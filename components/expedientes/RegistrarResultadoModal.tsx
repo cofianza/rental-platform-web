@@ -6,7 +6,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { IconLoader, IconUpload, IconFileText, IconX, IconCheck } from '@/components/icons'
 import { estudioService } from '@/services/estudioService'
@@ -31,10 +31,10 @@ interface RegistrarResultadoModalProps {
 
 type ResultadoValue = 'aprobado' | 'rechazado' | 'condicionado'
 
-const RESULTADOS: { value: ResultadoValue; label: string; color: string; bg: string; border: string }[] = [
-  { value: 'aprobado', label: 'Aprobado', color: 'text-green-700', bg: 'bg-green-50', border: 'border-green-500 ring-green-200' },
-  { value: 'rechazado', label: 'No aprobable', color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-500 ring-red-200' },
-  { value: 'condicionado', label: 'Condicionado', color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-500 ring-yellow-200' },
+const RESULTADOS: { value: ResultadoValue; label: string; ayuda: string; color: string; bg: string; border: string }[] = [
+  { value: 'aprobado', label: 'Aprobado', ayuda: 'Cumple la política.', color: 'text-green-800', bg: 'bg-green-50', border: 'border-green-600' },
+  { value: 'rechazado', label: 'No aprobable', ayuda: 'Pide los motivos.', color: 'text-red-800', bg: 'bg-red-50', border: 'border-red-600' },
+  { value: 'condicionado', label: 'Condicionado', ayuda: 'Pide las condiciones.', color: 'text-amber-800', bg: 'bg-amber-50', border: 'border-amber-600' },
 ]
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024
@@ -51,9 +51,9 @@ interface DatosFormulario {
 function DatoResumen({ label, value }: { label: string; value: React.ReactNode }) {
   if (value === null || value === undefined || value === '') return null
   return (
-    <div className="flex gap-2">
-      <dt className="shrink-0 text-gray-500">{label}:</dt>
-      <dd className="min-w-0 font-medium text-gray-900">{value}</dd>
+    <div className="min-w-0">
+      <dt className="text-xs text-gray-500">{label}</dt>
+      <dd className="mt-0.5 break-words text-sm font-medium text-gray-900">{value}</dd>
     </div>
   )
 }
@@ -142,6 +142,7 @@ export function RegistrarResultadoModal({
   }
 
   const handlePreSubmit = () => {
+    if (isSubmitting) return
     const validationError = validate()
     if (validationError) {
       setError(validationError)
@@ -210,11 +211,11 @@ export function RegistrarResultadoModal({
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > MAX_FILE_SIZE) {
-      setError('El archivo no debe superar 20MB')
+      setError('El archivo no debe superar 20 MB.')
       return
     }
     if (!file.name.toLowerCase().endsWith('.pdf')) {
-      setError('Solo se permiten archivos PDF')
+      setError('Solo se admiten archivos PDF.')
       return
     }
     setError(null)
@@ -232,13 +233,43 @@ export function RegistrarResultadoModal({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={handleClose} title="Registrar resultado de la evaluación" size="lg">
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title="Registrar resultado de la evaluación"
+        description="Revise el caso y registre el resultado. Una vez registrado no se puede cambiar."
+        size="lg"
+        footer={
+          <div className="space-y-2">
+            {error && (
+              <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {error}
+              </p>
+            )}
+            <ModalAcciones>
+              <button type="button" onClick={handleClose} disabled={isSubmitting} className={botonModal('secondary')}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handlePreSubmit}
+                disabled={isSubmitting || !resultado || esperaLista}
+                aria-busy={isSubmitting || undefined}
+                className={botonModal('primary')}
+              >
+                {isSubmitting ? <IconLoader size={16} className="animate-spin" /> : <IconCheck size={16} />}
+                {isSubmitting ? (uploadProgress != null ? 'Subiendo…' : 'Registrando…') : 'Registrar resultado'}
+              </button>
+            </ModalAcciones>
+          </div>
+        }
+      >
         <div className="space-y-5">
-          <dl className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm space-y-1">
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3 sm:grid-cols-3 sm:gap-x-6 sm:p-4">
             <DatoResumen label="Persona evaluada" value={datos.nombre_completo} />
             <DatoResumen label="Documento" value={documento} />
             <DatoResumen
-              label="Buró"
+              label="Central de riesgo"
               value={PROVEEDOR_LABELS[estudio.proveedor] ?? estudio.proveedor}
             />
             <DatoResumen
@@ -254,39 +285,53 @@ export function RegistrarResultadoModal({
               }
             />
             <DatoResumen label="Score actual" value={estudio.score ?? null} />
-            <DatoResumen label="Observaciones" value={estudio.observaciones ?? null} />
+            {estudio.observaciones && (
+              <div className="col-span-2 min-w-0 sm:col-span-3">
+                <dt className="text-xs text-gray-500">Observaciones</dt>
+                <dd className="mt-0.5 whitespace-pre-wrap break-words text-sm text-gray-900">{estudio.observaciones}</dd>
+              </div>
+            )}
           </dl>
-
-          {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-              {error}
-            </div>
-          )}
 
           {/* Resultado selector */}
           <div>
             <p id="registrar-resultado-modal-resultado" className="block text-sm font-medium text-gray-700 mb-2">
-              Resultado <span className="text-red-500">*</span>
+              Resultado <span className="text-red-600" aria-hidden="true">*</span>
             </p>
-            <div role="group" aria-labelledby="registrar-resultado-modal-resultado" className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-              {RESULTADOS.map((r) => (
-                <button
-                  key={r.value}
-                  type="button"
-                  onClick={() => {
-                    // M3: los motivos de rechazo no pasan a condicionado (ni al revés).
-                    if (r.value !== resultado) setMotivos(SIN_MOTIVOS)
-                    setResultado(r.value)
-                  }}
-                  className={`p-3 rounded-lg border-2 text-center font-medium text-sm transition-all ${
-                    resultado === r.value
-                      ? `${r.bg} ${r.border} ${r.color} ring-2`
-                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                  }`}
-                >
-                  {r.label}
-                </button>
-              ))}
+            <div role="group" aria-labelledby="registrar-resultado-modal-resultado" className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {RESULTADOS.map((r) => {
+                const activo = resultado === r.value
+                return (
+                  <button
+                    key={r.value}
+                    type="button"
+                    
+                    aria-pressed={activo}
+                    disabled={isSubmitting}
+                    onClick={() => {
+                      // M3: los motivos de rechazo no pasan a condicionado (ni al revés).
+                      if (r.value !== resultado) setMotivos(SIN_MOTIVOS)
+                      setResultado(r.value)
+                    }}
+                    className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 ${
+                      activo ? `${r.bg} ${r.border}` : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                        activo ? `${r.border} bg-white ${r.color}` : 'border-gray-300 bg-white'
+                      }`}
+                    >
+                      {activo && <IconCheck size={12} />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className={`block text-sm font-semibold ${activo ? r.color : 'text-gray-900'}`}>{r.label}</span>
+                      <span className="block text-xs text-gray-600">{r.ayuda}</span>
+                    </span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
@@ -310,7 +355,7 @@ export function RegistrarResultadoModal({
           <div>
             <LoVeLaInmobiliaria />
             <label htmlFor="registrar-resultado-modal-observaciones-min-10-caracteres" className="block text-sm font-medium text-gray-700 mb-1">
-              Observaciones <span className="text-red-500">*</span>
+              Observaciones <span className="text-red-600" aria-hidden="true">*</span>
               <span className="text-gray-500 font-normal"> (min. 10 caracteres)</span>
             </label>
             <textarea id="registrar-resultado-modal-observaciones-min-10-caracteres"
@@ -345,8 +390,8 @@ export function RegistrarResultadoModal({
           {!tipoLista && !esperaLista && resultado === 'rechazado' && (
             <div className="space-y-4">
               <div>
-                <label htmlFor="registrar-resultado-modal-fundamento" className="block text-sm font-medium text-red-700 mb-1">
-                  Fundamento interno <span className="text-red-500">*</span>
+                <label htmlFor="registrar-resultado-modal-fundamento" className="block text-sm font-medium text-gray-700 mb-1">
+                  Fundamento interno <span className="text-red-600" aria-hidden="true">*</span>
                 </label>
                 <textarea id="registrar-resultado-modal-fundamento"
                   value={fundamento}
@@ -354,14 +399,14 @@ export function RegistrarResultadoModal({
                   rows={3}
                   maxLength={2000}
                   placeholder="Por qué no es aprobable..."
-                  className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">Solo lo ve Cofianza: queda en el historial del estudio.</p>
               </div>
               <div>
                 <LoVeLaInmobiliaria />
-                <label htmlFor="registrar-resultado-modal-motivo-de-rechazo" className="block text-sm font-medium text-red-700 mb-1">
-                  Motivo para la inmobiliaria o el propietario <span className="text-red-500">*</span>
+                <label htmlFor="registrar-resultado-modal-motivo-de-rechazo" className="block text-sm font-medium text-gray-700 mb-1">
+                  Motivo para la inmobiliaria o el propietario <span className="text-red-600" aria-hidden="true">*</span>
                 </label>
                 <textarea id="registrar-resultado-modal-motivo-de-rechazo"
                   value={motivoRechazo}
@@ -369,10 +414,10 @@ export function RegistrarResultadoModal({
                   rows={2}
                   maxLength={500}
                   placeholder="Ej.: El caso no cumple la política de evaluación de Cofianza."
-                  className="w-full px-3 py-2 border border-red-300 bg-red-50 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Lo verán en el estudio. Escríbalo corto, sin cifras del buró ni datos del coarrendatario.
+                  Lo verán en el estudio. Escríbalo corto, sin cifras de las centrales de riesgo ni datos del coarrendatario.
                 </p>
               </div>
             </div>
@@ -382,8 +427,8 @@ export function RegistrarResultadoModal({
           {!tipoLista && !esperaLista && resultado === 'condicionado' && (
             <div>
               <LoVeLaInmobiliaria />
-              <label htmlFor="registrar-resultado-modal-condiciones" className="block text-sm font-medium text-yellow-700 mb-1">
-                Condiciones <span className="text-red-500">*</span>
+              <label htmlFor="registrar-resultado-modal-condiciones" className="block text-sm font-medium text-gray-700 mb-1">
+                Condiciones <span className="text-red-600" aria-hidden="true">*</span>
               </label>
               <textarea id="registrar-resultado-modal-condiciones"
                 value={condiciones}
@@ -391,7 +436,7 @@ export function RegistrarResultadoModal({
                 rows={3}
                 maxLength={2000}
                 placeholder="Especifique las condiciones para la aprobación..."
-                className="w-full px-3 py-2 border border-yellow-300 bg-yellow-50 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 resize-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
               />
             </div>
           )}
@@ -399,13 +444,13 @@ export function RegistrarResultadoModal({
           {/* Certificado PDF upload */}
           <div>
             <label htmlFor="registrar-resultado-certificado" className="block text-sm font-medium text-gray-700 mb-1">
-              Certificado PDF <span className="text-gray-500">(opcional, max 20MB)</span>
+              Certificado PDF <span className="text-gray-500">(opcional, máx. 20 MB)</span>
             </label>
             {!archivo ? (
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-500 hover:border-primary-400 hover:text-primary-600 transition-colors"
+                className="w-full flex min-h-12 items-center justify-center gap-2 px-4 py-3 border border-dashed border-gray-300 rounded-lg text-sm text-gray-700 hover:border-primary-400 hover:text-primary-700 transition-colors"
               >
                 <IconUpload size={18} />
                 Seleccionar archivo PDF
@@ -433,7 +478,8 @@ export function RegistrarResultadoModal({
                   <button
                     type="button"
                     onClick={() => setArchivo(null)}
-                    className="p-1 text-gray-500 hover:text-red-600"
+                    aria-label={`Quitar ${archivo.name}`}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 hover:bg-gray-100 hover:text-red-700"
                   >
                     <IconX size={16} />
                   </button>
@@ -450,33 +496,6 @@ export function RegistrarResultadoModal({
             />
           </div>
 
-          {/* Buttons */}
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handlePreSubmit}
-              disabled={isSubmitting || !resultado || esperaLista}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-            >
-              {isSubmitting ? (
-                <>
-                  <IconLoader size={16} className="animate-spin" />
-                  {uploadProgress != null ? 'Subiendo...' : 'Registrando...'}
-                </>
-              ) : (
-                <>
-                  <IconCheck size={16} />
-                  Registrar resultado
-                </>
-              )}
-            </button>
-          </div>
         </div>
       </Modal>
 
@@ -484,8 +503,8 @@ export function RegistrarResultadoModal({
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={handleSubmit}
-        title="Confirmar resultado"
-        message={`Va a registrar la evaluación como "${resultado}". No se puede deshacer y la evaluación quedará completada.`}
+        title="¿Registrar el resultado?"
+        message={`Va a registrar la evaluación como «${RESULTADOS.find((r) => r.value === resultado)?.label ?? resultado}». No se puede deshacer y la evaluación quedará completada.`}
         confirmLabel="Confirmar resultado"
         variant="default"
         isLoading={isSubmitting}

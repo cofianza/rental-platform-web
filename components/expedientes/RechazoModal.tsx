@@ -6,7 +6,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { IconLoader } from '@/components/icons'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 
 const SUGERENCIAS_RAPIDAS = [
   'Documento ilegible o de baja calidad',
@@ -53,25 +54,57 @@ export function RechazoModal({
     setMotivo(texto)
   }
 
-  return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Rechazar documento" size="sm">
-      <div className="space-y-4">
-        <p className="text-sm text-gray-600">
-          Rechazar <span className="font-medium text-gray-900">{documentoNombre}</span>.
-          Indique el motivo del rechazo. Le avisaremos a quien gestiona el estudio para que suba uno nuevo.
-        </p>
+  const restantes = MIN_CHARS - charCount
 
-        {/* Sugerencias rapidas */}
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Rechazar documento"
+      description={
+        <>
+          <span className="font-medium text-gray-900 break-words">{documentoNombre}</span>. Le avisaremos a quien gestiona el
+          estudio para que suba uno nuevo.
+        </>
+      }
+      size="sm"
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={handleClose} disabled={isLoading} className={botonModal('secondary')}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={!isValid || isLoading}
+            aria-busy={isLoading || undefined}
+            className={botonModal('danger')}
+          >
+            {isLoading && <IconLoader size={16} className="animate-spin" />}
+            {isLoading ? 'Rechazando…' : 'Rechazar documento'}
+          </button>
+        </ModalAcciones>
+      }
+    >
+      <div className="space-y-4">
+        {/* Sugerencias rápidas: llenan el motivo, que se puede editar después. */}
         <div>
-          <p className="text-xs font-medium text-gray-500 mb-2">Sugerencias rápidas:</p>
-          <div className="flex flex-wrap gap-2">
+          <p id="rechazo-sugerencias" className="mb-2 text-sm font-medium text-gray-700">
+            Motivos frecuentes
+          </p>
+          <div role="group" aria-labelledby="rechazo-sugerencias" className="flex flex-wrap gap-2">
             {SUGERENCIAS_RAPIDAS.map((sugerencia) => (
               <button
                 key={sugerencia}
                 type="button"
                 onClick={() => handleSugerencia(sugerencia)}
                 disabled={isLoading}
-                className="px-2.5 py-1 text-xs text-gray-600 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors disabled:opacity-50"
+                aria-pressed={motivo === sugerencia}
+                className={`min-h-9 rounded-full border px-3 py-1.5 text-left text-xs transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+                  motivo === sugerencia
+                    ? 'border-red-300 bg-red-50 text-red-800'
+                    : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+                }`}
               >
                 {sugerencia}
               </button>
@@ -79,43 +112,32 @@ export function RechazoModal({
           </div>
         </div>
 
-        {/* Textarea */}
         <div>
+          <label htmlFor="rechazo-modal-motivo" className="block text-sm font-medium text-gray-700 mb-1">
+            Motivo del rechazo <span className="text-red-600" aria-hidden="true">*</span>
+          </label>
           <textarea
+            id="rechazo-modal-motivo"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
-            placeholder="Describa el motivo del rechazo (mín. 10 caracteres)..."
+            placeholder="Por ejemplo: la foto está borrosa y no se leen los datos."
             maxLength={MAX_CHARS}
             rows={4}
+            required
+            aria-describedby="rechazo-modal-motivo-ayuda"
             disabled={isLoading}
-            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:opacity-50 disabled:bg-gray-50"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:bg-gray-50"
           />
-          <div className="flex justify-between mt-1">
-            <span className={`text-xs ${charCount < MIN_CHARS ? 'text-red-500' : 'text-gray-500'}`}>
-              {charCount < MIN_CHARS ? `Mínimo ${MIN_CHARS} caracteres` : ''}
+          <div id="rechazo-modal-motivo-ayuda" className="mt-1 flex justify-between gap-3 text-xs">
+            <span className={restantes > 0 && charCount > 0 ? 'text-amber-800' : 'text-gray-500'}>
+              {restantes > 0
+                ? `Obligatorio, mínimo ${MIN_CHARS} caracteres${charCount > 0 ? ` (faltan ${restantes})` : ''}.`
+                : 'Lo verá quien gestiona el estudio.'}
             </span>
-            <span className={`text-xs ${charCount > MAX_CHARS * 0.9 ? 'text-yellow-600' : 'text-gray-500'}`}>
+            <span className={`tabular-nums ${charCount > MAX_CHARS * 0.9 ? 'text-amber-800' : 'text-gray-500'}`}>
               {charCount}/{MAX_CHARS}
             </span>
           </div>
-        </div>
-
-        {/* Botones */}
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            onClick={handleClose}
-            disabled={isLoading}
-            className="px-4 py-2 rounded-lg text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleConfirm}
-            disabled={!isValid || isLoading}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? 'Rechazando...' : 'Rechazar documento'}
-          </button>
         </div>
       </div>
     </Modal>

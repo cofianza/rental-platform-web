@@ -24,7 +24,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { IconShieldCheck, IconLoader, IconAlertTriangle, IconCalendar, IconRefresh } from '@/components/icons'
-import { Modal } from '@/components/ui'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -130,6 +130,7 @@ export function AccionHabilitarEstudioCard({
   }
 
   const handleOmitirCita = async () => {
+    if (submitting) return
     setSubmitting(true)
     try {
       await expedienteService.omitirCita(expedienteId, motivoOmitir.trim() || undefined)
@@ -146,6 +147,7 @@ export function AccionHabilitarEstudioCard({
   }
 
   const handleRechazar = async () => {
+    if (submitting) return
     setSubmitting(true)
     try {
       await expedienteService.rechazarEstudio(expedienteId, motivoRechazo.trim() || undefined)
@@ -228,44 +230,41 @@ export function AccionHabilitarEstudioCard({
           isOpen={showOmitir}
           onClose={() => !submitting && setShowOmitir(false)}
           title="Omitir la cita de visita"
+          description="Confirme que la visita ya se coordinó por fuera. Podrá habilitar la evaluación enseguida."
           size="sm"
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Confirme que la visita ya se coordinó por fuera y quiere continuar sin
-              agendar una cita en el sistema. Podrá habilitar la evaluación enseguida.
-            </p>
-            <div>
-              <label htmlFor="accion-habilitar-estudio-card-motivo-nota-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-                Motivo / nota (opcional)
-              </label>
-              <textarea id="accion-habilitar-estudio-card-motivo-nota-opcional"
-                value={motivoOmitir}
-                onChange={(e) => setMotivoOmitir(e.target.value)}
-                rows={3}
-                maxLength={2000}
-                placeholder="Ej: visita coordinada y realizada por WhatsApp el 2 de julio."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">Queda registrado en la bitácora del estudio.</p>
-            </div>
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={() => setShowOmitir(false)}
-                disabled={submitting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
+          footer={
+            <ModalAcciones>
+              <button type="button" onClick={() => setShowOmitir(false)} disabled={submitting} className={botonModal('secondary')}>
                 Cancelar
               </button>
               <button
+                type="button"
                 onClick={handleOmitirCita}
                 disabled={submitting}
-                className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
+                aria-busy={submitting || undefined}
+                className={botonModal('primary')}
               >
-                {submitting && <IconLoader size={14} className="animate-spin" />}
+                {submitting && <IconLoader size={16} className="animate-spin" />}
                 Omitir cita y continuar
               </button>
-            </div>
+            </ModalAcciones>
+          }
+        >
+          <div>
+            <label htmlFor="accion-habilitar-estudio-card-motivo-nota-opcional" className="block text-sm font-medium text-gray-700 mb-1">
+              Motivo o nota <span className="font-normal text-gray-500">(opcional)</span>
+            </label>
+            <textarea id="accion-habilitar-estudio-card-motivo-nota-opcional"
+              value={motivoOmitir}
+              onChange={(e) => setMotivoOmitir(e.target.value)}
+              rows={3}
+              maxLength={2000}
+              disabled={submitting}
+              aria-describedby="accion-habilitar-omitir-ayuda"
+              placeholder="Por ejemplo: visita coordinada y realizada por WhatsApp el 2 de julio."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <p id="accion-habilitar-omitir-ayuda" className="text-xs text-gray-600 mt-1">Queda registrado en la bitácora del estudio.</p>
           </div>
         </Modal>
       </>
@@ -322,50 +321,52 @@ export function AccionHabilitarEstudioCard({
         isOpen={showRechazar}
         onClose={() => !submitting && setShowRechazar(false)}
         title="No habilitar la evaluación"
+        description="El proceso de este prospecto se cierra aquí."
         size="sm"
+        footer={
+          <div className="space-y-2">
+            <p className="flex items-start gap-2 text-sm text-gray-700">
+              <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-red-700" aria-hidden="true" />
+              <span>
+                Al confirmar, el prospecto recibirá un aviso por correo de que decidió no continuar con el proceso. Esta acción es
+                irreversible.
+              </span>
+            </p>
+            <ModalAcciones>
+              <button type="button" onClick={() => setShowRechazar(false)} disabled={submitting} className={botonModal('secondary')}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleRechazar}
+                disabled={submitting}
+                aria-busy={submitting || undefined}
+                className={botonModal('danger')}
+              >
+                {submitting && <IconLoader size={16} className="animate-spin" />}
+                No habilitar
+              </button>
+            </ModalAcciones>
+          </div>
+        }
       >
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-            <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-amber-800">
-              Al confirmar, el prospecto recibirá un aviso por correo de que decidió no continuar con el proceso. Esta acción es irreversible.
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="accion-habilitar-estudio-card-motivo-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-              Motivo (opcional)
-            </label>
-            <textarea id="accion-habilitar-estudio-card-motivo-opcional"
-              value={motivoRechazo}
-              onChange={(e) => setMotivoRechazo(e.target.value)}
-              rows={3}
-              maxLength={2000}
-              placeholder="Ej.: el inmueble ya se comprometió con otro candidato."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Este texto aparecerá en el correo al prospecto: escríbalo en tono formal.
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              onClick={() => setShowRechazar(false)}
-              disabled={submitting}
-              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleRechazar}
-              disabled={submitting}
-              className="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2"
-            >
-              {submitting && <IconLoader size={14} className="animate-spin" />}
-              Confirmar — no habilitar
-            </button>
-          </div>
+        <div>
+          <label htmlFor="accion-habilitar-estudio-card-motivo-opcional" className="block text-sm font-medium text-gray-700 mb-1">
+            Motivo <span className="font-normal text-gray-500">(opcional)</span>
+          </label>
+          <textarea id="accion-habilitar-estudio-card-motivo-opcional"
+            value={motivoRechazo}
+            onChange={(e) => setMotivoRechazo(e.target.value)}
+            rows={3}
+            maxLength={2000}
+            disabled={submitting}
+            aria-describedby="accion-habilitar-rechazo-ayuda"
+            placeholder="Por ejemplo: el inmueble ya se comprometió con otro candidato."
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <p id="accion-habilitar-rechazo-ayuda" className="text-xs text-gray-600 mt-1">
+            Este texto aparecerá en el correo al prospecto: escríbalo en tono formal.
+          </p>
         </div>
       </Modal>
     </>

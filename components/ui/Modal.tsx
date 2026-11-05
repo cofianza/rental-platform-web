@@ -5,14 +5,21 @@
 
 'use client'
 
-import { useEffect, useCallback, useId, useRef } from 'react'
+import { useEffect, useCallback, useId, useRef, type ReactNode } from 'react'
 import { IconX } from '@/components/icons'
+import { buttonClasses } from './Button'
 import { cn } from '@/lib/utils'
 
 export interface ModalProps {
   isOpen: boolean
   onClose: () => void
   title?: string
+  /** Una línea bajo el título: qué decide o qué pasa aquí. Se anuncia como descripción del diálogo. */
+  description?: ReactNode
+  /** Pie fijo (no se desplaza con el cuerpo). Las acciones van en `<ModalAcciones>`:
+   *  la secundaria primero y la principal al final (a la derecha en pantallas
+   *  anchas; arriba y a lo ancho en el celular). */
+  footer?: ReactNode
   size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl'
   children: React.ReactNode
   className?: string
@@ -27,6 +34,8 @@ export interface ModalProps {
   bare?: boolean
   /** Diálogo que se abre encima de otro modal. */
   encima?: boolean
+  /** Id de un elemento propio que describe el diálogo (aria-describedby), si no se usa `description`. */
+  ariaDescribedBy?: string
 }
 
 // Bloqueo de scroll con contador: un ConfirmDialog abierto sobre otro Modal
@@ -65,6 +74,8 @@ export function Modal({
   isOpen,
   onClose,
   title,
+  description,
+  footer,
   size = 'md',
   children,
   className,
@@ -72,8 +83,10 @@ export function Modal({
   closeOnBackdrop = false,
   bare = false,
   encima = false,
+  ariaDescribedBy,
 }: ModalProps) {
   const titleId = useId()
+  const descId = useId()
   const contentRef = useRef<HTMLDivElement>(null)
   const restaurarFocoRef = useRef<HTMLElement | null>(null)
   const idRef = useRef(Symbol('modal'))
@@ -156,6 +169,7 @@ export function Modal({
       aria-modal="true"
       aria-labelledby={title ? titleId : undefined}
       aria-label={title ? undefined : ariaLabel}
+      aria-describedby={description && title && !bare ? descId : ariaDescribedBy}
     >
       {/* Overlay */}
       <div
@@ -183,29 +197,67 @@ export function Modal({
           children
         ) : (
           <>
-            {/* Header (no se encoge) */}
+            {/* Encabezado (no se encoge): título, una línea de contexto y cerrar. */}
             {title && (
-              <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 shrink-0">
-                <h2 id={titleId} className="min-w-0 break-words text-base sm:text-lg font-semibold text-gray-900">
-                  {title}
-                </h2>
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-gray-200 py-3 pl-4 pr-2 sm:py-4 sm:pl-6 sm:pr-3">
+                <div className="min-w-0 pt-1.5">
+                  <h2 id={titleId} className="break-words text-base font-semibold leading-snug text-gray-900 sm:text-lg">
+                    {title}
+                  </h2>
+                  {description && (
+                    <p id={descId} className="mt-1 text-sm leading-relaxed text-gray-600">
+                      {description}
+                    </p>
+                  )}
+                </div>
                 <button
                   type="button"
                   data-modal-close
                   onClick={onClose}
-                  className="-m-2 flex h-11 w-11 items-center justify-center rounded hover:bg-gray-100 transition-colors"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                   aria-label="Cerrar"
                 >
-                  <IconX size={20} className="text-gray-500" />
+                  <IconX size={20} />
                 </button>
               </div>
             )}
 
-            {/* Body — scroll interno cuando el contenido excede el viewport */}
-            <div className="px-4 sm:px-6 py-4 overflow-y-auto flex-1 min-h-0">{children}</div>
+            {/* Cuerpo: es lo único que se desplaza cuando el contenido no cabe. */}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">{children}</div>
+
+            {/* Pie fijo: las acciones siempre a la vista, también a 390 px. */}
+            {footer && (
+              <div className="shrink-0 rounded-b-lg border-t border-gray-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+                {footer}
+              </div>
+            )}
           </>
         )}
       </div>
     </div>
   )
+}
+
+/**
+ * Fila de acciones del pie. Orden en el código: la secundaria (Cancelar) y al
+ * final la principal. En pantallas anchas quedan a la derecha, la principal en
+ * el extremo; en el celular se apilan a lo ancho con la principal arriba.
+ */
+export function ModalAcciones({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end',
+        '[&>*]:w-full sm:[&>*]:w-auto',
+        className,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Botón de diálogo: la misma forma que `Button`, con 40 px de alto. */
+export function botonModal(variante: 'primary' | 'secondary' | 'danger' = 'secondary', className?: string) {
+  return buttonClasses(variante, 'md', cn('min-h-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1', className))
 }

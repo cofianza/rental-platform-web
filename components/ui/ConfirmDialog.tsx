@@ -5,9 +5,9 @@
 
 'use client'
 
-import { useRef, useState, type ReactNode } from 'react'
-import { Modal } from './Modal'
-import { cn } from '@/lib/utils'
+import { useId, useRef, useState, type ReactNode } from 'react'
+import { IconLoader } from '@/components/icons'
+import { Modal, ModalAcciones, botonModal } from './Modal'
 
 export interface ConfirmDialogProps {
   isOpen: boolean
@@ -61,47 +61,46 @@ export function ConfirmDialog({
     }
   }
   const bloqueado = isLoading || ocupado
+  const mensajeId = useId()
 
   return (
     // Mientras dice «Procesando…» la acción ya corre: la X y Escape no cierran,
-    // para no dar a entender que se canceló.
-    <Modal isOpen={isOpen} onClose={bloqueado ? () => {} : onClose} title={title} size="sm">
-      <div className="space-y-4">
-        <div className="text-sm text-gray-600">{message}</div>
-
-        <div className="flex justify-end gap-3 pt-2">
+    // para no dar a entender que se canceló. Va encima: casi siempre se abre
+    // sobre otro diálogo o sobre una tarjeta con su propio modal.
+    <Modal
+      isOpen={isOpen}
+      onClose={bloqueado ? () => {} : onClose}
+      title={title}
+      size="sm"
+      encima
+      ariaDescribedBy={mensajeId}
+      footer={
+        <ModalAcciones>
           <button
             type="button"
             autoFocus={variant === 'danger'}
             onClick={onClose}
             disabled={bloqueado}
-            className={cn(
-              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-              'border border-gray-300 text-gray-700',
-              'hover:bg-gray-50',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
+            className={botonModal('secondary')}
           >
             {cancelLabel}
           </button>
-
           <button
             type="button"
             autoFocus={variant !== 'danger'}
             onClick={handleConfirm}
             disabled={bloqueado || confirmDisabled}
-            className={cn(
-              'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-              'text-white',
-              variant === 'danger'
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-primary-700 hover:bg-primary-800',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
+            aria-busy={bloqueado || undefined}
+            className={botonModal(variant === 'danger' ? 'danger' : 'primary')}
           >
+            {bloqueado && <IconLoader size={16} className="animate-spin" />}
             {bloqueado ? 'Procesando…' : confirmLabel}
           </button>
-        </div>
+        </ModalAcciones>
+      }
+    >
+      <div id={mensajeId} className="text-sm leading-relaxed text-gray-700">
+        {message}
       </div>
     </Modal>
   )

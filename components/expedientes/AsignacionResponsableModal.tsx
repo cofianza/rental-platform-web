@@ -7,10 +7,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Avatar } from '@/components/ui/Avatar'
-import { IconLoader, IconUser, IconCheck } from '@/components/icons'
+import { IconLoader, IconUser, IconCheck, IconRefresh } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import type { IAnalistaOption, IExpedienteAnalista } from '@/types/expediente'
 import { cn } from '@/lib/utils'
@@ -53,7 +53,7 @@ export function AsignacionResponsableModal({
       const data = await expedienteService.getAnalistas()
       setAnalistas(data)
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Error al cargar analistas'
+      const message = err instanceof Error ? err.message : 'No se pudieron cargar los analistas.'
       setError(message)
     } finally {
       setIsLoadingAnalistas(false)
@@ -110,113 +110,106 @@ export function AsignacionResponsableModal({
       <Modal
         isOpen={isOpen}
         onClose={handleClose}
-        title="Asignar responsable"
+        title={analistaActual ? 'Cambiar responsable' : 'Asignar responsable'}
+        description={
+          analistaActual ? (
+            <>
+              Hoy lo lleva <span className="font-medium text-gray-900">{nombreActual}</span>. El nuevo responsable queda a cargo del estudio.
+            </>
+          ) : (
+            'Quien quede a cargo del estudio.'
+          )
+        }
         size="md"
-      >
-        <div className="space-y-6">
-          {/* Responsable actual */}
-          {analistaActual && (
-            <div>
-              <p className="block text-sm font-medium text-gray-700 mb-2">
-                Responsable actual
+        footer={
+          <div className="space-y-2">
+            {error && !isLoadingAnalistas && analistas.length > 0 && (
+              <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {error}
               </p>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Avatar name={nombreActual!} size="sm" />
-                <span className="text-sm font-medium text-gray-900">{nombreActual}</span>
-              </div>
+            )}
+            <ModalAcciones>
+              <button type="button" onClick={handleClose} disabled={isLoading} className={botonModal('secondary')}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmar}
+                disabled={isLoading || !analistaSeleccionado || isLoadingAnalistas || analistaSeleccionado === analistaActual?.id}
+                aria-busy={isLoading || undefined}
+                className={botonModal('primary')}
+              >
+                {isLoading && <IconLoader size={16} className="animate-spin" />}
+                {analistaActual ? 'Cambiar responsable' : 'Asignar'}
+              </button>
+            </ModalAcciones>
+          </div>
+        }
+      >
+        <div>
+          <p id="asignacion-lista" className="mb-2 text-sm font-medium text-gray-700">
+            {analistaActual ? 'Nuevo responsable' : 'Responsable'}
+          </p>
+
+          {isLoadingAnalistas ? (
+            <div role="status" className="space-y-2">
+              <span className="sr-only">Cargando analistas…</span>
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))}
             </div>
-          )}
+          ) : error && analistas.length === 0 ? (
+            <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+              <p>{error}</p>
+              <button
+                type="button"
+                onClick={() => void loadAnalistas()}
+                className={botonModal('secondary', 'mt-3')}
+              >
+                <IconRefresh size={16} />
+                Reintentar
+              </button>
+            </div>
+          ) : analistas.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-gray-300 py-8 text-center text-gray-600">
+              <IconUser size={28} className="mx-auto mb-2 text-gray-400" />
+              <p className="text-sm">No hay analistas disponibles para asignar.</p>
+            </div>
+          ) : (
+            <ul role="group" aria-labelledby="asignacion-lista" className="divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200">
+              {analistas.map((analista) => {
+                const isSelected = analistaSeleccionado === analista.id
+                const isActual = analistaActual?.id === analista.id
 
-          {/* Lista de analistas */}
-          <div>
-            <p className="block text-sm font-medium text-gray-700 mb-3">
-              {analistaActual ? 'Nuevo responsable' : 'Seleccionar responsable'}
-            </p>
-
-            {isLoadingAnalistas ? (
-              <div role="status" className="space-y-2">
-                <span className="sr-only">Cargando analistas…</span>
-                {[0, 1, 2].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full rounded-lg" />
-                ))}
-              </div>
-            ) : analistas.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <IconUser size={32} className="mx-auto text-gray-300 mb-2" />
-                <p className="text-sm">No hay analistas disponibles</p>
-              </div>
-            ) : (
-              <div className="max-h-64 overflow-y-auto space-y-2">
-                {analistas.map((analista) => {
-                  const isSelected = analistaSeleccionado === analista.id
-                  const isActual = analistaActual?.id === analista.id
-
-                  return (
+                return (
+                  <li key={analista.id}>
                     <button
-                      key={analista.id}
                       type="button"
+                      
+                      aria-pressed={isSelected}
                       onClick={() => setAnalistaSeleccionado(analista.id)}
                       disabled={isLoading}
                       className={cn(
-                        'w-full flex items-center justify-between px-4 py-3 rounded-lg border-2 transition-all',
-                        isSelected
-                          ? 'border-primary-500 bg-primary-50'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                        'flex min-h-12 w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500 disabled:opacity-50',
+                        isSelected ? 'bg-primary-50' : 'bg-white hover:bg-gray-50'
                       )}
                     >
-                      <div className="flex items-center gap-3">
+                      <span className="flex min-w-0 items-center gap-3">
                         <Avatar name={analista.nombre} size="sm" />
-                        <div className="text-left">
-                          <span
-                            className={cn(
-                              'text-sm font-medium',
-                              isSelected ? 'text-primary-700' : 'text-gray-900'
-                            )}
-                          >
+                        <span className="min-w-0">
+                          <span className={cn('block truncate text-sm font-medium', isSelected ? 'text-primary-800' : 'text-gray-900')}>
                             {analista.nombre}
                           </span>
-                          {isActual && (
-                            <span className="ml-2 text-xs text-gray-500">(actual)</span>
-                          )}
-                        </div>
-                      </div>
-                      {isSelected && (
-                        <IconCheck size={20} className="text-primary-600" />
-                      )}
+                          {isActual && <span className="block text-xs text-gray-600">Responsable actual</span>}
+                        </span>
+                      </span>
+                      {isSelected && <IconCheck size={18} className="shrink-0 text-primary-700" />}
                     </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Mensaje de error */}
-          {error && (
-            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
+                  </li>
+                )
+              })}
+            </ul>
           )}
-
-          {/* Botones de acción */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmar}
-              disabled={isLoading || !analistaSeleccionado || isLoadingAnalistas}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isLoading && <IconLoader size={16} className="animate-spin" />}
-              {analistaActual ? 'Reasignar' : 'Asignar'}
-            </button>
-          </div>
         </div>
       </Modal>
 
@@ -225,9 +218,9 @@ export function AsignacionResponsableModal({
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={handleConfirmReassign}
-        title="Confirmar reasignación"
-        message={`¿Cambiar responsable de ${nombreActual} a ${nombreNuevo}?`}
-        confirmLabel="Reasignar"
+        title="¿Cambiar el responsable?"
+        message={`El estudio pasa de ${nombreActual} a ${nombreNuevo}.`}
+        confirmLabel="Cambiar responsable"
         isLoading={isLoading}
       />
     </>

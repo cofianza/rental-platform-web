@@ -14,7 +14,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { IconLoader } from '@/components/icons'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { autorizacionService } from '@/services/autorizacionService'
 import { ApiClientError } from '@/lib/api'
@@ -67,7 +67,7 @@ export function CorregirDocumentoModal({
   const [confirmar, setConfirmar] = useState(false)
   const [guardando, setGuardando] = useState(false)
 
-  const cerrar = () => {
+  const reiniciarYCerrar = () => {
     setTipo(TIPOS.some((t) => t.value === tipoActual) ? tipoActual! : 'cc')
     setNumero('')
     setNombre(nombreActual ?? '')
@@ -75,6 +75,11 @@ export function CorregirDocumentoModal({
     setFuente('')
     setConfirmar(false)
     onClose()
+  }
+  // Con el guardado en curso, la X, Escape y Cancelar no cierran: daría a entender que se canceló.
+  const cerrar = () => {
+    if (guardando) return
+    reiniciarYCerrar()
   }
 
   const restantes = correccionesRestantes ?? null
@@ -111,14 +116,14 @@ export function CorregirDocumentoModal({
         onReenviar ? { duration: 10000, action: { label: 'Reenviar enlace', onClick: onReenviar } } : undefined,
       )
       window.dispatchEvent(new Event(EVENTO_BLOQUEOS))
-      cerrar()
+      reiniciarYCerrar()
       onCorregido?.()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudieron corregir los datos.')
       // El límite cerró el estudio: refrescar para que se vea.
       if (err instanceof ApiClientError && err.code === 'LIMITE_CORRECCIONES_DOCUMENTO') {
         window.dispatchEvent(new Event(EVENTO_BLOQUEOS))
-        cerrar()
+        reiniciarYCerrar()
         onCorregido?.()
       }
     } finally {
@@ -128,7 +133,7 @@ export function CorregirDocumentoModal({
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!valido) return
+    if (!valido || guardando) return
     // La última corrección del documento y la que pasa el límite se confirman aparte.
     if (cambiaDoc && restantes != null && restantes <= 1) setConfirmar(true)
     else void guardar()
@@ -136,125 +141,18 @@ export function CorregirDocumentoModal({
 
   return (
     <>
-      <Modal isOpen={isOpen && !confirmar} onClose={cerrar} title="Corregir datos del prospecto" size="md" closeOnBackdrop={false}>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          {conNombre && (
-          <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label htmlFor="corregir-nombre" className="mb-1 block text-xs font-medium text-gray-600">
-                Nombres
-              </label>
-              <input
-                id="corregir-nombre"
-                autoComplete="off"
-                value={nombre}
-                maxLength={100}
-                onChange={(e) => setNombre(e.target.value)}
-                disabled={guardando}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="corregir-apellido" className="mb-1 block text-xs font-medium text-gray-600">
-                Apellidos
-              </label>
-              <input
-                id="corregir-apellido"
-                autoComplete="off"
-                value={apellido}
-                maxLength={100}
-                onChange={(e) => setApellido(e.target.value)}
-                disabled={guardando}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-          </div>
-          <p className="text-xs text-gray-600">
-            Escríbalos tal como aparecen en la cédula: las centrales de riesgo cotejan el apellido.
-          </p>
-          </>
-          )}
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
-            <p className="text-xs text-gray-500">Documento registrado</p>
-            <p className="font-mono font-semibold text-gray-900">
-              {documento(tipoActual || '', numeroActual || '—')}
-            </p>
-          </div>
-          <p className="text-xs text-gray-600">
-            {sinCorreccionesDoc
-              ? 'Ya usó todas las correcciones del documento en este estudio: aquí solo puede corregir el nombre.'
-              : conNombre
-                ? 'Si el documento está bien, deje el número vacío. Verifíquelo con el prospecto antes de corregirlo: si la persona es otra, cree un estudio nuevo.'
-                : 'Verifique el documento con el prospecto antes de corregirlo: si la persona es otra, cree un estudio nuevo.'}
-          </p>
-          <p className="text-xs text-gray-600">
-            Si el prospecto tiene un enlace vigente, dejará de funcionar: después de corregir tendrá que reenviárselo,
-            y ese reenvío cuenta dentro de los permitidos.
-          </p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
-            <div className="sm:col-span-2">
-              <label htmlFor="corregir-doc-tipo" className="mb-1 block text-xs font-medium text-gray-600">
-                Tipo de documento
-              </label>
-              <select
-                id="corregir-doc-tipo"
-                value={tipo}
-                onChange={(e) => setTipo(e.target.value)}
-                disabled={guardando || sinCorreccionesDoc}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {TIPOS.map((t) => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:col-span-3">
-              <label htmlFor="corregir-doc-numero" className="mb-1 block text-xs font-medium text-gray-600">
-                Número correcto <span className="font-normal text-gray-400">(opcional)</span>
-              </label>
-              <input
-                id="corregir-doc-numero"
-                inputMode={tipo === 'pasaporte' ? 'text' : 'numeric'}
-                autoComplete="off"
-                value={numero}
-                maxLength={20}
-                onChange={(e) => setNumero(e.target.value.replace(/[^\w]/g, ''))}
-                disabled={guardando || sinCorreccionesDoc}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-          </div>
-          <fieldset>
-            <legend className="mb-1 text-xs font-medium text-gray-600">¿Contra qué verificó los datos?</legend>
-            <div className="space-y-1.5">
-              {FUENTES.map((f) => (
-                <label key={f.value} className="flex items-center gap-2 text-sm text-gray-800">
-                  <input
-                    type="radio"
-                    name="corregir-doc-fuente"
-                    value={f.value}
-                    checked={fuente === f.value}
-                    onChange={() => setFuente(f.value)}
-                    disabled={guardando}
-                    required
-                  />
-                  {f.label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          {restantes != null && restantes > 0 && (
-            <p className="text-xs text-gray-600">
-              {restantes === 1 ? 'Le queda 1 corrección del documento.' : `Le quedan ${restantes} correcciones del documento.`}{' '}
-              {conNombre && 'Corregir solo el nombre no gasta corrección.'}
-            </p>
-          )}
-          {!valido && (
-            <p className="text-xs text-gray-500">
-              {!nombreCompleto
+      <Modal
+        isOpen={isOpen && !confirmar}
+        onClose={cerrar}
+        title="Corregir datos del prospecto"
+        description="Verifique los datos con el prospecto antes de corregirlos: si la persona es otra, cree un estudio nuevo."
+        size="md"
+        closeOnBackdrop={false}
+        footer={
+          <div className="space-y-2">
+            {!valido && (
+              <p id="corregir-falta" role="status" className="text-sm text-gray-600">
+                {!nombreCompleto
                 ? 'Escriba nombres y apellidos.'
                 : !docValido
                   ? 'El número de documento debe tener al menos 5 caracteres.'
@@ -265,26 +163,158 @@ export function CorregirDocumentoModal({
                         ? 'Cambie el nombre.'
                         : 'Cambie el nombre o escriba el documento correcto.'
                     : 'Elija contra qué verificó los datos.'}
-            </p>
-          )}
-          <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={cerrar}
-              disabled={guardando}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={guardando || !valido}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-sm font-medium text-white hover:bg-primary-800 disabled:opacity-50"
-            >
-              {guardando && <IconLoader size={14} className="animate-spin" />}
-              Guardar corrección
-            </button>
+              </p>
+            )}
+            <ModalAcciones>
+              <button type="button" onClick={cerrar} disabled={guardando} className={botonModal('secondary')}>
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="corregir-documento-form"
+                disabled={guardando || !valido}
+                aria-busy={guardando || undefined}
+                aria-describedby={!valido ? 'corregir-falta' : undefined}
+                className={botonModal('primary')}
+              >
+                {guardando && <IconLoader size={16} className="animate-spin" />}
+                Guardar corrección
+              </button>
+            </ModalAcciones>
           </div>
+        }
+      >
+        <form id="corregir-documento-form" onSubmit={onSubmit} className="space-y-5" noValidate>
+          {conNombre && (
+            <section className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="corregir-nombre" className="mb-1 block text-sm font-medium text-gray-700">
+                    Nombres
+                  </label>
+                  <input
+                    id="corregir-nombre"
+                    autoComplete="off"
+                    value={nombre}
+                    maxLength={100}
+                    onChange={(e) => setNombre(e.target.value)}
+                    disabled={guardando}
+                    aria-describedby="corregir-nombre-ayuda"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="corregir-apellido" className="mb-1 block text-sm font-medium text-gray-700">
+                    Apellidos
+                  </label>
+                  <input
+                    id="corregir-apellido"
+                    autoComplete="off"
+                    value={apellido}
+                    maxLength={100}
+                    onChange={(e) => setApellido(e.target.value)}
+                    disabled={guardando}
+                    aria-describedby="corregir-nombre-ayuda"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+              </div>
+              <p id="corregir-nombre-ayuda" className="text-xs text-gray-600">
+                Escríbalos tal como aparecen en la cédula: las centrales de riesgo cotejan el apellido.
+              </p>
+            </section>
+          )}
+
+          <section className="space-y-3">
+            <dl className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+              <dt className="text-sm text-gray-600">Documento registrado</dt>
+              <dd className="font-mono text-sm font-semibold text-gray-900">{documento(tipoActual || '', numeroActual || '—')}</dd>
+            </dl>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-5">
+              <div className="sm:col-span-2">
+                <label htmlFor="corregir-doc-tipo" className="mb-1 block text-sm font-medium text-gray-700">
+                  Tipo de documento
+                </label>
+                <select
+                  id="corregir-doc-tipo"
+                  value={tipo}
+                  onChange={(e) => setTipo(e.target.value)}
+                  disabled={guardando || sinCorreccionesDoc}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                >
+                  {TIPOS.map((t) => (
+                    <option key={t.value} value={t.value}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="sm:col-span-3">
+                <label htmlFor="corregir-doc-numero" className="mb-1 block text-sm font-medium text-gray-700">
+                  Número correcto <span className="font-normal text-gray-500">(opcional)</span>
+                </label>
+                <input
+                  id="corregir-doc-numero"
+                  inputMode={tipo === 'pasaporte' ? 'text' : 'numeric'}
+                  autoComplete="off"
+                  value={numero}
+                  maxLength={20}
+                  onChange={(e) => setNumero(e.target.value.replace(/[^\w]/g, ''))}
+                  disabled={guardando || sinCorreccionesDoc}
+                  aria-describedby="corregir-doc-ayuda"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                />
+              </div>
+            </div>
+            <div id="corregir-doc-ayuda" className="space-y-1 text-xs text-gray-600">
+              <p>
+                {sinCorreccionesDoc
+                  ? 'Ya usó todas las correcciones del documento en este estudio: aquí solo puede corregir el nombre.'
+                  : conNombre
+                    ? 'Si el documento está bien, deje el número vacío.'
+                    : 'Escriba el documento correcto.'}
+                {restantes != null && restantes > 0 && (
+                  <>
+                    {' '}
+                    {restantes === 1 ? 'Le queda 1 corrección del documento.' : `Le quedan ${restantes} correcciones del documento.`}
+                    {conNombre && ' Corregir solo el nombre no gasta corrección.'}
+                  </>
+                )}
+              </p>
+              <p>
+                Si el prospecto tiene un enlace vigente, dejará de funcionar: después de corregir tendrá que reenviárselo,
+                y ese reenvío cuenta dentro de los permitidos.
+              </p>
+            </div>
+          </section>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-gray-700">
+              ¿Contra qué verificó los datos? <span className="text-red-600" aria-hidden="true">*</span>
+            </legend>
+            <div className="space-y-2">
+              {FUENTES.map((f) => (
+                <label
+                  key={f.value}
+                  className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    fuente === f.value ? 'border-primary-500 bg-primary-50 text-gray-900' : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="corregir-doc-fuente"
+                    value={f.value}
+                    checked={fuente === f.value}
+                    onChange={() => setFuente(f.value)}
+                    disabled={guardando}
+                    required
+                    className="h-4 w-4 shrink-0 border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  {f.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </form>
       </Modal>
       <ConfirmDialog

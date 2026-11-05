@@ -13,7 +13,8 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
+import { IconLoader } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { estudioService } from '@/services/estudioService'
 import { useAuthStore } from '@/stores/auth.store'
@@ -195,10 +196,13 @@ function TarifaOverrideModal({
   const [cashback, setCashback] = useState(o?.cashback_pct?.toString() ?? '')
   const [motivo, setMotivo] = useState(o?.motivo ?? '')
   const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const num = (v: string) => (v.trim() === '' ? undefined : Number(v))
 
   const guardar = async () => {
+    if (guardando) return
+    setError(null)
     const input: ITarifaOverrideInput = {
       tarifa_mensual_pct: num(tarifa),
       prima_vinculacion_pct: num(prima),
@@ -207,11 +211,11 @@ function TarifaOverrideModal({
     }
     const pcts = [input.tarifa_mensual_pct, input.prima_vinculacion_pct, input.cashback_pct]
     if (pcts.every((p) => p === undefined)) {
-      toast.error('Indique al menos un porcentaje')
+      setError('Indique al menos un porcentaje.')
       return
     }
     if (pcts.some((p) => p !== undefined && (!Number.isFinite(p) || p < 0 || p > 100))) {
-      toast.error('Los porcentajes van de 0 a 100')
+      setError('Los porcentajes van de 0 a 100.')
       return
     }
     setGuardando(true)
@@ -237,58 +241,83 @@ function TarifaOverrideModal({
   ]
 
   return (
-    <Modal isOpen onClose={onClose} title="Condiciones especiales" size="sm">
-      <div className="space-y-3">
-        <p className="text-xs text-gray-600">
-          Sobrescriba la tabla estándar para este estudio. Lo que deje vacío vuelve al valor estándar — no se conserva la negociación anterior. Queda registro de quién autorizó, cuándo y por qué, y el CRC se regenera.
+    <Modal
+      isOpen
+      onClose={guardando ? () => {} : onClose}
+      title="Condiciones especiales"
+      description="Sobrescriben la tabla estándar solo para este estudio."
+      size="sm"
+      footer={
+        <div className="space-y-2">
+          {error && (
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              {error}
+            </p>
+          )}
+          <ModalAcciones>
+            <button type="button" onClick={onClose} disabled={guardando} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button type="submit" form="tarifa-override-form" disabled={guardando} aria-busy={guardando || undefined} className={botonModal('primary')}>
+              {guardando && <IconLoader size={16} className="animate-spin" />}
+              {guardando ? 'Guardando…' : 'Guardar condiciones'}
+            </button>
+          </ModalAcciones>
+        </div>
+      }
+    >
+      <form
+        id="tarifa-override-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          void guardar()
+        }}
+        className="space-y-4"
+      >
+        <p className="text-sm text-gray-700">
+          Lo que deje vacío vuelve al valor estándar — no se conserva la negociación anterior. Queda registro de quién autorizó,
+          cuándo y por qué, y el CRC se regenera.
         </p>
-        {campos.map(([label, placeholder, valor, setValor]) => (
-          <label key={label} className="block text-xs font-medium text-gray-700">
-            {label}
+        {campos.map(([label, placeholder, valor, setValor], i) => (
+          <div key={label}>
+            <label htmlFor={`tarifa-override-${i}`} className="block text-sm font-medium text-gray-700">
+              {label}
+            </label>
             <input
+              id={`tarifa-override-${i}`}
               type="number"
+              inputMode="decimal"
               step="0.1"
               min={0}
               max={100}
               value={valor}
               placeholder={placeholder ? `estándar: ${placeholder}%` : ''}
-              onChange={(e) => setValor(e.target.value)}
+              onChange={(e) => {
+                setValor(e.target.value)
+                setError(null)
+              }}
               disabled={guardando}
               className={`${INPUT_CLASS} mt-1`}
             />
-          </label>
+          </div>
         ))}
-        <label className="block text-xs font-medium text-gray-700">
-          Motivo (opcional)
+        <div>
+          <label htmlFor="tarifa-override-motivo" className="block text-sm font-medium text-gray-700">
+            Motivo <span className="font-normal text-gray-500">(opcional)</span>
+          </label>
           <textarea
+            id="tarifa-override-motivo"
             value={motivo}
             onChange={(e) => setMotivo(e.target.value)}
             rows={2}
             maxLength={500}
             disabled={guardando}
-            placeholder="Ej.: negociación con la inmobiliaria X, cliente corporativo…"
+            placeholder="Por ejemplo: negociación con la inmobiliaria, cliente corporativo…"
             className={`${INPUT_CLASS} mt-1`}
           />
-        </label>
-        <div className="flex justify-end gap-2 pt-1">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={guardando}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={guardar}
-            disabled={guardando}
-            className="rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-800 disabled:opacity-50"
-          >
-            {guardando ? 'Guardando…' : 'Guardar'}
-          </button>
         </div>
-      </div>
+      </form>
     </Modal>
   )
 }

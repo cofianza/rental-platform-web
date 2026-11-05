@@ -104,7 +104,7 @@ export function CoincidenciasListas({
         onConfirm={(motivo) => decidir('descartada', motivo)}
         title={`Descartar la coincidencia de ${quien}`}
         confirmLabel="Descartar coincidencia"
-        label="Motivo del descarte (obligatorio)"
+        label="Motivo del descarte"
         minLength={10}
         isLoading={guardando}
         descripcion="Descarte solo si comprobó que no es la misma persona (por ejemplo, otro documento, otra fecha de nacimiento u otra nacionalidad). El contrato sigue con la validación normal."

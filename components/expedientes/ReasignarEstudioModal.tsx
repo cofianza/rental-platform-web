@@ -36,13 +36,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import {
   IconAlertTriangle,
   IconArrowRight,
   IconHome,
   IconLoader,
   IconMapPin,
+  IconCheck,
 } from '@/components/icons'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { inmuebleService } from '@/services/inmuebleService'
@@ -220,7 +221,7 @@ export function ReasignarEstudioModal({
   }
 
   const handleReasignar = async () => {
-    if (!seleccionado) return
+    if (!seleccionado || isSaving) return
     setIsSaving(true)
     setError(null)
     try {
@@ -266,25 +267,69 @@ export function ReasignarEstudioModal({
       isOpen={isOpen}
       onClose={handleClose}
       title={vincular ? 'Vincular inmueble al estudio' : 'Reasignar estudio a otra propiedad'}
+      description={
+        vincular
+          ? 'El estudio se creó sin propiedad. Elija el inmueble que la persona va a arrendar.'
+          : 'El estudio ya está pagado y ejecutado: se puede reutilizar en otra propiedad sin costo adicional.'
+      }
       size="lg"
+      footer={
+        <div className="space-y-2">
+          {seleccionado ? (
+            <div className="text-sm">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-gray-900">
+                <span className="font-medium">
+                  {vincular && canonAprobado
+                    ? `Aprobado hasta ${formatCurrency(canonAprobado)}`
+                    : canonOrigen !== null
+                      ? formatCurrency(canonOrigen)
+                      : 'Canon no registrado'}
+                </span>
+                <IconArrowRight size={14} className="text-gray-500" aria-hidden="true" />
+                <span className="font-medium">
+                  {seleccionado.codigo} · {formatCurrency(seleccionado.valor_arriendo)}
+                </span>
+              </p>
+              <p className="mt-0.5 text-xs text-gray-600">
+                No se generará ningún cobro ni se descontará ningún crédito, y el estudio conserva su vigencia original.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">Elija una propiedad de la lista.</p>
+          )}
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isSaving} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleReasignar}
+              disabled={!seleccionado || isSaving}
+              aria-busy={isSaving || undefined}
+              className={botonModal('primary')}
+            >
+              {isSaving && <IconLoader size={16} className="animate-spin" />}
+              {vincular ? 'Vincular inmueble' : 'Reasignar sin costo'}
+            </button>
+          </ModalAcciones>
+        </div>
+      }
     >
       <div className="space-y-4">
-        <p className="text-sm text-gray-600">
+        <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
           {vincular ? (
             <>
-              El estudio se creó sin propiedad. Elija el inmueble que la persona va a arrendar: su canon debe caber en
-              el canon aprobado y debe ser de la misma destinación (vivienda o comercial). Desde ese momento el estudio
-              pasa a la cartera del dueño del inmueble. Conserva su vigencia original.
+              <li>Su canon debe caber en el canon aprobado.</li>
+              <li>Debe ser de la misma destinación (vivienda o comercial).</li>
+              <li>Desde ese momento el estudio pasa a la cartera del dueño del inmueble. Conserva su vigencia original.</li>
             </>
           ) : (
             <>
-              El estudio ya está pagado y ejecutado: se puede reutilizar en otra propiedad{' '}
-              <span className="font-medium text-gray-800">sin costo adicional</span>. Conserva su
-              vigencia original — reasignarlo no la extiende. Solo se traslada dentro de la misma
-              cartera, y no si el estudio ya generó contrato o tiene una visita agendada.
+              <li>Conserva su vigencia original: reasignarlo no la extiende.</li>
+              <li>Solo se traslada dentro de la misma cartera, y no si el estudio ya generó contrato o tiene una visita agendada.</li>
             </>
           )}
-        </p>
+        </ul>
 
         {vincular && canonAprobado ? (
           <div className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
@@ -315,7 +360,7 @@ export function ReasignarEstudioModal({
         )}
 
         {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
             {error}
             {noCabe && vincular && expedienteId && seleccionado && (
               <div className="mt-3">
@@ -326,6 +371,9 @@ export function ReasignarEstudioModal({
         )}
 
         <div>
+          <p id="reasignar-estudio-propiedad" className="mb-1 block text-sm font-medium text-gray-700">
+            Propiedad <span className="text-red-600" aria-hidden="true">*</span>
+          </p>
           <label htmlFor="reasignar-estudio-busqueda" className="sr-only">
             Buscar propiedad
           </label>
@@ -340,7 +388,7 @@ export function ReasignarEstudioModal({
           />
         </div>
 
-        <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200 divide-y divide-gray-100">
+        <div role="group" aria-labelledby="reasignar-estudio-propiedad" className="rounded-lg border border-gray-200 divide-y divide-gray-100 overflow-hidden">
           {isLoading && (
             <div role="status" className="space-y-3 p-3">
               <span className="sr-only">Cargando propiedades…</span>
@@ -372,6 +420,8 @@ export function ReasignarEstudioModal({
                 <button
                   key={inm.id}
                   type="button"
+                  
+                  aria-pressed={activo}
                   disabled={!seleccionable || isSaving}
                   onClick={() => {
                     setSeleccionado(inm)
@@ -379,16 +429,16 @@ export function ReasignarEstudioModal({
                     setNoCabe(false)
                   }}
                   className={cn(
-                    'flex w-full items-start gap-3 px-3 py-3 text-left transition-colors',
+                    'flex w-full items-start gap-3 px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500',
                     seleccionable ? 'hover:bg-gray-50' : 'cursor-not-allowed opacity-60',
                     activo && 'bg-primary-50',
                   )}
                 >
-                  <div className="mt-0.5 text-gray-500">
-                    <IconHome size={16} />
+                  <div className={cn('mt-0.5', activo ? 'text-primary-700' : 'text-gray-500')}>
+                    {activo ? <IconCheck size={16} /> : <IconHome size={16} />}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900">
+                    <p className={cn('truncate text-sm font-medium', activo ? 'text-primary-800' : 'text-gray-900')}>
                       {inm.codigo} · {formatCurrency(inm.valor_arriendo)}
                     </p>
                     <p className="flex items-center gap-1 truncate text-xs text-gray-600">
@@ -413,7 +463,7 @@ export function ReasignarEstudioModal({
                       <p className="mt-1 text-xs text-gray-500">{motivoNoSeleccionable(inm)}</p>
                     )}
                     {seleccionable && fueraDeTolerancia && (
-                      <p className="mt-1 text-xs text-amber-700">
+                      <p className="mt-1 text-xs text-amber-800">
                         Por encima de la tolerancia estimada — probablemente requiera una evaluación
                         nueva.
                       </p>
@@ -424,47 +474,6 @@ export function ReasignarEstudioModal({
             })}
         </div>
 
-        {seleccionado && (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm">
-            <div className="flex flex-wrap items-center gap-2 text-gray-800">
-              <span className="font-medium">
-                {vincular && canonAprobado
-                  ? `Aprobado hasta ${formatCurrency(canonAprobado)}`
-                  : canonOrigen !== null
-                    ? formatCurrency(canonOrigen)
-                    : 'Canon no registrado'}
-              </span>
-              <IconArrowRight size={14} className="text-gray-500" />
-              <span className="font-medium">
-                {seleccionado.codigo} · {formatCurrency(seleccionado.valor_arriendo)}
-              </span>
-            </div>
-            <p className="mt-1 text-xs text-gray-600">
-              No se generará ningún cobro ni se descontará ningún crédito, y el estudio conserva su
-              vigencia original.
-            </p>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2 border-t border-gray-200 pt-4">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={isSaving}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleReasignar}
-            disabled={!seleccionado || isSaving}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-sm font-medium text-white hover:bg-primary-800 disabled:opacity-50"
-          >
-            {isSaving && <IconLoader size={14} className="animate-spin" />}
-            {vincular ? 'Vincular inmueble' : 'Reasignar sin costo'}
-          </button>
-        </div>
       </div>
     </Modal>
   )
