@@ -31,7 +31,8 @@ import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvita
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { IconRefresh, IconUsers } from '@/components/icons'
+import { IconEye, IconLoader, IconRefresh, IconUsers } from '@/components/icons'
+import { TarjetaSiguientePaso, SeccionPaso, type TonoPaso } from './TarjetaSiguientePaso'
 import { textoVisible, esRolInterno, tipoFallo } from './textoVisible'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 
@@ -217,62 +218,100 @@ export function CoarrendatarioPropietarioCard({
   const tipoLabel = TIPO_DOC_LABEL[coa.tipo_documento] ?? coa.tipo_documento.toUpperCase()
   const fechaInvitacion = formatFecha(coa.created_at)
   const fechaAceptacion = coa.aceptado_at ? formatFecha(coa.aceptado_at) : null
+  // Resultado del estudio: lo mostramos en cuanto el estudio embebido terminó
+  // ('completado'), sin depender de que el campo coa.estado haya ganado la
+  // carrera contra la transición del expediente.
+  const estudioTerminado = coa.estudio && coa.estudio.estado === 'completado' ? coa.estudio : null
+  const estado = estadoInvitacion(coa, !vigente, antesDeLaDecision)
+  const resultado = estudioTerminado ? resultadoEvaluacion(estudioTerminado) : null
+  const externo = !esRolInterno(userRol)
 
   return (
     <>
-      <div className="border border-gray-200 rounded-lg p-5 bg-white">
-        <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center shrink-0">
-            <IconUsers size={20} className="text-primary-700" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="inline-flex items-center gap-1 text-base font-semibold text-gray-900">
-              Coarrendatario
-              <InfoTip texto={AYUDA.coarrendatario} lado="derecha" />
-            </h3>
-            <p className="text-xs text-gray-500">
-              Persona registrada como coarrendatario en este estudio. Si califica, suma puntaje e ingreso al del solicitante.
+      <TarjetaSiguientePaso
+        tono={resultado ? resultado.tono : estado.tono}
+        icono={<IconUsers size={18} />}
+        titulo={
+          <span className="inline-flex flex-wrap items-center gap-x-1.5">
+            <span>Coarrendatario: {resultado ? resultado.label : estado.label}</span>
+            <InfoTip texto={AYUDA.coarrendatario} lado="derecha" />
+          </span>
+        }
+        descripcion={
+          resultado ? (
+            <p>
+              {resultado.resultado === 'rechazado'
+                ? resultado.noCalifica
+                  ? 'No aporta puntos ni ingreso, y el estudio sigue con el titular. No entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'
+                  : 'Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'
+                : resultado.resultado === 'condicionado'
+                  ? 'Cofianza está revisando la evaluación del coarrendatario.'
+                  : 'La evaluación del coarrendatario terminó.'}
             </p>
-          </div>
-        </div>
-
+          ) : (
+            <p>{estado.mensaje}</p>
+          )
+        }
+      >
         {/* Datos del invitado */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
-          <InfoRow label="Nombre" value={`${coa.nombre} ${coa.apellido}`.trim()} />
-          <InfoRow label="Documento" value={`${tipoLabel} ${coa.numero_documento}`} />
-          <InfoRow label="Correo" value={coa.email} />
-          <InfoRow label="Teléfono" value={coa.telefono || '—'} />
-          <InfoRow label="Invitación enviada" value={fechaInvitacion} />
-          {fechaAceptacion && <InfoRow label="Aceptó el" value={fechaAceptacion} />}
+        <div className="px-4 py-4 sm:px-5">
+          <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+            <DatoCoa label="Nombre" value={`${coa.nombre} ${coa.apellido}`.trim()} />
+            <DatoCoa label="Documento" value={`${tipoLabel} ${coa.numero_documento}`} />
+            <DatoCoa label="Correo" value={coa.email} />
+            <DatoCoa label="Teléfono" value={coa.telefono || '—'} />
+            <DatoCoa label="Invitación enviada" value={fechaInvitacion} />
+            {fechaAceptacion && <DatoCoa label="Aceptó el" value={fechaAceptacion} />}
+          </dl>
         </div>
 
-        {/* Estado de la invitación + evaluación */}
-        <EstadoBlock coa={coa} sinEfecto={!vigente} antesDeLaDecision={antesDeLaDecision} />
+        {/* Resultado de la evaluación: puntaje, fecha, observaciones y el detalle. */}
+        {estudioTerminado && resultado && (
+          <SeccionPaso titulo="Resultado de la evaluación">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-1">
+                {estudioTerminado.score !== null && estudioTerminado.score !== undefined && (
+                  <p>
+                    Puntaje de la central: <strong className="tabular-nums">{estudioTerminado.score}</strong>
+                  </p>
+                )}
+                {estudioTerminado.fecha_completado && (
+                  <p className="text-gray-600">Completado el {formatFecha(estudioTerminado.fecha_completado)}</p>
+                )}
+                {textoVisible(estudioTerminado.observaciones, { externo }) && (
+                  <p className="whitespace-pre-wrap text-gray-600">
+                    {textoVisible(estudioTerminado.observaciones, { externo })}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleVerDetalle}
+                disabled={loadingDetail}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 self-start rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50"
+              >
+                {loadingDetail ? <IconLoader size={16} className="animate-spin" /> : <IconEye size={16} />}
+                {loadingDetail ? 'Cargando…' : 'Ver detalle'}
+              </button>
+            </div>
+          </SeccionPaso>
+        )}
 
         {/* Invitación pendiente: corregir y reenviar, o cancelar para invitar a
             otra persona (P4). Con la ventana cerrada ya no rige (P3). El key
             remonta el form cuando los datos guardados cambian. */}
         {coa.estado === 'pendiente_aceptacion' && puedeEditar && vigente && (
-          <CoarrendatarioReenviarInvitacion
-            key={coa.updated_at}
-            expedienteId={expedienteId}
-            coa={coa}
-            onCambio={fetchCoa}
-          />
+          <div className="px-4 py-4 sm:px-5">
+            <CoarrendatarioReenviarInvitacion
+              key={coa.updated_at}
+              expedienteId={expedienteId}
+              coa={coa}
+              onCambio={fetchCoa}
+              embebido
+            />
+          </div>
         )}
-
-        {/* Resultado del estudio: lo mostramos en cuanto el estudio embebido
-            terminó ('completado'), sin depender de que el campo coa.estado haya
-            ganado la carrera contra la transición del expediente. */}
-        {coa.estudio && coa.estudio.estado === 'completado' && (
-          <ResultadoEstudioBlock
-            estudio={coa.estudio}
-            onVerDetalle={handleVerDetalle}
-            loadingDetail={loadingDetail}
-            externo={!esRolInterno(userRol)}
-          />
-        )}
-      </div>
+      </TarjetaSiguientePaso>
 
       <EstudioDetailModal
         isOpen={showDetail}
@@ -292,41 +331,46 @@ export function CoarrendatarioPropietarioCard({
 
 // ── Subcomponentes ─────────────────────────────────────────────────
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function DatoCoa({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4">
-      <span className="text-gray-500 shrink-0">{label}:</span>
-      <span className="text-gray-800 text-right truncate">{value}</span>
+    <div className="min-w-0">
+      <dt className="text-xs text-gray-600">{label}</dt>
+      <dd className="mt-0.5 truncate font-medium text-gray-900" title={value}>{value}</dd>
     </div>
   )
 }
 
-function EstadoBlock({ coa, sinEfecto, antesDeLaDecision }: { coa: ICoarrendatario; sinEfecto: boolean; antesDeLaDecision: boolean }) {
+/** En qué va la invitación: título y mensaje de la banda de la tarjeta. */
+function estadoInvitacion(
+  coa: ICoarrendatario,
+  sinEfecto: boolean,
+  antesDeLaDecision: boolean,
+): { tono: TonoPaso; label: string; mensaje: string } {
   const fallida = coa.estudio?.estado === 'fallido'
   const fallo = coa.estudio ? tipoFallo(coa.estudio) : 'tecnico'
-  const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
+  const cfg: Record<ICoarrendatario['estado'], { tono: TonoPaso; label: string; mensaje: string }> = {
     // P3: con el estudio ya decidido, la invitación pendiente ya no se puede aceptar.
     pendiente_aceptacion: sinEfecto
       ? {
-          color: 'bg-gray-50 border-gray-200 text-gray-900',
+          tono: 'neutro',
           label: 'Invitación sin efecto',
           mensaje: 'El estudio ya se resolvió sin coarrendatario, así que esta invitación ya no se puede aceptar.',
         }
       : invitacionVencida(coa)
       ? {
-          color: 'bg-amber-50 border-amber-200 text-amber-900',
+          tono: 'revision',
           label: 'Invitación vencida',
           mensaje: `Venció el ${formatFecha(coa.token_expiracion)} sin respuesta y el enlace ya no sirve. Reenvíela para que le llegue uno nuevo.`,
         }
       : {
-          color: 'bg-blue-50 border-blue-200 text-blue-900',
+          tono: 'neutro',
           label: 'Esperando respuesta',
           mensaje: antesDeLaDecision
             ? 'La invitación fue enviada. Su evaluación corre apenas autorice (con el estudio pagado); si no lo va a hacer, cancele la invitación.'
             : 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su evaluación crediticia.',
         },
     aceptado: {
-      color: fallida ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50 border-blue-200 text-blue-900',
+      tono: fallida ? 'alerta' : 'neutro',
       label: 'Aceptó la invitación',
       // P2: sin evaluación terminada no entra al contrato ni al certificado.
       mensaje: fallida
@@ -336,11 +380,11 @@ function EstadoBlock({ coa, sinEfecto, antesDeLaDecision }: { coa: ICoarrendatar
                 ? 'el estudio ya se resolvió sin él y no entra al contrato ni al certificado.'
                 : fallo === 'no_existe'
                   ? `si el documento está mal escrito, comuníquese con Cofianza ${CONTACTO_COFIANZA_TEXTO} para corregirlo.`
-                  : 'corrija el primer apellido y vuelva a consultar en el panel «Coarrendatario» de la evaluación crediticia.'
+                  : 'corrija el primer apellido y vuelva a consultar en la tarjeta «Evaluación del coarrendatario» del Resumen.'
             }`
           : sinEfecto
           ? 'Su evaluación falló por un problema técnico y el estudio ya se resolvió sin él: no entra al contrato ni al certificado.'
-          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en el panel «Coarrendatario» de la evaluación crediticia.'
+          : 'Su evaluación falló por un problema técnico (no es un rechazo). Mientras no se complete no entra al contrato ni al certificado. Reinténtela en la tarjeta «Evaluación del coarrendatario» de la evaluación crediticia.'
         : coa.estudio?.estado === 'en_proceso'
           ? 'Estamos consultando su historial en las centrales de riesgo. Le avisaremos cuando termine.'
           : coa.estudio?.estado === 'pago_pendiente'
@@ -350,86 +394,38 @@ function EstadoBlock({ coa, sinEfecto, antesDeLaDecision }: { coa: ICoarrendatar
           : 'Procesando su evaluación crediticia.',
     },
     rechazado_invitacion: {
-      color: 'bg-red-50 border-red-200 text-red-900',
+      tono: 'alerta',
       label: 'Declinó la invitación',
       mensaje: 'La persona invitada declinó. El solicitante puede invitar a alguien más.',
     },
     estudio_completado: {
-      color: 'bg-gray-50 border-gray-200 text-gray-900',
+      tono: 'neutro',
       label: 'Evaluación completada',
       mensaje: 'La evaluación del coarrendatario terminó. Ver resultado abajo.',
     },
   }
-  const c = cfg[coa.estado]
-  return (
-    <div className={`border rounded-md p-3 ${c.color}`}>
-      <p className="text-sm font-medium">{c.label}</p>
-      <p className="text-xs mt-1 opacity-90">{c.mensaje}</p>
-    </div>
-  )
+  return cfg[coa.estado]
 }
 
-function ResultadoEstudioBlock({
-  estudio,
-  onVerDetalle,
-  loadingDetail,
-  externo,
-}: {
-  estudio: NonNullable<ICoarrendatario['estudio']>
-  onVerDetalle: () => void
-  loadingDetail: boolean
-  externo: boolean
-}) {
-  const cfg: Record<string, { color: string; label: string }> = {
-    // Mismas palabras que la evaluación (Adenda 3 V2 §7): válido, en revisión o no califica.
-    aprobado: { color: 'bg-green-50 border-green-200 text-green-900', label: 'Válido' },
-    condicionado: { color: 'bg-amber-50 border-amber-200 text-amber-900', label: 'En revisión' },
-    rechazado: { color: 'bg-red-50 border-red-200 text-red-900', label: 'No califica' },
-    pendiente: { color: 'bg-gray-50 border-gray-200 text-gray-900', label: 'Pendiente' },
+/** Cómo salió su evaluación, con las palabras de la Adenda 3 V2 §7: válido, en revisión o no califica. */
+function resultadoEvaluacion(estudio: NonNullable<ICoarrendatario['estudio']>): {
+  tono: TonoPaso
+  label: string
+  resultado: string
+  noCalifica: boolean
+} {
+  const cfg: Record<string, { tono: TonoPaso; label: string }> = {
+    aprobado: { tono: 'accion', label: 'Válido' },
+    condicionado: { tono: 'revision', label: 'En revisión' },
+    rechazado: { tono: 'alerta', label: 'No califica' },
+    pendiente: { tono: 'neutro', label: 'Pendiente' },
   }
   const resultado = estudio.resultado || 'pendiente'
   // Adenda 3 V2 §7: un coarrendatario que no cuenta «no califica»; nunca
   // «rechazado» ni «no aprobable». No tumba el estudio: sigue con el titular.
   const noCalifica = resultado === 'rechazado' && /no califica como coarrendatario/i.test(estudio.observaciones ?? '')
-  const c = noCalifica
-    ? { color: 'bg-gray-50 border-gray-200 text-gray-900', label: 'No califica' }
-    : (cfg[resultado] ?? cfg.pendiente)
-
-  return (
-    <div className={`mt-3 border rounded-md p-3 ${c.color}`}>
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold">Resultado de la evaluación: {c.label}</p>
-          {estudio.score !== null && estudio.score !== undefined && (
-            <p className="text-xs mt-1 opacity-90">Puntaje de la central: <strong>{estudio.score}</strong></p>
-          )}
-          {estudio.fecha_completado && (
-            <p className="text-xs mt-1 opacity-90">Completado el {formatFecha(estudio.fecha_completado)}</p>
-          )}
-          {/* P2: solo cuenta con la evaluación terminada y no rechazada. */}
-          {resultado === 'rechazado' && (
-            <p className="text-xs mt-1 font-medium">
-              {noCalifica
-                ? 'No aporta puntos ni ingreso, y el estudio sigue con el titular. No entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'
-                : 'Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'}
-            </p>
-          )}
-          {textoVisible(estudio.observaciones, { externo }) && (
-            <p className="text-xs mt-2 opacity-90 whitespace-pre-wrap">
-              {textoVisible(estudio.observaciones, { externo })}
-            </p>
-          )}
-        </div>
-        <button
-          onClick={onVerDetalle}
-          disabled={loadingDetail}
-          className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors shrink-0"
-        >
-          {loadingDetail ? 'Cargando…' : 'Ver detalle'}
-        </button>
-      </div>
-    </div>
-  )
+  const c = noCalifica ? { tono: 'neutro' as TonoPaso, label: 'No califica' } : (cfg[resultado] ?? cfg.pendiente)
+  return { ...c, resultado, noCalifica }
 }
 
 /** El enlace de la invitación expira (7 días); reenviarla renueva la fecha. */

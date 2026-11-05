@@ -1,6 +1,8 @@
 /**
  * DocumentosSection - HP-295, HP-327
- * Seccion de documentos del expediente con upload drag & drop
+ * Seccion de documentos del expediente: una lista con una fila por tipo de
+ * documento (estado, archivo, ver, cargar, eliminar y, para Cofianza, aprobar o
+ * rechazar). La revisión vivía en un panel aparte que repetía cada documento.
  * Estados: pendiente, aprobado, rechazado, reemplazado
  * Flujo: presigned URL -> upload directo -> confirmar
  * HP-327: Soporte para captura de selfie con camara
@@ -26,10 +28,12 @@ import {
   IconChevronDown,
   IconCamera,
   IconCompare,
+  IconClock,
 } from '@/components/icons'
+import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { DocumentViewer } from '@/components/ui/DocumentViewer'
-import { RevisionPanel } from './RevisionPanel'
+import { RechazoModal } from './RechazoModal'
 import { SelfieCapture } from './SelfieCapture'
 import { SelfieComparisonView } from './SelfieComparisonView'
 import { documentoService } from '@/services/documentoService'
@@ -90,6 +94,50 @@ function getEstadoLabel(estado: EstadoDocumento): string {
   }
 }
 
+/** Marca de la fila: el estado se lee en el texto de la pastilla; el ícono y el color lo refuerzan. */
+const MARCA_ESTADO: Record<EstadoDocumento | 'sin_cargar', { label: string; chip: string; circulo: string; icono: React.ReactNode }> = {
+  aprobado: {
+    label: 'Aprobado',
+    chip: 'bg-green-100 text-green-800',
+    circulo: 'bg-green-100 text-green-700',
+    icono: <IconCheck size={16} />,
+  },
+  pendiente: {
+    label: 'Pendiente',
+    chip: 'bg-amber-100 text-amber-900',
+    circulo: 'bg-amber-100 text-amber-800',
+    icono: <IconClock size={16} />,
+  },
+  rechazado: {
+    label: 'Rechazado',
+    chip: 'bg-red-100 text-red-800',
+    circulo: 'bg-red-100 text-red-700',
+    icono: <IconX size={16} />,
+  },
+  reemplazado: {
+    label: 'Reemplazado',
+    chip: 'bg-gray-100 text-gray-600',
+    circulo: 'bg-gray-100 text-gray-500',
+    icono: <IconHistory size={16} />,
+  },
+  sin_cargar: {
+    label: 'Sin cargar',
+    chip: 'bg-gray-100 text-gray-700',
+    circulo: 'border border-dashed border-gray-300 bg-white text-gray-500',
+    icono: <IconUpload size={16} />,
+  },
+}
+
+function formatFechaRevision(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('es-CO', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 function getAcceptedFormatsText(formatos: string[]): string {
   return formatos
     .map((f) => {
@@ -139,10 +187,12 @@ function VersionHistoryPanel({ documentoId }: { documentoId: string }) {
   }
 
   return (
-    <div className="mt-3">
+    <div className="mt-2">
       <button
+        type="button"
         onClick={handleToggle}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 transition-colors"
+        aria-expanded={isExpanded}
+        className="-ml-2 inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
         <IconHistory size={14} />
         Historial de versiones
@@ -204,10 +254,15 @@ function VersionHistoryPanel({ documentoId }: { documentoId: string }) {
 }
 
 // ============================================
-// DocumentUploadCard subcomponent
+// DocumentoFila subcomponent
 // ============================================
 
-interface DocumentUploadCardProps {
+/**
+ * Una fila por tipo de documento: qué es, en qué estado está y qué se puede
+ * hacer con él (ver, revisar, cargar, eliminar). Antes cada documento salía
+ * dos veces: en una tarjeta de carga y otra vez en el panel de revisión.
+ */
+interface DocumentoFilaProps {
   state: DocumentCardState
   expedienteId: string
   onUploadStart: (tipoId: string, file: File) => void
@@ -220,9 +275,17 @@ interface DocumentUploadCardProps {
   isSelfieType?: boolean // HP-327
   puedeSubir: boolean
   puedeEliminar: boolean
+  /** Analista o administrador: aprueba o rechaza los pendientes desde la fila. */
+  puedeRevisar: boolean
+  onAprobar: (documento: IDocumento) => void
+  onRechazar: (documento: IDocumento) => void
+  revisando: boolean
 }
 
-function DocumentUploadCard({
+const BOTON_FILA =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50'
+
+function DocumentoFila({
   state,
   expedienteId,
   onUploadStart,
@@ -235,7 +298,11 @@ function DocumentUploadCard({
   isSelfieType = false,
   puedeSubir,
   puedeEliminar,
-}: DocumentUploadCardProps) {
+  puedeRevisar,
+  onAprobar,
+  onRechazar,
+  revisando,
+}: DocumentoFilaProps) {
   const { tipoDocumento, documento, status, progress, error } = state
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -300,12 +367,11 @@ function DocumentUploadCard({
     [expedienteId, tipoDocumento, documento, isSelfieType, onUploadStart, onUploadComplete, onUploadProgress, onUploadError]
   )
 
-  // Drag and drop handlers
+  // Arrastrar y soltar: la fila entera recibe el archivo cuando se puede cargar.
   const handleDragOver = (e: React.DragEvent) => {
+    if (!canUpload || isUploading) return
     e.preventDefault()
-    if (canUpload && !isUploading) {
-      setIsDragOver(true)
-    }
+    setIsDragOver(true)
   }
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -337,7 +403,6 @@ function DocumentUploadCard({
     }
   }
 
-  // Click to upload
   const handleClick = () => {
     if (canUpload && !isUploading && fileInputRef.current) {
       fileInputRef.current.click()
@@ -347,228 +412,214 @@ function DocumentUploadCard({
   const isImage = documento?.tipo_mime?.startsWith('image/')
   const isPdf = documento?.tipo_mime === 'application/pdf'
   const canPreview = isImage || isPdf
+  const estado: EstadoDocumento | 'sin_cargar' = hasDocument && documento ? documento.estado : 'sin_cargar'
+  const marca = MARCA_ESTADO[estado] ?? MARCA_ESTADO.sin_cargar
+  const formatos = `${getAcceptedFormatsText(tipoDocumento.formatos_aceptados)} · máx. ${tipoDocumento.tamano_maximo_mb} MB`
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-      {/* Header */}
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-900">
-            {tipoDocumento.nombre}
-          </span>
-          {tipoDocumento.es_obligatorio && (
-            <span className="text-xs text-red-500">*Obligatorio</span>
-          )}
-        </div>
-        {hasDocument && documento && (
-          <span
-            className={`px-2 py-0.5 text-xs font-medium rounded-full ${getEstadoBadgeClass(
-              documento.estado
-            )}`}
-          >
-            {getEstadoLabel(documento.estado)}
-          </span>
-        )}
-      </div>
+    <li
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={cn(
+        'flex gap-3 px-4 py-4 transition-colors sm:px-5',
+        isDragOver && 'bg-primary-50 outline-2 -outline-offset-2 outline-dashed outline-primary-500',
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', marca.circulo)}
+      >
+        {marca.icono}
+      </span>
 
-      {/* Content */}
-      <div className="p-4">
-        {/* Show existing document info */}
-        {hasDocument && documento ? (
-          <div className="space-y-3">
-            {/* Document info */}
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                {isImage ? (
-                  <IconImage size={24} className="text-gray-600" />
-                ) : (
-                  <IconFileText size={24} className="text-gray-600" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {documento.nombre_original}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {formatFileSize(documento.tamano_bytes)} • v{documento.version}
-                </p>
-              </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          {/* Qué es y en qué estado está */}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <h4 className="text-sm font-semibold text-gray-900">{tipoDocumento.nombre}</h4>
+              <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', marca.chip)}>
+                {estado === 'pendiente' ? 'Pendiente de revisión' : marca.label}
+              </span>
+              {tipoDocumento.es_obligatorio && (
+                <span className="text-xs text-gray-500">Obligatorio</span>
+              )}
             </div>
 
-            {/* Rejection reason */}
-            {documento.estado === 'rechazado' && documento.motivo_rechazo && (
-              <div className="flex items-start gap-2 p-3 bg-red-50 rounded-lg">
-                <IconAlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-medium text-red-700">Motivo del rechazo:</p>
-                  <p className="text-xs text-red-600">{documento.motivo_rechazo}</p>
-                </div>
-              </div>
-            )}
+            {hasDocument && documento ? (
+              <>
+                <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-gray-600">
+                  {isImage ? (
+                    <IconImage size={14} className="shrink-0 text-gray-500" />
+                  ) : (
+                    <IconFileText size={14} className="shrink-0 text-gray-500" />
+                  )}
+                  <span className="truncate" title={documento.nombre_original}>{documento.nombre_original}</span>
+                  <span className="shrink-0 text-gray-500">
+                    · {formatFileSize(documento.tamano_bytes)} · v{documento.version}
+                  </span>
+                </p>
+                {documento.fecha_revision && documento.validador && documento.estado !== 'pendiente' && (
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    Revisado por {documento.validador.nombre} {documento.validador.apellido} el{' '}
+                    {formatFechaRevision(documento.fecha_revision)}
+                  </p>
+                )}
+              </>
+            ) : !puedeSubir ? (
+              <p className="mt-1 text-xs text-gray-500">Aún no se ha cargado</p>
+            ) : !isUploading && !error ? (
+              <p className="mt-1 text-xs text-gray-500">
+                <span className="hidden sm:inline">Arrastre el archivo a esta fila o selecciónelo. </span>
+                {formatos}
+              </p>
+            ) : null}
+          </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-2">
-              {canPreview && (
+          {/* Qué se puede hacer */}
+          {!isUploading && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              {puedeEliminar && documento?.estado === 'pendiente' && (
                 <button
-                  onClick={() => onView(documento)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                >
-                  <IconEye size={14} />
-                  Ver
-                </button>
-              )}
-              {puedeEliminar && documento.estado === 'pendiente' && (
-                <button
+                  type="button"
                   onClick={() => onDelete(documento)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors ml-auto"
+                  aria-label={`Eliminar ${documento.nombre_original}`}
+                  className={cn(BOTON_FILA, 'text-red-700 hover:bg-red-50')}
                 >
-                  <IconTrash size={14} />
+                  <IconTrash size={16} />
                   Eliminar
                 </button>
               )}
-            </div>
-
-            {/* Reupload button for rejected */}
-            {documento.estado === 'rechazado' && puedeSubir && (
-              isSelfieType ? (
-                <div className="mt-2 space-y-2">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleCameraClick() }}
-                    disabled={isUploading}
-                    className="w-full px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <IconCamera size={16} />
-                    Tomar nueva selfie
-                  </button>
-                  <button
-                    onClick={handleClick}
-                    disabled={isUploading}
-                    className="w-full px-4 py-2 text-sm font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    <IconUpload size={16} />
-                    Subir imagen existente
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleClick}
-                  disabled={isUploading}
-                  className="w-full mt-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <IconUpload size={16} />
-                  Resubir documento
-                </button>
-              )
-            )}
-
-            {/* Version history panel */}
-            {(documento.version > 1 || documento.estado === 'rechazado') && (
-              <VersionHistoryPanel key={documento.id} documentoId={documento.id} />
-            )}
-          </div>
-        ) : !puedeSubir ? (
-          <p className="text-sm text-gray-500 text-center py-6">Aún no se ha cargado</p>
-        ) : (
-          /* Upload zone: div con role="button" (no <button>) porque adentro
-             van los botones de cámara y de reintento, y un botón no puede
-             contener otro (HTML inválido, error de hidratación). */
-          <div
-            role="button"
-            tabIndex={isUploading ? -1 : 0}
-            aria-disabled={isUploading}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={handleClick}
-            onKeyDown={(e) => {
-              if (e.target !== e.currentTarget || isUploading) return
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                handleClick()
-              }
-            }}
-            aria-label={`Subir ${tipoDocumento.nombre}`}
-            className={`
-              w-full border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500
-              ${isDragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-gray-400'}
-              ${isUploading ? 'pointer-events-none opacity-70' : ''}
-              ${error ? 'border-red-300 bg-red-50' : ''}
-            `}
-          >
-            {isUploading ? (
-              <div className="space-y-3">
-                <IconLoader size={32} className="mx-auto text-primary-600 animate-spin" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Subiendo...</p>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">{progress}%</p>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="space-y-2">
-                <IconX size={32} className="mx-auto text-red-500" />
-                <p className="text-sm text-red-600">{error}</p>
+              {hasDocument && documento && canPreview && (
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleClick()
-                  }}
-                  className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+                  onClick={() => onView(documento)}
+                  aria-label={`Ver ${tipoDocumento.nombre}`}
+                  className={cn(BOTON_FILA, 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50')}
                 >
-                  Intentar de nuevo
+                  <IconEye size={16} />
+                  Ver
                 </button>
-              </div>
-            ) : (
-              <>
-                {/* HP-327: Show camera option for selfie types */}
-                {isSelfieType ? (
-                  <div className="space-y-4">
+              )}
+              {puedeRevisar && documento?.estado === 'pendiente' && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onRechazar(documento)}
+                    disabled={revisando}
+                    aria-label={`Rechazar ${tipoDocumento.nombre}`}
+                    className={cn(BOTON_FILA, 'border border-red-200 bg-white text-red-700 hover:bg-red-50')}
+                  >
+                    <IconX size={16} />
+                    Rechazar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onAprobar(documento)}
+                    disabled={revisando}
+                    aria-label={`Aprobar ${tipoDocumento.nombre}`}
+                    className={cn(BOTON_FILA, 'bg-primary-700 font-semibold text-white hover:bg-primary-800')}
+                  >
+                    <IconCheck size={16} />
+                    Aprobar
+                  </button>
+                </>
+              )}
+              {/* Sin archivo, o rechazado: cargarlo (de nuevo). La selfie ofrece primero la cámara. */}
+              {canUpload && !error && (
+                isSelfieType ? (
+                  <>
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleCameraClick()
-                      }}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
+                      onClick={handleCameraClick}
+                      className={cn(BOTON_FILA, 'bg-primary-700 font-semibold text-white hover:bg-primary-800')}
                     >
-                      <IconCamera size={20} />
-                      Tomar selfie con la cámara
+                      <IconCamera size={16} />
+                      {hasDocument ? 'Tomar nueva selfie' : 'Tomar selfie'}
                     </button>
-                    <div className="flex items-center gap-2 text-gray-500">
-                      <div className="flex-1 h-px bg-gray-200" />
-                      <span className="text-xs">o</span>
-                      <div className="flex-1 h-px bg-gray-200" />
-                    </div>
-                    <div className="text-center">
-                      <IconUpload size={24} className="mx-auto text-gray-500 mb-1" />
-                      <p className="text-xs text-gray-500">
-                        Subir imagen existente
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <IconUpload size={32} className="mx-auto text-gray-500 mb-2" />
-                    <p className="text-sm font-medium text-gray-900">
-                      Arrastre un archivo o haga clic para seleccionar
-                    </p>
+                    <button
+                      type="button"
+                      onClick={handleClick}
+                      className={cn(BOTON_FILA, 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50')}
+                    >
+                      <IconUpload size={16} />
+                      Subir imagen
+                    </button>
                   </>
-                )}
-                <p className="text-xs text-gray-500 mt-1">
-                  Formatos: {getAcceptedFormatsText(tipoDocumento.formatos_aceptados)}
-                </p>
-                <p className="text-xs text-gray-500">
-                  Máx.: {tipoDocumento.tamano_maximo_mb} MB
-                </p>
-              </>
-            )}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleClick}
+                    className={cn(
+                      BOTON_FILA,
+                      hasDocument
+                        ? 'bg-primary-700 font-semibold text-white hover:bg-primary-800'
+                        : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
+                    )}
+                  >
+                    <IconUpload size={16} />
+                    {hasDocument ? 'Cargar de nuevo' : 'Seleccionar archivo'}
+                  </button>
+                )
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Motivo del rechazo */}
+        {documento?.estado === 'rechazado' && documento.motivo_rechazo && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2">
+            <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-red-600" />
+            <p className="text-sm text-red-800">
+              <span className="font-medium">Motivo del rechazo:</span> {documento.motivo_rechazo}
+            </p>
           </div>
+        )}
+        {puedeRevisar && documento?.estado === 'rechazado' && (
+          <p className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500">
+            <IconClock size={14} />
+            Esperando que se cargue una versión nueva
+          </p>
+        )}
+
+        {/* Cargando */}
+        {isUploading && (
+          <div className="mt-3" role="status">
+            <div className="flex items-center justify-between text-xs text-gray-600">
+              <span className="inline-flex items-center gap-1.5">
+                <IconLoader size={14} className="animate-spin text-primary-700" />
+                Subiendo…
+              </span>
+              <span className="tabular-nums">{progress}%</span>
+            </div>
+            <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200">
+              <div
+                className="h-1.5 rounded-full bg-primary-600 transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Error al cargar */}
+        {error && !isUploading && (
+          <div role="alert" className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-red-50 px-3 py-2">
+            <p className="flex-1 text-sm text-red-800">{error}</p>
+            <button
+              type="button"
+              onClick={handleClick}
+              className={cn(BOTON_FILA, 'border border-red-200 bg-white text-red-700 hover:bg-red-100')}
+            >
+              <IconRefresh size={16} />
+              Intentar de nuevo
+            </button>
+          </div>
+        )}
+
+        {/* Version history panel */}
+        {hasDocument && documento && (documento.version > 1 || documento.estado === 'rechazado') && (
+          <VersionHistoryPanel key={documento.id} documentoId={documento.id} />
         )}
 
         {/* Hidden file input */}
@@ -578,10 +629,11 @@ function DocumentUploadCard({
           accept={tipoDocumento.formatos_aceptados.join(',')}
           onChange={handleFileChange}
           className="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
         />
       </div>
-
-    </div>
+    </li>
   )
 }
 
@@ -623,8 +675,12 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
   const [selfieTargetTipoId, setSelfieTargetTipoId] = useState<string | null>(null)
   const [isUploadingSelfie, setIsUploadingSelfie] = useState(false)
 
-  // Trigger RevisionPanel refresh after uploads/replacements
-  const [revisionRefreshKey, setRevisionRefreshKey] = useState(0)
+  // Revisión (analista o administrador): aprobar con confirmación, rechazar con motivo.
+  const puedeRevisar = userRole === 'administrador' || userRole === 'operador_analista'
+  const [aprobarTarget, setAprobarTarget] = useState<IDocumento | null>(null)
+  const [isAprobando, setIsAprobando] = useState(false)
+  const [rechazarTarget, setRechazarTarget] = useState<IDocumento | null>(null)
+  const [isRechazando, setIsRechazando] = useState(false)
 
   // HP-327: Comparison view state
   const [showComparison, setShowComparison] = useState(false)
@@ -721,7 +777,6 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
       return newMap
     })
     setDocumentos((prev) => [documento, ...prev])
-    setRevisionRefreshKey((k) => k + 1)
   }, [])
 
   const handleUploadProgress = useCallback((tipoId: string, progress: number) => {
@@ -865,13 +920,54 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
       // If this was a replacement (v2+), the backend reverted the original
       // to 'rechazado' — fetchData will pick it up and show "Resubir documento".
       await fetchData()
-      setRevisionRefreshKey((k) => k + 1)
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Error al eliminar documento'
       toast.error(message)
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  // ============================================
+  // Revisión: aprobar / rechazar desde la fila del documento
+  // ============================================
+
+  const handleAprobar = async () => {
+    if (!aprobarTarget || isAprobando) return
+
+    setIsAprobando(true)
+    const target = aprobarTarget
+    setAprobarTarget(null)
+
+    try {
+      await documentoService.aprobarDocumento(target.id)
+      toast.success(`"${target.nombre_original}" aprobado`)
+      // Se espera la recarga antes de soltar el botón: si no, la fila sigue
+      // «Pendiente de revisión» un instante y un segundo clic da error.
+      await fetchData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al aprobar')
+    } finally {
+      setIsAprobando(false)
+    }
+  }
+
+  const handleRechazar = async (motivo: string) => {
+    if (!rechazarTarget || isRechazando) return
+
+    setIsRechazando(true)
+    const target = rechazarTarget
+
+    try {
+      await documentoService.rechazarDocumento(target.id, motivo)
+      toast.success(`"${target.nombre_original}" rechazado`)
+      setRechazarTarget(null)
+      await fetchData()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al rechazar')
+    } finally {
+      setIsRechazando(false)
     }
   }
 
@@ -890,9 +986,18 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
       (s) => s.documento && s.documento.estado !== 'rechazado'
     ).length
 
+    const porRevisar = Array.from(cardStates.values()).filter(
+      (s) => s.documento?.estado === 'pendiente'
+    ).length
+    const rechazados = Array.from(cardStates.values()).filter(
+      (s) => s.documento?.estado === 'rechazado'
+    ).length
+
     return {
       total: tiposDocumento.length,
       subidos: totalSubidos,
+      porRevisar,
+      rechazados,
       obligatoriosTotal: obligatorios.length,
       obligatoriosCompletados: obligatoriosCompletados.length,
     }
@@ -903,20 +1008,23 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
   // ============================================
 
   // Esqueleto solo en la primera carga: en las recargas (aprobar, rechazar,
-  // subir) desmontaba RevisionPanel y se perdían filtro, scroll y lugar.
+  // subir) la lista sigue a la vista y no se pierde el lugar.
   if (isLoading && tiposDocumento.length === 0) {
     return (
-      <div className="space-y-4">
-        {/* Skeleton */}
-        <div className="flex items-center justify-between animate-pulse">
-          <div className="h-5 w-48 bg-gray-200 rounded" />
-          <div className="h-4 w-32 bg-gray-200 rounded" />
+      <div role="status" className="space-y-4">
+        <span className="sr-only">Cargando documentos…</span>
+        <div className="space-y-2">
+          <Skeleton className="h-5 w-48" />
+          <Skeleton className="h-4 w-64" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="divide-y divide-gray-100 rounded-xl border border-gray-200">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="border border-gray-200 rounded-lg p-4 animate-pulse">
-              <div className="h-4 w-32 bg-gray-200 rounded mb-4" />
-              <div className="h-24 bg-gray-100 rounded" />
+            <div key={i} className="flex gap-3 px-4 py-4 sm:px-5">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-56" />
+              </div>
             </div>
           ))}
         </div>
@@ -926,12 +1034,13 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <IconAlertTriangle size={48} className="mx-auto text-red-300 mb-4" />
-        <p className="text-sm text-red-600 mb-4">{error}</p>
+      <div role="alert" className="py-8 text-center">
+        <IconAlertTriangle size={32} className="mx-auto mb-3 text-red-500" />
+        <p className="mb-4 text-sm text-red-700">{error}</p>
         <button
+          type="button"
           onClick={fetchData}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+          className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           <IconRefresh size={16} />
           Reintentar
@@ -941,97 +1050,107 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
   }
 
   const progress = getProgressSummary()
+  const obligatoriosListos =
+    progress.obligatoriosTotal > 0 && progress.obligatoriosCompletados === progress.obligatoriosTotal
 
   return (
-    <div className="space-y-6">
-      {/* Progress summary */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Documentos del Estudio
-          </h3>
-          <p className="text-sm text-gray-500">
-            {puedeSubir ? 'Cargue los documentos requeridos para el estudio' : 'Documentos cargados para el estudio'}
+    <div className="space-y-4">
+      {/* Encabezado: cuánto falta y, para Cofianza, cuánto hay por revisar */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold text-gray-900">Documentos del estudio</h3>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600">
+            {progress.obligatoriosTotal > 0 && (
+              <span className={cn('inline-flex items-center gap-1', obligatoriosListos ? 'text-green-800' : 'text-gray-700')}>
+                {obligatoriosListos && <IconCheck size={16} aria-hidden="true" />}
+                <span className="font-semibold tabular-nums">
+                  {progress.obligatoriosCompletados} de {progress.obligatoriosTotal}
+                </span>{' '}
+                obligatorios cargados
+              </span>
+            )}
+            <span className="tabular-nums">
+              {progress.subidos} de {progress.total} en total
+            </span>
+            {puedeRevisar && progress.porRevisar > 0 && (
+              <span className="font-medium text-amber-900">
+                <span className="tabular-nums">{progress.porRevisar}</span> por revisar
+              </span>
+            )}
+            {progress.rechazados > 0 && (
+              <span className="text-red-800">
+                <span className="tabular-nums">{progress.rechazados}</span> rechazado{progress.rechazados === 1 ? '' : 's'}
+              </span>
+            )}
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="text-sm">
-            <span className="font-medium text-gray-900">
-              {progress.subidos} / {progress.total}
-            </span>
-            <span className="text-gray-500"> subidos</span>
-          </div>
-          {progress.obligatoriosTotal > 0 && (
-            <div
-              className={`text-sm ${
-                progress.obligatoriosCompletados === progress.obligatoriosTotal
-                  ? 'text-green-600'
-                  : 'text-yellow-600'
-              }`}
-            >
-              <span className="font-medium">
-                {progress.obligatoriosCompletados} / {progress.obligatoriosTotal}
-              </span>
-              <span> obligatorios</span>
-              {progress.obligatoriosCompletados === progress.obligatoriosTotal && (
-                <IconCheck size={16} className="inline ml-1" />
-              )}
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* HP-327: Comparison button for operators */}
-      {(userRole === 'administrador' || userRole === 'operador_analista') && canShowComparison() && (
-        <div className="flex justify-end">
+        {/* HP-327: comparar la selfie con el documento (solo Cofianza) */}
+        {puedeRevisar && canShowComparison() && (
           <button
+            type="button"
             onClick={() => setShowComparison(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors"
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
             <IconCompare size={18} />
-            Comparar Selfie con ID
+            Comparar selfie con el documento
           </button>
-        </div>
-      )}
-
-      {/* Document cards grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Array.from(cardStates.values())
-          .sort((a, b) => a.tipoDocumento.orden - b.tipoDocumento.orden)
-          .map((state) => (
-            <DocumentUploadCard
-              key={state.tipoDocumento.id}
-              state={state}
-              expedienteId={expedienteId}
-              onUploadStart={handleUploadStart}
-              onUploadComplete={handleUploadComplete}
-              onUploadProgress={handleUploadProgress}
-              onUploadError={handleUploadError}
-              onDelete={setDeleteTarget}
-              onView={setViewerDoc}
-              onCameraCapture={handleCameraCapture}
-              isSelfieType={state.tipoDocumento.codigo === SELFIE_CODIGO}
-              puedeSubir={puedeSubir}
-              puedeEliminar={puedeEditar && state.documento?.eliminable === true}
-            />
-          ))}
+        )}
       </div>
 
-      {tiposDocumento.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <IconFileText size={48} className="mx-auto text-gray-300 mb-4" />
+      {/* Una fila por tipo de documento */}
+      {tiposDocumento.length > 0 ? (
+        <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+          {Array.from(cardStates.values())
+            .sort((a, b) => a.tipoDocumento.orden - b.tipoDocumento.orden)
+            .map((state) => (
+              <DocumentoFila
+                key={state.tipoDocumento.id}
+                state={state}
+                expedienteId={expedienteId}
+                onUploadStart={handleUploadStart}
+                onUploadComplete={handleUploadComplete}
+                onUploadProgress={handleUploadProgress}
+                onUploadError={handleUploadError}
+                onDelete={setDeleteTarget}
+                onView={setViewerDoc}
+                onCameraCapture={handleCameraCapture}
+                isSelfieType={state.tipoDocumento.codigo === SELFIE_CODIGO}
+                puedeSubir={puedeSubir}
+                puedeEliminar={puedeEditar && state.documento?.eliminable === true}
+                puedeRevisar={puedeRevisar}
+                onAprobar={setAprobarTarget}
+                onRechazar={setRechazarTarget}
+                revisando={isAprobando || isRechazando}
+              />
+            ))}
+        </ul>
+      ) : (
+        <div className="rounded-xl border border-dashed border-gray-300 px-4 py-8 text-center text-gray-600">
+          <IconFileText size={32} className="mx-auto mb-2 text-gray-400" />
           <p className="text-sm">No hay tipos de documento configurados</p>
         </div>
       )}
 
-      {/* Panel de revision para operadores/admin */}
-      {(userRole === 'administrador' || userRole === 'operador_analista') && (
-        <RevisionPanel
-          key={revisionRefreshKey}
-          expedienteId={expedienteId}
-          onRevisionChange={fetchData}
-        />
-      )}
+      {/* Aprobar: confirmación */}
+      <ConfirmDialog
+        isOpen={!!aprobarTarget}
+        onClose={() => setAprobarTarget(null)}
+        onConfirm={handleAprobar}
+        title="Aprobar documento"
+        message={`¿Confirma que el documento "${aprobarTarget?.nombre_original}" cumple con los requisitos?`}
+        confirmLabel="Aprobar"
+        isLoading={isAprobando}
+      />
+
+      {/* Rechazar: pide el motivo */}
+      <RechazoModal
+        isOpen={!!rechazarTarget}
+        onClose={() => setRechazarTarget(null)}
+        onConfirm={handleRechazar}
+        documentoNombre={rechazarTarget?.nombre_original ?? ''}
+        isLoading={isRechazando}
+      />
 
       {/* Delete confirmation dialog */}
       <ConfirmDialog
