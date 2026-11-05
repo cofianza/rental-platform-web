@@ -961,6 +961,7 @@ export default function ExpedienteDetallePage() {
                   userRol={user?.rol}
                   onUpdate={fetchExpediente}
                   condicion={condicionCoa}
+                  pazYSalvoPendiente={!!pazYSalvo}
                 />
                 <ContratoSolicitanteCard expedienteId={id} expedienteEstado={expediente.estado} />
               </div>
@@ -1096,6 +1097,7 @@ export default function ExpedienteDetallePage() {
                       // La ponderación puede mover el expediente sola al completar el
                       // estudio del coarrendatario: se recarga.
                       onEstudioCompletado={fetchExpediente}
+                      requisitoPendiente={!!pazYSalvo}
                     />
                   ),
                   visita: expediente.inmueble ? (
@@ -1344,6 +1346,7 @@ export default function ExpedienteDetallePage() {
                   expedienteEstado={expediente.estado}
                   userRol={user?.rol}
                   onEstudioCompletado={fetchExpediente}
+                  requisitoPendiente={!!pazYSalvo}
                 />
               </>
             )}

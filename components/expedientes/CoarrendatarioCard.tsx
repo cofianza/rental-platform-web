@@ -37,6 +37,11 @@ interface CoarrendatarioCardProps {
   onUpdate?: () => void
   /** Adenda 3 §6: la condición del estudio del titular (null = sin condición). */
   condicion?: ICondicionCoarrendatario | null
+  /**
+   * Adenda 5 §7: el estudio espera el paz y salvo del candidato (no a un analista);
+   * un coarrendatario no lo reemplaza. Con ADENDA5 apagada siempre es false.
+   */
+  pazYSalvoPendiente?: boolean
 }
 
 export function CoarrendatarioCard({
@@ -45,6 +50,7 @@ export function CoarrendatarioCard({
   userRol,
   onUpdate,
   condicion = null,
+  pazYSalvoPendiente = false,
 }: CoarrendatarioCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -162,6 +168,7 @@ export function CoarrendatarioCard({
           initial={intencion}
           aprobado={aprobado}
           condicion={condicion}
+          pazYSalvoPendiente={pazYSalvoPendiente}
           onInvited={() => { fetchCoa(); fetchVentana(); onUpdate?.() }}
         />
       </div>
@@ -183,7 +190,14 @@ export function CoarrendatarioCard({
         </div>
       </div>
 
-      <EstadoBadge coa={coa} sinEfecto={!vigente} aprobado={aprobado} antesDeLaDecision={antesDeLaDecision} condicion={condicion} />
+      <EstadoBadge
+        coa={coa}
+        sinEfecto={!vigente}
+        aprobado={aprobado}
+        antesDeLaDecision={antesDeLaDecision}
+        condicion={condicion}
+        pazYSalvoPendiente={pazYSalvoPendiente}
+      />
 
       {/* Invitación pendiente: el solicitante puede corregirla y reenviarla, o
           cancelarla para invitar a otra persona (P4); con el estudio ya
@@ -213,15 +227,19 @@ function EstadoBadge({
   aprobado,
   antesDeLaDecision,
   condicion,
+  pazYSalvoPendiente,
 }: {
   coa: ICoarrendatario
   sinEfecto: boolean
   aprobado: boolean
   antesDeLaDecision: boolean
   condicion: ICondicionCoarrendatario | null
+  pazYSalvoPendiente: boolean
 }) {
   // Con condición no decide un analista: se pondera contra el puntaje objetivo.
   const conCondicion = !aprobado && !!condicion
+  // Adenda 5 §7: con el paz y salvo pendiente la ponderación no cambia el estado: sigue esperando el documento.
+  const esperaPazYSalvo = !aprobado && !antesDeLaDecision && !conCondicion && pazYSalvoPendiente
   const cfg: Record<ICoarrendatario['estado'], { color: string; label: string; mensaje: string }> = {
     pendiente_aceptacion: sinEfecto
       ? {
@@ -260,6 +278,8 @@ function EstadoBadge({
           ? 'Estamos haciendo su evaluación crediticia. Su estudio se decide con los resultados de los dos y le avisamos por correo.'
           : conCondicion
           ? 'Estamos procesando su evaluación crediticia. Cuando termine le avisamos el resultado.'
+          : esperaPazYSalvo
+          ? 'Estamos procesando su evaluación crediticia. Su estudio sigue esperando el paz y salvo; le avisamos por correo.'
           : 'Estamos procesando su evaluación crediticia. Cuando termine, un analista de Cofianza decide su caso con los dos resultados y le avisamos.',
     },
     rechazado_invitacion: {
@@ -279,6 +299,8 @@ function EstadoBadge({
           ? 'La evaluación de su coarrendatario terminó. Su estudio se decide con los resultados de los dos y le avisamos por correo.'
           : conCondicion
           ? 'La evaluación de su coarrendatario terminó. Le avisamos el resultado por notificación y correo.'
+          : esperaPazYSalvo
+          ? 'La evaluación de su coarrendatario terminó; su estudio sigue esperando el paz y salvo. Le avisamos por correo.'
           : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos; le avisamos por notificación y correo.',
     },
   }
