@@ -7,6 +7,7 @@ import { IconCheck, IconX, IconLoader, IconMail, IconRefresh, IconAlertTriangle 
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
+import { leerDestinoTrasVerificar, olvidarDestinoTrasVerificar } from '@/lib/destinoTrasVerificar'
 
 // 'sin_verificar': no se pudo LLEGAR a verificar (sin conexión, 5xx, 429). El
 // enlace puede estar bien: se ofrece reintentar, no pedir uno nuevo.
@@ -20,6 +21,10 @@ function VerifyEmailContent() {
   const [resendEmail, setResendEmail] = useState('')
   const [resending, setResending] = useState(false)
   const [resendMessage, setResendMessage] = useState<string | null>(null)
+  // Arrendatario (registro de la vitrina): su siguiente paso es volver a su
+  // estudio, no la oficina virtual del propietario o la inmobiliaria.
+  const [esArrendatario, setEsArrendatario] = useState(false)
+  const [destino, setDestino] = useState<string | null>(null)
 
   const verify = useCallback(async () => {
     if (!token) {
@@ -30,7 +35,10 @@ function VerifyEmailContent() {
 
     setState('verifying')
     try {
-      await authService.verifyEmail(token)
+      const { rol } = await authService.verifyEmail(token)
+      const guardado = leerDestinoTrasVerificar()
+      setEsArrendatario(rol === 'solicitante' || (!rol && !!guardado))
+      setDestino(guardado)
       setState('success')
     } catch (err) {
       if (esErrorTransitorio(err)) {
@@ -76,7 +84,33 @@ function VerifyEmailContent() {
         </div>
       )}
 
-      {state === 'success' && (
+      {state === 'success' && esArrendatario && (
+        <div className="space-y-5">
+          <div className="flex justify-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <IconCheck size={32} className="text-green-600" />
+            </div>
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold tracking-tight text-gray-900">
+              Su correo quedó confirmado
+            </h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Su cuenta ya está activa. Inicie sesión con su correo y su contraseña
+              {destino ? ' y lo llevamos a donde iba.' : ' para entrar a su cuenta.'}
+            </p>
+          </div>
+          <Link
+            href={destino ? `${AUTH_ROUTES.LOGIN}?redirect=${encodeURIComponent(destino)}` : AUTH_ROUTES.LOGIN}
+            onClick={olvidarDestinoTrasVerificar}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 px-6 py-2.5 bg-primary-700 text-white text-sm font-bold rounded-lg hover:bg-primary-800 transition-colors"
+          >
+            Iniciar sesión y continuar
+          </Link>
+        </div>
+      )}
+
+      {state === 'success' && !esArrendatario && (
         <div className="space-y-5">
           <div className="flex justify-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">

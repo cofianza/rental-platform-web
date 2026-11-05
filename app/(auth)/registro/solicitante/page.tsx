@@ -1,6 +1,8 @@
 /**
  * Registro rapido de solicitante — HP-368
- * Flujo "Me interesa" → Registro → Auto-login → Expediente+Estudio
+ * Flujo "Me interesa" → Registro → Confirmar el correo → Iniciar sesión →
+ * volver al inmueble (o a la invitación). Desde la auditoría de la vitrina la
+ * cuenta no queda activa al registrarse: hay que abrir el enlace del correo.
  */
 
 'use client'
@@ -10,12 +12,13 @@ import { useState, useEffect, useId, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconLoader, IconHome, IconCheck, IconEye, IconEyeOff } from '@/components/icons'
+import { IconLoader, IconHome, IconCheck, IconEye, IconEyeOff, IconMail } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { getPublicPropertyById, type PublicProperty } from '@/services/publicPropertiesService'
 import { formatCurrency, API_BASE_URL } from '@/lib/constants'
 import { authService } from '@/services/authService'
 import { isValidEmail } from '@/lib/utils'
+import { guardarDestinoTrasVerificar, olvidarDestinoTrasVerificar } from '@/lib/destinoTrasVerificar'
 
 // Registro liviano (H43, 2026-09-28): solo nombre, correo, celular y
 // contraseña. El documento se pide antes de la autorización del estudio
@@ -68,6 +71,9 @@ function RegistroSolicitanteContent() {
   const [vieneDeInvitacion, setVieneDeInvitacion] = useState(false)
   const [sinContrasena, setSinContrasena] = useState(searchParams.get('enlace') === '1')
   const [enlaceEnviado, setEnlaceEnviado] = useState(false)
+  // Registro con contraseña hecho: falta confirmar el correo.
+  const [correoPorConfirmar, setCorreoPorConfirmar] = useState<string | null>(null)
+  const [reenviando, setReenviando] = useState(false)
   useEffect(() => {
     try {
       setVieneDeInvitacion(!!sessionStorage.getItem('invitacion_token'))
@@ -136,8 +142,8 @@ function RegistroSolicitanteContent() {
     }
 
     // Si el usuario viene del flujo de invitación externa, preservamos el token
-    // para: (a) marcar registration_source='invitacion_externa' en backend y
-    // (b) redirigir al canje post-auto-login.
+    // para: (a) marcar el origen en el backend y (b) volver a la invitación
+    // después de confirmar el correo e iniciar sesión.
     const invitacionToken =
       typeof window !== 'undefined' ? sessionStorage.getItem('invitacion_token') : null
 
@@ -164,31 +170,38 @@ function RegistroSolicitanteContent() {
         return
       }
 
-      // Auto-login: la misma sesión que deja el login (token, refresh token,
-      // cookie y refresh programado), para que sobreviva la recarga de abajo.
-      const { user, session } = json.data
-      authService.adoptarSesion(user, session)
+      // Compatibilidad durante el despliegue: si la API todavía devuelve
+      // sesión (versión anterior a la verificación de correo), se entra como
+      // antes. Cuando la API nueva esté publicada este camino no se usa.
+      if (json.data?.session && json.data?.user) {
+        authService.adoptarSesion(json.data.user, json.data.session)
+        toast.success('Registro exitoso')
+        if (invitacionToken) {
+          window.location.href = `/invitacion/${invitacionToken}`
+          return
+        }
+        if (propertyId) {
+          localStorage.removeItem('cofianza_interested_property')
+          router.push(`/inmueble/${propertyId}?agendar=1`)
+          return
+        }
+        router.push('/dashboard')
+        return
+      }
 
-      toast.success('Registro exitoso')
-
-      // Flujo invitación externa tiene prioridad sobre property_interest.
+      // Sin sesión: la cuenta se activa con el enlace que le llegó al correo.
+      // Lo que estaba haciendo se guarda para retomarlo al confirmar (el
+      // enlace se abre en otra pestaña). La invitación además sigue en
+      // sessionStorage de esta pestaña, que el login ya usa.
       if (invitacionToken) {
-        window.location.href = `/invitacion/${invitacionToken}`
-        return
-      }
-
-      // Flujo unificado: en vez de crear expediente SIN cita aquí, mandamos
-      // al usuario al detalle del inmueble ya autenticado. router.push (no
-      // window.location) preserva el auth state en memoria — con full reload
-      // se perdía la sesión durante la rehidratación del AuthProvider.
-      // El flag ?agendar=1 le dice a <MeInteresaCTA> que auto-abra el modal.
-      if (propertyId) {
+        guardarDestinoTrasVerificar(`/invitacion/${invitacionToken}`)
+      } else if (propertyId) {
         localStorage.removeItem('cofianza_interested_property')
-        router.push(`/inmueble/${propertyId}?agendar=1`)
-        return
+        guardarDestinoTrasVerificar(`/inmueble/${propertyId}?agendar=1`)
+      } else {
+        olvidarDestinoTrasVerificar()
       }
-
-      router.push('/dashboard')
+      setCorreoPorConfirmar(json.data?.email || email.trim())
     } catch (err) {
       // Mismo traductor que los flujos publicos: sin conexion, demasiados
       // intentos y caidas del servidor dejan de llegar como texto crudo.
@@ -198,6 +211,61 @@ function RegistroSolicitanteContent() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const reenviarVerificacion = async () => {
+    if (!correoPorConfirmar || reenviando) return
+    setReenviando(true)
+    try {
+      await authService.resendVerification(correoPorConfirmar)
+      toast.success('Le enviamos un nuevo correo de confirmación. Use el enlace de este último correo.')
+    } catch (err) {
+      // Con el tope de reenvíos (3 por hora) la API dice cuánto esperar.
+      toast.error(mensajeParaProspecto(err, 'No pudimos reenviar el correo. Inténtelo de nuevo más tarde.'))
+    } finally {
+      setReenviando(false)
+    }
+  }
+
+  if (correoPorConfirmar) {
+    // Con el inmueble en la URL, el login lo retoma aunque se haya perdido lo
+    // guardado; la invitación la retoma el login desde sessionStorage.
+    const loginHref = propertyId
+      ? `/login?intent=interest&property_id=${encodeURIComponent(propertyId)}`
+      : '/login'
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-5 sm:p-8 w-full text-center">
+        <div className="mx-auto w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mb-6">
+          <IconMail size={32} className="text-primary-600" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Le enviamos un correo para confirmar su cuenta</h1>
+        <p className="text-gray-600 mb-4 break-words">
+          Abra el enlace que enviamos a <strong>{correoPorConfirmar}</strong> para activar su cuenta. Después
+          inicie sesión con su correo y su contraseña
+          {vieneDeInvitacion ? ' para continuar con su invitación.' : property ? ' para continuar con su solicitud.' : '.'}
+        </p>
+        <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600 text-left space-y-2 mb-6">
+          <p>Revise también la carpeta de spam. El enlace vence en 24 horas y sirve una sola vez; si pide otro correo, use el del más reciente.</p>
+          <p>Si lo abre en este mismo navegador, lo traemos de vuelta a donde iba. Si no, después de iniciar sesión busque de nuevo el inmueble en la vitrina.</p>
+        </div>
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={reenviarVerificacion}
+            disabled={reenviando}
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-primary-700 border border-primary-200 rounded-lg hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {reenviando ? (<><IconLoader size={16} className="animate-spin" /> Reenviando...</>) : 'Reenviar correo'}
+          </button>
+          <Link
+            href={loginHref}
+            className="inline-flex min-h-11 w-full items-center justify-center px-4 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            Ya confirmé mi correo: iniciar sesión
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   if (enlaceEnviado) {

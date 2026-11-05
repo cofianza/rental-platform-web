@@ -296,8 +296,9 @@ class AuthService {
     return response.data
   }
 
-  async verifyEmail(token: string): Promise<{ message: string }> {
-    const response = await apiClient.get<{ message: string }>(`/auth/register/verify-email/${token}`)
+  /** `rol` viene cuando la API lo conoce (para decir lo que sigue según la cuenta). */
+  async verifyEmail(token: string): Promise<{ message: string; rol?: string }> {
+    const response = await apiClient.get<{ message: string; rol?: string }>(`/auth/register/verify-email/${token}`)
     return response.data
   }
 
