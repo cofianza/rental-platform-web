@@ -248,7 +248,9 @@ export const META: Record<string, MetaParametro> = {
     ejemplo: (v) => {
       const n = v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA
       const menos = n - 1
-      return `Con ${n}: quien tiene ${menos === 0 ? 'ningún crédito financiero' : menos === 1 ? 'un solo crédito financiero' : `${menos} créditos financieros`} al día y una mora de $50.000 en un celular se rechaza.`
+      return menos === 0
+        ? `Con ${n}: quien no tiene ningún crédito financiero al día y tiene una mora de $50.000 en un celular se rechaza.`
+        : `Con ${n}: quien tiene ${menos === 1 ? 'un solo crédito financiero' : `${menos} créditos financieros`} al día y una mora de $50.000 en un celular se rechaza.`
     },
     nota: 'Es una regla de rechazo: moverlo exige autorización escrita de la Dirección de Riesgo.',
     rige: 'a5',

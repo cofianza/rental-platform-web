@@ -81,4 +81,7 @@ test('calibración: las fracciones del canon se leen como «15 % del canon» y e
   assert.equal(rigeHoy('a5', { ADENDA5: 1 }), true)
   assert.equal(rigeHoy('a5', { ADENDA5: 0 }), false)
   assert.match(META.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA.ejemplo?.({ MIN_OBLIGACIONES_FINANCIERAS_AL_DIA: 2 }) ?? '', /un solo crédito financiero/)
+  const conUno = META.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA.ejemplo?.({ MIN_OBLIGACIONES_FINANCIERAS_AL_DIA: 1 }) ?? ''
+  assert.match(conUno, /quien no tiene ningún crédito financiero al día y tiene una mora/)
+  assert.doesNotMatch(conUno, /quien tiene ningún/)
 })

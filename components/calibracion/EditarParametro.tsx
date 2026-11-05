@@ -55,6 +55,12 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
   function validar(): string | null {
     if (!valido)
       return unidad === 'mes' ? 'Elija un mes, o «Dejar sin activar».' : 'Escriba solo el número, sin puntos de miles (por ejemplo 3500000).'
+    // La fracción del canon se escribe como fracción (0,15), aunque se lea «15 % del canon»:
+    // quien escribe el porcentaje (15) no debe leer que 15 está dentro del rango.
+    if (unidad === 'fraccion_canon' && (nuevo < p.min || nuevo > p.max))
+      return nuevo > p.max && nuevo <= 100
+        ? `Escríbalo como fracción: ${fmt(nuevo / 100)} = ${fmt(nuevo)} % del canon.`
+        : `Escríbalo como fracción, de ${fmt(p.min)} a ${fmt(p.max)} (0,15 = 15 % del canon).`
     if (nuevo < p.min || nuevo > p.max) return `Debe estar entre ${conUnidad(p.min, p)} y ${conUnidad(p.max, p)}.`
     if (p.entero && !Number.isInteger(nuevo)) return 'Debe ser un número entero.'
     if (unidad === 'mes' && nuevo < MES_APAGADO && (nuevo % 100 < 1 || nuevo % 100 > 12)) return 'Elija un mes válido.'
@@ -208,7 +214,9 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                 <p id={`rango-${p.clave}`} className="mt-1 text-xs text-gray-500">
                   {unidad === 'mes'
                     ? 'Primer mes que cobra la plataforma (AAAA-MM, por ejemplo 2026-11).'
-                    : `Permitido: de ${conUnidad(p.min, p)} a ${conUnidad(p.max, p)}.`}
+                    : unidad === 'fraccion_canon'
+                      ? `Escríbalo como fracción, de ${fmt(p.min)} a ${fmt(p.max)} (0,15 = 15 % del canon).`
+                      : `Permitido: de ${conUnidad(p.min, p)} a ${conUnidad(p.max, p)}.`}
                   {unidad === 'cop' && valido && <span className="font-semibold text-gray-700"> Quedaría en {conUnidad(nuevo, p)}.</span>}
                 </p>
               )}
