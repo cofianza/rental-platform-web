@@ -566,7 +566,7 @@ export function AprobarCondicionadoCard({
                 : pctRazon !== null
                   ? `Razón de mora: ${textoPct(pctRazon)} del canon. `
                   : ''}
-              {TRAMO_A5.revision}. Por reserva, el acreedor y el monto solo se le comunican al candidato.
+              {TRAMO_A5.revision}. Por reserva, el acreedor y el monto no se comparten con la inmobiliaria ni con el propietario.
             </p>
             <div className="mt-2">
               <ObligacionesEnMora obligaciones={obligacionesMora} />

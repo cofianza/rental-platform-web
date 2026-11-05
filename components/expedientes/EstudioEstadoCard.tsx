@@ -267,7 +267,7 @@ function getSiguientePaso(
       if (pazYSalvoPendiente(estudio.paz_y_salvo)) {
         return esCofianza
           ? `Aprobado sujeto a paz y salvo: el candidato tiene hasta el ${fechaCondicion(estudio.paz_y_salvo.vence_en)} para acreditarlo. Cuando cargue el documento, acredítelo en el resumen del estudio.`
-          : `${textoRequisitoPendiente(estudio.paz_y_salvo.vence_en)}. Por reserva, el detalle solo se le comunica al candidato; mientras tanto no se puede crear el contrato.`
+          : `${textoRequisitoPendiente(estudio.paz_y_salvo.vence_en)}. Por reserva, Cofianza no comparte el detalle con la inmobiliaria ni con el propietario; mientras tanto no se puede crear el contrato.`
       }
       return esCofianza
         ? 'Revise el motivo y decida si lo aprueba.'

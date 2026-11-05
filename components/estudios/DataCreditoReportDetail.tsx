@@ -435,7 +435,7 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
   /**
    * Adenda 5 §10: a la inmobiliaria y al propietario la API les quita el
    * acreedor, el número y los montos de las obligaciones EN MORA y las marca
-   * con `detalle_reservado` (solo el evaluado conoce el detalle). La fila
+   * con `detalle_reservado` (la inmobiliaria y el propietario no reciben el detalle). La fila
    * sigue: estado y tipo, sin inventar datos. Sin la marca, nada cambia.
    */
   const esReservada = (item: (typeof obligaciones)[number]) => item.reservada
@@ -848,7 +848,7 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
             Saldo, cuota y mora en pesos. Las obligaciones ya canceladas no reportan importes: se muestran con
             guion.
             {hayReservadas &&
-              ' Por reserva, el acreedor y los montos de las obligaciones en mora solo se le comunican al candidato.'}
+              ' Por reserva, Cofianza no comparte con la inmobiliaria ni con el propietario el acreedor ni los montos de las obligaciones en mora.'}
           </p>
         </AccordionSection>
       )}
