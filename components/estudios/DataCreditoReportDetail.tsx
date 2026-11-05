@@ -471,7 +471,8 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
     .filter((v): v is number => v !== null)
   const valorMora = moras.length > 0 ? Math.max(...moras) : null
   // §10: la API también quitó el saldo en mora del consolidado (con una sola obligación lo revela).
-  const moraConsolidadaReservada = hayReservadas && valorMora === null
+  // La marca en la raíz cubre la mora que solo sale del consolidado (ninguna fila marcada).
+  const moraConsolidadaReservada = (report.detalle_reservado === true || hayReservadas) && valorMora === null
   const cuotaMensual = num(balances?.valueMonthlyPayment)
   const creditoMasAlto = num(balances?.HightestDebtBalance ?? balances?.hightestDebtBalance)
   const negativos12Meses = num(principals?.negativeHistoricalLast12Months)
@@ -800,20 +801,24 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
                         {reservada ? <span className="italic text-gray-500">Reservado</span> : nombreEntidad(item.account)}
                       </td>
                       <td className="py-1.5 px-1 text-gray-700">{tipoObligacion(item.account)}</td>
+                      {/* Reservada: el guion es de las canceladas; aquí el monto se quitó por reserva (§10). */}
                       <td className="py-1.5 px-1 text-right text-gray-900">
-                        {formatCOP(item.values?.debtBalance)}
+                        {reservada ? <span className="italic text-gray-500">Reservado</span> : formatCOP(item.values?.debtBalance)}
                       </td>
                       <td className="py-1.5 px-1 text-right text-gray-900">
-                        {formatCOP(item.values?.valueMonthlyPayment)}
+                        {reservada ? <span className="italic text-gray-500">Reservado</span> : formatCOP(item.values?.valueMonthlyPayment)}
                       </td>
                       <td className="py-1.5 px-1">
                         <EstadoPill texto={estadoTexto} tono={tono} />
                       </td>
                       <td className={`py-1.5 px-1 text-right ${enMora || reservada ? 'text-red-700 font-medium' : 'text-gray-900'}`}>
-                        {enMora
-                          ? `${formatCOP(valorMoraCuenta)}${diasMora !== null && diasMora > 0 ? ` · ${diasMora} d` : ''}`
-                          : reservada
-                            ? moraPorEstado(item) ? 'En mora' : 'Reservado'
+                        {/* La API quita el valor en mora pero deja los días: «En mora · 60 d», nunca «— · 60 d». */}
+                        {reservada
+                          ? diasMora !== null && diasMora > 0
+                            ? `En mora · ${diasMora} d`
+                            : moraPorEstado(item) ? 'En mora' : 'Reservado'
+                          : enMora
+                            ? `${formatCOP(valorMoraCuenta)}${diasMora !== null && diasMora > 0 ? ` · ${diasMora} d` : ''}`
                             : '—'}
                       </td>
                     </tr>

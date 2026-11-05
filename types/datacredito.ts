@@ -423,6 +423,11 @@ export interface DcAgregatedInfo {
 // ── Reporte y envoltura ─────────────────────────────────────
 
 export interface DcReport {
+  /**
+   * Adenda 5 §10: la API quitó el saldo en mora del consolidado por reserva,
+   * aunque ninguna obligación haya quedado marcada. Ausente sin reserva.
+   */
+  detalle_reservado?: boolean
   productResult?: DcProductResult
   identifyingAttributes?: DcIdentifyingAttributes
   basicInformation?: DcBasicInformation
