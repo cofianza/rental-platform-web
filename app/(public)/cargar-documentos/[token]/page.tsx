@@ -339,7 +339,7 @@ export default function CargarDocumentosPage() {
                 <p className="font-semibold text-gray-900">
                   {pazYSalvoRecibido
                     ? `Lo recibimos el ${fechaCondicion(pazYSalvoRecibido.created_at)}`
-                    : `Cárguelo antes del ${fechaCondicion(pazYSalvo.vence_en)}`}
+                    : `Cárguelo a más tardar el ${fechaCondicion(pazYSalvo.vence_en)}`}
                 </p>
                 {(pazYSalvo.obligaciones?.length ?? 0) > 0 ? (
                   <>
@@ -367,7 +367,7 @@ export default function CargarDocumentosPage() {
                 {pazYSalvoRecibido ? (
                   // Con un documento cargado, al vencer el plazo el caso va a un analista (vencerPazYSalvo de la API), no se cierra.
                   <p className="mt-2">
-                    Un analista de Cofianza lo revisa y le avisamos por correo. Si necesita cambiarlo, cargue el nuevo antes del{' '}
+                    Un analista de Cofianza lo revisa y le avisamos por correo. Si necesita cambiarlo, cargue el nuevo a más tardar el{' '}
                     {fechaCondicion(pazYSalvo.vence_en)}. Si el plazo vence antes de la revisión, un analista decide su caso con el
                     documento que cargó.
                   </p>

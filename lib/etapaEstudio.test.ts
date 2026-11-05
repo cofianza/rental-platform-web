@@ -116,8 +116,12 @@ test('Adenda 5: el paz y salvo pendiente espera al candidato y no dice el detall
   assert.match(equipo, /requisito pendiente a cargo del candidato/)
   // §10: a la inmobiliaria y al propietario nunca se les dice que es una mora ni el monto.
   for (const t of [gestor, equipo]) assert.doesNotMatch(t, /mora|paz y salvo|\$/i)
-  assert.match(queSigue('decision', { ...o, vista: 'cofianza', analista: true }), /acreditar el paz y salvo antes del 19\/11\/2026.*acredítelo aquí abajo/)
+  assert.match(queSigue('decision', { ...o, vista: 'cofianza', analista: true }), /acreditar el paz y salvo a más tardar el 19\/11\/2026.*acredítelo aquí abajo/)
   assert.doesNotMatch(queSigue('decision', { ...o, vista: 'cofianza' }), /acredítelo/)
+  // La API cierra el plazo al final del día anunciado: «antes del» lo acortaba un día.
+  for (const vista of ['gestor', 'equipo', 'cofianza'] as const) {
+    for (const analista of [false, true]) assert.doesNotMatch(queSigue('decision', { ...o, vista, analista }), /antes del/)
+  }
   // Sin paz y salvo, la decisión sigue siendo del analista.
   assert.equal(queSigue('decision', { ...o, vista: 'cofianza', analista: true, fechaPazYSalvo: null }), 'Revise el caso y decida si lo aprueba.')
   // A quién le escribió Cofianza: al candidato, no al gestor.

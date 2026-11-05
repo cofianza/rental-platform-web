@@ -120,8 +120,8 @@ export function queSigue(
     }
     if (o.vista === 'cofianza') {
       return o.analista
-        ? `El candidato debe acreditar el paz y salvo antes del ${o.fechaPazYSalvo}. Cuando cargue el documento, revíselo y acredítelo aquí abajo.`
-        : `El candidato debe acreditar el paz y salvo antes del ${o.fechaPazYSalvo}; luego lo acredita un analista de Cofianza.`
+        ? `El candidato debe acreditar el paz y salvo a más tardar el ${o.fechaPazYSalvo}. Cuando cargue el documento, revíselo y acredítelo aquí abajo.`
+        : `El candidato debe acreditar el paz y salvo a más tardar el ${o.fechaPazYSalvo}; luego lo acredita un analista de Cofianza.`
     }
     return gestor
       ? `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}. Cofianza ya le escribió al candidato con el detalle; usted no tiene que hacer nada y le avisamos cuando se resuelva.`

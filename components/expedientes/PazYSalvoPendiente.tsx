@@ -147,7 +147,7 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
               <p className="mt-1 text-sm text-gray-700">
                 {vencida
                   ? 'Venció el plazo para cumplir el requisito. Cofianza lo resuelve en breve y le avisamos por notificación y correo.'
-                  : `Un analista de Cofianza aprobó el estudio sujeto a un requisito que debe cumplir el candidato antes del ${fecha}. Por reserva, el detalle solo se le comunica a él. Mientras tanto no se puede crear el contrato.`}
+                  : `Un analista de Cofianza aprobó el estudio sujeto a un requisito que debe cumplir el candidato a más tardar el ${fecha}. Por reserva, el detalle solo se le comunica a él. Mientras tanto no se puede crear el contrato.`}
               </p>
               {!vencida && (
                 <p className="mt-2 text-sm text-gray-700">
