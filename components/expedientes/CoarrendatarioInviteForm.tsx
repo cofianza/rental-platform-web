@@ -71,6 +71,11 @@ interface CoarrendatarioInviteFormProps {
   } | null
   /** Adenda 3 V2 §6.1: el titular todavía no se evalúa (coarrendatario desde el inicio). */
   antesDeLaDecision?: boolean
+  /**
+   * Adenda 5 §7: el estudio quedó aprobado sujeto a paz y salvo. Espera al
+   * candidato, no a un analista, y un coarrendatario no reemplaza ese requisito.
+   */
+  pazYSalvoPendiente?: boolean
 }
 
 type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email' | 'telefono'
@@ -91,6 +96,7 @@ export function CoarrendatarioInviteForm({
   aprobado = false,
   condicion = null,
   antesDeLaDecision = false,
+  pazYSalvoPendiente = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
   const conCondicion = !esGestor && !!condicion
@@ -205,6 +211,13 @@ export function CoarrendatarioInviteForm({
                 El estudio quedó condicionado. Puede invitar a la persona con quien vivirá el
                 solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
                 respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
+            ) : pazYSalvoPendiente ? (
+              <>
+                Su estudio se aprueba cuando acreditemos el paz y salvo de arriba; un coarrendatario no lo reemplaza. Si
+                además suma como <strong>coarrendatario</strong> a la persona con quien va a vivir, la prima de vinculación
+                baja del 20 % al 10 % del canon y los respaldamos juntos como un solo arrendatario.{' '}
+                <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             ) : (
               <>

@@ -10,6 +10,7 @@ import {
   nombreObligacion,
   nombreSector,
   obligacionesExigidas,
+  pazYSalvoCargado,
   pazYSalvoDeMoraVigente,
   pazYSalvoPendiente,
   razonMoraPct,
@@ -57,6 +58,23 @@ test('GET mora-vigente: solo el paz y salvo pendiente cuenta (la API manda el ú
   assert.equal(pazYSalvoDeMoraVigente(null), null)
   // Lo que recibe el solicitante en su estudio: sin ref; no se inventa una.
   assert.deepEqual(obligacionesExigidas({ vence_en: '2026-11-19T15:00:00Z', obligaciones: [{ acreedor: 'Operador de ejemplo', saldo_mora_cop: 56_000 }] }), [])
+})
+
+test('paz y salvo cargado: el más reciente desde que se exigió (criterio del barrido)', () => {
+  const soportes = [
+    { id: 'a', proposito: 'certificacion_laboral', created_at: '2026-11-06T15:00:00Z' },
+    { id: 'b', proposito: 'paz_y_salvo', created_at: '2026-11-05T15:00:00Z' },
+    { id: 'c', proposito: 'paz_y_salvo', created_at: '2026-11-07T15:00:00Z' },
+    { id: 'd', proposito: 'paz_y_salvo', created_at: '2026-10-01T15:00:00Z' },
+  ]
+  assert.equal(pazYSalvoCargado({ exigido_en: '2026-11-04T15:00:00Z' }, soportes)?.id, 'c')
+  // Uno cargado antes de exigirlo no cuenta.
+  assert.equal(pazYSalvoCargado({ exigido_en: '2026-11-04T15:00:00Z' }, [soportes[3]]), null)
+  // Al candidato no le llega exigido_en: cuenta cualquiera, el más reciente.
+  assert.equal(pazYSalvoCargado({}, soportes)?.id, 'c')
+  assert.equal(pazYSalvoCargado({ exigido_en: '2026-11-04T15:00:00Z' }, [soportes[0]]), null)
+  assert.equal(pazYSalvoCargado(null, soportes), null)
+  assert.equal(pazYSalvoCargado({}, null), null)
 })
 
 test('§10: lo que ve la inmobiliaria no trae acreedor ni monto', () => {

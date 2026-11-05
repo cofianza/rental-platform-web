@@ -26,6 +26,28 @@ export function pazYSalvoPendiente(p: IPazYSalvo | null | undefined): p is IPazY
   return !!p && !!p.vence_en && !p.acreditacion
 }
 
+/**
+ * El paz y salvo que el candidato cargó para el requisito en pie: el soporte
+ * 'paz_y_salvo' más reciente desde que se exigió (el criterio del barrido de la
+ * API, que con él manda el caso a revisión en vez de cerrarlo). Sin `exigido_en`
+ * (al candidato no le llega) cuenta cualquiera. null si no hay ninguno.
+ */
+export function pazYSalvoCargado<T extends { proposito: string; created_at: string }>(
+  p: { exigido_en?: string | null } | null | undefined,
+  soportes: readonly T[] | null | undefined,
+): T | null {
+  if (!p || !soportes) return null
+  const desde = p.exigido_en ? Date.parse(p.exigido_en) : NaN
+  let ultimo: T | null = null
+  for (const s of soportes) {
+    if (s.proposito !== 'paz_y_salvo') continue
+    const t = Date.parse(s.created_at)
+    if (Number.isFinite(desde) && !(t >= desde)) continue
+    if (!ultimo || t > Date.parse(ultimo.created_at)) ultimo = s
+  }
+  return ultimo
+}
+
 /** Lo que ven la inmobiliaria y el propietario: sin acreedor ni monto (§10). */
 export function textoRequisitoPendiente(venceEn: string): string {
   return `Requisito pendiente a cargo del candidato · hasta ${diaMes(venceEn)}`

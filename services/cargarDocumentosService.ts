@@ -25,6 +25,11 @@ export interface PazYSalvoCandidato {
   /** ISO: hasta cuándo puede acreditarlo. */
   vence_en: string
   vencida?: boolean
+  /**
+   * ISO: cuándo se exigió. Hoy la API no lo manda; si llega, un paz y salvo
+   * cargado antes de esa fecha no cuenta como recibido (criterio del barrido).
+   */
+  exigido_en?: string | null
   /** Las obligaciones exigidas: solo acreedor y saldo en mora (getContextoDocumentosPublico). */
   obligaciones?: Array<{
     acreedor: string | null
