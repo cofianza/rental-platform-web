@@ -92,6 +92,29 @@ export function Indicadores({ cascada, revision }: { cascada: ICascadaCentrales 
           </p>
         </Bloque>
       )}
+
+      {revision?.auco && (
+        <Bloque
+          titulo="Auco: antecedentes y listas restrictivas"
+          ayuda="Si Auco pudo revisar a cada persona en las listas (ONU, OFAC) y antecedentes. Cuando no puede, el estudio no se aprueba solo: lo revisa un analista."
+        >
+          <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Dato label="Personas revisadas" valor={num(revision.auco.consultas)} sub={`${num(revision.auco.verificadas)} completas`} />
+            <Dato label="Una lista no respondió" valor={num(revision.auco.lista_caida)} sub="la fuente ONU u OFAC de Auco falló" />
+            <Dato label="Auco no respondió a tiempo" valor={num(revision.auco.sin_respuesta)} sub="tardó más de 90 segundos" />
+            <Dato
+              label="Sin verificar"
+              valor={revision.auco.tasa_falla_pct === null ? '—' : `${revision.auco.tasa_falla_pct} %`}
+              sub="del total de personas revisadas"
+            />
+          </dl>
+          <p className="mt-3 text-xs text-gray-500">
+            {revision.auco.ultima_falla
+              ? `Última falla: ${new Date(revision.auco.ultima_falla.en).toLocaleString('es-CO', { timeZone: 'America/Bogota', dateStyle: 'medium', timeStyle: 'short' })} (hora de Colombia). Si se repite, escriba a soporte de Auco: help@tech.auco.ai.`
+              : 'Sin fallas en este periodo.'}
+          </p>
+        </Bloque>
+      )}
     </div>
   )
 }
