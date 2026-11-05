@@ -11,9 +11,12 @@ import {
   IconDollarSign,
   IconLoader,
   IconMail,
+  IconPencil,
   IconRefresh,
   IconShieldCheck,
 } from '@/components/icons'
+import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
+import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
@@ -29,6 +32,16 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
+
+// Botones de la tarjeta: 40 px de alto, como las filas de Documentos.
+const BOTON =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50'
+const BOTON_PRINCIPAL = 'bg-primary-700 text-white hover:bg-primary-800'
+const BOTON_SECUNDARIO = 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+const BOTON_FANTASMA = 'text-gray-700 hover:bg-gray-100'
+// Una opción de «quién paga»: tarjeta pulsable con el texto a la izquierda.
+const OPCION =
+  'flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50'
 
 const fmtCOP = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`
 
@@ -433,102 +446,105 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     return <PagoEstudioSolicitanteView estado={estado} />
   }
 
+  // Monto como frase suelta: sin monto no queda un «COP —» colgando.
+  const montoCOP = estado.monto_formateado ? `${estado.monto_formateado} COP` : null
+  const emailEnlace = estado.pago?.email_pagador || null
+  const confirmLiberarDialog = (
+    <ConfirmDialog
+      isOpen={confirmLiberar}
+      onClose={() => setConfirmLiberar(false)}
+      onConfirm={() => {
+        setConfirmLiberar(false)
+        return handleLiberarCredito()
+      }}
+      isLoading={isSubmitting}
+      title="Pagar con un cupo"
+      message={`Se reserva 1 cupo de su paquete (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se descuenta solo si la central entrega el resultado; si no, vuelve a su saldo.`}
+      confirmLabel="Reservar 1 cupo"
+    />
+  )
+
   return (
     <div className="space-y-4">
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>
       )}
 
       {/* Sin definir — mostrar selector (acción requerida) */}
       {estado.estado === 'sin_definir' && (
-        <div className="border-2 border-amber-300 bg-amber-50/30 rounded-lg p-6">
-          <div className="flex items-start gap-3 mb-4">
-            <span className="shrink-0 mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
-              <IconAlertTriangle size={20} className="text-amber-600" />
-            </span>
-            <div>
-              <h3 className="text-base font-bold text-gray-900">
-                Acción requerida: defina quién paga el estudio
-                <InfoTip texto={AYUDA.pago} className="ml-1" />
-                <span className="ml-2 inline-flex px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide rounded-full bg-amber-200 text-amber-900">paso obligatorio</span>
-              </h3>
-              <p className="text-sm text-gray-600 mt-0.5">
-                La evaluación crediticia <span className="font-semibold">no puede ejecutarse</span> hasta que elija una de
-                estas opciones. Monto: <span className="font-semibold text-gray-900">{montoGestor(estado)}</span>.
-              </p>
-            </div>
-          </div>
-
-          <div className={`grid grid-cols-1 ${numOpcionesPago >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'} gap-3`}>
-              {/* Liberar con credito (inmobiliaria) */}
-              {puedeUsarCreditos && (
-                hayCreditosUsables ? (
-                  <>
-              <ConfirmDialog
-                    isOpen={confirmLiberar}
-                    onClose={() => setConfirmLiberar(false)}
-                    onConfirm={() => {
-                      setConfirmLiberar(false)
-                      return handleLiberarCredito()
-                    }}
-                    isLoading={isSubmitting}
-                    title="Pagar con un cupo"
-                    message={`Se reserva 1 cupo de su paquete (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se descuenta solo si la central entrega el resultado; si no, vuelve a su saldo.`}
-                    confirmLabel="Reservar 1 cupo"
-                  />
+        <TarjetaSiguientePaso
+          tono="revision"
+          icono={<IconAlertTriangle size={18} />}
+          titulo={
+            <>
+              Acción requerida: defina quién paga el estudio
+              <InfoTip texto={AYUDA.pago} className="ml-1" />
+            </>
+          }
+          descripcion={
+            <>
+              La evaluación crediticia <span className="font-semibold">no puede ejecutarse</span> hasta que elija una de
+              estas opciones.{montoCOP && <> Monto: <span className="font-semibold text-gray-900">{montoGestor(estado)}</span>.</>}
+            </>
+          }
+        >
+          <div className={cn('grid grid-cols-1 gap-3 px-4 py-4 sm:px-5', numOpcionesPago >= 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-2')}>
+            {/* Liberar con credito (inmobiliaria) */}
+            {puedeUsarCreditos && (
+              hayCreditosUsables ? (
+                <>
+                  {confirmLiberarDialog}
                   <button
+                    type="button"
                     onClick={() => setConfirmLiberar(true)}
                     disabled={isSubmitting}
-                    className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-emerald-300 rounded-lg hover:border-emerald-500 hover:bg-emerald-50 transition-colors disabled:opacity-50 text-center"
+                    className={cn(OPCION, 'border-primary-300 hover:border-primary-500 hover:bg-primary-50')}
                   >
-                    <IconShieldCheck size={32} className="text-emerald-600" />
-                    <span className="text-sm font-semibold text-gray-900">Pagar con un cupo</span>
-                    <span className="text-xs text-emerald-700 font-medium">Saldo: {saldoUsable} {saldoUsable === 1 ? 'cupo' : 'cupos'}</span>
-                    <span className="text-[11px] text-gray-500 leading-snug">{estado.autorizado ? 'Reserva 1 cupo y el proceso sigue de inmediato.' : 'Reserva 1 cupo; el proceso sigue cuando el prospecto autorice.'}</span>
+                    <IconShieldCheck size={22} className="shrink-0 text-primary-700" aria-hidden="true" />
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-gray-900">Pagar con un cupo</span>
+                      <span className="mt-0.5 block text-xs font-medium text-primary-800">Saldo: {saldoUsable} {saldoUsable === 1 ? 'cupo' : 'cupos'}</span>
+                      <span className="mt-1 block text-xs leading-snug text-gray-600">{estado.autorizado ? 'Reserva 1 cupo y el proceso sigue de inmediato.' : 'Reserva 1 cupo; el proceso sigue cuando el prospecto autorice.'}</span>
+                    </span>
                   </button>
-                  </>
-                ) : (
-                  <Link
-                    href="/configuracion/creditos-estudios"
-                    className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-amber-200 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-colors text-center"
-                  >
-                    <IconDollarSign size={32} className="text-amber-600" />
-                    <span className="text-sm font-semibold text-gray-900">Comprar paquete</span>
-                    <span className="text-xs text-amber-700">
+                </>
+              ) : (
+                <Link href="/configuracion/creditos-estudios" className={cn(OPCION, 'border-amber-300 hover:border-amber-500 hover:bg-amber-50')}>
+                  <IconDollarSign size={22} className="shrink-0 text-amber-700" aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-gray-900">Comprar paquete</span>
+                    <span className="mt-0.5 block text-xs font-medium text-amber-900">
                       {creditosEnContra > 0 ? `${creditosEnContra} en contra` : 'Sin cupos disponibles'}
                     </span>
-                    <span className="text-[11px] text-gray-500 leading-snug">
+                    <span className="mt-1 block text-xs leading-snug text-gray-600">
                       {creditosEnContra > 0
                         ? 'Una compra se reversó con el banco: lo usado se descuenta de su próxima compra.'
                         : 'Compre un paquete de cupos con descuento por volumen.'}
                     </span>
-                  </Link>
-                )
-              )}
-              {puedePagarSuelto && (
-              <button
-                onClick={() => { void handlePagar() }}
-                disabled={isSubmitting}
-                className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
-              >
-                <IconCreditCard size={32} className="text-primary-600" />
-                <span className="text-sm font-semibold text-gray-900">Pagar ahora con Mercado Pago</span>
-                <span className="text-xs text-gray-500">Tarjeta o PSE</span>
-                <span className="text-[11px] text-gray-500 leading-snug">El estudio sigue cuando se confirma el pago.</span>
+                  </span>
+                </Link>
+              )
+            )}
+            {puedePagarSuelto && (
+              <button type="button" onClick={() => { void handlePagar() }} disabled={isSubmitting} className={cn(OPCION, 'hover:border-primary-500 hover:bg-primary-50/50')}>
+                <IconCreditCard size={22} className="shrink-0 text-primary-700" aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold text-gray-900">Pagar ahora con Mercado Pago</span>
+                  <span className="mt-0.5 block text-xs text-gray-600">Tarjeta o PSE</span>
+                  <span className="mt-1 block text-xs leading-snug text-gray-600">El estudio sigue cuando se confirma el pago.</span>
+                </span>
               </button>
-              )}
-              <button
-                onClick={() => setShowLinkModal(true)}
-                disabled={isSubmitting}
-                className="flex flex-col items-center gap-1.5 p-4 bg-white border-2 border-gray-200 rounded-lg hover:border-primary-500 hover:bg-primary-50/50 transition-colors disabled:opacity-50 text-center"
-              >
-                <IconMail size={32} className="text-primary-600" />
-                <span className="text-sm font-semibold text-gray-900">Enviar link al arrendatario</span>
-                <span className="text-xs text-gray-500">Él paga con tarjeta o PSE</span>
-                <span className="text-[11px] text-gray-500 leading-snug">Primero le pedimos la autorización; el cobro le llega apenas la firme.</span>
-              </button>
+            )}
+            <button type="button" onClick={() => setShowLinkModal(true)} disabled={isSubmitting} className={cn(OPCION, 'hover:border-primary-500 hover:bg-primary-50/50')}>
+              <IconMail size={22} className="shrink-0 text-primary-700" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-gray-900">Enviar enlace al arrendatario</span>
+                <span className="mt-0.5 block text-xs text-gray-600">Él paga con tarjeta o PSE</span>
+                <span className="mt-1 block text-xs leading-snug text-gray-600">Primero le pedimos la autorización; el cobro le llega apenas la firme.</span>
+              </span>
+            </button>
           </div>
-        </div>
+        </TarjetaSiguientePaso>
       )}
 
       {/* Opción C antes de la autorización (§6.3). Todavía no hay fila de
@@ -536,237 +552,210 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           tarjeta del estado y la de autorización; aquí va solo lo del cobro.
           Los escapes siguen disponibles porque no hay link vivo que cancelar. */}
       {estado.estado === 'esperando_autorizacion' && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-center gap-3 mb-3">
-            <IconClock size={20} className="text-amber-600 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">Cobro al prospecto: {montoGestor(estado)}</p>
-              <p className="text-xs text-amber-600">
-                Le llega apenas autorice la consulta, y la evaluación corre cuando el pago se confirme.
-              </p>
+        <TarjetaSiguientePaso
+          tono="revision"
+          icono={<IconClock size={18} />}
+          titulo={montoCOP ? `Cobro al prospecto: ${montoGestor(estado)}` : 'Cobro al prospecto'}
+          descripcion="Le llega apenas autorice la consulta, y la evaluación corre cuando el pago se confirme."
+        >
+          {((puedeUsarCreditos && hayCreditosUsables) || puedePagarSuelto) && (
+            <div className="flex flex-wrap gap-2 px-4 py-4 sm:px-5">
+              {puedeUsarCreditos && hayCreditosUsables && (
+                <>
+                  {confirmLiberarDialog}
+                  <button type="button" onClick={() => setConfirmLiberar(true)} disabled={isSubmitting} className={cn(BOTON, BOTON_SECUNDARIO)}>
+                    <IconShieldCheck size={16} />
+                    Pagar con un cupo del paquete
+                  </button>
+                </>
+              )}
+              {puedePagarSuelto && (
+                <button type="button" onClick={() => { void handlePagar() }} disabled={isSubmitting} className={cn(BOTON, BOTON_SECUNDARIO)}>
+                  <IconCreditCard size={16} />
+                  Pagar yo con Mercado Pago
+                </button>
+              )}
             </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {puedeUsarCreditos && hayCreditosUsables && (
-              <>
-              <ConfirmDialog
-                    isOpen={confirmLiberar}
-                    onClose={() => setConfirmLiberar(false)}
-                    onConfirm={() => {
-                      setConfirmLiberar(false)
-                      return handleLiberarCredito()
-                    }}
-                    isLoading={isSubmitting}
-                    title="Pagar con un cupo"
-                    message={`Se reserva 1 cupo de su paquete (${saldoUsable} disponibles) y la evaluación inicia ${estado.autorizado ? 'de inmediato' : 'cuando el prospecto autorice la consulta'}. Se descuenta solo si la central entrega el resultado; si no, vuelve a su saldo.`}
-                    confirmLabel="Reservar 1 cupo"
-                  />
-                  <button
-                onClick={() => setConfirmLiberar(true)}
-                disabled={isSubmitting}
-                className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors disabled:opacity-50"
-              >
-                Pagar con un cupo del paquete
-              </button>
-              </>
-            )}
-            {puedePagarSuelto && (
-            <button
-              onClick={() => { void handlePagar() }}
-              disabled={isSubmitting}
-              className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors disabled:opacity-50"
-            >
-              Pagar yo con Mercado Pago
-            </button>
-            )}
-          </div>
-        </div>
+          )}
+        </TarjetaSiguientePaso>
       )}
 
       {/* Asumido por inmobiliaria */}
       {estado.estado === 'asumido_inmobiliaria' && (() => {
         const { titulo, texto } = textoCubierto(estado, estudioTitular, userRole !== 'inmobiliaria')
         return (
-          <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <IconCheckCircle size={20} className="text-green-600 shrink-0" />
-            <div>
-              <p className="inline-flex items-center gap-1 text-sm font-medium text-green-800">
+          <TarjetaSiguientePaso
+            tono="accion"
+            icono={<IconCheckCircle size={18} />}
+            titulo={
+              <span className="inline-flex items-center gap-1">
                 {titulo}
                 <InfoTip texto={/cupo/i.test(titulo) ? AYUDA.cupo : AYUDA.pago} lado="derecha" />
-              </p>
-              <p className="text-xs text-green-600">{texto}</p>
-            </div>
-          </div>
+              </span>
+            }
+            descripcion={texto}
+          />
         )
       })()}
 
       {/* P1: la evaluación se devolvió. El API no manda el motivo (estudio sin
           consulta, contracargo, reembolso a mano): el texto no lo supone. */}
       {estado.estado === 'reembolsado' && (
-        <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-          <IconRefresh size={20} className="text-gray-500 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-gray-800">Evaluación devuelta</p>
-            <p className="text-xs text-gray-600">{estado.monto_formateado} COP — esta evaluación se devolvió.</p>
-          </div>
-        </div>
+        <TarjetaSiguientePaso
+          tono="neutro"
+          icono={<IconRefresh size={18} />}
+          titulo="Evaluación devuelta"
+          descripcion={montoCOP ? `Esta evaluación de ${montoCOP} se devolvió.` : 'Esta evaluación se devolvió.'}
+        />
       )}
 
       {/* Completado (via pasarela) */}
       {estado.estado === 'completado' && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <IconCheckCircle size={20} className="text-green-600 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-green-800">Pago confirmado</p>
-            <p className="text-xs text-green-600">{estado.monto_formateado} COP — la evaluación crediticia ya puede ejecutarse</p>
-          </div>
-        </div>
+        <TarjetaSiguientePaso
+          tono="accion"
+          icono={<IconCheckCircle size={18} />}
+          titulo="Pago confirmado"
+          descripcion={`${montoCOP ? `${montoCOP}. ` : ''}La evaluación crediticia ya puede ejecutarse.`}
+        />
       )}
 
       {/* Pendiente — checkout del propio gestor (opción B) */}
       {estado.estado === 'pendiente' && pagaGestor && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-amber-800">Su pago está pendiente en Mercado Pago</p>
-            <p className="text-xs text-amber-600">{estado.monto_formateado} COP — el estudio sigue cuando se confirme.</p>
-          </div>
+        <TarjetaSiguientePaso
+          tono="revision"
+          icono={<IconClock size={18} />}
+          titulo="Su pago está pendiente en Mercado Pago"
+          descripcion={`${montoCOP ? `${montoCOP}. ` : ''}El estudio sigue cuando se confirme.`}
+        >
           {estado.pago?.payment_link_url && (
-            <a
-              href={estado.pago.payment_link_url}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-700 rounded-md hover:bg-primary-800 transition-colors"
-            >
-              Abrir Mercado Pago
-            </a>
+            <div className="px-4 py-4 sm:px-5">
+              <a href={estado.pago.payment_link_url} className={cn(BOTON, BOTON_PRINCIPAL)}>
+                <IconCreditCard size={16} />
+                Abrir Mercado Pago
+              </a>
+            </div>
           )}
-        </div>
+        </TarjetaSiguientePaso>
       )}
 
       {/* Pendiente — enlace enviado al arrendatario */}
       {estado.estado === 'pendiente' && !pagaGestor && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-center gap-3 mb-3">
-            <IconClock size={20} className="text-amber-600 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-amber-800">
-                {estado.autorizado ? 'Ya autorizó — esperando su pago' : 'Esperando pago del arrendatario'}
-              </p>
-              <p className="text-xs text-amber-600">{estado.monto_formateado} COP — Link enviado a {estado.pago?.email_pagador}</p>
+        <TarjetaSiguientePaso
+          tono="revision"
+          icono={<IconClock size={18} />}
+          titulo={estado.autorizado ? 'Ya autorizó: esperando su pago' : 'Esperando el pago del arrendatario'}
+          descripcion={
+            montoCOP || emailEnlace ? (
+              <>
+                {montoCOP && <span className="font-semibold text-gray-900">{montoCOP}</span>}
+                {montoCOP && emailEnlace && '. '}
+                {emailEnlace && (
+                  <>
+                    Enlace enviado a <span className="break-words font-medium text-gray-900">{emailEnlace}</span>
+                  </>
+                )}
+                .
+              </>
+            ) : (
+              'El enlace de pago ya se envió al arrendatario.'
+            )
+          }
+        >
+          <div className="space-y-3 px-4 py-4 sm:px-5">
+            {/* Corregir el email destino: el mismo link se reenvía al corregido
+                (no se puede re-crear el link mientras el pago siga pendiente). */}
+            {reenviarEmail !== null && (
+              <div className="max-w-sm">
+                <label htmlFor="pago-reenviarEmail" className="mb-1 block text-sm font-medium text-gray-800">
+                  Correo destino corregido
+                </label>
+                <input
+                  id="pago-reenviarEmail"
+                  type="email"
+                  value={reenviarEmail}
+                  onChange={(e) => setReenviarEmail(e.target.value)}
+                  disabled={isSubmitting}
+                  placeholder="correo@ejemplo.com"
+                  className="min-h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+                />
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleReenviar}
+                disabled={isSubmitting}
+                className={cn(BOTON, reenviarEmail !== null ? BOTON_PRINCIPAL : BOTON_SECUNDARIO)}
+              >
+                {isSubmitting ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
+                {reenviarEmail !== null ? 'Reenviar al correo corregido' : 'Reenviar correo'}
+              </button>
+              {reenviarEmail === null ? (
+                <button
+                  type="button"
+                  onClick={() => setReenviarEmail(estado.pago?.email_pagador ?? '')}
+                  disabled={isSubmitting}
+                  className={cn(BOTON, BOTON_SECUNDARIO)}
+                >
+                  <IconPencil size={16} />
+                  Corregir correo
+                </button>
+              ) : (
+                <button type="button" onClick={() => setReenviarEmail(null)} disabled={isSubmitting} className={cn(BOTON, BOTON_FANTASMA)}>
+                  Cancelar corrección
+                </button>
+              )}
+              {cancelarConCredito && !hayCreditosUsables ? (
+                // Sin saldo la API lo rechaza (SIN_CREDITOS): no se ofrece.
+                <span className="text-sm text-gray-600">Sin cupos disponibles para pagarlo con el paquete.</span>
+              ) : (
+                <button type="button" onClick={onCancelar} disabled={isSubmitting} className={cn(BOTON, BOTON_SECUNDARIO, 'text-left')}>
+                  {labelCancelar}
+                </button>
+              )}
             </div>
           </div>
-
-          {/* Corregir el email destino: el mismo link se reenvía al corregido
-              (no se puede re-crear el link mientras el pago siga pendiente). */}
-          {reenviarEmail !== null && (
-            <div className="mb-3">
-              <label htmlFor="pago-reenviarEmail" className="block text-[11px] font-medium text-amber-800 mb-1">
-                Correo destino corregido
-              </label>
-              <input id="pago-reenviarEmail"
-                type="email"
-                value={reenviarEmail}
-                onChange={(e) => setReenviarEmail(e.target.value)}
-                disabled={isSubmitting}
-                placeholder="correo@ejemplo.com"
-                className="w-full px-3 py-2 border border-amber-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50"
-              />
-            </div>
-          )}
-
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleReenviar}
-              disabled={isSubmitting}
-              className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-md hover:bg-amber-200 transition-colors disabled:opacity-50"
-            >
-              {reenviarEmail !== null ? 'Reenviar al correo corregido' : 'Reenviar correo'}
-            </button>
-            {reenviarEmail === null ? (
-              <button
-                onClick={() => setReenviarEmail(estado.pago?.email_pagador ?? '')}
-                disabled={isSubmitting}
-                className="px-3 py-1.5 text-xs font-medium text-amber-700 border border-amber-200 rounded-md hover:bg-amber-100 transition-colors disabled:opacity-50"
-              >
-                Corregir correo
-              </button>
-            ) : (
-              <button
-                onClick={() => setReenviarEmail(null)}
-                disabled={isSubmitting}
-                className="px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50"
-              >
-                Cancelar corrección
-              </button>
-            )}
-            {cancelarConCredito && !hayCreditosUsables ? (
-              // Sin saldo la API lo rechaza (SIN_CREDITOS): no se ofrece.
-              <span className="self-center text-xs text-amber-700">
-                Sin cupos disponibles para pagarlo con el paquete.
-              </span>
-            ) : (
-              <button
-                onClick={onCancelar}
-                disabled={isSubmitting}
-                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                {labelCancelar}
-              </button>
-            )}
-          </div>
-        </div>
+        </TarjetaSiguientePaso>
       )}
 
       {/* Procesando — PSE/efectivo en proceso en la pasarela */}
       {estado.estado === 'procesando' && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <IconLoader size={20} className="text-blue-600 shrink-0 animate-spin" />
-            <div>
-              <p className="text-sm font-medium text-blue-800">Pago en proceso</p>
-              <p className="text-xs text-blue-600">
-                {estado.monto_formateado} COP — el pago se inició (PSE/efectivo); se confirma automáticamente.
-              </p>
+        <TarjetaSiguientePaso
+          tono="neutro"
+          icono={<IconLoader size={18} className="animate-spin" />}
+          titulo="Pago en proceso"
+          descripcion={
+            <>
+              {montoCOP && `${montoCOP}. `}El pago se inició (PSE o efectivo) y se confirma automáticamente.{' '}
               {/* Sin "cancelar": el PSE o el recibo de efectivo ya salió y
                   cancelarlo cobraría el estudio dos veces (el API responde 409). */}
-              <p className="text-xs text-blue-600">
-                Si el pago vence, podrá {cancelarConCredito ? 'pagarlo con un cupo del paquete' : 'pagarlo usted'}.
-              </p>
-            </div>
-          </div>
-        </div>
+              Si el pago vence, podrá {cancelarConCredito ? 'pagarlo con un cupo del paquete' : 'pagarlo usted'}.
+            </>
+          }
+        />
       )}
 
       {/* Fallido */}
       {estado.estado === 'fallido' && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center gap-3 mb-3">
-            <IconAlertTriangle size={20} className="text-red-600 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-red-800">
-                {pagaGestor ? 'Su pago en Mercado Pago falló' : 'Pago fallido'}
-              </p>
-              <p className="text-xs text-red-600">{estado.monto_formateado} COP</p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
+        <TarjetaSiguientePaso
+          tono="alerta"
+          icono={<IconAlertTriangle size={18} />}
+          titulo={pagaGestor ? 'Su pago en Mercado Pago falló' : 'Pago fallido'}
+          descripcion={montoCOP ?? undefined}
+        >
+          <div className="flex flex-wrap gap-2 px-4 py-4 sm:px-5">
             {pagaGestor ? (
               <>
                 {/* Opción B: el cobro fallido es de la agencia. Lo principal es
                     reintentarlo; pasárselo al arrendatario es otra decisión (la C)
                     y se confirma aparte. */}
                 {puedePagarSuelto && (
-                <button
-                  onClick={() => { void handlePagar() }}
-                  disabled={isSubmitting}
-                  className="px-3 py-1.5 text-xs font-semibold text-white bg-primary-700 rounded-md hover:bg-primary-800 transition-colors disabled:opacity-50"
-                >
-                  Pagar de nuevo
-                </button>
+                  <button type="button" onClick={() => { void handlePagar() }} disabled={isSubmitting} className={cn(BOTON, BOTON_PRINCIPAL)}>
+                    <IconCreditCard size={16} />
+                    Pagar de nuevo
+                  </button>
                 )}
-                <button
-                  onClick={() => setConfirmPasarArrendatario(true)}
-                  disabled={isSubmitting}
-                  className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
+                <button type="button" onClick={() => setConfirmPasarArrendatario(true)} disabled={isSubmitting} className={cn(BOTON, BOTON_SECUNDARIO)}>
                   Mejor que pague el arrendatario
                 </button>
                 <ConfirmDialog
@@ -775,43 +764,33 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   onConfirm={handlePasarAlArrendatario}
                   isLoading={isSubmitting}
                   title="¿Pasarle el cobro al arrendatario?"
-                  message={`Se cierra su pago fallido y le enviamos al arrendatario${solicitanteEmail ? ` (${solicitanteEmail})` : ''} la autorización de la consulta. Apenas la firme le llega el cobro de ${estado.monto_formateado} COP, y la evaluación corre cuando lo pague.`}
+                  message={`Se cierra su pago fallido y le enviamos al arrendatario${solicitanteEmail ? ` (${solicitanteEmail})` : ''} la autorización de la consulta. Apenas la firme le llega el cobro${montoCOP ? ` de ${montoCOP}` : ''}, y la evaluación corre cuando lo pague.`}
                   confirmLabel="Sí, que pague el arrendatario"
                   cancelLabel="Volver"
                 />
               </>
             ) : (
               <>
-                <button
-                  onClick={() => setShowLinkModal(true)}
-                  disabled={isSubmitting}
-                  className="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 transition-colors disabled:opacity-50"
-                >
+                <button type="button" onClick={() => setShowLinkModal(true)} disabled={isSubmitting} className={cn(BOTON, BOTON_PRINCIPAL)}>
+                  <IconMail size={16} />
                   Reenviar enlace
                 </button>
                 {puedePagarSuelto && (
-                <button
-                  onClick={() => { void handlePagar() }}
-                  disabled={isSubmitting}
-                  className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-                >
-                  Pagar yo con Mercado Pago
-                </button>
+                  <button type="button" onClick={() => { void handlePagar() }} disabled={isSubmitting} className={cn(BOTON, BOTON_SECUNDARIO)}>
+                    <IconCreditCard size={16} />
+                    Pagar yo con Mercado Pago
+                  </button>
                 )}
               </>
             )}
             {/* El API cierra el cobro fallido (su link seguía pagable) y reserva el cupo. */}
             {cancelarConCredito && hayCreditosUsables && (
-              <button
-                onClick={() => setConfirmCancelarLiberar(true)}
-                disabled={isSubmitting}
-                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
+              <button type="button" onClick={() => setConfirmCancelarLiberar(true)} disabled={isSubmitting} className={cn(BOTON, BOTON_SECUNDARIO)}>
                 {labelCancelar}
               </button>
             )}
           </div>
-        </div>
+        </TarjetaSiguientePaso>
       )}
 
       <ConfirmDialog
@@ -1312,7 +1291,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   if (estado.estado === 'pendiente') {
     return (
       <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-        <p className="text-sm font-medium text-amber-800">Preparando su link de pago</p>
+        <p className="text-sm font-medium text-amber-800">Preparando su enlace de pago</p>
         <p className="text-xs text-amber-600 mt-1">
           El enlace llegará a su correo en unos momentos. También aparecerá aquí en su panel.
         </p>

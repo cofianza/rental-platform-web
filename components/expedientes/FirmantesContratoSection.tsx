@@ -36,6 +36,10 @@ const ESTADO_STYLES: Record<EstadoSolicitudFirma, { label: string; bg: string; t
   bloqueado: { label: 'Bloqueado · Cofianza lo desbloquea', bg: 'bg-amber-100', text: 'text-amber-800' },
 }
 
+// Botón de 40 px, el mismo de las filas de Documentos y Contratos.
+const BOTON =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50'
+
 // Cada cuánto re-consultamos el estado de las firmas mientras haya pendientes.
 const POLL_MS = 15000
 
@@ -231,40 +235,45 @@ export function FirmantesContratoSection({
   )
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-        <h4 className="text-sm font-semibold text-gray-900">Firmantes del contrato</h4>
-        <div className="flex flex-wrap items-center gap-2">
+    <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 mb-4">
+      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h4 className="text-base font-semibold text-gray-900">Firmantes del contrato</h4>
           {!isLoading && (
-            <span className={`text-xs font-medium ${todasFirmaron ? 'text-green-700' : 'text-gray-500'}`}>
-              {firmados}/{total} firmaron
-            </span>
+            <p className={`mt-0.5 text-sm ${todasFirmaron ? 'text-green-800' : 'text-gray-600'}`}>
+              <span className="font-semibold tabular-nums">{firmados} de {total}</span> firmaron
+              {pendientes && solicitud && (
+                <span className="text-gray-600"> · plazo hasta el {formatDate(solicitud.token_expiracion)}</span>
+              )}
+            </p>
           )}
-          {canManage && !isLoading && pendientes && solicitud && (
-            <span className="inline-flex items-center gap-1.5">
-              <button
-                onClick={handleRecordatorio}
-                disabled={enviandoRecordatorio || recordatoriosAgotados}
-                className="inline-flex items-center gap-1 rounded-md bg-primary-50 px-2.5 py-1 text-xs font-medium text-primary-700 hover:bg-primary-100 disabled:opacity-50"
-                title={recordatoriosAgotados ? 'Alcanzó el máximo de recordatorios (5)' : 'Reenviar recordatorio a las partes pendientes (sin costo de Auco)'}
-              >
-                {enviandoRecordatorio ? <IconLoader size={12} className="animate-spin" /> : <IconMail size={12} />}
-                Recordatorio
-              </button>
-              <span className="text-[11px] font-medium text-gray-500" title="Recordatorios/envíos realizados de los permitidos">
-                {solicitud.envios_realizados}/{solicitud.max_envios}
-              </span>
-            </span>
-          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
             onClick={() => { void actualizarDesdeAuco() }}
             disabled={refreshing || consultandoAuco || isLoading}
-            className="p-1 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-            title="Actualizar estado de firmas"
-            aria-label="Actualizar estado de firmas"
+            className={`${BOTON} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50`}
+            title="Consultar en Auco el estado de cada firma"
           >
-            <IconRefresh size={14} className={refreshing || consultandoAuco ? 'animate-spin' : ''} />
+            <IconRefresh size={16} className={refreshing || consultandoAuco ? 'animate-spin' : ''} />
+            Actualizar
           </button>
+          {canManage && !isLoading && pendientes && solicitud && (
+            <button
+              type="button"
+              onClick={handleRecordatorio}
+              disabled={enviandoRecordatorio || recordatoriosAgotados}
+              className={`${BOTON} bg-primary-700 text-white hover:bg-primary-800`}
+              title={recordatoriosAgotados ? 'Alcanzó el máximo de recordatorios' : 'Recordar a las partes pendientes (sin costo de Auco)'}
+            >
+              {enviandoRecordatorio ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
+              Enviar recordatorio
+              <span className="font-normal tabular-nums opacity-90" aria-label={`${solicitud.envios_realizados} de ${solicitud.max_envios} envíos usados`}>
+                ({solicitud.envios_realizados}/{solicitud.max_envios})
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -296,10 +305,6 @@ export function FirmantesContratoSection({
         </div>
       )}
 
-      {pendientes && solicitud && (
-        <p className="mb-3 text-xs text-gray-500">Plazo para firmar: hasta el {formatDate(solicitud.token_expiracion)}.</p>
-      )}
-
       {!isLoading && pendientes && errorSobres && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
           <span className="flex items-center gap-2">
@@ -309,9 +314,9 @@ export function FirmantesContratoSection({
           <button
             onClick={() => cargar(true)}
             disabled={refreshing}
-            className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-medium text-amber-800 ring-1 ring-amber-200 hover:bg-amber-100 disabled:opacity-50"
+            className={`${BOTON} bg-white text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100`}
           >
-            <IconRefresh size={12} className={refreshing ? 'animate-spin' : ''} />
+            <IconRefresh size={16} className={refreshing ? 'animate-spin' : ''} />
             Reintentar
           </button>
         </div>
@@ -327,9 +332,9 @@ export function FirmantesContratoSection({
             <button
               onClick={handleReenviar}
               disabled={reenviando}
-              className="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-red-200 hover:bg-red-100 disabled:opacity-50"
+              className={`${BOTON} bg-white text-red-800 ring-1 ring-red-300 hover:bg-red-100`}
             >
-              {reenviando ? <IconLoader size={12} className="animate-spin" /> : <IconMail size={12} />}
+              {reenviando ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
               Reenviar a firma
             </button>
           )}
@@ -364,9 +369,9 @@ export function FirmantesContratoSection({
             return (
               <li
                 key={f.id}
-                className={`flex items-center justify-between gap-3 rounded-lg border px-3 py-2 ${firmado ? 'border-green-200 bg-green-50/40' : 'border-gray-100'}`}
+                className={`flex flex-col gap-2 rounded-lg border px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${firmado ? 'border-green-200 bg-green-50/40' : 'border-gray-100'}`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-start gap-3 min-w-0 sm:items-center">
                   <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${firmado ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
                     {firmado ? <IconCheck size={14} /> : f.orden}
                   </span>
@@ -374,14 +379,14 @@ export function FirmantesContratoSection({
                     <Icon size={16} />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium text-gray-900 break-words">
                       {meta?.label ?? f.rol_firmante}
                       <span className="font-normal text-gray-500"> · {f.nombre}</span>
                     </p>
                     {f.telefono && (
-                      <p className={`text-xs flex items-center gap-1 truncate ${telsDuplicados.has(normTel(f.telefono)) ? 'text-amber-700' : 'text-gray-500'}`}>
-                        <IconWhatsapp size={11} className="text-green-600 shrink-0" />
-                        <span className="truncate">
+                      <p className={`text-xs flex items-start gap-1 ${telsDuplicados.has(normTel(f.telefono)) ? 'text-amber-700' : 'text-gray-500'}`}>
+                        <IconWhatsapp size={11} className="mt-0.5 text-green-600 shrink-0" />
+                        <span className="min-w-0 break-words">
                           {firmado ? 'Firmó vía WhatsApp a ' : 'Su código de firma llega por WhatsApp a '}
                           <span className="font-medium">{f.telefono}</span>
                           {telsDuplicados.has(normTel(f.telefono)) && ' · repetido'}
@@ -393,11 +398,11 @@ export function FirmantesContratoSection({
                         <IconClock size={11} /> Firmó el {formatDateTime(f.firmado_en)}
                       </p>
                     ) : (
-                      <p className="text-xs text-gray-500 truncate">{f.email}</p>
+                      <p className="text-xs text-gray-600 break-all">{f.email}</p>
                     )}
                   </div>
                 </div>
-                <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-xs font-medium ${estado.bg} ${estado.text}`}>
+                <span className={`ml-[4.25rem] inline-flex shrink-0 items-center self-start rounded-full px-2 py-0.5 text-xs font-medium sm:ml-0 sm:self-center ${estado.bg} ${estado.text}`}>
                   {estado.label}
                 </span>
               </li>
@@ -408,7 +413,7 @@ export function FirmantesContratoSection({
 
       {pendientes && !isLoading && !sinProceso && (
         <p className="mt-3 text-xs text-gray-500">
-          Se actualiza solo cuando cada parte firma. También puede refrescar con ↻.
+          Se actualiza solo cuando cada parte firma. También puede consultarlo con «Actualizar».
         </p>
       )}
     </div>

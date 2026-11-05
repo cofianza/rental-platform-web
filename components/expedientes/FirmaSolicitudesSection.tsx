@@ -1,6 +1,7 @@
 'use client'
 
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { IconMail, IconLoader, IconX, IconClock, IconCheck, IconEye, IconAlertTriangle } from '@/components/icons'
@@ -95,12 +96,14 @@ export function FirmaSolicitudesSection({
     }
   }
 
+  const [cancelarTarget, setCancelarTarget] = useState<ISolicitudFirma | null>(null)
+
   async function handleCancelar(id: string) {
     setCancelandoId(id)
     try {
       await firmaService.cancelarSolicitud(id)
       toast.success('Solicitud cancelada')
-      fetchSolicitudes()
+      await fetchSolicitudes()
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Error al cancelar'
       toast.error(message)
@@ -124,39 +127,54 @@ export function FirmaSolicitudesSection({
 
   return (
     <div className="space-y-3">
+      <ConfirmDialog
+        isOpen={!!cancelarTarget}
+        onClose={() => setCancelarTarget(null)}
+        onConfirm={async () => {
+          if (cancelarTarget) await handleCancelar(cancelarTarget.id)
+          setCancelarTarget(null)
+        }}
+        title="¿Cancelar esta solicitud de firma?"
+        message={`El enlace enviado a ${cancelarTarget?.email_firmante ?? 'el firmante'} dejará de funcionar.`}
+        confirmLabel="Sí, cancelar"
+        cancelLabel="Volver"
+        variant="danger"
+        isLoading={!!cancelandoId}
+      />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="text-sm font-semibold text-gray-900">
-          Solicitudes de Firma ({solicitudes.length})
+        <h4 className="text-base font-semibold text-gray-900">
+          Solicitudes de firma <span className="font-normal text-gray-600 tabular-nums">({solicitudes.length})</span>
         </h4>
         {canSendFirma && (
           <button
+            type="button"
             onClick={() => setEnviarOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 bg-primary-700 text-white hover:bg-primary-800"
           >
-            <IconMail size={14} />
-            Enviar para firma
+            <IconMail size={16} />
+            Enviar a firma
           </button>
         )}
       </div>
 
       {solicitudes.length === 0 ? (
-        <div className="text-center py-6 bg-gray-50 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-500">No hay solicitudes de firma</p>
+        <div className="rounded-lg border border-dashed border-gray-300 py-6 text-center">
+          <p className="text-sm font-medium text-gray-700">No hay solicitudes de firma</p>
           {canSendFirma && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-600 mt-1">
               Envíe un enlace seguro al firmante para que revise y firme el contrato
             </p>
           )}
         </div>
       ) : (
-        <div className="space-y-2">
+        <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200">
           {solicitudes.map((s) => {
             const style = ESTADO_STYLES[s.estado]
             const isActive = !['firmado', 'expirado', 'cancelado'].includes(s.estado)
             return (
-              <div
+              <li
                 key={s.id}
-                className="bg-white border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3"
+                className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
@@ -167,8 +185,8 @@ export function FirmaSolicitudesSection({
                       {style.label}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 truncate">{s.email_firmante}</p>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+                  <p className="text-xs text-gray-600 truncate">{s.email_firmante}</p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-600">
                     <span className="flex items-center gap-1">
                       <IconClock size={12} />
                       {formatDateTime(s.created_at)}
@@ -189,7 +207,7 @@ export function FirmaSolicitudesSection({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   {isActive && canManage && (
                     <>
                       <button
@@ -198,34 +216,28 @@ export function FirmaSolicitudesSection({
                           setReenviarTarget(s)
                         }}
                         disabled={reenviandoId === s.id || s.envios_realizados >= s.max_envios}
-                        className="px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 rounded-md hover:bg-primary-100 disabled:opacity-50"
-                        title="Reenviar enlace"
+                        type="button"
+                        className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                       >
-                        {reenviandoId === s.id ? (
-                          <IconLoader size={12} className="animate-spin" />
-                        ) : (
-                          'Reenviar'
-                        )}
+                        {reenviandoId === s.id ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
+                        Reenviar enlace
                       </button>
                       <button
-                        onClick={() => handleCancelar(s.id)}
+                        onClick={() => setCancelarTarget(s)}
                         disabled={cancelandoId === s.id}
-                        className="p-1 text-gray-500 hover:text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
-                        title="Cancelar solicitud"
+                        type="button"
+                        className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 text-red-700 hover:bg-red-50"
                       >
-                        {cancelandoId === s.id ? (
-                          <IconLoader size={12} className="animate-spin" />
-                        ) : (
-                          <IconX size={14} />
-                        )}
+                        {cancelandoId === s.id ? <IconLoader size={16} className="animate-spin" /> : <IconX size={16} />}
+                        Cancelar solicitud
                       </button>
                     </>
                   )}
                 </div>
-              </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
 
       <EnviarFirmaModal
