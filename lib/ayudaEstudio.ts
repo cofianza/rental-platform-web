@@ -100,11 +100,24 @@ export function queSigue(
     sinInmueble: boolean
     /** Adenda 5 §7: aprobado sujeto a paz y salvo; el candidato tiene hasta esta fecha (DD/MM/AAAA). */
     fechaPazYSalvo?: string | null
+    /** Adenda 5 §7: el candidato ya cargó el paz y salvo; falta que Cofianza lo revise y lo acredite. */
+    pazYSalvoCargado?: boolean
   },
 ): string {
   const gestor = o.vista === 'gestor'
   // §10: a la inmobiliaria y al propietario, sin el detalle de la obligación.
   if (etapa === 'decision' && o.fechaPazYSalvo) {
+    if (o.pazYSalvoCargado) {
+      if (o.vista === 'cofianza') {
+        return o.analista
+          ? 'El candidato cargó el paz y salvo: revíselo y acredítelo aquí abajo.'
+          : 'El candidato cargó el paz y salvo; falta que un analista de Cofianza lo revise y lo acredite.'
+      }
+      // §10: sin nombrar el documento ni la obligación.
+      return gestor
+        ? 'El candidato cargó el requisito pendiente y Cofianza lo revisa. Usted no tiene que hacer nada; le avisamos cuando se resuelva.'
+        : 'El candidato cargó el requisito pendiente y Cofianza lo revisa.'
+    }
     if (o.vista === 'cofianza') {
       return o.analista
         ? `El candidato debe acreditar el paz y salvo antes del ${o.fechaPazYSalvo}. Cuando cargue el documento, revíselo y acredítelo aquí abajo.`

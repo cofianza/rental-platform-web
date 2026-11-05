@@ -27,6 +27,12 @@ export interface IEstudioVigente {
    * fecha para acreditarlo (el RPC pone depende_de = 'prospecto'). Ausente con un API anterior.
    */
   paz_y_salvo_vence_en?: string | null
+  /**
+   * Adenda 5 §7: el candidato ya cargó un paz y salvo desde que se exigió y
+   * falta que Cofianza lo acredite: el turno pasa a Cofianza. Lo pide la web;
+   * hoy la API no lo manda (ausente = como antes, espera al candidato).
+   */
+  paz_y_salvo_cargado?: boolean
   /** Adenda 4 V3 §12: el titular ya consultado espera la autorización del coarrendatario hasta esta fecha. */
   espera_coarrendatario_hasta?: string | null
   /** Autorizó y está pagada, pero la consulta no arrancó sola: hay que lanzarla desde el detalle. */

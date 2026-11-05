@@ -89,6 +89,11 @@ test('U9: «Tomar» solo con el turno de Cofianza', () => {
   )
   // Adenda 5 §7: con el paz y salvo pendiente espera al candidato, no al analista.
   assert.equal(tomarDisponible(fila({ estado: 'condicionado' }, { estado: 'completado', paz_y_salvo_vence_en: '2099-01-01T05:00:00Z' })), false)
+  // Ya cargado, falta que Cofianza lo acredite: el turno vuelve al analista.
+  assert.equal(
+    tomarDisponible(fila({ estado: 'condicionado' }, { estado: 'completado', paz_y_salvo_vence_en: '2099-01-01T05:00:00Z', paz_y_salvo_cargado: true })),
+    true,
+  )
   assert.equal(tomarDisponible(fila({}, { estado: 'fallido' })), true)
   assert.equal(tomarDisponible(fila({}, { estado: 'formulario_completado', sin_ejecutar: true })), true)
   assert.equal(tomarDisponible(fila({ estado: 'aprobado' }, { estado: 'completado' })), false)

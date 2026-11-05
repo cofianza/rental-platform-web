@@ -64,9 +64,10 @@ import { revisionDemorada } from '@/lib/etapaFila'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { useEtapaEstudio, ETAPA_LABEL, turnoDeEtapa } from '@/hooks/useEtapaEstudio'
-import { pazYSalvoPendiente } from '@/lib/pazYSalvo'
+import { pazYSalvoCargado, pazYSalvoPendiente } from '@/lib/pazYSalvo'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
+import { expedienteSoportesService, type SoporteListItem } from '@/services/expedienteSoportesService'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
 import { solicitanteService } from '@/services/solicitanteService'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
@@ -266,8 +267,26 @@ export default function ExpedienteDetallePage() {
   // candidato (no al analista) y la API responde 409 a aprobarlo a mano.
   const pazYSalvoTitular = titularCondicionado?.paz_y_salvo ?? null
   const pazYSalvo = pazYSalvoPendiente(pazYSalvoTitular) ? pazYSalvoTitular : null
-  // La decisión espera algo del candidato: el coarrendatario o el paz y salvo.
-  const esperaCandidato = !!condicionCoa || !!pazYSalvo
+  // Ya cargado, el turno es de Cofianza (revisarlo y acreditarlo), aunque aprobar a
+  // mano siga cerrado hasta acreditarlo. Solo Cofianza recibe esos soportes (§10);
+  // sin poder leerlos se sigue esperando al candidato. Con ADENDA5 apagada no se pide.
+  const leerSoportesPazYSalvo = puedeAsignar && !!pazYSalvo
+  const [soportesPazYSalvo, setSoportesPazYSalvo] = useState<{ de: string; lista: SoporteListItem[] } | null>(null)
+  useEffect(() => {
+    if (!leerSoportesPazYSalvo) return
+    let cancel = false
+    expedienteSoportesService.listar(id).then(
+      (lista) => { if (!cancel) setSoportesPazYSalvo({ de: id, lista }) },
+      () => {},
+    )
+    return () => { cancel = true }
+  }, [leerSoportesPazYSalvo, id, cargas])
+  const pazYSalvoRecibido =
+    leerSoportesPazYSalvo && soportesPazYSalvo?.de === id ? pazYSalvoCargado(pazYSalvo, soportesPazYSalvo.lista) : null
+  // La decisión espera algo del candidato: el coarrendatario o el paz y salvo (sin cargar).
+  const esperaCandidato = !!condicionCoa || (!!pazYSalvo && !pazYSalvoRecibido)
+  // Con la condición o el paz y salvo pendiente (cargado o no) la API responde 409 a aprobar.
+  const aprobacionCerrada = !!condicionCoa || !!pazYSalvo
 
   // Decisión 2: la invitación del coarrendatario sigue en pie en revisión o
   // aprobado antes del contrato (`vigente`, la regla del API); mientras tanto
@@ -547,7 +566,7 @@ export default function ExpedienteDetallePage() {
         : etapa === 'decision' && condicionCoa
           ? condicionCoa.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
           : etapa === 'decision' && pazYSalvo
-            ? 'Requisito pendiente del candidato'
+            ? pazYSalvoRecibido ? 'Paz y salvo cargado: por acreditar' : 'Requisito pendiente del candidato'
             : etapa
             ? ETAPA_LABEL[etapa]
             : undefined
@@ -556,7 +575,7 @@ export default function ExpedienteDetallePage() {
   const vistaTurno = isInternalRole ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
   // Las mismas transiciones que ofrece el modal: con condición o con el paz y salvo
   // pendiente no se aprueba a mano (la API responde 409); no aprobarlo sí se ofrece.
-  const transicionesModal = (transiciones ?? []).filter((t) => !(esperaCandidato && t.estado_destino === 'aprobado'))
+  const transicionesModal = (transiciones ?? []).filter((t) => !(aprobacionCerrada && t.estado_destino === 'aprobado'))
   // Al dueño la API solo le ofrece cerrar o cancelar: el botón lo dice, y no como acción principal.
   const soloCierre = transicionesModal.every((t) => t.estado_destino === 'cerrado')
 
@@ -744,7 +763,8 @@ export default function ExpedienteDetallePage() {
             {(() => {
               const demora =
                 isInternalRole && etapaTurno === 'decision' && !esperaCandidato
-                  ? revisionDemorada(expediente.en_revision_desde, Date.now())
+                  ? // Con el paz y salvo cargado, la espera de Cofianza corre desde la carga.
+                    revisionDemorada(pazYSalvoRecibido ? pazYSalvoRecibido.created_at : expediente.en_revision_desde, Date.now())
                   : null
               return demora ? (
                 <span
@@ -762,6 +782,7 @@ export default function ExpedienteDetallePage() {
                 esperaHasta,
                 sinInmueble: !expediente.inmueble,
                 fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo.vence_en) : null,
+                pazYSalvoCargado: !!pazYSalvoRecibido,
                 // Propietario directo: la API no admite coarrendatario (espera el Convenio).
               })}
             </p>

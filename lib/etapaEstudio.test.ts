@@ -123,3 +123,25 @@ test('Adenda 5: el paz y salvo pendiente espera al candidato y no dice el detall
   // A quién le escribió Cofianza: al candidato, no al gestor.
   assert.match(gestor, /Cofianza ya le escribió al candidato con el detalle/)
 })
+
+test('Adenda 5: con el paz y salvo ya cargado, lo revisa y lo acredita Cofianza', () => {
+  const o = {
+    vista: 'cofianza' as const,
+    analista: true,
+    fechaCondicion: null,
+    esperaHasta: null,
+    sinInmueble: false,
+    fechaPazYSalvo: '19/11/2026',
+    pazYSalvoCargado: true,
+  }
+  assert.equal(queSigue('decision', o), 'El candidato cargó el paz y salvo: revíselo y acredítelo aquí abajo.')
+  assert.match(queSigue('decision', { ...o, analista: false }), /falta que un analista de Cofianza lo revise y lo acredite/)
+  const gestor = queSigue('decision', { ...o, vista: 'gestor', analista: false })
+  const equipo = queSigue('decision', { ...o, vista: 'equipo', analista: false })
+  for (const t of [gestor, equipo]) {
+    assert.match(t, /cargó el requisito pendiente y Cofianza lo revisa/)
+    // §10: sin nombrar el documento ni la obligación.
+    assert.doesNotMatch(t, /mora|paz y salvo|\$/i)
+  }
+  assert.match(gestor, /no tiene que hacer nada/)
+})
