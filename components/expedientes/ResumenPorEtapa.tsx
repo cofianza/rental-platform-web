@@ -8,6 +8,7 @@
 
 import { Fragment, type ReactNode } from 'react'
 import type { EtapaEstudio } from '@/hooks/useEtapaEstudio'
+import { IconChevronDown } from '@/components/icons'
 
 export type BloqueResumen =
   | 'vincular'
@@ -72,14 +73,24 @@ export function ResumenPorEtapa({ etapa, bloques }: Props) {
       {pintar(ahora)}
       {pintar(detalle)}
       {pasado.length > 0 && (
-        <details className="rounded-lg border border-gray-200 bg-white">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-5 py-4 text-sm hover:bg-gray-50">
-            <span className="font-medium text-gray-800">Pasos anteriores</span>
-            <span className="text-xs text-gray-500">Ver</span>
-          </summary>
-          <div className="space-y-4 border-t border-gray-200 p-4">{pintar(pasado)}</div>
-        </details>
+        <Plegable titulo="Pasos anteriores" resumen={pasado.length === 1 ? '1 paso' : `${pasado.length} pasos`}>
+          <div className="space-y-4 p-4">{pintar(pasado)}</div>
+        </Plegable>
       )}
     </>
+  )
+}
+
+/** Sección plegada del Resumen (pasos anteriores, datos del estudio): un solo aspecto en toda la página. */
+export function Plegable({ titulo, resumen, children }: { titulo: string; resumen?: string; children: ReactNode }) {
+  return (
+    <details className="group rounded-xl border border-gray-200 bg-white">
+      <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-xl px-4 py-3 text-sm hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-5 [&::-webkit-details-marker]:hidden">
+        <span className="font-semibold text-gray-900">{titulo}</span>
+        {resumen && <span className="min-w-0 flex-1 truncate text-gray-500">{resumen}</span>}
+        <IconChevronDown size={18} className="ml-auto shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
+      </summary>
+      <div className="border-t border-gray-200">{children}</div>
+    </details>
   )
 }

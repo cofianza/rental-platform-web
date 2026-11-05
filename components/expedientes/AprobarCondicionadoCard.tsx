@@ -38,7 +38,9 @@ import { useMoraVigente } from '@/hooks/useMoraVigente'
 import { pazYSalvoDeMoraVigente, pazYSalvoPendiente, pesosA5, razonMoraPct, textoPct, TRAMO_A5, venceSiSeExigeHoy } from '@/lib/pazYSalvo'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
-import { IconShieldCheck, IconAlertTriangle, IconCheck } from '@/components/icons'
+import { IconShieldCheck, IconAlertTriangle, IconCheck, IconArrowRight, IconBell, IconMail, IconRefresh, IconPaperclip, IconUser, IconUsers } from '@/components/icons'
+import { Button } from '@/components/ui/Button'
+import { TarjetaSiguientePaso, SeccionPaso } from './TarjetaSiguientePaso'
 import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
@@ -208,53 +210,53 @@ export function AprobarCondicionadoCard({
     // alcanza: solo se admite uno), ¿se cierra como no aprobado? (API vencidaSeRechaza)
     const seCierra = seCierraSiVence(condicion)
     return (
-      <div className="border-2 border-amber-300 bg-amber-50/60 rounded-lg p-5">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <IconShieldCheck size={20} className="text-amber-700" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="mb-0.5 inline-flex items-center gap-1 text-base font-semibold text-gray-900">
-              {condicion.obligatoria ? 'Requiere coarrendatario: qué sigue' : 'Aprobado con condición: qué sigue'}
-              <InfoTip texto={AYUDA.condicionado} lado="derecha" />
-            </h3>
-            <p className="text-sm text-gray-700">{textoCondicionCoarrendatario(condicion)}</p>
-            {!condicion.vencida && (
-              <ol className="mt-4 space-y-4">
-                <Paso n={1} titulo={esCofianza ? 'La inmobiliaria o el prospecto invitan al coarrendatario' : 'Invite al coarrendatario (en el recuadro de abajo)'}>
-                  <p>
-                    Es la persona con quien vivirá el solicitante. No necesita finca raíz: basta con que tenga ingresos
-                    propios. Se le hace su propia evaluación, y el enlace de su invitación vence con la condición.
-                  </p>
-                </Paso>
-                <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
-                  <p>
-                    {condicion.decide_analista && !condicion.obligatoria && !seCierra
-                      ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, no suma nada y el estudio pasa a revisión de un analista de Cofianza.'
-                      : condicion.obligatoria
-                      ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
-                      : seCierra
-                        ? 'Si califica y entre los dos se cumple el ingreso, el estudio queda aprobado (o lo decide un analista si hay algo por revisar). Si no califica, o con él no alcanza el ingreso, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
-                        : 'Si califica, mejora el puntaje del estudio y su ingreso se suma al del solicitante. Con eso, si el estudio cumple y no hay nada por revisar, queda aprobado sin pasar por un analista; si no, lo decide un analista de Cofianza. Si no califica, no suma nada y el estudio pasa a revisión de un analista de Cofianza.'}
-                  </p>
-                </Paso>
-                <Paso n={3} titulo="Si vence el plazo">
-                  <p>
-                    {seCierra
-                      ? 'Sin un coarrendatario que cumpla, el estudio se cierra como no aprobado, sin repetir la consulta a las centrales.'
-                      : 'El estudio pasa a revisión de un analista de Cofianza, sin repetir la consulta a las centrales.'}
-                  </p>
-                </Paso>
-              </ol>
-            )}
-            <p className="mt-4 text-xs text-gray-600">
-              Mientras la condición esté vigente no se puede aprobar el estudio a mano, pedir soportes al solicitante ni
-              reasignarlo a otra propiedad: lo que falta es el coarrendatario.
-              {esCofianza && ' Para no aprobarlo, use «Cambiar estado», arriba.'}
-            </p>
-          </div>
-        </div>
-      </div>
+      <TarjetaSiguientePaso
+        tono="revision"
+        icono={<IconShieldCheck size={18} />}
+        titulo={
+          <span className="inline-flex items-center gap-1">
+            {condicion.obligatoria ? 'Requiere coarrendatario: qué sigue' : 'Aprobado con condición: qué sigue'}
+            <InfoTip texto={AYUDA.condicionado} lado="derecha" />
+          </span>
+        }
+        descripcion={textoCondicionCoarrendatario(condicion)}
+        pie={
+          <>
+            Mientras la condición esté vigente no se puede aprobar el estudio a mano, pedir soportes al solicitante ni
+            reasignarlo a otra propiedad: lo que falta es el coarrendatario.
+            {esCofianza && ' Para no aprobarlo, use «Cambiar estado», arriba.'}
+          </>
+        }
+      >
+        {!condicion.vencida && (
+          <ol className="space-y-4 px-4 py-4 sm:px-5">
+            <Paso n={1} propio={false} titulo={esCofianza ? 'La inmobiliaria o el prospecto invitan al coarrendatario' : 'Invite al coarrendatario (en el recuadro de abajo)'}>
+              <p>
+                Es la persona con quien vivirá el solicitante. No necesita finca raíz: basta con que tenga ingresos
+                propios. Se le hace su propia evaluación, y el enlace de su invitación vence con la condición.
+              </p>
+            </Paso>
+            <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
+              <p>
+                {condicion.decide_analista && !condicion.obligatoria && !seCierra
+                  ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, no suma nada y el estudio pasa a revisión de un analista de Cofianza.'
+                  : condicion.obligatoria
+                  ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
+                  : seCierra
+                    ? 'Si califica y entre los dos se cumple el ingreso, el estudio queda aprobado (o lo decide un analista si hay algo por revisar). Si no califica, o con él no alcanza el ingreso, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
+                    : 'Si califica, mejora el puntaje del estudio y su ingreso se suma al del solicitante. Con eso, si el estudio cumple y no hay nada por revisar, queda aprobado sin pasar por un analista; si no, lo decide un analista de Cofianza. Si no califica, no suma nada y el estudio pasa a revisión de un analista de Cofianza.'}
+              </p>
+            </Paso>
+            <Paso n={3} titulo="Si vence el plazo">
+              <p>
+                {seCierra
+                  ? 'Sin un coarrendatario que cumpla, el estudio se cierra como no aprobado, sin repetir la consulta a las centrales.'
+                  : 'El estudio pasa a revisión de un analista de Cofianza, sin repetir la consulta a las centrales.'}
+              </p>
+            </Paso>
+          </ol>
+        )}
+      </TarjetaSiguientePaso>
     )
   }
 
@@ -372,17 +374,18 @@ export function AprobarCondicionadoCard({
 
   return (
     <>
-    <div className="border-2 border-amber-300 bg-amber-50/60 rounded-lg p-5">
-      <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-          <IconShieldCheck size={20} className="text-amber-700" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="mb-0.5 inline-flex items-center gap-1 text-base font-semibold text-gray-900">
-            Estudio condicionado: qué sigue
-            <InfoTip texto={AYUDA.condicionado} lado="derecha" />
-          </h3>
-          <p className="text-sm text-gray-700">
+    <TarjetaSiguientePaso
+      tono="revision"
+      icono={<IconShieldCheck size={18} />}
+      titulo={
+        <span className="inline-flex items-center gap-1">
+          Estudio condicionado: qué sigue
+          <InfoTip texto={AYUDA.condicionado} lado="derecha" />
+        </span>
+      }
+      descripcion={
+        <>
+          <p>
             {estudioSinCentrales && reconsultaParcial
               ? 'Una central de riesgo no respondió y la otra no devolvió puntaje de esta persona. No es un rechazo: Cofianza puede volver a consultar cuando la central responda.'
               : estudioSinCentrales
@@ -392,138 +395,144 @@ export function AprobarCondicionadoCard({
                 : 'La central sí evaluó a esta persona; el motivo de la revisión está en «Evaluación crediticia», aquí abajo. No es un rechazo.'}
           </p>
           {estudioSinCentrales && esCofianza && (
-            <button
+            <Button
+              variante="secondary"
               onClick={handleReconsultar}
               disabled={reconsultando || loading}
-              className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-amber-800 bg-white border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50 transition-colors"
+              className="mt-3 min-h-10"
             >
+              <IconRefresh size={16} />
               {reconsultando ? 'Consultando…' : 'Volver a consultar las centrales'}
-            </button>
+            </Button>
           )}
-
-          <ol className="mt-4 space-y-4">
-            <Paso n={1} titulo={esCofianza ? 'Usted decide, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}>
-              {sinSalidaAprobable ? (
-                <p>
-                  Sin historial en ninguna central, solo se puede aprobar con un coarrendatario, y en
-                  inmuebles sin inmobiliaria esa opción todavía no existe (llega con el Convenio). Por eso el caso no
-                  puede aprobarse y se cierra con el motivo
-                  {esCofianza
-                    ? ': use «Cambiar estado», arriba.'
-                    : '. Lo cierra un analista de Cofianza y le avisamos por notificación y correo.'}
-                </p>
-              ) : esCofianza ? (
-                <>
-                  <p>
-                    Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
-                    Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
-                  </p>
-                  {tramoRevisionA5 && (
-                    <p className="mt-2">
-                      Llegó a revisión por una mora vigente de bajo monto en sector no financiero. Dentro de «Aprobar
-                      estudio» verá las obligaciones en mora y podrá aprobarlo o aprobarlo sujeto a paz y salvo; si lo
-                      aprueba, se cobra la tarifa de aprobación no automática.
-                    </p>
-                  )}
-                  {errorA5 && (
-                    <p className="mt-2 text-xs text-red-700">
-                      No se pudo leer el detalle de la mora vigente.{' '}
-                      <button type="button" onClick={reintentarA5} className="font-medium underline">
-                        Reintentar
-                      </button>
-                    </p>
-                  )}
-                  {/* Si con el ingreso el estudio quedó no aprobado, se recarga (onAprobado recarga el estudio). */}
-                  <IngresoVerificadoSection
-                    expedienteId={expedienteId}
-                    onRegistrado={(rechazado) => (rechazado ? onAprobado?.() : setVersionBloqueo((n) => n + 1))}
-                  />
-                  {bloqueo && (
-                    <div role="status" className="mt-2 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                      <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
-                      <div>
-                        <p className="font-semibold">Todavía no se puede aprobar</p>
-                        <p>{bloqueo.motivo}</p>
-                        <p className="mt-1 text-red-700">Puede dejarlo en espera o pasarlo a «No aprobable» con «Cambiar estado».</p>
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    onClick={() => {
-                      setAbiertoEn(Date.now())
-                      setConfirmAprobarOpen(true)
-                    }}
-                    disabled={loading || enviandoEnlace || !!bloqueo}
-                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
-                  >
-                    {loading ? 'Aprobando…' : 'Aprobar estudio'}
-                  </button>
-                  {/* Solo el administrador: le recuerda al analista (uno cada 2 horas). */}
-                  {userRol === 'administrador' && (
-                    <button
-                      onClick={handleRecordar}
-                      disabled={recordando}
-                      className="mt-2 ml-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary-700 bg-white border border-primary-300 rounded-lg hover:bg-primary-50 disabled:opacity-50 transition-colors"
-                    >
-                      {recordando ? 'Enviando…' : 'Enviar recordatorio al analista'}
-                    </button>
-                  )}
-                </>
-              ) : (
-                <p>
-                  Revisa el caso y lo aprueba o no. No tiene que hacer nada para que avance: le avisamos por
-                  notificación y correo cuando decida.
-                </p>
-              )}
-            </Paso>
-
-            <Paso
-              n={2}
-              titulo={esCofianza ? 'La inmobiliaria o el propietario pueden reforzar el caso' : 'Mientras tanto, puede reforzar el caso (opcional)'}
-            >
-              <ul className="space-y-3">
-                <Opcion titulo="Pedir soportes al solicitante">
-                  <p>
-                    Le llega un enlace para cargar documentos (certificado laboral, extractos, etc.). Aparecen aquí y
-                    el analista los tiene en cuenta. Cada envío genera un enlace nuevo: el anterior deja de servir.
-                  </p>
-                  <button
-                    onClick={handleEnviarEnlace}
-                    disabled={loading || enviandoEnlace}
-                    className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                  >
-                    {enviandoEnlace ? 'Enviando…' : 'Enviar enlace al solicitante'}
-                  </button>
-                  {/* Lo que el solicitante subió por el enlace: aquí el gestor revisa y
-                      descarga; quien carga es el solicitante (permitirSubir=false). */}
-                  <div className="mt-3">
-                    <p className="text-xs font-semibold text-gray-700 mb-2">Documentos de soporte del solicitante</p>
-                    <SoportesCondicionadoSection expedienteId={expedienteId} permitirSubir={false} />
-                  </div>
-                </Opcion>
-
-                {!canalPropietario && (
-                  <Opcion titulo="Sumar un coarrendatario (en el recuadro de abajo)">
-                    <p>
-                      Es la persona con quien vivirá el solicitante: se le hace su propia evaluación y el analista decide con
-                      los dos resultados. Si el coarrendatario tiene un impedimento que no admite excepciones (por
-                      ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
-                    </p>
-                  </Opcion>
-                )}
-              </ul>
-            </Paso>
-
-            <Paso n={3} titulo="Cuando se decida">
+        </>
+      }
+      pie={
+        <>
+          <span className="font-semibold text-gray-800">Cuando se decida.</span>{' '}
+          <strong className="font-semibold text-gray-800">Aprobado:</strong> se crea el contrato desde este estudio.{' '}
+          <strong className="font-semibold text-gray-800">No aprobable:</strong> no se puede hacer contrato con este solicitante para este inmueble.
+        </>
+      }
+    >
+      <SeccionPaso
+        titulo={esCofianza ? 'Usted decide, como analista de Cofianza' : 'Lo decide un analista de Cofianza'}
+        propio={esCofianza && !sinSalidaAprobable}
+        icono={esCofianza && !sinSalidaAprobable ? <IconArrowRight size={16} /> : <IconUser size={16} className="text-gray-500" />}
+      >
+        {sinSalidaAprobable ? (
+          <p>
+            Sin historial en ninguna central, solo se puede aprobar con un coarrendatario, y en
+            inmuebles sin inmobiliaria esa opción todavía no existe (llega con el Convenio). Por eso el caso no
+            puede aprobarse y se cierra con el motivo
+            {esCofianza
+              ? ': use «Cambiar estado», arriba.'
+              : '. Lo cierra un analista de Cofianza y le avisamos por notificación y correo.'}
+          </p>
+        ) : esCofianza ? (
+          <>
+            <p>
+              Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
+              Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
+            </p>
+            {tramoRevisionA5 && (
               <p>
-                <strong>Aprobado:</strong> se crea el contrato desde este estudio.{' '}
-                <strong>No aprobable:</strong> no se puede hacer contrato con este solicitante para este inmueble.
+                Llegó a revisión por una mora vigente de bajo monto en sector no financiero. Dentro de «Aprobar
+                estudio» verá las obligaciones en mora y podrá aprobarlo o aprobarlo sujeto a paz y salvo; si lo
+                aprueba, se cobra la tarifa de aprobación no automática.
               </p>
-            </Paso>
-          </ol>
+            )}
+            {errorA5 && (
+              <p className="text-xs text-red-700">
+                No se pudo leer el detalle de la mora vigente.{' '}
+                <button type="button" onClick={reintentarA5} className="font-medium underline">
+                  Reintentar
+                </button>
+              </p>
+            )}
+            {/* Si con el ingreso el estudio quedó no aprobado, se recarga (onAprobado recarga el estudio). */}
+            <IngresoVerificadoSection
+              expedienteId={expedienteId}
+              onRegistrado={(rechazado) => (rechazado ? onAprobado?.() : setVersionBloqueo((n) => n + 1))}
+            />
+            {bloqueo && (
+              <div role="status" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-semibold">Todavía no se puede aprobar</p>
+                  <p>{bloqueo.motivo}</p>
+                  <p className="mt-1 text-red-700">Puede dejarlo en espera o pasarlo a «No aprobable» con «Cambiar estado».</p>
+                </div>
+              </div>
+            )}
+            <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
+              <Button
+                onClick={() => {
+                  setAbiertoEn(Date.now())
+                  setConfirmAprobarOpen(true)
+                }}
+                disabled={loading || enviandoEnlace || !!bloqueo}
+                className="min-h-10 shadow-sm"
+              >
+                <IconCheck size={16} />
+                {loading ? 'Aprobando…' : 'Aprobar estudio'}
+              </Button>
+              {/* Solo el administrador: le recuerda al analista (uno cada 2 horas). Secundario: no compite con aprobar. */}
+              {userRol === 'administrador' && (
+                <Button variante="secondary" onClick={handleRecordar} disabled={recordando} className="min-h-10">
+                  <IconBell size={16} />
+                  {recordando ? 'Enviando…' : 'Enviar recordatorio al analista'}
+                </Button>
+              )}
+            </div>
+          </>
+        ) : (
+          <p>
+            Revisa el caso y lo aprueba o no. No tiene que hacer nada para que avance: le avisamos por
+            notificación y correo cuando decida.
+          </p>
+        )}
+      </SeccionPaso>
+
+      <SeccionPaso
+        titulo={esCofianza ? 'La inmobiliaria o el propietario pueden reforzar el caso' : 'Mientras tanto, puede reforzar el caso (opcional)'}
+        // Opcional: no es el turno de nadie (el coral queda para lo que sí le toca a quien mira).
+        icono={esDueno ? <IconPaperclip size={16} className="text-gray-500" /> : <IconUsers size={16} className="text-gray-500" />}
+      >
+        <div>
+          <p className="font-medium text-gray-900">Pedir soportes al solicitante</p>
+          <p className="mt-0.5">
+            Le llega un enlace para cargar documentos (certificado laboral, extractos, etc.). Aparecen aquí y
+            el analista los tiene en cuenta. Cada envío genera un enlace nuevo: el anterior deja de servir.
+          </p>
+          <Button
+            variante="secondary"
+            onClick={handleEnviarEnlace}
+            disabled={loading || enviandoEnlace}
+            className="mt-2 min-h-10"
+          >
+            <IconMail size={16} />
+            {enviandoEnlace ? 'Enviando…' : 'Enviar enlace al solicitante'}
+          </Button>
         </div>
-      </div>
-    </div>
+        {/* Lo que el solicitante subió por el enlace: aquí el gestor revisa y
+            descarga; quien carga es el solicitante (permitirSubir=false). */}
+        <div>
+          <p className="mb-1.5 font-medium text-gray-900">Documentos de soporte del solicitante</p>
+          <SoportesCondicionadoSection expedienteId={expedienteId} permitirSubir={false} />
+        </div>
+        {!canalPropietario && (
+          <div>
+            <p className="font-medium text-gray-900">Sumar un coarrendatario (en el recuadro de abajo)</p>
+            <p className="mt-0.5">
+              Es la persona con quien vivirá el solicitante: se le hace su propia evaluación y el analista decide con
+              los dos resultados. Si el coarrendatario tiene un impedimento que no admite excepciones (por
+              ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
+            </p>
+          </div>
+        )}
+      </SeccionPaso>
+    </TarjetaSiguientePaso>
 
     <Modal
       isOpen={confirmAprobarOpen}
@@ -790,28 +799,21 @@ export function AprobarCondicionadoCard({
   )
 }
 
-function Paso({ n, titulo, children }: { n: number; titulo: string; children: ReactNode }) {
+function Paso({ n, titulo, propio, children }: { n: number; titulo: string; propio?: boolean; children: ReactNode }) {
   return (
     <li className="flex items-start gap-3">
       <span
         aria-hidden
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs font-bold text-amber-900"
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+          propio ? 'bg-coral-100 text-coral-800' : 'bg-gray-100 text-gray-700'
+        }`}
       >
         {n}
       </span>
-      <div className="min-w-0 flex-1 text-sm text-gray-700">
-        <p className="font-semibold text-gray-900 mb-1">{titulo}</p>
+      <div className="min-w-0 flex-1 text-sm leading-relaxed text-gray-700">
+        <p className={`mb-1 font-semibold ${propio ? 'text-coral-800' : 'text-gray-900'}`}>{titulo}</p>
         {children}
       </div>
-    </li>
-  )
-}
-
-function Opcion({ titulo, children }: { titulo: string; children: ReactNode }) {
-  return (
-    <li className="rounded-lg border border-amber-200 bg-white/70 p-3">
-      <p className="font-medium text-gray-900 mb-0.5">{titulo}</p>
-      <div className="text-sm text-gray-700">{children}</div>
     </li>
   )
 }

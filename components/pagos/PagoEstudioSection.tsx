@@ -142,10 +142,12 @@ export function LineaPagoEstudio({
           ? 'evaluación devuelta'
           : null
   if (!texto) return null
+  // Un dato más de la ficha del encabezado (dt/dd dentro de su <dl>).
   return (
-    <span>
-      <span className="text-gray-500">Pago:</span> {texto}
-    </span>
+    <div className="min-w-0">
+      <dt className="text-xs font-medium text-gray-500">Pago</dt>
+      <dd className="mt-0.5 text-sm font-medium text-gray-900 first-letter:uppercase">{texto}</dd>
+    </div>
   )
 }
 
