@@ -47,6 +47,8 @@ function textoInvitado(
   siVence: ContextoCargaDocumentos['condicion_si_vence'],
   /** Adenda 5 §7: el estudio espera el paz y salvo del candidato, no a un analista. */
   pazYSalvo: boolean,
+  /** Ya lo cargó: lo revisa un analista (no se le dice que el estudio lo sigue esperando). */
+  pazYSalvoRecibido: boolean,
 ): string {
   if (estadoEstudio === 'cerrado') {
     return invitado.estado === 'pendiente_aceptacion'
@@ -77,7 +79,9 @@ function textoInvitado(
     : conCondicion
       ? 'La evaluación de su coarrendatario terminó. Le avisamos el resultado por correo.'
       : pazYSalvo
-        ? 'La evaluación de su coarrendatario terminó; su estudio sigue esperando el paz y salvo. Le avisamos por correo.'
+        ? pazYSalvoRecibido
+          ? 'La evaluación de su coarrendatario terminó; un analista de Cofianza está revisando su paz y salvo. Le avisamos por correo.'
+          : 'La evaluación de su coarrendatario terminó; su estudio sigue esperando el paz y salvo. Le avisamos por correo.'
         : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
 }
 
@@ -142,11 +146,12 @@ export default function CargarDocumentosPage() {
   const pazYSalvoRecibido = pazYSalvo ? pazYSalvoCargado(pazYSalvo, ctx?.soportes) : null
   const opcionesProposito = pazYSalvo ? OPCIONES_CON_PAZ_Y_SALVO : OPCIONES_PROPOSITO
   // Lo elegido solo si sigue entre las opciones (el paz y salvo deja de ofrecerse al acreditarse o vencer).
-  // Ya cargado, sigue en la lista (puede reemplazarlo) pero no se elige solo.
+  // Con el requisito vivo es lo único que la página pide cargar, también para reemplazarlo («cargue el
+  // nuevo»): el API y el modal de Cofianza solo cuentan los soportes 'paz_y_salvo'.
   const propositoElegido: PropositoSoporte =
     proposito && opcionesProposito.some((p) => p.value === proposito)
       ? proposito
-      : pazYSalvo && !pazYSalvoRecibido
+      : pazYSalvo
         ? 'paz_y_salvo'
         : 'certificacion_laboral'
 
@@ -283,7 +288,7 @@ export default function CargarDocumentosPage() {
           <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
           <div className="min-w-0 text-sm">
             <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como coarrendatario</p>
-            <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion, plazo, ctx.condicion_si_vence, !!pazYSalvo)}</p>
+            <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion, plazo, ctx.condicion_si_vence, !!pazYSalvo, !!pazYSalvoRecibido)}</p>
           </div>
         </div>
       )}
