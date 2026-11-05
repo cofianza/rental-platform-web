@@ -42,6 +42,21 @@ export function errorMotivosAprobacion(
   return null
 }
 
+/**
+ * El primer motivo de ESTA decisión que el estudio no admite (la API responde
+ * 400 MOTIVO_NO_APLICA), o null. Adenda 5 §7: al rechazar, R10 solo aplica en el
+ * tramo de revisión; un código que no está en el catálogo (ADENDA5=0) no cuenta.
+ */
+export function errorMotivoNoAplica(
+  tipo: TipoDecision,
+  v: IMotivosElegidos,
+  catalogo: ICatalogoMotivos,
+  noAplican: Record<string, string>,
+): string | null {
+  const invalido = delTipo(tipo, v, catalogo).find((c) => noAplican[c])
+  return invalido ? `Desmarque el motivo que no aplica. ${noAplican[invalido]}` : null
+}
+
 export function errorMotivos(tipo: TipoDecision, v: IMotivosElegidos, catalogo: ICatalogoMotivos): string | null {
   const motivos = delTipo(tipo, v, catalogo)
   if (motivos.length === 0) return 'Elija al menos un motivo.'

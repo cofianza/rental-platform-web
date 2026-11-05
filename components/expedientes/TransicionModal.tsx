@@ -15,7 +15,7 @@ import type { ITransicionDisponible, IEvaluacionRevisionManual } from '@/types/e
 import type { IMotivosElegidos } from '@/types/estudio'
 import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
-import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, errorMotivosAprobacion, motivosParaEnviar } from './SelectorMotivos'
+import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivoNoAplica, errorMotivos, errorMotivosAprobacion, motivosParaEnviar } from './SelectorMotivos'
 import { usePermissions } from '@/hooks/usePermissions'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
@@ -86,7 +86,15 @@ export function TransicionModal({
   const enviando = useRef(false)
   // Adenda 2 §5.1: resolver un condicionado es una decisión de revisión manual.
   const esRevisionManual = estadoActual === 'condicionado' && !!expedienteId
-  const { noAplican, error: errorMotivosLectura, reintentar: reintentarMotivos } = useMotivosAprobacion(expedienteId, isOpen && esRevisionManual && (userRole === 'administrador' || userRole === 'operador_analista'))
+  // Adenda 5 §7: R10 (no aceptar la mora del tramo de revisión) solo aplica en ese
+  // tramo y la API valida lo mismo al rechazar desde cualquier estado. Con ADENDA5=0
+  // el catálogo no trae R10: no se pide nada que main no pidiera.
+  const conR10 = !!catalogo?.rechazar?.R10
+  const puedeRechazar = Array.isArray(transicionesDisponibles) && transicionesDisponibles.some((t) => t.estado_destino === 'rechazado')
+  const { noAplican, error: errorMotivosLectura, reintentar: reintentarMotivos } = useMotivosAprobacion(
+    expedienteId,
+    isOpen && (userRole === 'administrador' || userRole === 'operador_analista') && (esRevisionManual || (conR10 && puedeRechazar)),
+  )
 
   const handleClose = () => {
     if (isLoading) return
@@ -114,6 +122,8 @@ export function TransicionModal({
   // (si el API la tiene); el API arma con ella el comentario y el motivo.
   const tipoLista = !catalogo ? null : estadoSeleccionado === 'rechazado' ? 'rechazar' : pideEvaluacion ? 'aprobar' : null
   const errorLista = tipoLista && catalogo ? errorMotivos(tipoLista, motivos, catalogo) : null
+  // Qué motivos de esta lista no admite el estudio: los de aprobar y, al rechazar, R10.
+  const validaNoAplican = tipoLista === 'aprobar' || (tipoLista === 'rechazar' && conR10)
   // B14: esta decisión irá con lista, pero el catálogo aún no llega.
   const esperaLista = cargandoMotivos && (estadoSeleccionado === 'rechazado' || pideEvaluacion)
   const motivoValido = esperaLista ? false : tipoLista ? !errorLista : comentario.trim().length >= MIN_MOTIVO
@@ -164,7 +174,9 @@ export function TransicionModal({
     // Los motivos que el estudio contradice no se pueden registrar (la API da 400).
     const errorFundamento = pideEvaluacion
       ? errorMotivosAprobacion(motivos.motivos, noAplican, documentos, evaluacion.arrendamiento_previo)
-      : null
+      : tipoLista === 'rechazar' && conR10 && catalogo
+        ? errorMotivoNoAplica('rechazar', motivos, catalogo, noAplican)
+        : null
     if (errorFundamento) {
       setError(errorFundamento)
       return
@@ -303,7 +315,7 @@ export function TransicionModal({
         )}
 
         {tipoLista && catalogo && (
-          <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={(v) => { setMotivos(v); setError(null) }} disabled={isLoading} noAplican={tipoLista === 'aprobar' ? noAplican : undefined} errorLectura={tipoLista === 'aprobar' && errorMotivosLectura} onReintentar={reintentarMotivos} />
+          <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={(v) => { setMotivos(v); setError(null) }} disabled={isLoading} noAplican={validaNoAplican ? noAplican : undefined} errorLectura={validaNoAplican && errorMotivosLectura} onReintentar={reintentarMotivos} />
         )}
 
         {esperaLista && <CargandoMotivos />}
