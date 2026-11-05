@@ -711,7 +711,8 @@ export function AprobarCondicionadoCard({
                         venceSiSeExigeHoy(moraVigente.dias_plazo_paz_y_salvo, abiertoEn || 0),
                       )}, aproximadamente)`
                     : 'el que fija la calibración, en días calendario'}
-                  . Si vence sin acreditarlo, el estudio se cierra como no aprobado.
+                  . Si vence sin que el candidato cargue el paz y salvo, el estudio se cierra como no aprobado; si lo cargó a
+                  tiempo y aún no se ha acreditado, vuelve a su revisión.
                 </p>
               </div>
             )}

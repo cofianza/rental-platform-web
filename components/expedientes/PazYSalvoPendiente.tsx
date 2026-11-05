@@ -164,9 +164,10 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
                     : `Un analista de Cofianza aprobó el estudio sujeto a un requisito que debe cumplir el candidato a más tardar el ${fecha}. Por reserva, Cofianza no comparte el detalle con la inmobiliaria ni con el propietario. Mientras tanto no se puede crear el contrato.`}
               </p>
               {!vencida && !cargado && (
+                // Al vencer con el documento cargado y sin revisar, el caso vuelve a un analista (no se cierra).
                 <p className="mt-2 text-sm text-gray-700">
-                  No tiene que hacer nada: si el candidato lo acredita a tiempo, el estudio pasa a Aprobado; si vence el plazo sin
-                  acreditarlo, se cierra como no aprobado. Le avisamos por notificación y correo.
+                  No tiene que hacer nada: cuando Cofianza confirme el requisito, el estudio pasa a Aprobado; si el candidato no lo
+                  cumple dentro del plazo, se cierra como no aprobado. Le avisamos por notificación y correo.
                 </p>
               )}
             </>
@@ -237,11 +238,11 @@ function AcreditarPazYSalvoModal({
   if (via === 'documento' && !soporteId) {
     faltantes.push(
       errorSoportes
-        ? 'No se pudieron leer los documentos del candidato: reintente la lectura o elija «Nueva consulta».'
+        ? 'No se pudieron leer los documentos del candidato: reintente la lectura o elija «Verificado en una nueva consulta a la central».'
         : soportes === null
           ? 'Espere a que carguen los documentos del candidato.'
           : soportes.length === 0
-            ? 'El candidato todavía no ha cargado el paz y salvo: elija «Nueva consulta» o espere el documento.'
+            ? 'El candidato todavía no ha cargado el paz y salvo: elija «Verificado en una nueva consulta a la central» o espere el documento.'
             : 'Elija el documento que revisó.',
     )
   }
