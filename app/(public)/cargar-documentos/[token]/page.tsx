@@ -21,6 +21,7 @@ import { IconLoader, IconCheckCircle, IconClock, IconFileText, IconRefresh, Icon
 import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
 import { fechaCondicion } from '@/components/expedientes/textoVisible'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
+import { ApiClientError } from '@/lib/api'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import {
   cargarDocumentosService,
@@ -174,23 +175,32 @@ export default function CargarDocumentosPage() {
         proposito: propositoCarga,
       })
       await cargarDocumentosService.uploadToSignedUrl(pre.signed_url, file)
-      await cargarDocumentosService.confirmar(token, {
+      const guardado = await cargarDocumentosService.confirmar(token, {
         storage_key: pre.storage_key,
         nombre_original: file.name,
         tipo_mime: file.type,
         tamano_bytes: file.size,
         proposito: propositoCarga,
       })
-      toast.success(
-        propositoCarga === 'paz_y_salvo'
-          ? 'Paz y salvo cargado. Un analista de Cofianza lo revisa y le avisamos por correo.'
-          : 'Documento cargado correctamente',
-      )
+      // Lo que el API realmente guardó: con el mismo archivo ya cargado devuelve
+      // esa fila, con su propósito, y no registra uno nuevo.
+      const propositoGuardado = guardado?.proposito ?? propositoCarga
+      if (propositoGuardado === 'paz_y_salvo') {
+        toast.success('Paz y salvo cargado. Un analista de Cofianza lo revisa y le avisamos por correo.')
+      } else if (propositoCarga === 'paz_y_salvo') {
+        toast.warning(
+          `Ese archivo ya estaba cargado como «${PROPOSITO_LABEL[propositoGuardado] ?? 'otro documento'}», así que no quedó como paz y salvo. Cargue el certificado de paz y salvo que le entregó la entidad.`,
+        )
+      } else {
+        toast.success('Documento cargado correctamente')
+      }
       setFile(null)
       form.reset()
       await cargar()
     } catch (err: unknown) {
       toast.error(mensajeParaProspecto(err, 'No se pudo cargar el documento'))
+      // El plazo cerró o el requisito ya se resolvió (409 del API): se relee para no seguir ofreciéndolo.
+      if (err instanceof ApiClientError && err.code === 'PAZ_Y_SALVO_NO_PENDIENTE') void cargar()
     } finally {
       setSubiendo(false)
     }
