@@ -5,10 +5,13 @@
  * Cada pestaña es #tab-<id> y apunta a #panel-<id>: el uso envuelve el
  * contenido activo en <div role="tabpanel" id="panel-<id>" aria-labelledby="tab-<id>">.
  * Flechas, Inicio y Fin cambian de pestaña; Tab salta directo al panel.
+ * Si no caben (celular), el borde que esconde pestañas se desvanece para
+ * avisar que hay más, y la activa se desliza a la vista.
  */
 
 'use client'
 
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface Tab {
@@ -24,7 +27,55 @@ export interface TabsProps {
   className?: string
 }
 
+// Máscara (no un degradado pintado): sirve sobre cualquier fondo.
+const DESVANECER = {
+  izquierda: 'linear-gradient(to right, transparent, #000 32px)',
+  derecha: 'linear-gradient(to left, transparent, #000 32px)',
+  ambos: 'linear-gradient(to right, transparent, #000 32px, #000 calc(100% - 32px), transparent)',
+} as const
+
 export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
+  const navRef = useRef<HTMLElement>(null)
+  const [bordes, setBordes] = useState({ izquierda: false, derecha: false })
+
+  const medir = useCallback(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const izquierda = nav.scrollLeft > 1
+    const derecha = nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 1
+    setBordes((b) => (b.izquierda === izquierda && b.derecha === derecha ? b : { izquierda, derecha }))
+  }, [])
+
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    medir()
+    nav.addEventListener('scroll', medir, { passive: true })
+    const ro = new ResizeObserver(medir)
+    ro.observe(nav)
+    return () => {
+      nav.removeEventListener('scroll', medir)
+      ro.disconnect()
+    }
+  }, [medir, tabs])
+
+  // La pestaña activa a la vista, solo en horizontal (scrollIntoView movería la página).
+  useEffect(() => {
+    const nav = navRef.current
+    const tab = nav?.querySelector<HTMLElement>('[aria-selected="true"]')
+    if (!nav || !tab) return
+    const margen = 32
+    if (tab.offsetLeft - margen < nav.scrollLeft) nav.scrollLeft = Math.max(0, tab.offsetLeft - margen)
+    else if (tab.offsetLeft + tab.offsetWidth + margen > nav.scrollLeft + nav.clientWidth)
+      nav.scrollLeft = tab.offsetLeft + tab.offsetWidth + margen - nav.clientWidth
+  }, [activeTab])
+
+  const mascara =
+    bordes.izquierda && bordes.derecha ? DESVANECER.ambos
+      : bordes.izquierda ? DESVANECER.izquierda
+        : bordes.derecha ? DESVANECER.derecha
+          : undefined
+
   const onKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
     const destino = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key]
     if (destino === undefined) return
@@ -40,9 +91,11 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
   return (
     <div className={cn('border-b border-gray-200', className)}>
       <nav
+        ref={navRef}
         role="tablist"
-        className="-mb-px flex gap-5 overflow-x-auto [scrollbar-width:thin] sm:gap-7"
+        className="relative -mb-px flex gap-5 overflow-x-auto [scrollbar-width:thin] sm:gap-7"
         aria-label="Secciones"
+        style={mascara ? { maskImage: mascara, WebkitMaskImage: mascara } : undefined}
       >
         {tabs.map((tab, i) => {
           const isActive = tab.id === activeTab

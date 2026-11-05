@@ -29,7 +29,7 @@ const ESTADO_STYLES: Record<EstadoSolicitudFirma, { label: string; bg: string; t
   pendiente: { label: 'Pendiente', bg: 'bg-gray-100', text: 'text-gray-700' },
   enviado: { label: 'Enviado · esperando firma', bg: 'bg-blue-100', text: 'text-blue-700' },
   abierto: { label: 'Abrió el enlace', bg: 'bg-amber-100', text: 'text-amber-700' },
-  otp_validado: { label: 'OTP validado', bg: 'bg-purple-100', text: 'text-purple-700' },
+  otp_validado: { label: 'Código verificado', bg: 'bg-purple-100', text: 'text-purple-700' },
   firmado: { label: 'Firmado', bg: 'bg-green-100', text: 'text-green-700' },
   expirado: { label: 'Expirado', bg: 'bg-red-100', text: 'text-red-700' },
   cancelado: { label: 'Rechazado', bg: 'bg-red-100', text: 'text-red-700' },
