@@ -32,7 +32,7 @@ import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { motivoCoarrendatario, textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida, fechaCondicion } from './textoVisible'
-import { pazYSalvoPendiente, textoRequisitoPendiente } from '@/lib/pazYSalvo'
+import { pazYSalvoPendiente, pazYSalvoYaCargado, textoRequisitoPendiente } from '@/lib/pazYSalvo'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -122,7 +122,10 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
       // Adenda 4 V3 §8: con la condición obligatoria, sin coarrendatario válido no se aprueba.
       if (e.condicion_coarrendatario) return e.condicion_coarrendatario.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
       // Adenda 5 §7: aprobado sujeto a paz y salvo; espera al candidato, no al analista.
-      if (pazYSalvoPendiente(e.paz_y_salvo)) return 'Requisito pendiente del candidato'
+      // Ya cargado lo revisa Cofianza: el rótulo de la lista a los externos (sin nombrar el documento, §10).
+      if (pazYSalvoPendiente(e.paz_y_salvo)) {
+        return pazYSalvoYaCargado(e.paz_y_salvo) ? 'Requisito cargado: lo revisa Cofianza' : 'Requisito pendiente del candidato'
+      }
       // U8: un nombre por situación, como la lista, la barra y las notificaciones.
       return 'En revisión de Cofianza'
     }
@@ -265,9 +268,13 @@ function getSiguientePaso(
       }
       // Adenda 5 §7 y §10: a la inmobiliaria y al propietario, sin acreedor ni monto.
       if (pazYSalvoPendiente(estudio.paz_y_salvo)) {
-        return esCofianza
-          ? `Aprobado sujeto a paz y salvo: el candidato tiene hasta el ${fechaCondicion(estudio.paz_y_salvo.vence_en)} para acreditarlo. Cuando cargue el documento, acredítelo en el resumen del estudio.`
-          : `${textoRequisitoPendiente(estudio.paz_y_salvo.vence_en)}. Por reserva, Cofianza no comparte el detalle con la inmobiliaria ni con el propietario; mientras tanto no se puede crear el contrato.`
+        const cargado = pazYSalvoYaCargado(estudio.paz_y_salvo)
+        if (esCofianza) {
+          return cargado
+            ? 'Aprobado sujeto a paz y salvo: el candidato ya lo cargó. Revíselo y acredítelo en el resumen del estudio.'
+            : `Aprobado sujeto a paz y salvo: el candidato tiene hasta el ${fechaCondicion(estudio.paz_y_salvo.vence_en)} para acreditarlo. Cuando cargue el documento, acredítelo en el resumen del estudio.`
+        }
+        return `${cargado ? 'Requisito cargado: lo revisa Cofianza' : textoRequisitoPendiente(estudio.paz_y_salvo.vence_en)}. Por reserva, Cofianza no comparte el detalle con la inmobiliaria ni con el propietario; mientras tanto no se puede crear el contrato.`
       }
       return esCofianza
         ? 'Revise el motivo y decida si lo aprueba.'

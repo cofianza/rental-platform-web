@@ -13,6 +13,7 @@ import {
   pazYSalvoCargado,
   pazYSalvoDeMoraVigente,
   pazYSalvoPendiente,
+  pazYSalvoYaCargado,
   razonMoraPct,
   refsExigidas,
   textoPct,
@@ -58,6 +59,35 @@ test('GET mora-vigente: solo el paz y salvo pendiente cuenta (la API manda el ú
   assert.equal(pazYSalvoDeMoraVigente(null), null)
   // Lo que recibe el solicitante en su estudio: sin ref; no se inventa una.
   assert.deepEqual(obligacionesExigidas({ vence_en: '2026-11-19T15:00:00Z', obligaciones: [{ acreedor: 'Operador de ejemplo', saldo_mora_cop: 56_000 }] }), [])
+})
+
+test('GET mora-vigente: trae cuándo lo cargó el candidato (null si aún no o con un API anterior)', () => {
+  const base = { exigido_en: '2026-11-04T15:00:00Z', exigido_por: 'analista', acreditacion: null, vencimiento: null, obligaciones: [] }
+  const cargado = pazYSalvoDeMoraVigente({ paz_y_salvo: { ...base, pendiente: true, vence_en: '2026-11-19T15:00:00Z', cargado_en: '2026-11-06T10:00:00Z' } })
+  assert.equal(cargado?.cargado_en, '2026-11-06T10:00:00Z')
+  assert.equal(pazYSalvoYaCargado(cargado), true)
+  const sinCargar = pazYSalvoDeMoraVigente({ paz_y_salvo: { ...base, pendiente: true, vence_en: '2026-11-19T15:00:00Z', cargado_en: null } })
+  assert.equal(sinCargar?.cargado_en, null)
+  assert.equal(pazYSalvoYaCargado(sinCargar), false)
+  // Un API anterior no manda el campo: no se da por cargado.
+  const anterior = pazYSalvoDeMoraVigente({ paz_y_salvo: { ...base, pendiente: true, vence_en: '2026-11-19T15:00:00Z' } })
+  assert.equal(anterior?.cargado_en, null)
+  assert.equal(pazYSalvoYaCargado(anterior), false)
+})
+
+test('paz y salvo ya cargado según el estudio: cargado_en (Cofianza) o cargado (inmobiliaria y propietario)', () => {
+  const vence = '2099-01-01T05:00:00Z'
+  // Cofianza y Gerencia reciben la fecha.
+  assert.equal(pazYSalvoYaCargado({ cargado_en: '2026-11-06T10:00:00Z' }), true)
+  assert.equal(pazYSalvoYaCargado({ cargado_en: null }), false)
+  // La inmobiliaria y el propietario, solo el booleano (§10: sin fecha ni documento).
+  const deAgencia = { vence_en: vence, vencida: false, cargado: true }
+  assert.equal(pazYSalvoYaCargado(deAgencia), true)
+  assert.equal(pazYSalvoYaCargado({ cargado: false }), false)
+  // Un API que no manda ninguno de los dos: sigue esperando al candidato (como antes).
+  assert.equal(pazYSalvoYaCargado({}), false)
+  assert.equal(pazYSalvoYaCargado(null), false)
+  assert.equal(pazYSalvoYaCargado(undefined), false)
 })
 
 test('paz y salvo cargado: el más reciente desde que se exigió (criterio del barrido)', () => {

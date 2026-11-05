@@ -8,7 +8,8 @@
  *    (con el documento, o declarando que una nueva consulta la muestra al día).
  *    Al acreditar se consuma la aprobación que quedó en espera.
  *  - La inmobiliaria y el propietario solo ven «Requisito pendiente a cargo del
- *    candidato · hasta dd/mm»: el acreedor y el monto son reservados (§10).
+ *    candidato · hasta dd/mm» y, ya cargado, «Requisito cargado: lo revisa
+ *    Cofianza» (como la lista): el acreedor y el monto son reservados (§10).
  *
  * Mientras esté pendiente la API responde 409 a aprobar, a «Cambiar estado →
  * Aprobado» y a reasignar; no aprobarlo sigue siendo «Cambiar estado».
@@ -24,7 +25,7 @@ import { IconCheck, IconClock, IconLoader, IconShieldCheck } from '@/components/
 import { expedienteService } from '@/services/expedienteService'
 import type { SoporteListItem } from '@/services/expedienteSoportesService'
 import type { IAcreditarPazYSalvoInput, IObligacionMoraA5, IPazYSalvo } from '@/types/estudio'
-import { diaMes, obligacionesExigidas, textoRequisitoPendiente } from '@/lib/pazYSalvo'
+import { diaMes, obligacionesExigidas, pazYSalvoYaCargado, textoRequisitoPendiente } from '@/lib/pazYSalvo'
 import { fechaCondicion } from './textoVisible'
 import { ObligacionesEnMora } from './ObligacionesEnMora'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
@@ -58,6 +59,9 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
   const fecha = fechaCondicion(pazYSalvo.vence_en)
   const vencida = !!pazYSalvo.vencida || new Date(pazYSalvo.vence_en).getTime() <= ahora
   const exigidas = esCofianza ? obligacionesExigidas(pazYSalvo, obligacionesEnMora) : []
+  // Ya lo cargó (cargado_en para Cofianza, cargado para la inmobiliaria y el propietario):
+  // falta que Cofianza lo revise y lo acredite, como dicen la lista y «Qué sigue».
+  const cargado = pazYSalvoYaCargado(pazYSalvo)
 
   const handleEnviarEnlace = async () => {
     setEnviandoEnlace(true)
@@ -79,7 +83,11 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="mb-0.5 inline-flex flex-wrap items-center gap-1 text-base font-semibold text-gray-900">
-            {esCofianza ? 'Aprobado sujeto a paz y salvo: qué sigue' : 'Requisito pendiente del candidato'}
+            {esCofianza
+              ? 'Aprobado sujeto a paz y salvo: qué sigue'
+              : cargado
+                ? 'Requisito cargado: lo revisa Cofianza'
+                : 'Requisito pendiente del candidato'}
             <InfoTip
               texto="Un analista de Cofianza aprobó el estudio con un requisito que debe cumplir el candidato. Mientras no lo acredite, no se puede crear el contrato ni se expide la fianza."
               lado="derecha"
@@ -91,7 +99,11 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
               <p className="text-sm text-gray-700">
                 {vencida
                   ? `Venció el plazo para acreditar el paz y salvo (${fecha}). La plataforma lo resuelve en breve: si el candidato cargó el documento y nadie lo ha revisado, vuelve a su revisión; si no, el estudio se cierra como no aprobado.`
-                  : `El candidato tiene hasta el ${fecha} para acreditar el paz y salvo de ${exigidas.length === 1 ? 'esta obligación' : 'estas obligaciones'}. Le escribimos con el detalle y el enlace para cargarlo.`}
+                  : pazYSalvo.cargado_en
+                    ? `El candidato cargó el paz y salvo el ${fechaCondicion(pazYSalvo.cargado_en)}. Revíselo abajo y acredítelo si muestra ${
+                        exigidas.length === 1 ? 'la obligación pagada o al día' : 'las obligaciones pagadas o al día'
+                      }; el plazo del candidato vence el ${fecha}.`
+                    : `El candidato tiene hasta el ${fecha} para acreditar el paz y salvo de ${exigidas.length === 1 ? 'esta obligación' : 'estas obligaciones'}. Le escribimos con el detalle y el enlace para cargarlo.`}
               </p>
               {exigidas.length > 0 && (
                 <div className="mt-3">
@@ -143,13 +155,15 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
             </>
           ) : (
             <>
-              <p className="text-sm font-medium text-amber-900">{textoRequisitoPendiente(pazYSalvo.vence_en)}</p>
-              <p className="mt-1 text-sm text-gray-700">
+              {!cargado && <p className="text-sm font-medium text-amber-900">{textoRequisitoPendiente(pazYSalvo.vence_en)}</p>}
+              <p className={cargado ? 'text-sm text-gray-700' : 'mt-1 text-sm text-gray-700'}>
                 {vencida
                   ? 'Venció el plazo para cumplir el requisito. Cofianza lo resuelve en breve y le avisamos por notificación y correo.'
-                  : `Un analista de Cofianza aprobó el estudio sujeto a un requisito que debe cumplir el candidato a más tardar el ${fecha}. Por reserva, Cofianza no comparte el detalle con la inmobiliaria ni con el propietario. Mientras tanto no se puede crear el contrato.`}
+                  : cargado
+                    ? 'El candidato cargó el requisito pendiente y Cofianza lo revisa. Usted no tiene que hacer nada; le avisamos por notificación y correo cuando se resuelva. Por reserva, Cofianza no comparte el detalle con la inmobiliaria ni con el propietario; mientras tanto no se puede crear el contrato.'
+                    : `Un analista de Cofianza aprobó el estudio sujeto a un requisito que debe cumplir el candidato a más tardar el ${fecha}. Por reserva, Cofianza no comparte el detalle con la inmobiliaria ni con el propietario. Mientras tanto no se puede crear el contrato.`}
               </p>
-              {!vencida && (
+              {!vencida && !cargado && (
                 <p className="mt-2 text-sm text-gray-700">
                   No tiene que hacer nada: si el candidato lo acredita a tiempo, el estudio pasa a Aprobado; si vence el plazo sin
                   acreditarlo, se cierra como no aprobado. Le avisamos por notificación y correo.

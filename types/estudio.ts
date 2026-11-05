@@ -203,8 +203,9 @@ export type IObligacionExigida = Omit<IObligacionMoraA5, 'ref'> & { ref?: string
  * manual). La fianza no se expide hasta acreditarlo. La API solo lo manda
  * mientras está pendiente (al acreditar, rechazar o vencer deja de venir) y lo
  * redacta por rol: Cofianza recibe {vence_en, vencida, exigido_en,
- * obligaciones con detalle}; el solicitante {vence_en, vencida, obligaciones:
- * [{acreedor, saldo_mora_cop}]}; la inmobiliaria y el propietario {vence_en, vencida}.
+ * obligaciones con detalle, cargado_en}; el solicitante {vence_en, vencida, obligaciones:
+ * [{acreedor, saldo_mora_cop}]}; la inmobiliaria y el propietario {vence_en, vencida, cargado}.
+ * Si ya lo cargó lo dicen `cargado_en` o `cargado` (pazYSalvoYaCargado): un API anterior no los manda.
  */
 export interface IPazYSalvo {
   /** ISO timestamptz: fin del plazo de DIAS_PLAZO_PAZ_Y_SALVO (días calendario). */
@@ -216,6 +217,14 @@ export interface IPazYSalvo {
   /** Refs exigidas (respuesta de exigirlo) o las obligaciones con su detalle (estudio). */
   obligaciones?: Array<string | IObligacionExigida>
   acreditacion?: IAcreditacionPazYSalvo | null
+  /**
+   * Cuándo cargó el candidato el paz y salvo del requisito en pie (el soporte más
+   * reciente entre la exigencia y el plazo: el criterio del barrido); null si aún no.
+   * Lo reciben Cofianza (también Gerencia) y, según el API, el propio evaluado.
+   */
+  cargado_en?: string | null
+  /** Inmobiliaria y propietario: ya lo cargó, sin la fecha ni el documento (§10). */
+  cargado?: boolean
 }
 
 /** paz_y_salvo de GET mora-vigente: el último exigido, pendiente o ya resuelto. */
@@ -228,6 +237,8 @@ export interface IPazYSalvoMoraVigente {
   obligaciones: IObligacionMoraA5[]
   acreditacion: IAcreditacionPazYSalvo | null
   vencimiento: { en: string; destino: 'rechazo' | 'revision_manual'; soporte_id?: string | null } | null
+  /** Cuándo lo cargó el candidato; null si aún no o si ya no está pendiente (ausente en un API anterior). */
+  cargado_en?: string | null
 }
 
 /**

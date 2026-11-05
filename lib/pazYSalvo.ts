@@ -48,6 +48,17 @@ export function pazYSalvoCargado<T extends { proposito: string; created_at: stri
   return ultimo
 }
 
+/**
+ * El candidato ya cargó el paz y salvo del requisito en pie, según el estudio
+ * que manda el API: `cargado_en` (Cofianza, también Gerencia) o `cargado`
+ * (inmobiliaria y propietario, sin la fecha). Es el mismo criterio que el
+ * barrido y la lista (`paz_y_salvo_cargado`): así el detalle dice lo mismo que
+ * la fila para todos los roles. Un API que no los manda = no cargado (como antes).
+ */
+export function pazYSalvoYaCargado(p: Pick<IPazYSalvo, 'cargado_en' | 'cargado'> | null | undefined): boolean {
+  return !!p && (!!p.cargado_en || p.cargado === true)
+}
+
 /** Lo que ven la inmobiliaria y el propietario: sin acreedor ni monto (§10). */
 export function textoRequisitoPendiente(venceEn: string): string {
   return `Requisito pendiente a cargo del candidato · hasta ${diaMes(venceEn)}`
@@ -73,7 +84,13 @@ export function razonMoraPct(m: Partial<Pick<IMoraVigente, 'razon_mora_pct' | 'r
 export function pazYSalvoDeMoraVigente(m: Pick<IMoraVigente, 'paz_y_salvo'> | null | undefined): IPazYSalvo | null {
   const p = m?.paz_y_salvo
   if (!p?.pendiente || !p.vence_en) return null
-  return { vence_en: p.vence_en, exigido_en: p.exigido_en, exigido_por: p.exigido_por, obligaciones: p.obligaciones }
+  return {
+    vence_en: p.vence_en,
+    exigido_en: p.exigido_en,
+    exigido_por: p.exigido_por,
+    obligaciones: p.obligaciones,
+    cargado_en: p.cargado_en ?? null,
+  }
 }
 
 /** «13,8 %». */

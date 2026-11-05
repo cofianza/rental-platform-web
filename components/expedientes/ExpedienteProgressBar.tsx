@@ -43,6 +43,8 @@ export interface ExpedienteProgressBarProps {
   condicionDecideAnalista?: boolean
   /** Adenda 5 §7: fecha ya formateada del plazo del paz y salvo; espera al candidato, no al analista. */
   requisitoPendienteHasta?: string | null
+  /** El candidato ya cargó el paz y salvo (lo dice el API en su estudio): lo revisa un analista. */
+  requisitoRecibido?: boolean
   /**
    * Detalle para quien gestiona (revisión del Resumen, 23-oct): pasos con la
    * autorización y el pago, según la etapa real. undefined = la barra de
@@ -65,6 +67,7 @@ export function ExpedienteProgressBar({
   condicionObligatoria,
   condicionDecideAnalista,
   requisitoPendienteHasta,
+  requisitoRecibido,
   etapa,
   etiquetaActual,
   className,
@@ -82,6 +85,7 @@ export function ExpedienteProgressBar({
       condicionObligatoria={condicionObligatoria}
       condicionDecideAnalista={condicionDecideAnalista}
       requisitoPendienteHasta={requisitoPendienteHasta}
+      requisitoRecibido={requisitoRecibido}
       className={className}
     />
   )
@@ -172,6 +176,7 @@ function BarraPorEstado({
   condicionObligatoria,
   condicionDecideAnalista,
   requisitoPendienteHasta,
+  requisitoRecibido,
   className,
 }: Omit<ExpedienteProgressBarProps, 'etapa'>) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -254,7 +259,7 @@ function BarraPorEstado({
             : conCondicion
               ? condicionObligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
               : requisito
-                ? 'Tiene un requisito pendiente'
+                ? requisitoRecibido ? 'Recibimos su paz y salvo' : 'Tiene un requisito pendiente'
                 : 'Estamos revisando su estudio'}
         </p>
         <p className="text-xs mt-0.5">
@@ -263,7 +268,9 @@ function BarraPorEstado({
             : conCondicion
               ? mensajeCondicionCoarrendatario({ obligatoria: condicionObligatoria, decide_analista: condicionDecideAnalista })
               : requisito
-                ? `Cofianza necesita un documento a su cargo para continuar con su estudio. Le escribimos al correo qué debe presentar. Plazo: hasta el ${requisitoPendienteHasta}.`
+                ? requisitoRecibido
+                  ? 'Un analista de Cofianza lo revisa y le avisamos por correo.'
+                  : `Cofianza necesita un documento a su cargo para continuar con su estudio. Le escribimos al correo qué debe presentar. Plazo: hasta el ${requisitoPendienteHasta}.`
                 : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>
