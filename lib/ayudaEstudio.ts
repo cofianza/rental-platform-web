@@ -98,9 +98,35 @@ export function queSigue(
     fechaCondicion: string | null
     esperaHasta: string | null
     sinInmueble: boolean
+    /** Adenda 5 §7: aprobado sujeto a paz y salvo; el candidato tiene hasta esta fecha (DD/MM/AAAA). */
+    fechaPazYSalvo?: string | null
+    /** Adenda 5 §7: el candidato ya cargó el paz y salvo; falta que Cofianza lo revise y lo acredite. */
+    pazYSalvoCargado?: boolean
   },
 ): string {
   const gestor = o.vista === 'gestor'
+  // §10: a la inmobiliaria y al propietario, sin el detalle de la obligación.
+  if (etapa === 'decision' && o.fechaPazYSalvo) {
+    if (o.pazYSalvoCargado) {
+      if (o.vista === 'cofianza') {
+        return o.analista
+          ? 'El candidato cargó el paz y salvo: revíselo y acredítelo aquí abajo.'
+          : 'El candidato cargó el paz y salvo; falta que un analista de Cofianza lo revise y lo acredite.'
+      }
+      // §10: sin nombrar el documento ni la obligación.
+      return gestor
+        ? 'El candidato cargó el requisito pendiente y Cofianza lo revisa. Usted no tiene que hacer nada; le avisamos cuando se resuelva.'
+        : 'El candidato cargó el requisito pendiente y Cofianza lo revisa.'
+    }
+    if (o.vista === 'cofianza') {
+      return o.analista
+        ? `El candidato debe acreditar el paz y salvo a más tardar el ${o.fechaPazYSalvo}. Cuando cargue el documento, revíselo y acredítelo aquí abajo.`
+        : `El candidato debe acreditar el paz y salvo a más tardar el ${o.fechaPazYSalvo}; luego lo acredita un analista de Cofianza.`
+    }
+    return gestor
+      ? `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}. Cofianza ya le escribió al candidato con el detalle; usted no tiene que hacer nada y le avisamos cuando se resuelva.`
+      : `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}.`
+  }
   if (etapa === 'contrato' && o.sinInmueble) {
     return 'El estudio está aprobado: falta vincular el inmueble que eligió la persona; después se crea el contrato.'
   }

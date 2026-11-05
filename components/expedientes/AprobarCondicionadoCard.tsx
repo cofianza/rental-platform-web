@@ -20,6 +20,10 @@
  * Adenda 3 §6 (cuarto desenlace): con `condicion` el caso NO está en revisión
  * del analista: falta el coarrendatario con el puntaje mínimo. La API responde
  * 409 a aprobar a mano y a pedir soportes, así que esos botones no se ofrecen.
+ * Adenda 5 §7: si la mora vigente de bajo monto llevó el caso a revisión (tramo
+ * 'revision'), el analista ve las obligaciones en mora y puede aprobar o
+ * aprobar sujeto a paz y salvo. Con el paz y salvo pendiente el caso espera al
+ * candidato (PazYSalvoPendiente), como con la condición de coarrendatario.
  */
 
 'use client'
@@ -28,14 +32,18 @@ import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IngresoVerificadoSection } from './IngresoVerificadoSection'
+import { PazYSalvoPendiente } from './PazYSalvoPendiente'
+import { ObligacionesEnMora } from './ObligacionesEnMora'
+import { useMoraVigente } from '@/hooks/useMoraVigente'
+import { pazYSalvoDeMoraVigente, pazYSalvoPendiente, pesosA5, razonMoraPct, textoPct, TRAMO_A5, venceSiSeExigeHoy } from '@/lib/pazYSalvo'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { IconShieldCheck, IconAlertTriangle, IconCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
-import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
-import { seCierraSiVence, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
+import type { ICondicionCoarrendatario, IMotivosElegidos, IPazYSalvo, TramoAdenda5 } from '@/types/estudio'
+import { fechaCondicion, seCierraSiVence, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
 import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { CargandoMotivos, SelectorMotivos, errorMotivos, errorMotivosAprobacion, motivosParaEnviar } from './SelectorMotivos'
@@ -62,6 +70,14 @@ interface AprobarCondicionadoCardProps {
   motivoRevision?: string | null
   /** Estudio sin propiedad: al aprobar no hay dueño a quien avisar y el contrato espera el inmueble. */
   sinInmueble?: boolean
+  /** Adenda 5 §7: aprobado sujeto a paz y salvo (el del estudio del titular; sin detalle para externos). */
+  pazYSalvo?: IPazYSalvo | null
+  /**
+   * Adenda 5 §4: tramo de la escalera del titular (estudio.adenda5_tramo; solo
+   * llega a Cofianza). Sin él (ADENDA5 apagada o sin mora) no se pide GET
+   * mora-vigente y la tarjeta queda como antes.
+   */
+  adenda5Tramo?: TramoAdenda5 | null
   onAprobado?: () => void
 }
 
@@ -76,6 +92,8 @@ export function AprobarCondicionadoCard({
   condicion,
   motivoRevision,
   sinInmueble,
+  pazYSalvo,
+  adenda5Tramo,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
@@ -120,6 +138,38 @@ export function AprobarCondicionadoCard({
   const [condicionAdicional, setCondicionAdicional] = useState(false)
 
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista'
+  // Adenda 5: la escalera de mora vigente y el paz y salvo. El detalle (acreedor,
+  // saldo, razón, tramo) solo lo lee Cofianza (§10); los demás ven el plazo.
+  // Solo se pide con el titular en el tramo de revisión: con ADENDA5 apagada
+  // (o sin mora) no hay petición nueva ni aviso de error posible.
+  const [versionA5, setVersionA5] = useState(0)
+  const {
+    moraVigente,
+    cargando: cargandoA5,
+    error: errorA5,
+    reintentar: reintentarA5,
+  } = useMoraVigente(
+    expedienteId,
+    esCofianza && expedienteEstado === 'condicionado' && !condicion && adenda5Tramo === 'revision',
+    versionA5,
+  )
+  const pazYSalvoDeMora = pazYSalvoDeMoraVigente(moraVigente)
+  const pazYSalvoVivo = pazYSalvoPendiente(pazYSalvo) ? pazYSalvo : pazYSalvoDeMora
+  const obligacionesMora = moraVigente?.obligaciones ?? []
+  // §7: solo en el tramo de revisión el analista puede exigir el paz y salvo.
+  const enRevisionA5 = esCofianza && moraVigente?.tramo === 'revision'
+  // El tramo que trae el estudio (no depende de GET mora-vigente): lo que se dice
+  // aunque la lectura siga cargando o haya fallado. Con ADENDA5 apagada llega null.
+  const tramoRevisionA5 = esCofianza && adenda5Tramo === 'revision'
+  // Sin las obligaciones todavía no se ofrece «Aprobar sujeto a paz y salvo»: se espera la lectura.
+  const esperandoA5 = tramoRevisionA5 && cargandoA5
+  const pctRazon = razonMoraPct(moraVigente)
+  const [modo, setModo] = useState<'aprobar' | 'sujeto'>('aprobar')
+  const [exigidas, setExigidas] = useState<string[]>([])
+  const sujeto = enRevisionA5 && modo === 'sujeto'
+  // Al abrir el modal: el plazo que se muestra se cuenta desde ahí (la fecha real la fija la API).
+  const [abiertoEn, setAbiertoEn] = useState(0)
+  const etiquetaAprobar = sujeto ? 'Aprobar sujeto a paz y salvo' : 'Aprobar estudio'
   // Por qué llegó a revisión, arriba del formulario: los motivos que elija deben responder a esto.
   const revision = motivoRevision ? partirObservaciones(textoVisible(motivoRevision)) : null
   // Lo que falta para que se active «Aprobar estudio», dicho junto al botón:
@@ -127,24 +177,28 @@ export function AprobarCondicionadoCard({
   const faltantes: string[] = []
   if (cargandoMotivos) faltantes.push('Esperar a que carguen los motivos.')
   else if (!motivoListo) faltantes.push(catalogo ? (errorMotivos('aprobar', motivos, catalogo) ?? 'Elija al menos un motivo.') : 'Escriba el fundamento de la decisión (mínimo 10 caracteres).')
+  if (esperandoA5) faltantes.push('Esperar a que carguen las obligaciones en mora.')
   if (errorFundamento) faltantes.push(errorFundamento)
   if (!evaluacion.estabilidad_laboral) faltantes.push('Elija la «Situación laboral verificada».')
   if (!evaluacion.arrendamiento_previo) faltantes.push('Elija el «Historial de arrendamiento verificado» (si no tiene, elija «Sin historial de arrendamiento previo»).')
   if (faltaNotaIdentidad) faltantes.push('Escriba cómo verificó la identidad (mínimo 10 caracteres).')
+  if (sujeto && exigidas.length === 0) faltantes.push('Marque al menos una obligación de la que exige el paz y salvo.')
   // Lo que impide aprobar ahora (p. ej. Política §15 sin el coarrendatario de 80):
   // se dice antes del formulario, no al final después de llenarlo.
   const [bloqueo, setBloqueo] = useState<{ codigo: string; motivo: string } | null>(null)
   // Sube al registrar un ingreso verificado: el bloqueo se vuelve a pedir.
   const [versionBloqueo, setVersionBloqueo] = useState(0)
+  // Con el paz y salvo pendiente no se aprueba a mano: no hay bloqueo que anticipar.
+  const hayPazYSalvo = !!pazYSalvoVivo
   useEffect(() => {
-    if (!esCofianza || expedienteEstado !== 'condicionado' || condicion) return
+    if (!esCofianza || expedienteEstado !== 'condicionado' || condicion || hayPazYSalvo) return
     let cancel = false
     expedienteService.bloqueoAprobacion(expedienteId).then(
       (b) => { if (!cancel) setBloqueo(b) },
       () => {},
     )
     return () => { cancel = true }
-  }, [esCofianza, expedienteEstado, condicion, expedienteId, versionBloqueo])
+  }, [esCofianza, expedienteEstado, condicion, hayPazYSalvo, expedienteId, versionBloqueo])
   const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
 
   if (expedienteEstado !== 'condicionado' || !(esCofianza || esDueno)) return null
@@ -204,6 +258,22 @@ export function AprobarCondicionadoCard({
     )
   }
 
+  if (pazYSalvoVivo) {
+    return (
+      <PazYSalvoPendiente
+        expedienteId={expedienteId}
+        pazYSalvo={pazYSalvoVivo}
+        esCofianza={esCofianza}
+        obligacionesEnMora={obligacionesMora}
+        sinInmueble={sinInmueble}
+        onAcreditado={() => {
+          setVersionA5((n) => n + 1)
+          onAprobado?.()
+        }}
+      />
+    )
+  }
+
   const handleEnviarEnlace = async () => {
     setEnviandoEnlace(true)
     try {
@@ -245,19 +315,33 @@ export function AprobarCondicionadoCard({
 
   const handleAprobar = async () => {
     // Doble clic: el segundo llega antes de que se pinte «Aprobando…».
-    if (aprobando.current || !evaluacionCompleta(evaluacion) || !motivoListo || errorFundamento || faltaNotaIdentidad) return
+    if (aprobando.current || esperandoA5 || !evaluacionCompleta(evaluacion) || !motivoListo || errorFundamento || faltaNotaIdentidad) return
+    if (sujeto && exigidas.length === 0) return
     aprobando.current = true
     setLoading(true)
     try {
-      // Sin datos de contrato: solo aprueba. El contrato se crea después desde el estudio.
-      const res = await expedienteService.aprobarCondicionado(expedienteId, {
+      const revisionBody = {
         ...(catalogo ? motivosParaEnviar('aprobar', motivos, catalogo) : { fundamento: fundamento.trim() }),
         documentos_consultados: documentos,
         evaluacion,
         ...(sinInfoBuro ? { fuente_capacidad_verificada: fuenteCapacidad } : {}),
         ...(condicionAdicional ? { condicion_adicional: true } : {}),
         ...(notaIdentidad.trim() ? { nota_identidad: notaIdentidad.trim() } : {}),
-      })
+      }
+      if (sujeto) {
+        // Adenda 5 §7: no pasa a Aprobado; queda pendiente del candidato.
+        const res = await expedienteService.aprobarSujetoPazYSalvo(expedienteId, { ...revisionBody, obligaciones: exigidas })
+        setConfirmAprobarOpen(false)
+        const vence = res?.paz_y_salvo?.vence_en ?? null
+        toast.success(
+          `Aprobado sujeto a paz y salvo. El candidato tiene ${vence ? `hasta el ${fechaCondicion(vence)}` : 'el plazo vigente'} para acreditarlo; le escribimos con el detalle.`,
+        )
+        setVersionA5((n) => n + 1)
+        onAprobado?.()
+        return
+      }
+      // Sin datos de contrato: solo aprueba. El contrato se crea después desde el estudio.
+      const res = await expedienteService.aprobarCondicionado(expedienteId, revisionBody)
       setConfirmAprobarOpen(false)
       // El puntaje del modelo es interno: solo se le muestra a Cofianza, en
       // escala de 0 a 100 y con coma decimal.
@@ -334,6 +418,21 @@ export function AprobarCondicionadoCard({
                     Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
                     Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
                   </p>
+                  {tramoRevisionA5 && (
+                    <p className="mt-2">
+                      Llegó a revisión por una mora vigente de bajo monto en sector no financiero. Dentro de «Aprobar
+                      estudio» verá las obligaciones en mora y podrá aprobarlo o aprobarlo sujeto a paz y salvo; si lo
+                      aprueba, se cobra la tarifa de aprobación no automática.
+                    </p>
+                  )}
+                  {errorA5 && (
+                    <p className="mt-2 text-xs text-red-700">
+                      No se pudo leer el detalle de la mora vigente.{' '}
+                      <button type="button" onClick={reintentarA5} className="font-medium underline">
+                        Reintentar
+                      </button>
+                    </p>
+                  )}
                   {/* Si con el ingreso el estudio quedó no aprobado, se recarga (onAprobado recarga el estudio). */}
                   <IngresoVerificadoSection
                     expedienteId={expedienteId}
@@ -350,7 +449,10 @@ export function AprobarCondicionadoCard({
                     </div>
                   )}
                   <button
-                    onClick={() => setConfirmAprobarOpen(true)}
+                    onClick={() => {
+                      setAbiertoEn(Date.now())
+                      setConfirmAprobarOpen(true)
+                    }}
                     disabled={loading || enviandoEnlace || !!bloqueo}
                     className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
                   >
@@ -453,6 +555,39 @@ export function AprobarCondicionadoCard({
             pasos; abajo verá lo que falta para aprobar.
           </p>
         )}
+        {enRevisionA5 && obligacionesMora.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-white p-3 text-sm text-gray-800">
+            <p className="font-semibold text-gray-900">Obligaciones en mora</p>
+            <p className="mt-0.5 text-xs text-gray-600">
+              {typeof moraVigente?.suma_moras_cop === 'number' && pctRazon !== null
+                ? `Suman ${pesosA5(moraVigente.suma_moras_cop)} en mora: ${textoPct(pctRazon)} del canon${
+                    typeof moraVigente.canon_cop === 'number' ? ` de ${pesosA5(moraVigente.canon_cop)}` : ''
+                  }. `
+                : pctRazon !== null
+                  ? `Razón de mora: ${textoPct(pctRazon)} del canon. `
+                  : ''}
+              {TRAMO_A5.revision}. Por reserva, el acreedor y el monto no se comparten con la inmobiliaria ni con el propietario.
+            </p>
+            <div className="mt-2">
+              <ObligacionesEnMora obligaciones={obligacionesMora} />
+            </div>
+          </div>
+        )}
+        {/* El tercer estado de la lectura: sin ella no se ve la mora ni «Aprobar sujeto a paz y salvo». */}
+        {tramoRevisionA5 && !enRevisionA5 && (cargandoA5 || errorA5) && (
+          <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            {cargandoA5 ? (
+              'Cargando las obligaciones en mora…'
+            ) : (
+              <>
+                No se pudo leer el detalle de la mora vigente; sin él no puede aprobar sujeto a paz y salvo.{' '}
+                <button type="button" onClick={reintentarA5} className="font-medium underline">
+                  Reintentar
+                </button>
+              </>
+            )}
+          </div>
+        )}
         {/* Dos columnas en pantallas anchas: a la izquierda por qué se aprueba; a la
             derecha lo que se verificó. Así el formulario cabe casi sin desplazarse. */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -537,26 +672,88 @@ export function AprobarCondicionadoCard({
         )}
         </section>
         </div>
+        {enRevisionA5 && (
+          <section className="space-y-2">
+            <PasoModal
+              n={3}
+              titulo="Cómo lo aprueba"
+              ayuda="Por la mora vigente puede exigir el paz y salvo antes de expedir la fianza. Es opcional."
+              listo={modo === 'aprobar' || exigidas.length > 0}
+            />
+            <div role="radiogroup" aria-label="Cómo lo aprueba" className="grid gap-2 sm:grid-cols-2">
+              <OpcionModo
+                activa={modo === 'aprobar'}
+                titulo="Aprobar"
+                ayuda="El estudio pasa a Aprobado y se puede crear el contrato."
+                disabled={loading}
+                onElegir={() => setModo('aprobar')}
+              />
+              <OpcionModo
+                activa={modo === 'sujeto'}
+                titulo="Aprobar sujeto a paz y salvo"
+                ayuda="Queda pendiente del candidato: sin contrato hasta acreditar el paz y salvo de lo que marque."
+                disabled={loading}
+                onElegir={() => {
+                  setModo('sujeto')
+                  // Por omisión se exigen todas; el analista desmarca las que no.
+                  if (exigidas.length === 0) setExigidas(obligacionesMora.map((o) => o.ref))
+                }}
+              />
+            </div>
+            {modo === 'sujeto' && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm">
+                <p className="mb-2 text-xs font-semibold text-gray-700">Obligaciones de las que exige el paz y salvo</p>
+                <ObligacionesEnMora obligaciones={obligacionesMora} seleccion={exigidas} onSeleccion={setExigidas} disabled={loading} />
+                <p className="mt-2 text-xs text-gray-600">
+                  Plazo:{' '}
+                  {moraVigente?.dias_plazo_paz_y_salvo
+                    ? `${moraVigente.dias_plazo_paz_y_salvo} días calendario (hasta el ${fechaCondicion(
+                        venceSiSeExigeHoy(moraVigente.dias_plazo_paz_y_salvo, abiertoEn || 0),
+                      )}, aproximadamente)`
+                    : 'el que fija la calibración, en días calendario'}
+                  . Si vence sin que el candidato cargue el paz y salvo, el estudio se cierra como no aprobado; si lo cargó a
+                  tiempo y aún no se ha acreditado, vuelve a su revisión.
+                </p>
+              </div>
+            )}
+          </section>
+        )}
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-          <p className="font-semibold text-gray-900">Al aprobar</p>
-          <ul className="mt-1 list-disc space-y-0.5 pl-5">
-            <li>
-              {sinInmueble
-                ? 'El estudio pasa a Aprobado. Para crear el contrato, primero vincule el inmueble.'
-                : 'El estudio pasa a Aprobado y se puede crear el contrato.'}
-            </li>
-            <li>
-              {sinInmueble
-                ? 'Se le avisa al solicitante.'
-                : 'Se le avisa al solicitante y a la inmobiliaria o al propietario.'}
-            </li>
-            <li>Queda en el registro interno con su usuario, la fecha, los motivos y los documentos que marcó.</li>
-          </ul>
+          <p className="font-semibold text-gray-900">{sujeto ? 'Al aprobar sujeto a paz y salvo' : 'Al aprobar'}</p>
+          {sujeto ? (
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              <li>El estudio no pasa a Aprobado: queda pendiente de un requisito a cargo del candidato y no se puede crear el contrato.</li>
+              <li>
+                Al candidato le escribimos con el detalle de las obligaciones y el plazo; a la inmobiliaria o al propietario solo les
+                decimos que hay un requisito pendiente a cargo del candidato.
+              </li>
+              <li>
+                Cuando un analista de Cofianza acredite el paz y salvo, el estudio pasa a Aprobado con esta decisión y se cobra la tarifa
+                de aprobación no automática.
+              </li>
+              <li>Queda en el registro interno con su usuario, la fecha, los motivos, los documentos y las obligaciones que marcó.</li>
+            </ul>
+          ) : (
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              <li>
+                {sinInmueble
+                  ? 'El estudio pasa a Aprobado. Para crear el contrato, primero vincule el inmueble.'
+                  : 'El estudio pasa a Aprobado y se puede crear el contrato.'}
+              </li>
+              <li>
+                {sinInmueble
+                  ? 'Se le avisa al solicitante.'
+                  : 'Se le avisa al solicitante y a la inmobiliaria o al propietario.'}
+              </li>
+              {tramoRevisionA5 && <li>Por la mora vigente, se cobra la tarifa de aprobación no automática.</li>}
+              <li>Queda en el registro interno con su usuario, la fecha, los motivos y los documentos que marcó.</li>
+            </ul>
+          )}
         </div>
         <div className="sticky -bottom-4 -mx-1 space-y-2 border-t border-gray-100 bg-white px-1 pt-3 pb-4">
         {!loading && (faltantes.length > 0 ? (
           <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            <p className="font-semibold">Para activar «Aprobar estudio» falta:</p>
+            <p className="font-semibold">Para activar «{etiquetaAprobar}» falta:</p>
             {/* En el celular el pie fijo no puede tapar el formulario: la lista se desplaza. */}
             <ul className="mt-1 max-h-28 list-disc space-y-0.5 overflow-y-auto pl-5 sm:max-h-none">
               {faltantes.map((f) => <li key={f}>{f}</li>)}
@@ -580,10 +777,10 @@ export function AprobarCondicionadoCard({
           <button
             type="button"
             onClick={() => { void handleAprobar() }}
-            disabled={loading || !motivoListo || !evaluacionCompleta(evaluacion) || !!errorFundamento || faltaNotaIdentidad}
+            disabled={loading || esperandoA5 || !motivoListo || !evaluacionCompleta(evaluacion) || !!errorFundamento || faltaNotaIdentidad || (sujeto && exigidas.length === 0)}
             className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           >
-            {loading ? 'Aprobando…' : 'Aprobar estudio'}
+            {loading ? 'Aprobando…' : etiquetaAprobar}
           </button>
         </div>
         </div>
@@ -616,6 +813,40 @@ function Opcion({ titulo, children }: { titulo: string; children: ReactNode }) {
       <p className="font-medium text-gray-900 mb-0.5">{titulo}</p>
       <div className="text-sm text-gray-700">{children}</div>
     </li>
+  )
+}
+
+/** Una de las dos formas de aprobar en el tramo de revisión de la mora vigente (Adenda 5 §7). */
+function OpcionModo({
+  activa,
+  titulo,
+  ayuda,
+  disabled,
+  onElegir,
+}: {
+  activa: boolean
+  titulo: string
+  ayuda: string
+  disabled?: boolean
+  onElegir: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={activa}
+      disabled={disabled}
+      onClick={onElegir}
+      className={`rounded-lg border p-3 text-left text-sm transition-colors disabled:opacity-50 ${
+        activa ? 'border-primary-600 bg-primary-50 ring-1 ring-primary-600' : 'border-gray-200 bg-white hover:border-primary-300'
+      }`}
+    >
+      <span className="flex items-center gap-1.5 font-semibold text-gray-900">
+        {activa && <IconCheck size={14} className="shrink-0 text-primary-700" />}
+        {titulo}
+      </span>
+      <span className="mt-0.5 block text-xs text-gray-600">{ayuda}</span>
+    </button>
   )
 }
 

@@ -104,3 +104,48 @@ test('U8: la revisión sin condición se llama «En revisión de Cofianza»', as
   const { ETAPA_LABEL } = await import('./etapaEstudio')
   assert.equal(ETAPA_LABEL.decision, 'En revisión de Cofianza')
 })
+
+test('Adenda 5: el paz y salvo pendiente espera al candidato y no dice el detalle', () => {
+  // turnoDeEtapa: la decisión espera al candidato (coarrendatario o paz y salvo).
+  assert.equal(turnoDeEtapa('decision', true), 'prospecto')
+  const o = { vista: 'gestor' as const, analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false, fechaPazYSalvo: '19/11/2026' }
+  const gestor = queSigue('decision', o)
+  assert.match(gestor, /requisito pendiente a cargo del candidato hasta el 19\/11\/2026/)
+  assert.match(gestor, /no tiene que hacer nada/)
+  const equipo = queSigue('decision', { ...o, vista: 'equipo' })
+  assert.match(equipo, /requisito pendiente a cargo del candidato/)
+  // §10: a la inmobiliaria y al propietario nunca se les dice que es una mora ni el monto.
+  for (const t of [gestor, equipo]) assert.doesNotMatch(t, /mora|paz y salvo|\$/i)
+  assert.match(queSigue('decision', { ...o, vista: 'cofianza', analista: true }), /acreditar el paz y salvo a más tardar el 19\/11\/2026.*acredítelo aquí abajo/)
+  assert.doesNotMatch(queSigue('decision', { ...o, vista: 'cofianza' }), /acredítelo/)
+  // La API cierra el plazo al final del día anunciado: «antes del» lo acortaba un día.
+  for (const vista of ['gestor', 'equipo', 'cofianza'] as const) {
+    for (const analista of [false, true]) assert.doesNotMatch(queSigue('decision', { ...o, vista, analista }), /antes del/)
+  }
+  // Sin paz y salvo, la decisión sigue siendo del analista.
+  assert.equal(queSigue('decision', { ...o, vista: 'cofianza', analista: true, fechaPazYSalvo: null }), 'Revise el caso y decida si lo aprueba.')
+  // A quién le escribió Cofianza: al candidato, no al gestor.
+  assert.match(gestor, /Cofianza ya le escribió al candidato con el detalle/)
+})
+
+test('Adenda 5: con el paz y salvo ya cargado, lo revisa y lo acredita Cofianza', () => {
+  const o = {
+    vista: 'cofianza' as const,
+    analista: true,
+    fechaCondicion: null,
+    esperaHasta: null,
+    sinInmueble: false,
+    fechaPazYSalvo: '19/11/2026',
+    pazYSalvoCargado: true,
+  }
+  assert.equal(queSigue('decision', o), 'El candidato cargó el paz y salvo: revíselo y acredítelo aquí abajo.')
+  assert.match(queSigue('decision', { ...o, analista: false }), /falta que un analista de Cofianza lo revise y lo acredite/)
+  const gestor = queSigue('decision', { ...o, vista: 'gestor', analista: false })
+  const equipo = queSigue('decision', { ...o, vista: 'equipo', analista: false })
+  for (const t of [gestor, equipo]) {
+    assert.match(t, /cargó el requisito pendiente y Cofianza lo revisa/)
+    // §10: sin nombrar el documento ni la obligación.
+    assert.doesNotMatch(t, /mora|paz y salvo|\$/i)
+  }
+  assert.match(gestor, /no tiene que hacer nada/)
+})

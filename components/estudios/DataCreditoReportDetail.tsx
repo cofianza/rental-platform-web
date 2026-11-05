@@ -65,6 +65,16 @@ const EVENTOS_CIERRE = new Set([
 ])
 
 /**
+ * Tabla 4 — eventos de pago de una obligación en mora hoy: 17-41 mora activa,
+ * 45 castigada y 47 dudoso recaudo (el mismo criterio del motor). Sirve para
+ * reconocer la fila en mora cuando la API quitó los importes (Adenda 5 §10).
+ */
+function eventoEnMora(evento: string): boolean {
+  const n = Number(evento)
+  return Number.isInteger(n) && ((n >= 17 && n <= 41) || n === 45 || n === 47)
+}
+
+/**
  * Anexo Advance Income DW, "Exclusiones del Producto Advance Income".
  * La razon 99 es el caso normal (hay estimacion); 50-54 la excluyen, y no
  * significan lo mismo entre si: la 53 dice que el buro reporta al titular
@@ -410,19 +420,33 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
       account: item?.account,
       status: item?.status,
       values: item?.values?.[0] as DcAccountValues | undefined,
+      reservada: item?.detalle_reservado === true,
     })),
     ...creditCard.map((item) => ({
       account: item?.account,
       status: item?.status,
       values: item?.values?.[0] as DcAccountValues | undefined,
+      reservada: item?.detalle_reservado === true,
     })),
   ]
   const esVigente = (item: (typeof obligaciones)[number]) =>
     ESTADOS_ABIERTOS.has(codigoCatalogo(item.status?.account?.businessAccountStatus)) &&
     !EVENTOS_CIERRE.has(codigoCatalogo(item.status?.payment?.businessBureauEvent))
+  /**
+   * Adenda 5 §10: a la inmobiliaria y al propietario la API les quita el
+   * acreedor, el número y los montos de las obligaciones EN MORA y las marca
+   * con `detalle_reservado` (la inmobiliaria y el propietario no reciben el detalle). La fila
+   * sigue: estado y tipo, sin inventar datos. Sin la marca, nada cambia.
+   */
+  const esReservada = (item: (typeof obligaciones)[number]) => item.reservada
+  const hayReservadas = obligaciones.some(esReservada)
   // Deterioro: estado negativo de la Tabla 41 o mora efectiva en importes/dias.
-  const esNegativa = (item: (typeof obligaciones)[number]) =>
+  // En una fila reservada (sin importes) cuenta también el evento de mora de la Tabla 4.
+  const moraPorEstado = (item: (typeof obligaciones)[number]) =>
     ESTADOS_NEGATIVOS.has(codigoCatalogo(item.status?.account?.businessAccountStatus)) ||
+    (esReservada(item) && eventoEnMora(codigoCatalogo(item.status?.payment?.businessBureauEvent)))
+  const esNegativa = (item: (typeof obligaciones)[number]) =>
+    moraPorEstado(item) ||
     (num(item.values?.businessValueBalanceOverdue) ?? 0) > 0 ||
     (num(item.values?.delinquencyMaturation) ?? 0) > 0
   // El historial negativo es lo que sustenta un condicionado: va primero, para
@@ -446,6 +470,9 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
     .map((v) => num(v))
     .filter((v): v is number => v !== null)
   const valorMora = moras.length > 0 ? Math.max(...moras) : null
+  // §10: la API también quitó el saldo en mora del consolidado (con una sola obligación lo revela).
+  // La marca en la raíz cubre la mora que solo sale del consolidado (ninguna fila marcada).
+  const moraConsolidadaReservada = (report.detalle_reservado === true || hayReservadas) && valorMora === null
   const cuotaMensual = num(balances?.valueMonthlyPayment)
   const creditoMasAlto = num(balances?.HightestDebtBalance ?? balances?.hightestDebtBalance)
   const negativos12Meses = num(principals?.negativeHistoricalLast12Months)
@@ -599,8 +626,8 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
             />
             <SummaryCard
               label="Valor en mora"
-              value={formatCOP(valorMora, MILES)}
-              color={valorMora !== null && valorMora > 0 ? 'red' : 'green'}
+              value={moraConsolidadaReservada ? 'Reservado' : formatCOP(valorMora, MILES)}
+              color={moraConsolidadaReservada ? undefined : valorMora !== null && valorMora > 0 ? 'red' : 'green'}
             />
           </div>
 
@@ -663,10 +690,14 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
             <InfoRow label="Mayor saldo individual" value={formatCOP(creditoMasAlto, MILES)} />
             <InfoRow
               label="Saldo en mora 30 / 60 / 90 días"
-              value={`${formatCOP(balances?.debtBalanceD30, MILES)} / ${formatCOP(
-                balances?.debtBalanceD60,
-                MILES
-              )} / ${formatCOP(balances?.debtBalanceD90, MILES)}`}
+              value={
+                moraConsolidadaReservada
+                  ? 'Reservado'
+                  : `${formatCOP(balances?.debtBalanceD30, MILES)} / ${formatCOP(
+                      balances?.debtBalanceD60,
+                      MILES
+                    )} / ${formatCOP(balances?.debtBalanceD90, MILES)}`
+              }
             />
             <InfoRow
               label="Negativos últimos 12 meses"
@@ -762,24 +793,33 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
                   const valorMoraCuenta = num(item.values?.businessValueBalanceOverdue)
                   const diasMora = num(item.values?.delinquencyMaturation)
                   const enMora = (valorMoraCuenta !== null && valorMoraCuenta > 0) || (diasMora !== null && diasMora > 0)
+                  const reservada = esReservada(item)
 
                   return (
                     <tr key={item.account?.primaryKey ?? idx} className="border-b border-gray-50">
-                      <td className="py-1.5 px-1 text-gray-700">{nombreEntidad(item.account)}</td>
+                      <td className="py-1.5 px-1 text-gray-700">
+                        {reservada ? <span className="italic text-gray-500">Reservado</span> : nombreEntidad(item.account)}
+                      </td>
                       <td className="py-1.5 px-1 text-gray-700">{tipoObligacion(item.account)}</td>
+                      {/* Reservada: el guion es de las canceladas; aquí el monto se quitó por reserva (§10). */}
                       <td className="py-1.5 px-1 text-right text-gray-900">
-                        {formatCOP(item.values?.debtBalance)}
+                        {reservada ? <span className="italic text-gray-500">Reservado</span> : formatCOP(item.values?.debtBalance)}
                       </td>
                       <td className="py-1.5 px-1 text-right text-gray-900">
-                        {formatCOP(item.values?.valueMonthlyPayment)}
+                        {reservada ? <span className="italic text-gray-500">Reservado</span> : formatCOP(item.values?.valueMonthlyPayment)}
                       </td>
                       <td className="py-1.5 px-1">
                         <EstadoPill texto={estadoTexto} tono={tono} />
                       </td>
-                      <td className={`py-1.5 px-1 text-right ${enMora ? 'text-red-700 font-medium' : 'text-gray-900'}`}>
-                        {enMora
-                          ? `${formatCOP(valorMoraCuenta)}${diasMora !== null && diasMora > 0 ? ` · ${diasMora} d` : ''}`
-                          : '—'}
+                      <td className={`py-1.5 px-1 text-right ${enMora || reservada ? 'text-red-700 font-medium' : 'text-gray-900'}`}>
+                        {/* La API quita el valor en mora pero deja los días: «En mora · 60 d», nunca «— · 60 d». */}
+                        {reservada
+                          ? diasMora !== null && diasMora > 0
+                            ? `En mora · ${diasMora} d`
+                            : moraPorEstado(item) ? 'En mora' : 'Reservado'
+                          : enMora
+                            ? `${formatCOP(valorMoraCuenta)}${diasMora !== null && diasMora > 0 ? ` · ${diasMora} d` : ''}`
+                            : '—'}
                       </td>
                     </tr>
                   )
@@ -807,6 +847,8 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
           <p className="text-[10px] text-gray-500 mt-2">
             Saldo, cuota y mora en pesos. Las obligaciones ya canceladas no reportan importes: se muestran con
             guion.
+            {hayReservadas &&
+              ' Por reserva, Cofianza no comparte con la inmobiliaria ni con el propietario el acreedor ni los montos de las obligaciones en mora.'}
           </p>
         </AccordionSection>
       )}

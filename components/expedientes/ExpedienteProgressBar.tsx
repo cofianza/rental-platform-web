@@ -41,6 +41,10 @@ export interface ExpedienteProgressBarProps {
   condicionObligatoria?: boolean
   /** Adenda 4 R3: «Está cerca» con R2: decide un analista; el literal no aplica. */
   condicionDecideAnalista?: boolean
+  /** Adenda 5 §7: fecha ya formateada del plazo del paz y salvo; espera al candidato, no al analista. */
+  requisitoPendienteHasta?: string | null
+  /** El candidato ya cargó el paz y salvo (lo dice el API en su estudio): lo revisa un analista. */
+  requisitoRecibido?: boolean
   /**
    * Detalle para quien gestiona (revisión del Resumen, 23-oct): pasos con la
    * autorización y el pago, según la etapa real. undefined = la barra de
@@ -62,6 +66,8 @@ export function ExpedienteProgressBar({
   conCondicion,
   condicionObligatoria,
   condicionDecideAnalista,
+  requisitoPendienteHasta,
+  requisitoRecibido,
   etapa,
   etiquetaActual,
   className,
@@ -78,6 +84,8 @@ export function ExpedienteProgressBar({
       conCondicion={conCondicion}
       condicionObligatoria={condicionObligatoria}
       condicionDecideAnalista={condicionDecideAnalista}
+      requisitoPendienteHasta={requisitoPendienteHasta}
+      requisitoRecibido={requisitoRecibido}
       className={className}
     />
   )
@@ -167,6 +175,8 @@ function BarraPorEstado({
   conCondicion,
   condicionObligatoria,
   condicionDecideAnalista,
+  requisitoPendienteHasta,
+  requisitoRecibido,
   className,
 }: Omit<ExpedienteProgressBarProps, 'etapa'>) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -233,6 +243,8 @@ function BarraPorEstado({
   // la evaluación crediticia (P34). Los textos de su ruta en rutas-resultado.ts
   // del API: 'no_aprobable' y 'en_revision'.
   if (esProspecto && (isRejected || isConditioned)) {
+    // Adenda 5 §7: aprobado sujeto a paz y salvo; el literal de 'requisito_pendiente' (rutas-resultado.ts del API).
+    const requisito = isConditioned && !conCondicion && !!requisitoPendienteHasta
     return (
       <div
         className={cn(
@@ -242,14 +254,24 @@ function BarraPorEstado({
         )}
       >
         <p className="text-sm font-semibold">
-          {isRejected ? 'No aprobable por ahora' : conCondicion ? (condicionObligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : 'Estamos revisando su estudio'}
+          {isRejected
+            ? 'No aprobable por ahora'
+            : conCondicion
+              ? condicionObligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
+              : requisito
+                ? requisitoRecibido ? 'Recibimos su paz y salvo' : 'Tiene un requisito pendiente'
+                : 'Estamos revisando su estudio'}
         </p>
         <p className="text-xs mt-0.5">
           {isRejected
             ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.'
             : conCondicion
               ? mensajeCondicionCoarrendatario({ obligatoria: condicionObligatoria, decide_analista: condicionDecideAnalista })
-              : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
+              : requisito
+                ? requisitoRecibido
+                  ? 'Un analista de Cofianza lo revisa y le avisamos por correo.'
+                  : `Cofianza necesita un documento a su cargo para continuar con su estudio. Le escribimos al correo qué debe presentar. Plazo: hasta el ${requisitoPendienteHasta}.`
+                : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>
     )

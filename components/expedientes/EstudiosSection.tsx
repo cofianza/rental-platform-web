@@ -652,6 +652,7 @@ export function EstudiosSection({
         isOpen={!!resultadoTarget}
         onClose={() => setResultadoTarget(null)}
         estudio={resultadoTarget}
+        expedienteId={expedienteId}
         onSuccess={() => {
           toast.success('Resultado registrado exitosamente')
           setResultadoTarget(null)

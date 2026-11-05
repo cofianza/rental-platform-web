@@ -14,8 +14,9 @@ import { PROVEEDOR_LABELS } from '@/components/estudios/constants'
 import { formatCurrency } from '@/lib/constants'
 import type { IEstudio, IMotivosElegidos, IRegistrarResultadoInput } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
+import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useAuthStore } from '@/stores/auth.store'
-import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
+import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivoNoAplica, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 
 const SIN_MOTIVOS: IMotivosElegidos = { motivos: [] }
 
@@ -24,6 +25,8 @@ interface RegistrarResultadoModalProps {
   onClose: () => void
   estudio: IEstudio | null
   onSuccess: () => void
+  /** El estudio (expediente) de la evaluación: para saber si R10 aplica. Sin él se usa estudio.expediente_id. */
+  expedienteId?: string
 }
 
 type ResultadoValue = 'aprobado' | 'rechazado' | 'condicionado'
@@ -60,6 +63,7 @@ export function RegistrarResultadoModal({
   onClose,
   estudio,
   onSuccess,
+  expedienteId,
 }: RegistrarResultadoModalProps) {
   const [resultado, setResultado] = useState<ResultadoValue | null>(null)
   const [score, setScore] = useState('')
@@ -76,6 +80,15 @@ export function RegistrarResultadoModal({
   // B14: rechazo y condicionado irán con lista, pero el catálogo aún no llega.
   const esperaLista = cargandoMotivos && (resultado === 'rechazado' || resultado === 'condicionado')
   const tipoLista = catalogo && resultado === 'rechazado' ? 'rechazar' : catalogo && resultado === 'condicionado' ? 'condicionar' : null
+  // Adenda 5 §7: R10 solo aplica en el tramo de revisión (la API responde 400 si no).
+  // Con ADENDA5=0 el catálogo no trae R10 y no se pide nada nuevo.
+  const conR10 = !!catalogo?.rechazar?.R10
+  const {
+    noAplican,
+    error: errorNoAplican,
+    reintentar: reintentarNoAplican,
+  } = useMotivosAprobacion(expedienteId ?? estudio?.expediente_id, isOpen && conR10)
+  const validaR10 = tipoLista === 'rechazar' && conR10
   const [archivo, setArchivo] = useState<File | null>(null)
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -111,6 +124,8 @@ export function RegistrarResultadoModal({
     if (tipoLista) {
       const e = catalogo ? errorMotivos(tipoLista, motivos, catalogo) : null
       if (e) return e
+      const noAplica = validaR10 && catalogo ? errorMotivoNoAplica('rechazar', motivos, catalogo, noAplican) : null
+      if (noAplica) return noAplica
     } else if (resultado === 'rechazado' && fundamento.trim().length < 10) {
       return 'El fundamento interno debe tener al menos 10 caracteres'
     }
@@ -314,7 +329,16 @@ export function RegistrarResultadoModal({
           {esperaLista && <CargandoMotivos />}
 
           {tipoLista && catalogo && (
-            <SelectorMotivos tipo={tipoLista} catalogo={catalogo} value={motivos} onChange={setMotivos} disabled={isSubmitting} />
+            <SelectorMotivos
+              tipo={tipoLista}
+              catalogo={catalogo}
+              value={motivos}
+              onChange={setMotivos}
+              disabled={isSubmitting}
+              noAplican={validaR10 ? noAplican : undefined}
+              errorLectura={validaR10 && errorNoAplican}
+              onReintentar={reintentarNoAplican}
+            />
           )}
 
           {/* Rechazo (P34): fundamento interno y motivo corto para el gestor (API sin lista) */}

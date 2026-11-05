@@ -7,6 +7,9 @@
  * estudio aprobado y antes del contrato, para bajar la prima al 10 % (el enlace
  * llega en el correo del aprobado). El API decide si se puede (Decisión 4: no en
  * el canal del propietario directo).
+ * Adenda 5 §7 y §10: si el analista aprobó el estudio sujeto a paz y salvo,
+ * aquí (y solo aquí, porque el enlace es personal) el evaluado ve la obligación
+ * en mora con su acreedor y saldo, el plazo, y carga el paz y salvo.
  */
 
 'use client'
@@ -14,10 +17,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { IconLoader, IconCheckCircle, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
+import { IconLoader, IconCheckCircle, IconClock, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
 import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
 import { fechaCondicion } from '@/components/expedientes/textoVisible'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
+import { ApiClientError } from '@/lib/api'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import {
   cargarDocumentosService,
@@ -25,6 +29,7 @@ import {
   type PropositoSoporte,
 } from '@/services/cargarDocumentosService'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
+import { pazYSalvoCargado, pesosA5 } from '@/lib/pazYSalvo'
 
 // Lo que el prospecto ve de su invitado: en qué va, nunca su resultado. Con el
 // estudio ya resuelto no se promete una revisión que no va a ocurrir, y al
@@ -40,6 +45,10 @@ function textoInvitado(
   plazo: string | null,
   /** Qué pasa si vence sin coarrendatario (API); null = no lo sabemos. */
   siVence: ContextoCargaDocumentos['condicion_si_vence'],
+  /** Adenda 5 §7: el estudio espera el paz y salvo del candidato, no a un analista. */
+  pazYSalvo: boolean,
+  /** Ya lo cargó: lo revisa un analista (no se le dice que el estudio lo sigue esperando). */
+  pazYSalvoRecibido: boolean,
 ): string {
   if (estadoEstudio === 'cerrado') {
     return invitado.estado === 'pendiente_aceptacion'
@@ -69,7 +78,11 @@ function textoInvitado(
     ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
     : conCondicion
       ? 'La evaluación de su coarrendatario terminó. Le avisamos el resultado por correo.'
-      : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
+      : pazYSalvo
+        ? pazYSalvoRecibido
+          ? 'La evaluación de su coarrendatario terminó; un analista de Cofianza está revisando su paz y salvo. Le avisamos por correo.'
+          : 'La evaluación de su coarrendatario terminó; su estudio sigue esperando el paz y salvo. Le avisamos por correo.'
+        : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
 }
 
 const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
@@ -80,11 +93,14 @@ const PROPOSITOS: { value: PropositoSoporte; label: string }[] = [
   { value: 'codeudor', label: 'Documentos de respaldo de un tercero' },
   { value: 'poliza', label: 'Póliza' },
   { value: 'otros_soportes', label: 'Otros soportes' },
+  { value: 'paz_y_salvo', label: 'Paz y salvo de la obligación' },
 ]
 const PROPOSITO_LABEL = Object.fromEntries(PROPOSITOS.map((p) => [p.value, p.label]))
 // Al arrendatario no se le ofrecen codeudor ni póliza: Cofianza es justamente
 // lo que reemplaza a ambos. Siguen en el mapa de arriba para nombrar lo ya subido.
-const OPCIONES_PROPOSITO = PROPOSITOS.filter((p) => p.value !== 'codeudor' && p.value !== 'poliza')
+// El paz y salvo solo se ofrece mientras el analista lo exige (va primero).
+const OPCIONES_PROPOSITO = PROPOSITOS.filter((p) => p.value !== 'codeudor' && p.value !== 'poliza' && p.value !== 'paz_y_salvo')
+const OPCIONES_CON_PAZ_Y_SALVO = [PROPOSITOS.find((p) => p.value === 'paz_y_salvo')!, ...OPCIONES_PROPOSITO]
 
 const MIME_OK = ['application/pdf', 'image/jpeg', 'image/png']
 const MAX_BYTES = 10 * 1024 * 1024
@@ -95,7 +111,8 @@ export default function CargarDocumentosPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [reintentable, setReintentable] = useState(false)
-  const [proposito, setProposito] = useState<PropositoSoporte>('certificacion_laboral')
+  // null = el de omisión: el paz y salvo si se lo exigen, si no la certificación laboral.
+  const [proposito, setProposito] = useState<PropositoSoporte | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [subiendo, setSubiendo] = useState(false)
 
@@ -122,9 +139,26 @@ export default function CargarDocumentosPage() {
     cargar()
   }, [cargar])
 
+  // Adenda 5 §7: el requisito, solo mientras el plazo sigue corriendo.
+  const pazYSalvo =
+    ctx?.paz_y_salvo && !ctx.paz_y_salvo.vencida && new Date(ctx.paz_y_salvo.vence_en) > new Date() ? ctx.paz_y_salvo : null
+  // Ya lo cargó: el más reciente (la API los manda del más nuevo al más viejo). Lo revisa un analista.
+  const pazYSalvoRecibido = pazYSalvo ? pazYSalvoCargado(pazYSalvo, ctx?.soportes) : null
+  const opcionesProposito = pazYSalvo ? OPCIONES_CON_PAZ_Y_SALVO : OPCIONES_PROPOSITO
+  // Lo elegido solo si sigue entre las opciones (el paz y salvo deja de ofrecerse al acreditarse o vencer).
+  // Con el requisito vivo es lo único que la página pide cargar, también para reemplazarlo («cargue el
+  // nuevo»): el API y el modal de Cofianza solo cuentan los soportes 'paz_y_salvo'.
+  const propositoElegido: PropositoSoporte =
+    proposito && opcionesProposito.some((p) => p.value === proposito)
+      ? proposito
+      : pazYSalvo
+        ? 'paz_y_salvo'
+        : 'certificacion_laboral'
+
   const handleSubir = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
+    const propositoCarga = propositoElegido
     if (!file) {
       toast.error('Seleccione un archivo')
       return
@@ -143,22 +177,35 @@ export default function CargarDocumentosPage() {
         nombre_original: file.name,
         tipo_mime: file.type,
         tamano_bytes: file.size,
-        proposito,
+        proposito: propositoCarga,
       })
       await cargarDocumentosService.uploadToSignedUrl(pre.signed_url, file)
-      await cargarDocumentosService.confirmar(token, {
+      const guardado = await cargarDocumentosService.confirmar(token, {
         storage_key: pre.storage_key,
         nombre_original: file.name,
         tipo_mime: file.type,
         tamano_bytes: file.size,
-        proposito,
+        proposito: propositoCarga,
       })
-      toast.success('Documento cargado correctamente')
+      // Lo que el API realmente guardó: con el mismo archivo ya cargado devuelve
+      // esa fila, con su propósito, y no registra uno nuevo.
+      const propositoGuardado = guardado?.proposito ?? propositoCarga
+      if (propositoGuardado === 'paz_y_salvo') {
+        toast.success('Paz y salvo cargado. Un analista de Cofianza lo revisa y le avisamos por correo.')
+      } else if (propositoCarga === 'paz_y_salvo') {
+        toast.warning(
+          `Ese archivo ya estaba cargado como «${PROPOSITO_LABEL[propositoGuardado] ?? 'otro documento'}», así que no quedó como paz y salvo. Cargue el certificado de paz y salvo que le entregó la entidad.`,
+        )
+      } else {
+        toast.success('Documento cargado correctamente')
+      }
       setFile(null)
       form.reset()
       await cargar()
     } catch (err: unknown) {
       toast.error(mensajeParaProspecto(err, 'No se pudo cargar el documento'))
+      // El plazo cerró o el requisito ya se resolvió (409 del API): se relee para no seguir ofreciéndolo.
+      if (err instanceof ApiClientError && err.code === 'PAZ_Y_SALVO_NO_PENDIENTE') void cargar()
     } finally {
       setSubiendo(false)
     }
@@ -207,12 +254,57 @@ export default function CargarDocumentosPage() {
   const soloCoarrendatario =
     conCondicion || (aprobado && vigente && !!(ctx.coarrendatario?.puede_invitar || ctx.coarrendatario?.invitado))
 
+  // Adenda 5 §7: con el paz y salvo pendiente, la acción principal es cargarlo; el
+  // coarrendatario (opcional, no lo reemplaza) va después de la carga.
+  const bloqueCoarrendatario = (
+    <>
+      {ctx.coarrendatario?.puede_invitar && (
+        <CoarrendatarioInviteForm
+          audience="solicitante"
+          aprobado={aprobado}
+          condicion={
+            conCondicion
+              ? {
+                  vence_en: plazo ?? undefined,
+                  // Sin plazo vivo ya venció: no se dice «si no lo agrega a tiempo».
+                  vencida: !plazo,
+                  ingreso_adicional_requerido: ctx.condicion_ingreso_adicional_requerido,
+                  siVence: ctx.condicion_si_vence,
+                  obligatoria: ctx.condicion_obligatoria,
+                  decide_analista: ctx.condicion_decide_analista,
+                }
+              : null
+          }
+          // Adenda 5 §7: el estudio espera el paz y salvo, no a un analista; el coarrendatario no lo reemplaza.
+          pazYSalvoPendiente={!!pazYSalvo}
+          initial={ctx.coarrendatario.sugerido}
+          invitar={(input) => cargarDocumentosService.invitarCoarrendatario(token, input)}
+          onInvited={cargar}
+        />
+      )}
+
+      {ctx.coarrendatario?.invitado && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+          <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
+          <div className="min-w-0 text-sm">
+            <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como coarrendatario</p>
+            <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion, plazo, ctx.condicion_si_vence, !!pazYSalvo, !!pazYSalvoRecibido)}</p>
+          </div>
+        </div>
+      )}
+    </>
+  )
+
   return (
     <div>
       <div className="space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900">
-            {conCondicion ? (ctx.condicion_obligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
+            {conCondicion
+              ? ctx.condicion_obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
+              : pazYSalvo
+                ? pazYSalvoRecibido ? 'Recibimos su paz y salvo' : 'Requisito pendiente: paz y salvo'
+                : soloCoarrendatario ? 'Su coarrendatario' : 'Carga de documentos'}
           </h1>
           <p className="text-sm text-gray-600 mt-1 break-words">
             {conCondicion ? (
@@ -220,6 +312,16 @@ export default function CargarDocumentosPage() {
               <>
                 Hola {ctx.solicitante}: así va su estudio de arriendo
                 {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}.
+              </>
+            ) : pazYSalvo && pazYSalvoRecibido ? (
+              <>
+                Hola {ctx.solicitante}: así va el requisito de su estudio de arriendo
+                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''}.
+              </>
+            ) : pazYSalvo ? (
+              <>
+                Hola {ctx.solicitante}: para continuar con su estudio de arriendo
+                {ctx.inmueble.direccion ? ` del inmueble en ${ctx.inmueble.direccion}` : ''} necesitamos un paz y salvo.
               </>
             ) : soloCoarrendatario ? (
               <>
@@ -236,40 +338,73 @@ export default function CargarDocumentosPage() {
           </p>
         </div>
 
-        {ctx.coarrendatario?.puede_invitar && (
-          <CoarrendatarioInviteForm
-            audience="solicitante"
-            aprobado={aprobado}
-            condicion={
-              conCondicion
-                ? {
-                    vence_en: plazo ?? undefined,
-                    // Sin plazo vivo ya venció: no se dice «si no lo agrega a tiempo».
-                    vencida: !plazo,
-                    ingreso_adicional_requerido: ctx.condicion_ingreso_adicional_requerido,
-                    siVence: ctx.condicion_si_vence,
-                    obligatoria: ctx.condicion_obligatoria,
-                    decide_analista: ctx.condicion_decide_analista,
-                  }
-                : null
-            }
-            initial={ctx.coarrendatario.sugerido}
-            invitar={(input) => cargarDocumentosService.invitarCoarrendatario(token, input)}
-            onInvited={cargar}
-          />
-        )}
-
-        {ctx.coarrendatario?.invitado && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
-            <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
-            <div className="min-w-0 text-sm">
-              <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como coarrendatario</p>
-              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion, plazo, ctx.condicion_si_vence)}</p>
+        {pazYSalvo && (
+          <div
+            className={`rounded-xl border p-4 text-sm text-gray-800 ${
+              pazYSalvoRecibido ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              {pazYSalvoRecibido ? (
+                <IconCheckCircle size={20} className="mt-0.5 shrink-0 text-green-700" />
+              ) : (
+                <IconClock size={20} className="mt-0.5 shrink-0 text-amber-700" />
+              )}
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900">
+                  {pazYSalvoRecibido
+                    ? `Lo recibimos el ${fechaCondicion(pazYSalvoRecibido.created_at)}`
+                    : `Cárguelo a más tardar el ${fechaCondicion(pazYSalvo.vence_en)}`}
+                </p>
+                {(pazYSalvo.obligaciones?.length ?? 0) > 0 ? (
+                  <>
+                    <p className="mt-1">
+                      Las centrales de riesgo reportan en mora a su nombre{' '}
+                      {pazYSalvo.obligaciones!.length === 1 ? 'esta obligación' : 'estas obligaciones'}:
+                    </p>
+                    <ul className="mt-2 space-y-1.5">
+                      {pazYSalvo.obligaciones!.map((o, i) => (
+                        <li
+                          key={i}
+                          className={`rounded-lg border bg-white px-3 py-2 ${pazYSalvoRecibido ? 'border-green-200' : 'border-amber-200'}`}
+                        >
+                          <p className="break-words font-medium text-gray-900">{o.acreedor?.trim() || 'Entidad acreedora'}</p>
+                          {typeof o.saldo_mora_cop === 'number' && (
+                            <p className="text-xs text-gray-700">Saldo en mora: {pesosA5(o.saldo_mora_cop)}</p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p className="mt-1">Las centrales de riesgo reportan a su nombre una obligación en mora; le enviamos el detalle por correo.</p>
+                )}
+                {pazYSalvoRecibido ? (
+                  // Con un documento cargado, al vencer el plazo el caso va a un analista (vencerPazYSalvo de la API), no se cierra.
+                  <p className="mt-2">
+                    Un analista de Cofianza lo revisa y le avisamos por correo. Si necesita cambiarlo, cargue el nuevo a más tardar el{' '}
+                    {fechaCondicion(pazYSalvo.vence_en)}. Si el plazo vence antes de la revisión, un analista decide su caso con el
+                    documento que cargó.
+                  </p>
+                ) : (
+                  <p className="mt-2">
+                    Suba el certificado de paz y salvo que le entregue la entidad (que diga que la obligación está paga o al día). Si ya
+                    la pagó y la central todavía no lo refleja, ese certificado es justamente lo que necesitamos. Si vence el plazo sin
+                    acreditarlo, su estudio no podrá aprobarse.
+                  </p>
+                )}
+                <p className="mt-2 text-xs text-gray-600">
+                  Esta información es solo para usted: a la inmobiliaria o al propietario solo les informamos que hay un requisito
+                  pendiente a su cargo.
+                </p>
+              </div>
             </div>
           </div>
         )}
 
-        {ctx.puede_subir && (
+        {!pazYSalvo && bloqueCoarrendatario}
+
+        {ctx.puede_subir && !pazYSalvo && (
           <div className="rounded-xl border border-primary-100 bg-primary-50 p-4 text-sm text-primary-900">
             <p className="font-semibold">¿Qué subir?</p>
             <p className="mt-1 text-primary-800">
@@ -292,11 +427,11 @@ export default function CargarDocumentosPage() {
               </label>
               <select
                 id="cargar-proposito"
-                value={proposito}
+                value={propositoElegido}
                 onChange={(e) => setProposito(e.target.value as PropositoSoporte)}
                 className="w-full px-3 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
               >
-                {OPCIONES_PROPOSITO.map((p) => (
+                {opcionesProposito.map((p) => (
                   <option key={p.value} value={p.value}>{p.label}</option>
                 ))}
               </select>
@@ -354,6 +489,8 @@ export default function CargarDocumentosPage() {
             )}
           </div>
         )}
+
+        {pazYSalvo && bloqueCoarrendatario}
       </div>
     </div>
   )

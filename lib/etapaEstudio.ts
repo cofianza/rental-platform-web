@@ -144,8 +144,12 @@ export type VistaTurno = 'gestor' | 'cofianza' | 'equipo'
  * Mismo criterio que depende_de del RPC de la lista (20261027000002), para que
  * lista y detalle digan lo mismo: la visita tampoco la cuenta el RPC. null = no
  * hay turno (cerrado o sin paso pendiente de alguien).
+ *
+ * `esperaAlCandidato`: la decisión no es del analista sino que espera algo a
+ * cargo del candidato: la condición de coarrendatario (Adenda 3 §6) o el paz y
+ * salvo exigido por el analista (Adenda 5 §7). El RPC pone 'prospecto' en ambos.
  */
-export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno | null {
+export function turnoDeEtapa(etapa: EtapaEstudio, esperaAlCandidato: boolean): Turno | null {
   switch (etapa) {
     case 'habilitar':
     case 'enlace':
@@ -162,7 +166,7 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno 
     case 'consulta':
       return 'cofianza'
     case 'decision':
-      return conCondicion ? 'prospecto' : 'cofianza'
+      return esperaAlCandidato ? 'prospecto' : 'cofianza'
     case 'firma':
       return 'firmas'
     default:

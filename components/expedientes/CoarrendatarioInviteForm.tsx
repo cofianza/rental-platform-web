@@ -71,6 +71,12 @@ interface CoarrendatarioInviteFormProps {
   } | null
   /** Adenda 3 V2 §6.1: el titular todavía no se evalúa (coarrendatario desde el inicio). */
   antesDeLaDecision?: boolean
+  /**
+   * Adenda 5 §7: el estudio quedó aprobado sujeto a paz y salvo. Espera al
+   * candidato, no a un analista, y un coarrendatario no reemplaza ese requisito.
+   * Al gestor se le dice sin nombrar el documento (§10: «un requisito a cargo del candidato»).
+   */
+  pazYSalvoPendiente?: boolean
 }
 
 type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email' | 'telefono'
@@ -91,6 +97,7 @@ export function CoarrendatarioInviteForm({
   aprobado = false,
   condicion = null,
   antesDeLaDecision = false,
+  pazYSalvoPendiente = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
   const conCondicion = !esGestor && !!condicion
@@ -200,11 +207,26 @@ export function CoarrendatarioInviteForm({
                 Puede agregar a la persona con quien vivirá el solicitante como <strong>coarrendatario</strong>. Cada uno
                 se consulta apenas autoriza (con el estudio pagado), y el estudio se decide con los dos. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
+            ) : esGestor && pazYSalvoPendiente ? (
+              // §10: sin nombrar el paz y salvo ni la obligación ante la inmobiliaria o el propietario.
+              <>
+                El estudio espera un requisito a cargo del candidato; un coarrendatario no lo reemplaza. Si además invita a
+                la persona con quien vivirá el solicitante como <strong>coarrendatario</strong>, se evalúa a ambos y los
+                respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
             ) : esGestor ? (
               <>
                 El estudio quedó condicionado. Puede invitar a la persona con quien vivirá el
                 solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
                 respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
+            ) : pazYSalvoPendiente ? (
+              <>
+                Su estudio se aprueba cuando acreditemos el paz y salvo que le pedimos por correo; un coarrendatario no lo
+                reemplaza. Si
+                además suma como <strong>coarrendatario</strong> a la persona con quien va a vivir, la prima de vinculación
+                baja del 20 % al 10 % del canon y los respaldamos juntos como un solo arrendatario.{' '}
+                <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             ) : (
               <>

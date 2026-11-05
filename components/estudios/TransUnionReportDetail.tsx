@@ -109,6 +109,14 @@ export function TransUnionReportDetail({ data }: TransUnionReportDetailProps) {
   const registroTotal = consolidado?.Registro
   const resumenPrincipal = consolidado?.ResumenPrincipal?.Registro
   const huellas = infoComercial?.HuellaConsulta?.Consulta
+  // Adenda 5 §10: a la inmobiliaria y al propietario la API les quita ValorMora y
+  // SaldoObligacionesMora y marca la respuesta con `detalle_reservado`. Sin la
+  // marca nada cambia; con ella, el monto que falta se lee «Reservado», no «$0».
+  const conReserva = data.detalle_reservado === true
+  const reservado = (registro: object | undefined, campo: 'ValorMora' | 'SaldoObligacionesMora') =>
+    conReserva && !!registro && !(campo in registro)
+  const montoMora = (registro: TransUnionConsolidadoRegistro | undefined, campo: 'ValorMora' | 'SaldoObligacionesMora') =>
+    reservado(registro, campo) ? 'Reservado' : formatCOP(registro?.[campo])
 
   return (
     <div className="space-y-3">
@@ -175,14 +183,16 @@ export function TransUnionReportDetail({ data }: TransUnionReportDetailProps) {
             />
             <SummaryCard
               label="Valor en mora"
-              value={formatCOP(registroTotal.ValorMora)}
-              color={parseInt(registroTotal.ValorMora ?? '0', 10) > 0 ? 'red' : 'green'}
+              value={montoMora(registroTotal, 'ValorMora')}
+              color={
+                reservado(registroTotal, 'ValorMora') ? undefined : parseInt(registroTotal.ValorMora ?? '0', 10) > 0 ? 'red' : 'green'
+              }
             />
           </div>
           <div className="mt-3 pt-3 border-t border-gray-100">
             <InfoRow label="Saldo total" value={formatCOP(registroTotal.TotalSaldo)} />
             <InfoRow label="Saldo al dia" value={formatCOP(registroTotal.SaldoObligacionesDia)} />
-            <InfoRow label="Saldo en mora" value={formatCOP(registroTotal.SaldoObligacionesMora)} />
+            <InfoRow label="Saldo en mora" value={montoMora(registroTotal, 'SaldoObligacionesMora')} />
           </div>
         </AccordionSection>
       )}
@@ -207,8 +217,8 @@ export function TransUnionReportDetail({ data }: TransUnionReportDetailProps) {
                     <td className="py-1.5 px-1 text-gray-700">{item.PaqueteInformacion ?? '—'}</td>
                     <td className="py-1.5 px-1 text-right text-gray-900">{item.NumeroObligaciones ?? '0'}</td>
                     <td className="py-1.5 px-1 text-right text-gray-900">{formatCOP(item.TotalSaldo)}</td>
-                    <td className="py-1.5 px-1 text-right text-gray-900">{formatCOP(item.SaldoObligacionesMora)}</td>
-                    <td className="py-1.5 px-1 text-right text-gray-900">{formatCOP(item.ValorMora)}</td>
+                    <td className="py-1.5 px-1 text-right text-gray-900">{montoMora(item, 'SaldoObligacionesMora')}</td>
+                    <td className="py-1.5 px-1 text-right text-gray-900">{montoMora(item, 'ValorMora')}</td>
                   </tr>
                 ))}
               </tbody>
