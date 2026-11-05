@@ -117,50 +117,72 @@ function BarraPorEtapa({
   }
   const actual = PASO_DE_ETAPA[etapa]
   const tono = etapa === 'no_aprobado' ? 'rojo' : etapa === 'decision' ? 'ambar' : 'normal'
+  const total = PASOS_DETALLE.length
+  const rotuloActual = (idx: number, label: string) =>
+    // El mismo nombre que el chip del encabezado («Por habilitar», «Aprobado con condición»).
+    idx === actual ? etiquetaActual ?? (tono === 'rojo' ? 'No aprobable' : label) : label
   return (
     <div className={cn('w-full', className)}>
-      <div className="flex items-start gap-1">
+      <ol aria-label="Pasos del estudio" className="flex items-start">
         {PASOS_DETALLE.map((label, idx) => {
           const isComplete = idx < actual
           const isCurrent = idx === actual
           const isFailed = isCurrent && tono === 'rojo'
           return (
-            <div key={label} className="flex min-w-0 items-start flex-1">
-              <div className="flex flex-col items-center flex-1">
-                <div
+            <li key={label} className="flex min-w-0 flex-1 items-start last:flex-none sm:last:flex-1">
+              <div className="flex min-w-0 flex-1 flex-col items-center">
+                <span
                   className={cn(
-                    'w-7 h-7 shrink-0 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold transition-all',
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold sm:h-9 sm:w-9',
                     isComplete && 'bg-primary-700 text-white',
-                    isCurrent && !isFailed && 'bg-amber-100 text-amber-700 ring-2 ring-amber-500',
-                    isFailed && 'bg-red-100 text-red-600 ring-2 ring-red-300',
+                    isCurrent && !isFailed && 'bg-amber-50 text-amber-800 ring-2 ring-amber-500',
+                    isFailed && 'bg-red-50 text-red-700 ring-2 ring-red-400',
                     !isComplete && !isCurrent && 'bg-gray-100 text-gray-500',
                   )}
                   aria-current={isCurrent ? 'step' : undefined}
                 >
-                  {isComplete ? <IconCheck size={18} /> : isFailed ? <IconX size={16} /> : idx + 1}
-                </div>
+                  {isComplete ? <IconCheck size={16} /> : isFailed ? <IconX size={16} /> : idx + 1}
+                </span>
                 <span
                   className={cn(
-                    'text-[10px] mt-1.5 text-center leading-tight max-w-16',
-                    // En el celular los siete rótulos no caben: solo el del paso actual.
-                    !isCurrent && 'max-sm:sr-only',
-                    isFailed ? 'text-red-600 font-semibold'
-                      : isCurrent ? 'text-amber-700 font-semibold'
-                      : isComplete ? 'text-primary-700 font-medium'
+                    // En el celular los siete rótulos no caben: van en la línea de abajo.
+                    'mt-2 hidden max-w-[7.5rem] text-center text-xs leading-snug sm:block',
+                    isFailed ? 'font-semibold text-red-700'
+                      : isCurrent ? 'font-semibold text-amber-800'
+                      : isComplete ? 'font-medium text-gray-700'
                       : 'text-gray-500',
                   )}
                 >
-                  {/* El mismo nombre que el chip del encabezado («Por habilitar», «Aprobado con condición»). */}
-                  {isCurrent ? etiquetaActual ?? (isFailed ? 'No aprobable' : label) : label}
+                  {rotuloActual(idx, label)}
+                </span>
+                <span className="sr-only sm:hidden">
+                  {rotuloActual(idx, label)}
+                  {isComplete ? ' (completo)' : isCurrent ? ' (paso actual)' : ''}
                 </span>
               </div>
-              {idx < PASOS_DETALLE.length - 1 && (
-                <div className={cn('h-0.5 flex-1 mx-0.5 sm:mx-1 mt-[13px] sm:mt-[17px] rounded', isComplete ? 'bg-primary-600' : 'bg-gray-200')} />
+              {idx < total - 1 && (
+                <span
+                  aria-hidden="true"
+                  className={cn('mx-0.5 mt-4 h-0.5 flex-1 rounded sm:mx-1 sm:mt-[18px]', isComplete ? 'bg-primary-600' : 'bg-gray-200')}
+                />
               )}
-            </div>
+            </li>
           )
         })}
-      </div>
+      </ol>
+      {/* Celular: el paso actual en una sola línea legible, en vez de un rótulo partido en tres. */}
+      <p aria-hidden="true" className="mt-3 text-sm sm:hidden">
+        {actual < total ? (
+          <>
+            <span className="text-gray-500">Paso {actual + 1} de {total}: </span>
+            <span className={cn('font-semibold', tono === 'rojo' ? 'text-red-700' : 'text-amber-800')}>
+              {rotuloActual(actual, PASOS_DETALLE[actual])}
+            </span>
+          </>
+        ) : (
+          <span className="font-semibold text-primary-800">{etiquetaActual ?? 'Todos los pasos completos'}</span>
+        )}
+      </p>
     </div>
   )
 }

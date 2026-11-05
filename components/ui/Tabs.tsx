@@ -41,7 +41,7 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
     <div className={cn('border-b border-gray-200', className)}>
       <nav
         role="tablist"
-        className="-mb-px flex space-x-6 sm:space-x-8 overflow-x-auto"
+        className="-mb-px flex gap-5 overflow-x-auto [scrollbar-width:thin] sm:gap-7"
         aria-label="Secciones"
       >
         {tabs.map((tab, i) => {
@@ -59,10 +59,11 @@ export function Tabs({ tabs, activeTab, onChange, className }: TabsProps) {
               onClick={() => onChange(tab.id)}
               onKeyDown={(e) => onKeyDown(e, i)}
               className={cn(
-                'shrink-0 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors',
+                'flex min-h-11 shrink-0 items-center whitespace-nowrap border-b-2 px-1 py-3 text-sm transition-colors',
+                'focus-visible:rounded-t-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500',
                 isActive
-                  ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-primary-700 font-medium text-primary-800'
+                  : 'border-transparent font-medium text-gray-600 hover:border-gray-300 hover:text-gray-900'
               )}
             >
               <span className="flex items-center gap-2">

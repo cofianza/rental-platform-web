@@ -32,6 +32,9 @@ import {
   IconX,
   IconCheck,
   IconLoader,
+  IconArrowRight,
+  IconClock,
+  IconBuilding2,
 } from '@/components/icons'
 import {
   ExpedienteProgressBar,
@@ -58,8 +61,9 @@ import {
   EstudioEstadoCard,
 } from '@/components/expedientes'
 import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
-import { ResumenPorEtapa } from '@/components/expedientes/ResumenPorEtapa'
-import { PastillaTurno } from '@/components/expedientes/PastillaTurno'
+import { ResumenPorEtapa, Plegable } from '@/components/expedientes/ResumenPorEtapa'
+import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
+import { textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
 import { revisionDemorada } from '@/lib/etapaFila'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -586,28 +590,22 @@ export default function ExpedienteDetallePage() {
     <div className="space-y-6" aria-busy={isLoading}>
       {/* Título de la pestaña: <title> de React 19 (va al <head>; al salir lo quita y queda el de la metadata). */}
       {numeroExpediente && <title>{`Estudio ${formatNumeroEstudio(numeroExpediente)} — Cofianza`}</title>}
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-2 sm:gap-4">
-          <Link
-            href={rutaListado}
-            aria-label={user?.rol === 'solicitante' ? 'Volver a mis estudios' : 'Volver al listado'}
-            className="inline-block shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors mt-1"
-          >
-            <IconArrowLeft size={20} className="text-gray-600" />
-          </Link>
-          <div className="min-w-0 space-y-2">
-            {/* Código y estado */}
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900">
+      {/* Encabezado: qué estudio es y en qué está (título + estado), la ficha
+          (inmueble, solicitante, pago, responsable) y la acción formal. */}
+      <header className="space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-2 sm:gap-3">
+            <Link
+              href={rutaListado}
+              aria-label={user?.rol === 'solicitante' ? 'Volver a mis estudios' : 'Volver al listado'}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            >
+              <IconArrowLeft size={20} />
+            </Link>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 pt-1">
+              <h1 className="text-2xl font-bold leading-tight text-gray-900">
                 Estudio {formatNumeroEstudio(expediente.numero_expediente)}
               </h1>
-              {isLoading && (
-                <span role="status" className="inline-flex items-center gap-1 text-xs text-gray-500">
-                  <IconLoader size={14} className="animate-spin" />
-                  Actualizando…
-                </span>
-              )}
               {expediente.cancelado_at ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
                   Cancelado
@@ -624,116 +622,135 @@ export default function ExpedienteDetallePage() {
                   label={etiquetaEtapa}
                 />
               )}
-            </div>
-
-            {/* Info del inmueble y solicitante */}
-            <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-x-4 text-sm text-gray-600 break-words">
-              {!expediente.inmueble && expediente.canon_objetivo_cop && (
-                <span>
-                  <span className="text-gray-500">Inmueble:</span> por definir · canon de{' '}
-                  {formatCurrency(expediente.canon_objetivo_cop)}
+              {isLoading && (
+                <span role="status" className="inline-flex items-center gap-1 text-xs text-gray-500">
+                  <IconLoader size={14} className="animate-spin" />
+                  Actualizando…
                 </span>
-              )}
-              {expediente.inmueble && (
-                <span>
-                  <span className="text-gray-500">Inmueble:</span>{' '}
-                  {expediente.inmueble.titulo || expediente.inmueble.direccion}
-                  {/* Flujo §11 "Reasignado": el estudio vino de otra propiedad (§4.3). */}
-                  {reasignadoDesde && (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
-                      Reasignado desde {reasignadoDesde}
-                    </span>
-                  )}
-                </span>
-              )}
-              {expediente.solicitante && (
-                <span>
-                  <span className="text-gray-500">Solicitante:</span>{' '}
-                  {`${expediente.solicitante.nombre} ${expediente.solicitante.apellido}`.trim()}
-                </span>
-              )}
-              {/* Gerencia no lee el pago; el prospecto tiene su propia tarjeta. */}
-              {user && user.rol !== 'solicitante' && user.rol !== 'gerencia_consulta' && (expediente.estudio_habilitado ?? false) && (
-                <LineaPagoEstudio
-                  expedienteId={id}
-                  estudioTitular={titular}
-                  gestor={
-                    !isInternalRole ? 'usted' : expediente.inmueble?.inmobiliaria_id ? 'la inmobiliaria' : 'el propietario'
-                  }
-                  deLaInmobiliaria={user.rol !== 'inmobiliaria'}
-                  version={cargas}
-                />
               )}
             </div>
+          </div>
 
-            {/* Responsable ANALISTA interno (personal Cofianza). Solo lo asignan
-                admin/operador, así que se muestra únicamente a roles internos.
-                Para inmobiliaria/propietario el responsable relevante es el
-                "Responsable del expediente" (miembro) del tab Resumen. */}
-            {puedeAsignar && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 text-sm text-gray-500">
-                  Responsable:
-                  <InfoTip texto={AYUDA.responsable} lado="derecha" />
+          {/* Acciones — el solicitante no cambia estado manualmente; un miembro
+              con perfil incompleto tampoco hasta completar sus datos. */}
+          {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
+            <div className="flex flex-wrap gap-3 pl-12 sm:pl-0">
+              {transiciones === null ? (
+                <Button variante="secondary" className="min-h-10" onClick={() => fetchExpediente()}>
+                  <IconRefresh size={16} />
+                  Reintentar acciones
+                </Button>
+              ) : transicionesModal.length > 0 ? (
+                <Button variante="secondary" className="min-h-10" onClick={() => setShowTransicionModal(true)}>
+                  {!soloCierre
+                    ? 'Cambiar estado'
+                    : transicionesModal.length === 1
+                      ? transicionesModal[0].etiqueta
+                      : 'Cerrar o cancelar el estudio'}
+                </Button>
+              ) : null}
+            </div>
+          )}
+        </div>
+
+        {/* Ficha: cada dato con su rótulo encima, en columnas que se leen de un vistazo. */}
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-3 sm:ml-[52px] sm:flex sm:flex-wrap sm:gap-x-10 sm:gap-y-4">
+          {!expediente.inmueble && expediente.canon_objetivo_cop && (
+            <Dato etiqueta="Inmueble" ancho>
+              Por definir · canon de {formatCurrency(expediente.canon_objetivo_cop)}
+            </Dato>
+          )}
+          {expediente.inmueble && (
+            <Dato etiqueta="Inmueble" ancho>
+              {expediente.inmueble.titulo || expediente.inmueble.direccion}
+              {/* Flujo §11 "Reasignado": el estudio vino de otra propiedad (§4.3). */}
+              {reasignadoDesde && (
+                <span className="mt-1 flex">
+                  <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                    Reasignado desde {reasignadoDesde}
+                  </span>
                 </span>
+              )}
+            </Dato>
+          )}
+          {expediente.solicitante && (
+            <Dato etiqueta="Solicitante">
+              {`${expediente.solicitante.nombre} ${expediente.solicitante.apellido}`.trim()}
+            </Dato>
+          )}
+          {/* Gerencia no lee el pago; el prospecto tiene su propia tarjeta. */}
+          {user && user.rol !== 'solicitante' && user.rol !== 'gerencia_consulta' && (expediente.estudio_habilitado ?? false) && (
+            <LineaPagoEstudio
+              expedienteId={id}
+              estudioTitular={titular}
+              gestor={
+                !isInternalRole ? 'usted' : expediente.inmueble?.inmobiliaria_id ? 'la inmobiliaria' : 'el propietario'
+              }
+              deLaInmobiliaria={user.rol !== 'inmobiliaria'}
+              version={cargas}
+            />
+          )}
+
+          {/* Responsable ANALISTA interno (personal Cofianza). Solo lo asignan
+              admin/operador, así que se muestra únicamente a roles internos.
+              Para inmobiliaria/propietario el responsable relevante es el
+              "Responsable del expediente" (miembro) del tab Resumen. */}
+          {puedeAsignar && (
+            <Dato
+              ancho
+              etiqueta={
+                <span className="inline-flex items-center gap-1">
+                  Responsable
+                  <InfoTip texto={AYUDA.responsable} lado="izquierda" />
+                </span>
+              }
+            >
+              <span className="-my-1.5 flex flex-wrap items-center gap-x-3">
                 {nombreAnalista ? (
                   <button
+                    type="button"
                     onClick={() => setShowAsignacionModal(true)}
-                    className="inline-flex items-center gap-2 text-sm text-gray-700 hover:text-primary-600 transition-colors"
+                    aria-label={`Responsable: ${nombreAnalista}. Cambiar responsable`}
+                    className="inline-flex min-h-10 items-center gap-2 rounded-md text-gray-900 transition-colors hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                   >
                     <Avatar name={nombreAnalista} size="sm" />
                     <span>{nombreAnalista}</span>
                     <IconEdit size={14} className="text-gray-500" />
                   </button>
                 ) : (
-                  <button
-                    onClick={() => setShowAsignacionModal(true)}
-                    className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 transition-colors"
-                  >
-                    <IconUser size={14} />
-                    Asignar responsable
-                  </button>
+                  <>
+                    <span className="font-normal text-gray-500">Sin asignar</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowAsignacionModal(true)}
+                      className="inline-flex min-h-10 items-center gap-1 rounded-md text-primary-700 transition-colors hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                    >
+                      <IconUser size={14} />
+                      Asignar responsable
+                    </button>
+                  </>
                 )}
                 {/* Tomar el caso sin abrir el modal y buscarse en la lista de
                     analistas: es el 90% de las asignaciones reales. */}
                 {user && expediente.analista?.id !== user.id && (
                   <button
+                    type="button"
                     onClick={() => tomarloYo()}
                     disabled={isAsignando}
-                    className="inline-flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 disabled:opacity-50 transition-colors"
+                    className="inline-flex min-h-10 items-center gap-1 rounded-md text-primary-700 transition-colors hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50"
                   >
                     <IconUserCheck size={14} />
                     {nombreAnalista ? 'Tomarlo yo' : 'Asignármelo'}
                   </button>
                 )}
-              </div>
-            )}
-          </div>
-        </div>
+              </span>
+            </Dato>
+          )}
+        </dl>
+      </header>
 
-        {/* Acciones — el solicitante no cambia estado manualmente; un miembro
-            con perfil incompleto tampoco hasta completar sus datos. */}
-        {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
-          <div className="flex flex-wrap gap-3 sm:ml-12 lg:ml-0">
-            {transiciones === null ? (
-              <Button variante="secondary" onClick={() => fetchExpediente()}>
-                Reintentar acciones
-              </Button>
-            ) : transicionesModal.length > 0 ? (
-              <Button variante="secondary" onClick={() => setShowTransicionModal(true)}>
-                {!soloCierre
-                  ? 'Cambiar estado'
-                  : transicionesModal.length === 1
-                    ? transicionesModal[0].etiqueta
-                    : 'Cerrar o cancelar el estudio'}
-              </Button>
-            ) : null}
-          </div>
-        )}
-      </div>
-
-      {/* Barra de progreso */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+      {/* Avance y turno: dónde está el estudio y a quién le toca. */}
+      <section aria-label="Avance del estudio" className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
         <ExpedienteProgressBar
           expedienteId={id}
           estadoActual={expediente.estado}
@@ -750,50 +767,84 @@ export default function ExpedienteDetallePage() {
           etapa={user?.rol === 'solicitante' ? undefined : etapa}
           etiquetaActual={etiquetaEtapa}
         />
-        {/* «Qué sigue»: de quién es el turno y el siguiente paso, con las palabras de la lista. */}
-        {etapaTurno && user?.rol !== 'solicitante' && (
-          <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-start sm:gap-3">
-            {turno && (
-              <PastillaTurno
-                turno={turno}
-                vista={vistaTurno}
-                revision={etapaTurno === 'decision' && !esperaCandidato}
-                analista={puedeAsignar}
-                sinEjecutar={etapaTurno === 'sin_ejecutar'}
-                pazYSalvoCargado={pazYSalvoRecibido}
-                className="shrink-0 self-start"
-              />
-            )}
-            {/* L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h). */}
-            {(() => {
-              const demora =
-                isInternalRole && etapaTurno === 'decision' && !esperaCandidato
-                  ? // Con el paz y salvo cargado, la espera de Cofianza corre desde la carga.
-                    revisionDemorada(pazYSalvoCargadoEn ?? expediente.en_revision_desde, Date.now())
-                  : null
-              return demora ? (
-                <span
-                  className={`shrink-0 self-start text-xs font-medium ${demora.tono === 'rojo' ? 'text-red-600' : 'text-amber-700'}`}
-                >
-                  {demora.texto}
-                </span>
-              ) : null
-            })()}
-            <p className="text-sm text-gray-700">
-              {queSigue(etapaTurno, {
-                vista: vistaTurno,
-                analista: puedeAsignar,
-                fechaCondicion: condicionCoa ? fechaCondicion(condicionCoa.vence_en) : null,
-                esperaHasta,
-                sinInmueble: !expediente.inmueble,
-                fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo.vence_en) : null,
-                pazYSalvoCargado: pazYSalvoRecibido,
-                // Propietario directo: la API no admite coarrendatario (espera el Convenio).
-              })}
-            </p>
-          </div>
-        )}
-      </div>
+        {/* «Qué sigue»: de quién es el turno y el siguiente paso, con las palabras de la lista.
+            Como la lista: lo propio en coral con flecha; el turno de otros, en gris. */}
+        {etapaTurno && user?.rol !== 'solicitante' && (() => {
+          const opcionesTurno = {
+            revision: etapaTurno === 'decision' && !esperaCandidato,
+            analista: puedeAsignar,
+            sinEjecutar: etapaTurno === 'sin_ejecutar',
+            pazYSalvoCargado: pazYSalvoRecibido,
+          }
+          const propio = !!turno && turnoPropio(turno, vistaTurno, opcionesTurno)
+          // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
+          const demora =
+            isInternalRole && etapaTurno === 'decision' && !esperaCandidato
+              ? // Con el paz y salvo cargado, la espera de Cofianza corre desde la carga.
+                revisionDemorada(pazYSalvoCargadoEn ?? expediente.en_revision_desde, Date.now())
+              : null
+          // La decisión está en el Resumen: un atajo para llegar a ella desde cualquier pestaña.
+          const irADecision = propio && etapaTurno === 'decision' && esCondicionado && puedeActuar
+          return (
+            <div
+              className={`mt-5 flex flex-col gap-3 rounded-lg px-4 py-3 sm:flex-row sm:items-center sm:gap-4 ${
+                propio ? 'bg-coral-50 ring-1 ring-inset ring-coral-200' : 'bg-gray-50'
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                {turno && (
+                  <p
+                    className={`flex items-start gap-1.5 text-sm font-semibold ${propio ? 'text-coral-800' : 'text-gray-800'}`}
+                  >
+                    {propio && <IconArrowRight size={16} className="mt-0.5 shrink-0" />}
+                    {textoTurno(turno, vistaTurno, opcionesTurno)}
+                  </p>
+                )}
+                <p className={`text-sm leading-relaxed text-gray-700 ${turno ? 'mt-0.5' : ''} ${propio ? 'pl-[22px]' : ''}`}>
+                  {queSigue(etapaTurno, {
+                    vista: vistaTurno,
+                    analista: puedeAsignar,
+                    fechaCondicion: condicionCoa ? fechaCondicion(condicionCoa.vence_en) : null,
+                    esperaHasta,
+                    sinInmueble: !expediente.inmueble,
+                    fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo.vence_en) : null,
+                    pazYSalvoCargado: pazYSalvoRecibido,
+                    // Propietario directo: la API no admite coarrendatario (espera el Convenio).
+                  })}
+                </p>
+              </div>
+              {(demora || irADecision) && (
+                <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${propio ? 'pl-[22px] sm:pl-0' : ''}`}>
+                  {demora && (
+                    <span
+                      className={`inline-flex items-center gap-1 text-xs font-medium ${demora.tono === 'rojo' ? 'text-red-700' : 'text-amber-800'}`}
+                    >
+                      <IconClock size={14} className="shrink-0" />
+                      {demora.texto}
+                    </span>
+                  )}
+                  {irADecision && (
+                    <Button
+                      variante="secondary"
+                      className="min-h-10"
+                      onClick={() => {
+                        setActiveTab('resumen')
+                        requestAnimationFrame(() => {
+                          const destino = document.getElementById('decision-estudio')
+                          destino?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          destino?.focus({ preventScroll: true })
+                        })
+                      }}
+                    >
+                      {pazYSalvoRecibido ? 'Ir al paz y salvo' : 'Ir a la decisión'}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })()}
+      </section>
 
       {/* Adenda de precios §7: canon sobre el tope — aviso al analista y excepción de la Gerencia General. */}
       {isInternalRole && expediente.tope_canon && (
@@ -823,12 +874,12 @@ export default function ExpedienteDetallePage() {
         role="tabpanel"
         id={`panel-${activeTab}`}
         aria-labelledby={`tab-${activeTab}`}
-        className={`bg-white rounded-lg shadow-sm border border-gray-200${isLoading ? ' pointer-events-none' : ''}`}
+        className={`${activeTab === 'resumen' ? '' : 'bg-white rounded-xl shadow-sm border border-gray-200'}${isLoading ? ' pointer-events-none' : ''}`}
       >
         {/* Tab: Resumen. Siempre montado (oculto en las otras pestañas): al
             volver no se desmontan y re-piden sus tarjetas. Se mantienen al día
             con el contador de cargas (fetchExpediente), no remontándose. */}
-        <div className="p-4 sm:p-6 space-y-6" hidden={activeTab !== 'resumen'}>
+        <div className={user?.rol === 'solicitante' ? 'p-4 sm:p-6 space-y-6 bg-white rounded-xl shadow-sm border border-gray-200' : 'space-y-4'} hidden={activeTab !== 'resumen'}>
             {/* Banner del cierre del expediente — distinto si fue cancelado
                 vs cierre natural vs rechazado. Aplica a todos los roles. */}
             {expediente.estado === 'rechazado' ||
@@ -853,84 +904,68 @@ export default function ExpedienteDetallePage() {
                 }
               />
             ) : expediente.estado === 'cerrado' && expediente.cancelado_at ? (
-              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0">
-                    <IconX size={28} className="text-red-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio cancelado</h3>
-                    <p className="text-sm text-red-800">
-                      El estudio fue cancelado y no continuará con el proceso.
-                    </p>
+              <TarjetaSiguientePaso
+                tono="alerta"
+                icono={<IconX size={18} />}
+                titulo="Estudio cancelado"
+                descripcion={
+                  <>
+                    <p>El estudio fue cancelado y no continuará con el proceso.</p>
                     {expediente.motivo_cancelacion && (
-                      <p className="text-sm text-red-700 mt-2">
+                      <p className="mt-1">
                         <span className="font-semibold">Motivo:</span> {expediente.motivo_cancelacion}
                       </p>
                     )}
-                  </div>
-                </div>
-              </div>
+                  </>
+                }
+              />
             ) : expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado' ? (
               // rechazado→cerrado no escribe `cancelado_at` (no es abandono),
               // asi que sin esta rama caia en el "else" verde y saludaba con
               // "¡Estudio finalizado! Todos los pasos se completaron
               // exitosamente" a un candidato rechazado y sin contrato.
-              <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-white border border-gray-200 flex items-center justify-center shrink-0">
-                    <IconX size={28} className="text-gray-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 mb-0.5">Estudio cerrado</h3>
-                    <p className="text-sm text-gray-700">
-                      El estudio no fue aprobable y el caso quedó cerrado.
-                    </p>
+              <TarjetaSiguientePaso
+                tono="neutro"
+                icono={<IconX size={18} />}
+                titulo="Estudio cerrado"
+                descripcion={
+                  <>
+                    <p>El estudio no fue aprobable y el caso quedó cerrado.</p>
                     {textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) }) && (
-                      <p className="text-sm text-gray-600 mt-2">
+                      <p className="mt-1">
                         <span className="font-semibold">Motivo:</span>{' '}
                         {textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) })}
                       </p>
                     )}
-                  </div>
-                </div>
-              </div>
+                  </>
+                }
+              />
             ) : expediente.estado === 'cerrado' && expediente.cierre_sin_acta ? (
               // Adenda 1 contratos (respuesta 21): no terminó «con todos los pasos»: un
               // administrador lo cerró sin el acta de entrega e inventario, con motivo.
-              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-white border border-amber-200 flex items-center justify-center shrink-0">
-                    <IconAlertTriangle size={28} className="text-amber-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 mb-0.5">Estudio cerrado sin acta de entrega</h3>
-                    <p className="text-sm text-gray-700">
+              <TarjetaSiguientePaso
+                tono="revision"
+                icono={<IconAlertTriangle size={18} />}
+                titulo="Estudio cerrado sin acta de entrega"
+                descripcion={
+                  <>
+                    <p>
                       Lo cerró {expediente.cierre_sin_acta.porNombre ?? 'un administrador de Cofianza'} el{' '}
                       {formatDate(expediente.cierre_sin_acta.en)} sin el acta de entrega e inventario del contrato.
                     </p>
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="mt-1">
                       <span className="font-semibold">Motivo:</span> {expediente.cierre_sin_acta.motivo}
                     </p>
-                  </div>
-                </div>
-              </div>
+                  </>
+                }
+              />
             ) : expediente.estado === 'cerrado' && (
-              <div className="relative overflow-hidden bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-300 rounded-xl p-6">
-                <div className="absolute -top-6 -right-6 w-24 h-24 bg-green-200/40 rounded-full blur-2xl pointer-events-none" />
-                <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-emerald-200/30 rounded-full blur-2xl pointer-events-none" />
-                <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-white shadow-md border border-green-200 flex items-center justify-center shrink-0">
-                    <IconCheck size={28} className="text-green-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold text-gray-900 mb-0.5">¡Estudio finalizado!</h3>
-                    <p className="text-sm text-gray-700">
-                      Todos los pasos del proceso se completaron exitosamente. El estudio queda cerrado para consulta.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <TarjetaSiguientePaso
+                tono="accion"
+                icono={<IconCheck size={18} />}
+                titulo="¡Estudio finalizado!"
+                descripcion="Todos los pasos del proceso se completaron exitosamente. El estudio queda cerrado para consulta."
+              />
             )}
 
             {/* "Siguiente paso" — solo para el solicitante, al tope.
@@ -979,13 +1014,12 @@ export default function ExpedienteDetallePage() {
                 bloques={{
                   vincular:
                     puedeActuar && !expediente.inmueble && expediente.estado === 'aprobado' ? (
-                      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                        <p className="font-semibold">Siguiente paso: vincular el inmueble</p>
-                        <p className="mt-1">
-                          El estudio está aprobado sin propiedad. Cuando la persona elija el inmueble, use «Vincular inmueble»
-                          en la evaluación de abajo; después podrá generar el contrato.
-                        </p>
-                      </div>
+                      <TarjetaSiguientePaso
+                        tono="revision"
+                        icono={<IconBuilding2 size={18} />}
+                        titulo="Siguiente paso: vincular el inmueble"
+                        descripcion="El estudio está aprobado sin propiedad. Cuando la persona elija el inmueble, use «Vincular inmueble» en la evaluación de abajo; después podrá generar el contrato."
+                      />
                     ) : null,
                   contrato:
                     puedeActuar && expediente.inmueble ? (
@@ -1001,6 +1035,8 @@ export default function ExpedienteDetallePage() {
                     ) : null,
                   decision:
                     esCondicionado && puedeActuar ? (
+                      // Destino del atajo «Ir a la decisión» de la franja del turno.
+                      <div id="decision-estudio" tabIndex={-1} className="scroll-mt-4 rounded-xl focus:outline-none">
                       <AprobarCondicionadoCard
                         expedienteId={id}
                         expedienteEstado={expediente.estado}
@@ -1016,6 +1052,7 @@ export default function ExpedienteDetallePage() {
                         adenda5Tramo={titularCondicionado?.adenda5_tramo ?? null}
                         onAprobado={fetchExpediente}
                       />
+                      </div>
                     ) : null,
                   habilitar: puedeActuar ? (
                     <AccionHabilitarEstudioCard
@@ -1101,7 +1138,7 @@ export default function ExpedienteDetallePage() {
                     />
                   ),
                   visita: expediente.inmueble ? (
-                    <div className="rounded-lg border border-gray-200 p-4 sm:p-5">
+                    <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
                       <CitasSection
                         expedienteId={id}
                         expedienteEstado={expediente.estado}
@@ -1527,12 +1564,19 @@ function ExpedienteDetalleSkeleton() {
 function DatosPlegables({ plegar, children }: { plegar: boolean; children: ReactNode }) {
   if (!plegar) return <>{children}</>
   return (
-    <details className="rounded-lg border border-gray-200 bg-white">
-      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 px-4 py-4 text-sm sm:px-5 hover:bg-gray-50">
-        <span className="font-medium text-gray-800">Datos del estudio</span>
-        <span className="text-xs text-gray-500">Inmueble · Solicitante · Notas · Ver</span>
-      </summary>
-      <div className="border-t border-gray-200 p-4">{children}</div>
-    </details>
+    <Plegable titulo="Datos del estudio" resumen="Inmueble · Solicitante · Notas">
+      <div className="p-4">{children}</div>
+    </Plegable>
+  )
+}
+
+/** Un dato de la ficha del encabezado: rótulo encima, valor debajo. */
+function Dato({ etiqueta, ancho, children }: { etiqueta: ReactNode; ancho?: boolean; children: ReactNode }) {
+  // `ancho`: en el celular ocupa las dos columnas (textos largos o con acciones).
+  return (
+    <div className={ancho ? 'col-span-2 min-w-0' : 'min-w-0'}>
+      <dt className="text-xs font-medium text-gray-500">{etiqueta}</dt>
+      <dd className="mt-0.5 break-words text-sm font-medium text-gray-900">{children}</dd>
+    </div>
   )
 }

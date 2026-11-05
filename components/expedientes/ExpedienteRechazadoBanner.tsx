@@ -27,6 +27,8 @@
 
 import { IconAlertTriangle, IconInfo } from '@/components/icons'
 import { formatDate } from '@/lib/constants'
+import { buttonClasses } from '@/components/ui/Button'
+import { TarjetaSiguientePaso } from './TarjetaSiguientePaso'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import type { IEstudioHistorial } from '@/types/estudio'
 import { ESTUDIO_NUEVO, MAX_REEVALUACIONES, plazoEfectivoApelacion, reporteQueLimita } from './ReEvaluacionSection'
@@ -135,30 +137,28 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, ap
   }
 
   return (
-    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-white border border-red-200 flex items-center justify-center shrink-0">
-          <IconAlertTriangle size={28} className="text-red-600" />
+    <TarjetaSiguientePaso
+      tono="alerta"
+      icono={<IconAlertTriangle size={18} />}
+      titulo="Estudio no aprobable"
+      descripcion={motivo || MOTIVO_FALLBACK}
+    >
+      {/* 27-oct: «El flujo termina aquí» escondía la apelación (Política §11). */}
+      {apelacion !== undefined && (
+        <div className="px-4 py-4 sm:px-5">
+          {onReevaluar ? (
+            <ApelacionCofianza a={apelacion && leerApelacion(apelacion)} onReevaluar={onReevaluar} />
+          ) : (
+            <ApelacionGestor a={apelacion && leerApelacion(apelacion)} />
+          )}
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-red-900 mb-0.5">Estudio no aprobable</h3>
-          <p className="text-sm text-red-800">{motivo || MOTIVO_FALLBACK}</p>
-          {/* 27-oct: «El flujo termina aquí» escondía la apelación (Política §11). */}
-          {apelacion !== undefined &&
-            (onReevaluar ? (
-              <ApelacionCofianza a={apelacion && leerApelacion(apelacion)} onReevaluar={onReevaluar} />
-            ) : (
-              <ApelacionGestor a={apelacion && leerApelacion(apelacion)} />
-            ))}
-        </div>
-      </div>
-    </div>
+      )}
+    </TarjetaSiguientePaso>
   )
 }
 
 type Apelacion = ReturnType<typeof leerApelacion>
-const BOTON =
-  'mt-2 inline-flex items-center rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-800 hover:bg-red-100'
+const BOTON = buttonClasses('secondary', 'md', 'mt-3 min-h-10')
 const RECARGUE = 'Recargue la página en unos segundos.'
 const YA_NO_ADMITE = `Este resultado ya no admite apelación. ${ESTUDIO_NUEVO}`
 
@@ -173,8 +173,8 @@ function ApelacionCofianza({ a, onReevaluar }: { a: Apelacion | null; onReevalua
             : 'Se puede reevaluar dentro de los 15 días hábiles siguientes a esta decisión, mientras siga vigente el reporte de la central (30 días desde la consulta).'
         }`
     return (
-      <div className="mt-3">
-        <p className="text-xs text-red-800">{texto}</p>
+      <div>
+        <p className="text-sm leading-relaxed text-gray-700">{texto}</p>
         <button type="button" onClick={onReevaluar} className={BOTON}>
           {a?.estado === 'plazo_vencido' ? 'Registrar la fecha de la apelación' : 'Reevaluar con documentos'}
         </button>
@@ -191,14 +191,14 @@ function ApelacionCofianza({ a, onReevaluar }: { a: Apelacion | null; onReevalua
     agotada: `Ya se usaron las ${MAX_REEVALUACIONES} reevaluaciones que admite este resultado: no se puede apelar otra vez. ${ESTUDIO_NUEVO}`,
     no_admite: 'Este resultado no admite apelación.',
   }[a.estado]
-  return <p className="text-xs text-red-800 mt-2">{texto}</p>
+  return <p className="text-sm leading-relaxed text-gray-700">{texto}</p>
 }
 
 /** Inmobiliaria, propietario y Gerencia: la apelación va por correo a Cofianza. */
 function ApelacionGestor({ a }: { a: Apelacion | null }) {
   if (!a || (a.estado === 'abierta' && !a.radicada)) {
     return (
-      <p className="text-xs text-red-700 mt-2">
+      <p className="text-sm leading-relaxed text-gray-700">
         ¿Tiene documentos que cambian el resultado, por ejemplo el ingreso real del
         solicitante? Puede apelar enviándolos a{' '}
         <a href="mailto:hola@cofianza.co" className="font-medium underline">
@@ -221,5 +221,5 @@ function ApelacionGestor({ a }: { a: Apelacion | null }) {
     agotada: YA_NO_ADMITE,
     no_admite: 'Este resultado no admite apelación.',
   }[a.estado]
-  return <p className="text-xs text-red-700 mt-2">{texto}</p>
+  return <p className="text-sm leading-relaxed text-gray-700">{texto}</p>
 }

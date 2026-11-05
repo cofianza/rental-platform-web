@@ -174,10 +174,12 @@ export function CoarrendatarioInviteForm({
   }
 
   return (
-    <div className="border-2 border-amber-300 bg-amber-50/60 rounded-lg p-5">
+    // Para quien gestiona es una opción junto a la tarjeta del siguiente paso: marco
+    // sobrio (sin el recuadro ámbar grueso, que competía con ella). Al prospecto, igual que antes.
+    <div className={esGestor ? 'rounded-xl border border-gray-200 bg-white p-4 sm:p-5' : 'border-2 border-amber-300 bg-amber-50/60 rounded-lg p-5'}>
       <div className="flex items-start gap-3 mb-3">
-        <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-          <IconUsers size={20} className="text-amber-700" />
+        <div className={`w-10 h-10 rounded-full items-center justify-center shrink-0 ${esGestor ? 'hidden sm:flex bg-gray-100' : 'flex bg-amber-100'}`}>
+          <IconUsers size={20} className={esGestor ? 'text-gray-600' : 'text-amber-700'} />
         </div>
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">

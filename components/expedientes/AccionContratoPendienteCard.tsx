@@ -31,6 +31,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useAuthStore } from '@/stores/auth.store'
 import type { Bloqueo } from '@/types/contratoV3'
 import { Button, buttonClasses } from '@/components/ui/Button'
+import { TarjetaSiguientePaso } from './TarjetaSiguientePaso'
 import { IconAlertTriangle, IconArrowRight, IconBuilding2, IconFileText } from '@/components/icons'
 import type { IContrato } from '@/types/contrato'
 import { GenerarContratoModal } from './GenerarContratoModal'
@@ -199,7 +200,7 @@ export function AccionContratoPendienteCard({
             : 'El estudio está aprobado. Cree el contrato de vivienda con el asistente.'
         }
       >
-        <Link href={`/expedientes/${expedienteId}/contrato`} className={buttonClasses('primary', 'md', 'shadow-sm')}>
+        <Link href={`/expedientes/${expedienteId}/contrato`} className={buttonClasses('primary', 'md', 'min-h-10 shadow-sm')}>
           {borradorV3 ? 'Continuar' : 'Crear contrato'}
           <IconArrowRight size={16} />
         </Link>
@@ -235,7 +236,7 @@ export function AccionContratoPendienteCard({
         >
           <button
             onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
+            className={buttonClasses('primary', 'md', 'min-h-10 shadow-sm')}
           >
             Generar contrato
             <IconArrowRight size={16} />
@@ -266,17 +267,16 @@ export function AccionContratoPendienteCard({
 
 function CardAccion({ titulo, texto, children }: { titulo: string; texto: string; children: ReactNode }) {
   return (
-    <div className="border-2 border-primary-300 bg-primary-50/50 rounded-lg p-5">
-      <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-          <IconFileText size={20} className="text-primary-700" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-gray-900 mb-0.5">{titulo}</h3>
-          <p className="text-sm text-gray-600 mb-3">{texto}</p>
-          {children}
-        </div>
-      </div>
-    </div>
+    <TarjetaSiguientePaso
+      tono="accion"
+      icono={<IconFileText size={18} />}
+      titulo={titulo}
+      descripcion={
+        <>
+          <p>{texto}</p>
+          <div className="mt-3 flex flex-wrap gap-2">{children}</div>
+        </>
+      }
+    />
   )
 }
