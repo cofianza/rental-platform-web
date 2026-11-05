@@ -765,6 +765,7 @@ export default function ExpedienteDetallePage() {
                 revision={etapaTurno === 'decision' && !esperaCandidato}
                 analista={puedeAsignar}
                 sinEjecutar={etapaTurno === 'sin_ejecutar'}
+                pazYSalvoCargado={!!pazYSalvoRecibido}
                 className="shrink-0 self-start"
               />
             )}

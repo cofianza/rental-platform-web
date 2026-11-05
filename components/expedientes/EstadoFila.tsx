@@ -138,12 +138,14 @@ export function EstadoFila({
   // (hasta que lo carga: ahí falta que Cofianza lo acredite).
   const pazYSalvo = ev?.paz_y_salvo_vence_en ?? null
   const pazYSalvoCargado = !!pazYSalvo && !!ev?.paz_y_salvo_cargado
-  const revision = expediente.estado === 'condicionado' && expediente.depende_de === 'cofianza'
+  // Ya cargado, el turno es de Cofianza (acreditarlo), como en el detalle, aunque depende_de no lo diga aún.
+  const turnoPazYSalvo = pazYSalvoCargado && etapa === 'decision'
+  const revision = expediente.estado === 'condicionado' && (expediente.depende_de === 'cofianza' || turnoPazYSalvo)
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
   const demora =
     interno && etapa === 'decision' && !c && (!pazYSalvo || pazYSalvoCargado) ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
-  const turno = etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
+  const turno = turnoPazYSalvo ? 'cofianza' : etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
   // En la espera, la etapa ya dice a quién se espera: «Esperando al prospecto» la contradecía.
   // U8: fuera de Cofianza la etapa ya dice «En revisión de Cofianza»; la pastilla de turno lo repetía.
@@ -188,6 +190,7 @@ export function EstadoFila({
           revision={revision}
           analista={analista}
           sinEjecutar={etapa === 'sin_ejecutar'}
+          pazYSalvoCargado={pazYSalvoCargado}
           accion={turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined}
         />
       )}
