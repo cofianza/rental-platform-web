@@ -33,7 +33,8 @@ import {
   IconMail,
 } from '@/components/icons'
 import { abrirEnPestana, cn } from '@/lib/utils'
-import { SkeletonCards, SkeletonTable } from '@/components/ui/Skeleton'
+import { formatCurrency, formatDate } from '@/lib/constants'
+import { SkeletonText, SkeletonTable } from '@/components/ui/Skeleton'
 
 // ============================================
 // Types
@@ -66,29 +67,23 @@ const METODOS_LABELS: Record<string, string> = {
   cheque: 'Cheque',
 }
 
-const ESTADOS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  pendiente: { label: 'Pendiente', color: 'text-amber-700', bg: 'bg-amber-100' },
-  procesando: { label: 'Procesando', color: 'text-blue-700', bg: 'bg-blue-100' },
-  completado: { label: 'Completado', color: 'text-green-700', bg: 'bg-green-100' },
-  fallido: { label: 'Fallido', color: 'text-red-700', bg: 'bg-red-100' },
-  reembolsado: { label: 'Reembolsado', color: 'text-purple-700', bg: 'bg-purple-100' },
-  cancelado: { label: 'Cancelado', color: 'text-gray-700', bg: 'bg-gray-100' },
+// Marca de cada estado: círculo + pastilla, con la paleta corta de Documentos y Contratos.
+const ESTADOS_CONFIG: Record<string, { label: string; chip: string; circulo: string; icono: React.ReactNode }> = {
+  pendiente: { label: 'Pendiente', chip: 'bg-amber-100 text-amber-900', circulo: 'bg-amber-100 text-amber-800', icono: <IconClock size={16} /> },
+  procesando: { label: 'Procesando', chip: 'bg-blue-100 text-blue-800', circulo: 'bg-blue-100 text-blue-700', icono: <IconLoader size={16} /> },
+  completado: { label: 'Completado', chip: 'bg-green-100 text-green-800', circulo: 'bg-green-100 text-green-700', icono: <IconCheck size={16} /> },
+  fallido: { label: 'Fallido', chip: 'bg-red-100 text-red-800', circulo: 'bg-red-100 text-red-700', icono: <IconAlertTriangle size={16} /> },
+  reembolsado: { label: 'Reembolsado', chip: 'bg-gray-100 text-gray-700', circulo: 'bg-gray-100 text-gray-600', icono: <IconRefresh size={16} /> },
+  cancelado: { label: 'Cancelado', chip: 'bg-gray-100 text-gray-700', circulo: 'bg-gray-100 text-gray-500', icono: <IconX size={16} /> },
 }
+
+// El mismo botón de fila que Documentos: 40 px de alto, con texto.
+const BOTON_FILA =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50'
+const BOTON_SECUNDARIO = 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+const BOTON_PRINCIPAL = 'bg-primary-700 text-white hover:bg-primary-800'
 
 const ITEMS_PER_PAGE = 10
-
-// ============================================
-// Helper: Format COP
-// ============================================
-
-function formatCOP(amount: number): string {
-  return new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 // ============================================
 // Component
@@ -227,7 +222,9 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
         toast.success('Pago cancelado')
         onPagoActualizado?.()
       }
-      fetchPagos()
+      // Se espera la relectura antes de soltar el botón: sin esto se podía
+      // volver a pulsar sobre la fila vieja (doble factura o doble cancelación).
+      await fetchPagos()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : accion === 'facturar' ? 'No se pudo generar la factura' : 'No se pudo cancelar el pago')
     } finally {
@@ -262,9 +259,9 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
   // ============================================
   if (pageState === 'loading' && pagos.length === 0) {
     return (
-      <div className="space-y-6">
-        <SkeletonCards cantidad={3} etiqueta="Cargando resumen de pagos…" className="sm:grid-cols-3 lg:grid-cols-3" />
-        <SkeletonTable filas={5} columnas={6} etiqueta="Cargando pagos…" />
+      <div className="space-y-4">
+        <SkeletonText lineas={2} className="max-w-sm" />
+        <SkeletonTable filas={4} columnas={4} etiqueta="Cargando pagos…" />
       </div>
     )
   }
@@ -274,282 +271,24 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
   // ============================================
   if (pageState === 'error') {
     return (
-      <div className="bg-white rounded-lg border border-red-200 p-8 text-center">
-        <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar pagos</h3>
-        <p className="text-sm text-gray-500 mb-4">{errorMessage}</p>
-        <button
-          onClick={fetchPagos}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
-        >
-          <IconRefresh size={18} />
+      <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+        <div className="flex min-w-0 items-start gap-2">
+          <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-red-700" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-red-900">No pudimos cargar los pagos de este estudio.</p>
+            {errorMessage && <p className="mt-0.5 text-sm text-red-800">{errorMessage}</p>}
+          </div>
+        </div>
+        <button type="button" onClick={fetchPagos} className={cn(BOTON_FILA, 'border border-red-300 bg-white text-red-800 hover:bg-red-100')}>
+          <IconRefresh size={16} />
           Reintentar
         </button>
       </div>
     )
   }
 
-  // ============================================
-  // Render: Empty
-  // ============================================
-  if (pagos.length === 0 && !filterEstado && !filterConcepto) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-        <IconDollarSign size={48} className="mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Sin pagos registrados</h3>
-        <p className="text-sm text-gray-500 mb-6">
-          Aún no hay pagos en este estudio.
-          {/* Solo quien ve los botones de abajo puede generarlos. */}
-          {canManage && ' Puede generar un enlace de pago o registrar un pago manual.'}
-        </p>
-        {canManage && (
-          <div className="flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => setShowLinkModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
-            >
-              <IconPlus size={18} />
-              Generar enlace de pago
-            </button>
-            <button
-              onClick={() => setShowManualModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <IconPlus size={18} />
-              Registrar pago manual
-            </button>
-          </div>
-        )}
-
-        {/* Modals */}
-        <PagoManualModal
-          isOpen={showManualModal}
-          onClose={() => setShowManualModal(false)}
-          expedienteId={expedienteId}
-          onSuccess={handleSuccess}
-        />
-        <GenerarLinkPagoModal
-          isOpen={showLinkModal}
-          onClose={() => setShowLinkModal(false)}
-          expedienteId={expedienteId}
-          onSuccess={handleSuccess}
-        />
-      </div>
-    )
-  }
-
-  // ============================================
-  // Render: Main Content
-  // ============================================
-  return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Total Cobrado */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <IconCheck size={20} className="text-green-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">
-                Cobrado {hayRecorte ? 'en esta vista' : ''}
-              </p>
-              <p className="text-xl font-bold text-gray-900">{formatCOP(summary.totalCobrado)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Total Pendiente */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-              <IconClock size={20} className="text-amber-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">
-                Pendiente {hayRecorte ? 'en esta vista' : ''}
-              </p>
-              <p className="text-xl font-bold text-gray-900">{formatCOP(summary.totalPendiente)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Pagos por Estado */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <IconDollarSign size={20} className="text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Total Pagos</p>
-              <p className="text-xl font-bold text-gray-900">{total}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={filterEstado}
-            onChange={(e) => setFilterEstado(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-          >
-            <option value="">Todos los estados</option>
-            {Object.entries(ESTADOS_CONFIG).map(([value, { label }]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-
-          <select
-            value={filterConcepto}
-            onChange={(e) => setFilterConcepto(e.target.value)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
-          >
-            <option value="">Todos los conceptos</option>
-            {Object.entries(CONCEPTOS_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-
-          <button
-            onClick={fetchPagos}
-            disabled={pageState === 'loading'}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Actualizar"
-          >
-            <IconRefresh size={18} className={pageState === 'loading' ? 'animate-spin' : ''} />
-          </button>
-        </div>
-
-        {/* Action buttons */}
-        {canManage && (
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setShowLinkModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white text-sm rounded-lg hover:bg-primary-800 transition-colors"
-            >
-              <IconPlus size={18} />
-              Generar enlace
-            </button>
-            <button
-              onClick={() => setShowManualModal(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <IconPlus size={18} />
-              Pago manual
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Desktop Table */}
-      <div
-        className={cn('hidden md:block bg-white rounded-lg border border-gray-200 overflow-x-auto transition-opacity', pageState === 'loading' && 'pointer-events-none opacity-60')}
-        aria-busy={pageState === 'loading'}
-      >
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Concepto
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Monto
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Fecha
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Método
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Referencia
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {pagos.map((pago) => (
-              <PagoTableRow
-                onFacturar={canFacturar ? handleFacturar : undefined}
-                key={pago.id}
-                pago={pago}
-                canManage={canManage}
-                actionLoading={actionLoading}
-                onVerDetalle={handleVerDetalle}
-                onCopyLink={handleCopyLink}
-                onReenviarLink={handleReenviarLink}
-                onCancelar={handleCancelar}
-                onDescargarComprobante={handleDescargarComprobante}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile Cards */}
-      <div className={cn('md:hidden space-y-4 transition-opacity', pageState === 'loading' && 'pointer-events-none opacity-60')}>
-        {pagos.map((pago) => (
-          <PagoCard
-            onFacturar={canFacturar ? handleFacturar : undefined}
-            key={pago.id}
-            pago={pago}
-            canManage={canManage}
-            actionLoading={actionLoading}
-            onVerDetalle={handleVerDetalle}
-            onCopyLink={handleCopyLink}
-            onReenviarLink={handleReenviarLink}
-            onCancelar={handleCancelar}
-            onDescargarComprobante={handleDescargarComprobante}
-          />
-        ))}
-      </div>
-
-      {/* Empty filtered state */}
-      {pagos.length === 0 && (filterEstado || filterConcepto) && (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <p className="text-gray-500">No se encontraron pagos con los filtros seleccionados.</p>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-lg border border-gray-200 px-4 py-3">
-          <p className="text-sm text-gray-500">
-            Mostrando {((page - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(page * ITEMS_PER_PAGE, total)} de {total}
-          </p>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Anterior
-            </button>
-            <span className="text-sm text-gray-600">
-              {page} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modals */}
+  const modales = (
+    <>
       <PagoManualModal
         isOpen={showManualModal}
         onClose={() => setShowManualModal(false)}
@@ -562,6 +301,181 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
         expedienteId={expedienteId}
         onSuccess={handleSuccess}
       />
+    </>
+  )
+
+  const accionesCrear = canManage && (
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" onClick={() => setShowManualModal(true)} className={cn(BOTON_FILA, BOTON_SECUNDARIO)}>
+        <IconPlus size={16} />
+        Registrar pago manual
+      </button>
+      <button type="button" onClick={() => setShowLinkModal(true)} className={cn(BOTON_FILA, BOTON_PRINCIPAL)}>
+        <IconPlus size={16} />
+        Generar enlace de pago
+      </button>
+    </div>
+  )
+
+  // ============================================
+  // Render: Empty
+  // ============================================
+  if (pagos.length === 0 && !filterEstado && !filterConcepto) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900">Pagos del estudio</h3>
+        <div className="flex flex-col items-center rounded-xl border border-dashed border-gray-300 bg-white px-6 py-10 text-center">
+          <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+            <IconDollarSign size={20} />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-gray-900">Sin pagos registrados</p>
+          <p className="mt-1 max-w-md text-sm text-gray-600">
+            Aún no hay pagos en este estudio.
+            {/* Solo quien ve los botones de abajo puede generarlos. */}
+            {canManage && ' Puede generar un enlace de pago o registrar un pago manual.'}
+          </p>
+          {accionesCrear && <div className="mt-5">{accionesCrear}</div>}
+        </div>
+        {modales}
+      </div>
+    )
+  }
+
+  // ============================================
+  // Render: Main Content
+  // ============================================
+  const cantidadPendientes = (summary.porEstado.pendiente ?? 0) + (summary.porEstado.procesando ?? 0)
+  return (
+    <div className="space-y-4">
+      {/* Encabezado: cuánto se cobró, cuánto falta y las acciones de Cofianza */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold text-gray-900">Pagos del estudio</h3>
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600">
+            <span>
+              Cobrado{hayRecorte ? ' en esta vista' : ''}:{' '}
+              <span className="font-semibold text-gray-900 tabular-nums">{formatCurrency(summary.totalCobrado)}</span>
+            </span>
+            {cantidadPendientes > 0 && (
+              <span className="text-amber-900">
+                Pendiente{hayRecorte ? ' en esta vista' : ''}:{' '}
+                <span className="font-semibold tabular-nums">{formatCurrency(summary.totalPendiente)}</span>
+              </span>
+            )}
+            <span>
+              <span className="tabular-nums">{total}</span> {total === 1 ? 'pago' : 'pagos'}
+            </span>
+          </p>
+        </div>
+        {accionesCrear}
+      </div>
+
+      {/* Filtros */}
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor="pagos-filtro-estado" className="sr-only">Filtrar por estado</label>
+        <select
+          id="pagos-filtro-estado"
+          value={filterEstado}
+          onChange={(e) => setFilterEstado(e.target.value)}
+          className="min-h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+        >
+          <option value="">Todos los estados</option>
+          {Object.entries(ESTADOS_CONFIG).map(([value, { label }]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+        <label htmlFor="pagos-filtro-concepto" className="sr-only">Filtrar por concepto</label>
+        <select
+          id="pagos-filtro-concepto"
+          value={filterConcepto}
+          onChange={(e) => setFilterConcepto(e.target.value)}
+          className="min-h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-800 focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+        >
+          <option value="">Todos los conceptos</option>
+          {Object.entries(CONCEPTOS_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={fetchPagos}
+          disabled={pageState === 'loading'}
+          className={cn(BOTON_FILA, 'text-gray-700 hover:bg-gray-100')}
+        >
+          <IconRefresh size={16} className={pageState === 'loading' ? 'animate-spin' : ''} />
+          Actualizar
+        </button>
+      </div>
+
+      {/* Una fila por pago */}
+      {pagos.length > 0 ? (
+        <ul
+          className={cn(
+            'divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white transition-opacity',
+            pageState === 'loading' && 'pointer-events-none opacity-60',
+          )}
+          aria-busy={pageState === 'loading'}
+        >
+          {pagos.map((pago) => (
+            <PagoFila
+              key={pago.id}
+              pago={pago}
+              canManage={canManage}
+              actionLoading={actionLoading}
+              onVerDetalle={handleVerDetalle}
+              onCopyLink={handleCopyLink}
+              onReenviarLink={handleReenviarLink}
+              onCancelar={handleCancelar}
+              onDescargarComprobante={handleDescargarComprobante}
+              onFacturar={canFacturar ? handleFacturar : undefined}
+            />
+          ))}
+        </ul>
+      ) : (
+        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center">
+          <p className="text-sm text-gray-600">No hay pagos con los filtros seleccionados.</p>
+          <button
+            type="button"
+            onClick={() => { setFilterEstado(''); setFilterConcepto('') }}
+            className={cn(BOTON_FILA, 'mt-3 text-primary-800 hover:bg-primary-50')}
+          >
+            Quitar filtros
+          </button>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <nav aria-label="Páginas de pagos" className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-gray-600 tabular-nums">
+            {((page - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(page * ITEMS_PER_PAGE, total)} de {total}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className={cn(BOTON_FILA, BOTON_SECUNDARIO)}
+            >
+              Anterior
+            </button>
+            <span className="text-sm text-gray-600 tabular-nums">
+              {page} / {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className={cn(BOTON_FILA, BOTON_SECUNDARIO)}
+            >
+              Siguiente
+            </button>
+          </div>
+        </nav>
+      )}
+
+      {/* Modals */}
+      {modales}
       {selectedPagoId && (
         <PagoDetalleModal
           isOpen={showDetalleModal}
@@ -576,6 +490,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
         isOpen={!!confirmar}
         onClose={() => setConfirmar(null)}
         onConfirm={ejecutarConfirmado}
+        isLoading={actionLoading !== null}
         title={confirmar?.accion === 'cancelar' ? '¿Cancelar este pago?' : '¿Generar la factura electrónica de este pago?'}
         message={
           confirmar?.accion === 'cancelar'
@@ -591,7 +506,7 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
 }
 
 // ============================================
-// Table Row Component
+// Fila de un pago (escritorio y móvil)
 // ============================================
 
 interface PagoRowProps {
@@ -606,7 +521,7 @@ interface PagoRowProps {
   onFacturar?: (id: string) => void
 }
 
-function PagoTableRow({
+function PagoFila({
   pago,
   canManage,
   actionLoading,
@@ -619,247 +534,110 @@ function PagoTableRow({
 }: PagoRowProps) {
   const isLoading = actionLoading === pago.id
   const estadoConfig = ESTADOS_CONFIG[pago.estado] || ESTADOS_CONFIG.pendiente
+  const concepto = CONCEPTOS_LABELS[pago.concepto] || pago.concepto
+  const referencia = pago.transaction_ref || pago.referencia_bancaria
 
   return (
-    <tr className="hover:bg-gray-50">
-      <td className="px-4 py-3 whitespace-nowrap">
-        <div>
-          <p className="text-sm font-medium text-gray-900">
-            {CONCEPTOS_LABELS[pago.concepto] || pago.concepto}
-          </p>
-          {pago.descripcion && (
-            <p className="text-xs text-gray-500 truncate max-w-[200px]">{pago.descripcion}</p>
-          )}
-        </div>
-      </td>
-      <td className="px-4 py-3 whitespace-nowrap text-right">
-        <span className="text-sm font-semibold text-gray-900">{formatCOP(pago.monto)}</span>
-      </td>
-      <td className="px-4 py-3 whitespace-nowrap">
-        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${estadoConfig.bg} ${estadoConfig.color}`}>
-          {estadoConfig.label}
-        </span>
-      </td>
-      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-        {pago.fecha_pago
-          ? new Date(pago.fecha_pago).toLocaleDateString('es-CO')
-          : new Date(pago.created_at).toLocaleDateString('es-CO')}
-      </td>
-      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-        {METODOS_LABELS[pago.metodo] || pago.metodo}
-      </td>
-      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-        {pago.transaction_ref || pago.referencia_bancaria || '-'}
-      </td>
-      <td className="px-4 py-3 whitespace-nowrap text-right">
-        <div className="flex items-center justify-end gap-1">
-          {isLoading ? (
-            <IconLoader size={16} className="animate-spin text-gray-500" />
-          ) : (
-            <>
-              <button
-                onClick={() => onVerDetalle(pago.id)}
-                className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                title="Ver detalle"
-              >
-                <IconEye size={16} />
-              </button>
-
-              {pago.payment_link_url && pago.estado === 'pendiente' && (
-                <>
-                  <button
-                    onClick={() => onCopyLink(pago)}
-                    className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                    title="Copiar enlace"
-                  >
-                    <IconCopy size={16} />
-                  </button>
-                  {canManage && (
-                    <button
-                      onClick={() => onReenviarLink(pago.id)}
-                      className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                      title="Reenviar enlace"
-                    >
-                      <IconMail size={16} />
-                    </button>
-                  )}
-                </>
-              )}
-
-              {/* 'fallido' también: MP deja pagar el mismo checkout, y un pago manual del concepto lo exige cerrado */}
-              {(pago.estado === 'pendiente' || pago.estado === 'fallido') && canManage && (
-                <button
-                  onClick={() => onCancelar(pago.id)}
-                  className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                  title="Cancelar"
-                >
-                  <IconX size={16} />
-                </button>
-              )}
-
-              {pago.comprobante_storage_key && pago.estado === 'completado' && (
-                <button
-                  onClick={() => onDescargarComprobante(pago.id)}
-                  className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
-                  title="Descargar comprobante"
-                >
-                  <IconDownload size={16} />
-                </button>
-              )}
-
-              {pago.factura?.id ? (
-                <Link
-                  href={`/facturacion/${pago.factura.id}`}
-                  className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                  title={`Ver factura ${pago.factura.numero || ''}`.trim()}
-                >
-                  <IconFileText size={16} />
-                </Link>
-              ) : (
-                pago.estado === 'completado' && onFacturar && (
-                  <button
-                    onClick={() => onFacturar(pago.id)}
-                    className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
-                    title="Generar factura electrónica (Factus / DIAN)"
-                  >
-                    <IconFileText size={16} />
-                  </button>
-                )
-              )}
-            </>
-          )}
-        </div>
-      </td>
-    </tr>
-  )
-}
-
-// ============================================
-// Mobile Card Component
-// ============================================
-
-function PagoCard({
-  pago,
-  canManage,
-  actionLoading,
-  onVerDetalle,
-  onCopyLink,
-  onReenviarLink,
-  onCancelar,
-  onDescargarComprobante,
-  onFacturar,
-}: PagoRowProps) {
-  const isLoading = actionLoading === pago.id
-  const estadoConfig = ESTADOS_CONFIG[pago.estado] || ESTADOS_CONFIG.pendiente
-
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <p className="font-medium text-gray-900">
-            {CONCEPTOS_LABELS[pago.concepto] || pago.concepto}
-          </p>
-          {pago.descripcion && (
-            <p className="text-sm text-gray-500 mt-0.5 break-words">{pago.descripcion}</p>
-          )}
-        </div>
-        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${estadoConfig.bg} ${estadoConfig.color}`}>
-          {estadoConfig.label}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-        <div>
-          <p className="text-gray-500">Monto</p>
-          <p className="font-semibold text-gray-900">{formatCOP(pago.monto)}</p>
-        </div>
-        <div>
-          <p className="text-gray-500">Fecha</p>
-          <p className="text-gray-900">
-            {pago.fecha_pago
-              ? new Date(pago.fecha_pago).toLocaleDateString('es-CO')
-              : new Date(pago.created_at).toLocaleDateString('es-CO')}
+    <li className="flex gap-3 px-4 py-4 sm:px-5">
+      <span
+        aria-hidden="true"
+        className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', estadoConfig.circulo)}
+      >
+        {estadoConfig.icono}
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        {/* Qué pago es, cuánto y en qué estado está */}
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h4 className="text-sm font-semibold text-gray-900">{concepto}</h4>
+            <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCurrency(pago.monto)}</span>
+            <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', estadoConfig.chip)}>{estadoConfig.label}</span>
+          </div>
+          {pago.descripcion && <p className="mt-1 break-words text-sm text-gray-700">{pago.descripcion}</p>}
+          <p className="mt-1 flex flex-wrap gap-x-2 text-xs text-gray-600">
+            <span>
+              {pago.fecha_pago ? `Pagado el ${formatDate(pago.fecha_pago)}` : `Creado el ${formatDate(pago.created_at)}`}
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>{METODOS_LABELS[pago.metodo] || pago.metodo}</span>
+            {referencia && (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="break-all">Ref. {referencia}</span>
+              </>
+            )}
           </p>
         </div>
-        <div>
-          <p className="text-gray-500">Método</p>
-          <p className="text-gray-900">{METODOS_LABELS[pago.metodo] || pago.metodo}</p>
-        </div>
-        <div>
-          <p className="text-gray-500">Referencia</p>
-          <p className="text-gray-900 break-all">{pago.transaction_ref || pago.referencia_bancaria || '-'}</p>
-        </div>
-      </div>
 
-      <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+        {/* Qué se puede hacer */}
         {isLoading ? (
-          <IconLoader size={16} className="animate-spin text-gray-500" />
+          <span role="status" className="inline-flex min-h-10 items-center gap-2 text-sm text-gray-600">
+            <IconLoader size={16} className="animate-spin" />
+            Un momento…
+          </span>
         ) : (
-          <>
+          <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
             <button
+              type="button"
               onClick={() => onVerDetalle(pago.id)}
-              className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+              aria-label={`Ver detalle del pago de ${concepto}`}
+              className={cn(BOTON_FILA, BOTON_SECUNDARIO)}
             >
+              <IconEye size={16} />
               Ver detalle
             </button>
 
             {pago.payment_link_url && pago.estado === 'pendiente' && (
               <>
-                <button
-                  onClick={() => onCopyLink(pago)}
-                  className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
+                <button type="button" onClick={() => onCopyLink(pago)} className={cn(BOTON_FILA, BOTON_SECUNDARIO)}>
+                  <IconCopy size={16} />
                   Copiar enlace
                 </button>
                 {canManage && (
-                  <button
-                    onClick={() => onReenviarLink(pago.id)}
-                    className="px-3 py-1.5 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                  >
-                    Reenviar
+                  <button type="button" onClick={() => onReenviarLink(pago.id)} className={cn(BOTON_FILA, BOTON_SECUNDARIO)}>
+                    <IconMail size={16} />
+                    Reenviar enlace
                   </button>
                 )}
               </>
             )}
 
+            {/* 'fallido' también: MP deja pagar el mismo checkout, y un pago manual del concepto lo exige cerrado */}
             {(pago.estado === 'pendiente' || pago.estado === 'fallido') && canManage && (
-              <button
-                onClick={() => onCancelar(pago.id)}
-                className="px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                Cancelar
+              <button type="button" onClick={() => onCancelar(pago.id)} className={cn(BOTON_FILA, 'text-red-700 hover:bg-red-50')}>
+                <IconX size={16} />
+                Cancelar pago
               </button>
             )}
 
             {pago.comprobante_storage_key && pago.estado === 'completado' && (
-              <button
-                onClick={() => onDescargarComprobante(pago.id)}
-                className="px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-              >
+              <button type="button" onClick={() => onDescargarComprobante(pago.id)} className={cn(BOTON_FILA, BOTON_SECUNDARIO)}>
+                <IconDownload size={16} />
                 Comprobante
               </button>
             )}
 
             {pago.factura?.id ? (
-              <Link
-                href={`/facturacion/${pago.factura.id}`}
-                className="px-3 py-1.5 text-sm text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-              >
-                Ver factura
+              <Link href={`/facturacion/${pago.factura.id}`} className={cn(BOTON_FILA, BOTON_SECUNDARIO)}>
+                <IconFileText size={16} />
+                {pago.factura.numero ? `Factura ${pago.factura.numero}` : 'Ver factura'}
               </Link>
             ) : (
               pago.estado === 'completado' && onFacturar && (
                 <button
+                  type="button"
                   onClick={() => onFacturar(pago.id)}
-                  className="px-3 py-1.5 text-sm text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                  title="Generar la factura electrónica (Factus / DIAN)"
+                  className={cn(BOTON_FILA, BOTON_PRINCIPAL)}
                 >
+                  <IconFileText size={16} />
                   Facturar
                 </button>
               )
             )}
-          </>
+          </div>
         )}
       </div>
-    </div>
+    </li>
   )
 }

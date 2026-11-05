@@ -265,7 +265,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
         {/* Payment link */}
         {pago.payment_link_url && (
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-600 uppercase tracking-wide mb-1">Link de pago</p>
+            <p className="text-xs text-blue-600 uppercase tracking-wide mb-1">Enlace de pago</p>
             <div className="flex items-center gap-2">
               <input
                 type="text"

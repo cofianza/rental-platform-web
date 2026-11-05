@@ -2,10 +2,25 @@
 
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconPlus, IconDownload, IconEye, IconRefresh, IconLoader, IconArrowRight, IconMail } from '@/components/icons'
+import {
+  IconAlertTriangle,
+  IconArrowRight,
+  IconCheck,
+  IconClock,
+  IconDownload,
+  IconEye,
+  IconFileText,
+  IconHistory,
+  IconLoader,
+  IconMail,
+  IconPencil,
+  IconPlus,
+  IconRefresh,
+  IconShieldCheck,
+  IconX,
+} from '@/components/icons'
 import { GenerarContratoModal } from './GenerarContratoModal'
 import { ContratoTransicionModal } from './ContratoTransicionModal'
 import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
@@ -17,7 +32,8 @@ import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { ESTADOS_CONTRATO, etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
+import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
+import { cn } from '@/lib/utils'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
 import type { Bloqueo } from '@/types/contratoV3'
@@ -28,6 +44,26 @@ const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 // Estados anteriores al envío a firma. A nivel de módulo (antes se redeclaraba
 // dentro del componente) porque también decide qué acciones ve el dueño.
 const ESTADOS_PRE_FIRMA: EstadoContrato[] = ['borrador', 'en_revision', 'aprobado']
+
+// Marca de cada estado: círculo + pastilla, con la misma paleta corta que
+// Documentos (gris, ámbar, azul, verde, rojo). Antes eran nueve colores.
+const MARCA_CONTRATO: Record<EstadoContrato, { circulo: string; chip: string; icono: React.ReactNode }> = {
+  borrador: { circulo: 'bg-gray-100 text-gray-600', chip: 'bg-gray-100 text-gray-700', icono: <IconFileText size={16} /> },
+  en_revision: { circulo: 'bg-amber-100 text-amber-800', chip: 'bg-amber-100 text-amber-900', icono: <IconClock size={16} /> },
+  aprobado: { circulo: 'bg-amber-100 text-amber-800', chip: 'bg-amber-100 text-amber-900', icono: <IconCheck size={16} /> },
+  pendiente_firma: { circulo: 'bg-blue-100 text-blue-700', chip: 'bg-blue-100 text-blue-800', icono: <IconPencil size={16} /> },
+  firma_incompleta: { circulo: 'bg-red-100 text-red-700', chip: 'bg-red-100 text-red-800', icono: <IconAlertTriangle size={16} /> },
+  firmado: { circulo: 'bg-green-100 text-green-700', chip: 'bg-green-100 text-green-800', icono: <IconCheck size={16} /> },
+  vigente: { circulo: 'bg-green-100 text-green-700', chip: 'bg-green-100 text-green-800', icono: <IconShieldCheck size={16} /> },
+  finalizado: { circulo: 'bg-gray-100 text-gray-600', chip: 'bg-gray-100 text-gray-700', icono: <IconHistory size={16} /> },
+  cancelado: { circulo: 'bg-gray-100 text-gray-500', chip: 'bg-gray-100 text-gray-700', icono: <IconX size={16} /> },
+}
+
+// El mismo botón de fila que Documentos: 40 px de alto, con texto.
+const BOTON_FILA =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50'
+const BOTON_SECUNDARIO = 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+const BOTON_PRINCIPAL = 'bg-primary-700 text-white hover:bg-primary-800'
 
 interface ContratosSectionProps {
   expedienteId: string
@@ -59,7 +95,6 @@ export function ContratosSection({
   conComision,
 }: ContratosSectionProps) {
   const { user } = useAuth()
-  const router = useRouter()
 
   const [contratos, setContratos] = useState<IContrato[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -236,7 +271,10 @@ export function ContratosSection({
   }
 
 
+  // Mientras se piden las transiciones, el botón no se puede volver a pulsar.
+  const [abriendoTransicionId, setAbriendoTransicionId] = useState<string | null>(null)
   async function handleOpenTransicion(contrato: IContrato) {
+    setAbriendoTransicionId(contrato.id)
     try {
       const data = await contratoService.getTransicionesDisponibles(contrato.id)
       setTransicionesDisponibles(data.transiciones_disponibles)
@@ -244,6 +282,8 @@ export function ContratosSection({
       setTransicionContrato(contrato)
     } catch {
       toast.error('Error al obtener las transiciones disponibles')
+    } finally {
+      setAbriendoTransicionId(null)
     }
   }
 
@@ -287,110 +327,102 @@ export function ContratosSection({
     }
   }
 
-  // Acciones de una fila: las comparten la tabla (escritorio) y las tarjetas (móvil).
-  const accionesContrato = (c: IContrato, esV3: boolean) => (
-    <div className="flex flex-wrap items-center justify-end gap-2">
-      {esV3 && contratosV3 && canCreate && c.estado === 'borrador' && (
-        <Link
-          href={rutaAsistente}
-          className={buttonClasses('primary', 'sm')}
-          title="Continuar el contrato en el asistente"
-        >
-          <IconArrowRight size={14} />
-          Continuar
-        </Link>
-      )}
-      {/* En firma, firma incompleta, fianza activa o terminado: se sigue en el asistente (ahí va el acta
-          de entrega), también con el flag apagado: el API sigue mostrando los contratos ya enviados. */}
-      {esV3 && veAsistente && c.estado !== 'borrador' && c.estado !== 'cancelado' && (
-        <Link
-          href={rutaAsistente}
-          className={buttonClasses('secondary', 'sm')}
-          title="Ver el estado de la firma en el asistente"
-        >
-          <IconArrowRight size={14} />
-          Abrir
-        </Link>
-      )}
-      {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (
+  // Acciones de una fila: las secundarias primero y la principal (verde) al final,
+  // como en Documentos. Botones de 40 px con texto: antes eran iconos de 28 px.
+  const accionesContrato = (c: IContrato, esV3: boolean) => {
+    const nombre = esV3 ? `contrato ${c.numero ?? ''}`.trim() : `contrato versión ${c.version}`
+    const firmasAbiertas = firmaContratoId === c.id
+    return (
+      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
         <button
-          onClick={() => handleEnviarAFirma(c)}
-          disabled={enviandoFirmaId === c.id}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-ink-900 bg-coral-500 rounded-md hover:bg-coral-400 disabled:opacity-50"
-          title="Llevar a firma y enviar al/los firmante(s)"
+          type="button"
+          onClick={() => handleDownload(c)}
+          disabled={downloadingId === c.id || !c.storage_key}
+          aria-label={`Descargar el PDF del ${nombre}`}
+          title={c.storage_key ? undefined : 'El PDF todavía no está disponible'}
+          className={cn(BOTON_FILA, BOTON_SECUNDARIO)}
         >
-          {enviandoFirmaId === c.id ? (
-            <IconLoader size={14} className="animate-spin" />
-          ) : (
-            <IconMail size={14} />
-          )}
-          {enviandoFirmaId === c.id ? 'Enviando…' : 'Enviar a firma'}
+          {downloadingId === c.id ? <IconLoader size={16} className="animate-spin" /> : <IconDownload size={16} />}
+          PDF
         </button>
-      )}
-      {/* La fila entera ya navega al detalle: el ojo solo
-          se conserva para roles internos. */}
-      {!esV3 && !esDuenio && (
-        <Link
-          href={`/contratos/${c.id}`}
-          className="inline-block p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
-          title="Ver detalle"
-          aria-label="Ver detalle del contrato"
-        >
-          <IconEye size={16} />
-        </Link>
-      )}
-      <button
-        onClick={() => handleDownload(c)}
-        disabled={downloadingId === c.id || !c.storage_key}
-        className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-        title="Descargar PDF"
-        aria-label="Descargar PDF del contrato"
-      >
-        {downloadingId === c.id ? (
-          <IconLoader size={16} className="animate-spin" />
-        ) : (
-          <IconDownload size={16} />
+        {/* Con la fila enlazada al detalle, «Ver detalle» queda solo para los
+            roles internos: al dueño solo le añadía ruido. */}
+        {!esV3 && !esDuenio && (
+          <Link href={`/contratos/${c.id}`} className={cn(BOTON_FILA, BOTON_SECUNDARIO)} aria-label={`Ver detalle del ${nombre}`}>
+            <IconEye size={16} />
+            Ver detalle
+          </Link>
         )}
-      </button>
-      {!esV3 && canRegenerate && c.estado === 'borrador' && (
-        <button
-          onClick={() => setRegenerarTarget(c)}
-          className="p-1.5 text-gray-500 hover:text-amber-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-          title="Editar y regenerar (fecha, plazo, canon, servicios)"
-          aria-label="Editar y regenerar el contrato"
-        >
-          <IconRefresh size={16} />
-        </button>
-      )}
-      {!esV3 && canRegenerate && c.estado === 'pendiente_firma' && (
-        <button
-          onClick={() => { setTieneMultiparte(null); setFirmaContratoId(firmaContratoId === c.id ? null : c.id) }}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md border ${firmaContratoId === c.id ? 'text-primary-700 bg-primary-50 border-primary-300' : 'text-primary-600 bg-white border-primary-200 hover:bg-primary-50'}`}
-          title="Ver y gestionar las firmas de este contrato (reenviar / cancelar)"
-        >
-          <IconMail size={14} />
-          {firmaContratoId === c.id ? 'Ocultar firmas' : 'Ver firmas'}
-        </button>
-      )}
-      {/* Antes de la firma, "Cambiar estado" solo le ofrece
-          "Cancelar" al dueño: lo escondemos ahí y se lo
-          dejamos en pendiente_firma / vigente, donde sí sirve
-          para terminar o cancelar el contrato. */}
-      {!esV3 &&
-        canRegenerate &&
-        !TERMINAL_STATES.includes(c.estado) &&
-        !(esDuenio && ESTADOS_PRE_FIRMA.includes(c.estado)) && (
-        <button
-          onClick={() => handleOpenTransicion(c)}
-          className="p-1.5 text-gray-500 hover:text-primary-600 rounded-md hover:bg-gray-100"
-          title="Cambiar estado"
-          aria-label="Cambiar el estado del contrato"
-        >
-          <IconArrowRight size={16} />
-        </button>
-      )}
-    </div>
-  )
+        {!esV3 && canRegenerate && c.estado === 'borrador' && (
+          <button
+            type="button"
+            onClick={() => setRegenerarTarget(c)}
+            className={cn(BOTON_FILA, BOTON_SECUNDARIO)}
+            title="Fecha de inicio, plazo, canon y servicios"
+          >
+            <IconRefresh size={16} />
+            Editar y regenerar
+          </button>
+        )}
+        {/* Antes de la firma, "Cambiar estado" solo le ofrece "Cancelar" al
+            dueño: lo escondemos ahí y se lo dejamos en pendiente_firma /
+            vigente, donde sí sirve para terminar o cancelar el contrato. */}
+        {!esV3 &&
+          canRegenerate &&
+          !TERMINAL_STATES.includes(c.estado) &&
+          !(esDuenio && ESTADOS_PRE_FIRMA.includes(c.estado)) && (
+            <button
+              type="button"
+              onClick={() => handleOpenTransicion(c)}
+              disabled={abriendoTransicionId === c.id}
+              className={cn(BOTON_FILA, BOTON_SECUNDARIO)}
+            >
+              {abriendoTransicionId === c.id ? <IconLoader size={16} className="animate-spin" /> : <IconArrowRight size={16} />}
+              Cambiar estado
+            </button>
+          )}
+        {!esV3 && canRegenerate && c.estado === 'pendiente_firma' && (
+          <button
+            type="button"
+            onClick={() => { setTieneMultiparte(null); setFirmaContratoId(firmasAbiertas ? null : c.id) }}
+            aria-expanded={firmasAbiertas}
+            aria-controls="contrato-firmas"
+            className={cn(BOTON_FILA, firmasAbiertas ? 'border border-primary-300 bg-primary-50 text-primary-800' : BOTON_SECUNDARIO)}
+            title="Ver y gestionar las firmas de este contrato"
+          >
+            <IconMail size={16} />
+            {firmasAbiertas ? 'Ocultar firmas' : 'Ver firmas'}
+          </button>
+        )}
+        {/* En firma, firma incompleta, fianza activa o terminado: se sigue en el asistente (ahí va el acta
+            de entrega), también con el flag apagado: el API sigue mostrando los contratos ya enviados. */}
+        {esV3 && veAsistente && c.estado !== 'borrador' && c.estado !== 'cancelado' && (
+          <Link href={rutaAsistente} className={cn(BOTON_FILA, BOTON_SECUNDARIO)} title="Ver el estado de la firma en el asistente">
+            <IconArrowRight size={16} />
+            Abrir
+          </Link>
+        )}
+        {esV3 && contratosV3 && canCreate && c.estado === 'borrador' && (
+          <Link href={rutaAsistente} className={cn(BOTON_FILA, BOTON_PRINCIPAL)} title="Continuar el contrato en el asistente">
+            <IconArrowRight size={16} />
+            Continuar
+          </Link>
+        )}
+        {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (
+          <button
+            type="button"
+            onClick={() => handleEnviarAFirma(c)}
+            disabled={enviandoFirmaId === c.id || confirmandoFirma}
+            className={cn(BOTON_FILA, BOTON_PRINCIPAL)}
+            title="Llevar a firma y enviar al/los firmante(s)"
+          >
+            {enviandoFirmaId === c.id ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
+            {enviandoFirmaId === c.id ? 'Enviando…' : 'Enviar a firma'}
+          </button>
+        )}
+      </div>
+    )
+  }
 
   // Loading state
   // Solo la primera carga: al refrescar se sigue viendo lo que ya estaba.
@@ -401,33 +433,51 @@ export function ContratosSection({
   // Error state
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600 mb-2">{error}</p>
-        <button onClick={fetchContratos} className="text-sm text-primary-600 hover:underline">
+      <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-800">No pudimos cargar los contratos de este estudio.</p>
+        <button
+          type="button"
+          onClick={fetchContratos}
+          className={cn(BOTON_FILA, 'border border-red-300 bg-white text-red-800 hover:bg-red-100')}
+        >
+          <IconRefresh size={16} />
           Reintentar
         </button>
       </div>
     )
   }
 
+  const enFirma = contratos.filter((c) => c.estado === 'pendiente_firma').length
+  const contratoFirmas = contratos.find((c) => c.id === firmaContratoId)
+
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold text-gray-900">
-          Contratos ({contratos.length})
-        </h3>
+      {/* Encabezado: cuántos hay y la acción para crear el primero */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h3 className="text-lg font-semibold text-gray-900">Contratos del estudio</h3>
+          {contratos.length > 0 && (
+            <p className="mt-1 text-sm text-gray-600">
+              <span className="tabular-nums">{contratos.length}</span> {contratos.length === 1 ? 'contrato' : 'contratos'}
+              {enFirma > 0 && (
+                <>
+                  {' · '}
+                  <span className="font-medium text-blue-800">
+                    <span className="tabular-nums">{enFirma}</span> en firma
+                  </span>
+                </>
+              )}
+            </p>
+          )}
+        </div>
         {canCreate && expedienteAprobado && !sinInmueble && contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro && (
-          <Link href={rutaAsistente} className={buttonClasses('primary', 'md')}>
+          <Link href={rutaAsistente} className={buttonClasses('primary', 'md', 'min-h-10 shrink-0')}>
             <IconPlus size={16} />
             Crear contrato
           </Link>
         )}
         {canCreate && expedienteAprobado && !sinInmueble && !contratosV3 && (
-          <button
-            onClick={() => setGenerarOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800"
-          >
+          <button type="button" onClick={() => setGenerarOpen(true)} className={buttonClasses('primary', 'md', 'min-h-10 shrink-0')}>
             <IconPlus size={16} />
             Generar contrato
           </button>
@@ -444,141 +494,91 @@ export function ContratosSection({
         />
       )}
 
-      {/* Empty state */}
       {contratos.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
-          <p className="text-gray-500 mb-2">No hay contratos generados</p>
-          {!expedienteAprobado ? (
-            <p className="text-sm text-gray-500">
-              El contrato se podrá generar cuando el estudio del arrendatario
-              esté aprobado.
-            </p>
-          ) : sinInmueble ? (
-            <p className="text-sm text-gray-500">
-              El estudio está aprobado sin propiedad. Vincule el inmueble antes de generar el contrato.
-            </p>
-          ) : canCreate && contratosV3 ? (
-            <p className="text-sm text-gray-500">
-              Pulse «Crear contrato» para abrir el asistente.
-            </p>
-          ) : canCreate ? (
-            <p className="text-sm text-gray-500">
-              Pulse «Generar contrato» para crear uno con la plantilla activa.
-            </p>
-          ) : (
-            <p className="text-sm text-gray-500">
-              El contrato se generará cuando el propietario lo emita, ahora que el
-              estudio fue aprobado.
-            </p>
-          )}
+        <div className="flex flex-col items-center rounded-xl border border-dashed border-gray-300 bg-white px-6 py-10 text-center">
+          <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+            <IconFileText size={20} />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-gray-900">Este estudio todavía no tiene contrato</p>
+          <p className="mt-1 max-w-md text-sm text-gray-600">
+            {!expedienteAprobado
+              ? 'El contrato se podrá generar cuando el estudio del arrendatario esté aprobado.'
+              : sinInmueble
+                ? 'El estudio está aprobado sin propiedad. Vincule el inmueble antes de generar el contrato.'
+                : canCreate && contratosV3
+                  ? 'Pulse «Crear contrato» para abrir el asistente.'
+                  : canCreate
+                    ? 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
+                    : 'El contrato se generará cuando el propietario lo emita, ahora que el estudio fue aprobado.'}
+          </p>
         </div>
       ) : (
-        <>
-        {/* Table */}
-        <div className="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Archivo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Versión
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {contratos.map((c) => {
-                  const estadoStyle = ESTADOS_CONTRATO[c.estado] ?? ESTADOS_CONTRATO.borrador
-                  // /contratos/:id de una fila V3 redirige al asistente: vamos directo.
-                  const esV3 = !!c.destinacion
-                  return (
-                    <tr
-                      key={c.id}
-                      onClick={() => router.push(esV3 ? rutaAsistente : `/contratos/${c.id}`)}
-                      className="hover:bg-gray-50 cursor-pointer"
-                    >
-                      <td className="px-6 py-4">
-                        <p className="text-sm font-medium text-gray-900">
-                          {esV3 ? `Contrato ${c.numero ?? ''}` : c.nombre_archivo || 'contrato.pdf'}
-                        </p>
-                        {c.fecha_inicio && (
-                          <p className="text-xs text-gray-500">
-                            Inicio: {formatDate(c.fecha_inicio)} · {c.duracion_meses || 12} meses
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          v{c.version}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoStyle.bgColor} ${estadoStyle.textColor}`}>
-                          {etiquetaContrato(c.estado, esV3)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {c.fecha_generacion ? formatDateTime(c.fecha_generacion) : formatDateTime(c.created_at)}
-                      </td>
-                      <td
-                        className="px-6 py-4 text-right"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {accionesContrato(c, esV3)}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Móvil: tarjetas, para que las acciones no queden fuera de la pantalla. */}
-        <div className="md:hidden space-y-3">
+        <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
           {contratos.map((c) => {
-            const estadoStyle = ESTADOS_CONTRATO[c.estado] ?? ESTADOS_CONTRATO.borrador
+            // /contratos/:id de una fila V3 redirige al asistente: vamos directo.
             const esV3 = !!c.destinacion
+            const marca = MARCA_CONTRATO[c.estado] ?? MARCA_CONTRATO.borrador
+            const titulo = esV3 ? `Contrato ${c.numero ?? ''}`.trim() : `Contrato · versión ${c.version}`
+            const generado = c.fecha_generacion ?? c.created_at
             return (
-              <div key={c.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3">
-                <Link
-                  href={esV3 ? rutaAsistente : `/contratos/${c.id}`}
-                  className="block w-full text-left"
+              <li key={c.id} className={cn('flex gap-3 px-4 py-4 sm:px-5', firmaContratoId === c.id && 'bg-primary-50/40')}>
+                <span
+                  aria-hidden="true"
+                  className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', marca.circulo)}
                 >
-                  <span className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium text-gray-900">
-                      {esV3 ? `Contrato ${c.numero ?? ''}` : c.nombre_archivo || 'contrato.pdf'}
-                    </span>
-                    <span className={`inline-flex shrink-0 items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${estadoStyle.bgColor} ${estadoStyle.textColor}`}>
-                      {etiquetaContrato(c.estado, esV3)}
-                    </span>
-                  </span>
-                  <span className="mt-1 block text-xs text-gray-500">
-                    Versión {c.version} · {c.fecha_generacion ? formatDateTime(c.fecha_generacion) : formatDateTime(c.created_at)}
-                  </span>
-                </Link>
-                {accionesContrato(c, esV3)}
-              </div>
+                  {marca.icono}
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  {/* Qué contrato es y en qué estado está */}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <h4 className="text-sm font-semibold text-gray-900">
+                        <Link
+                          href={esV3 ? rutaAsistente : `/contratos/${c.id}`}
+                          className="rounded-sm hover:text-primary-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                        >
+                          {titulo}
+                        </Link>
+                      </h4>
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', marca.chip)}>
+                        {etiquetaContrato(c.estado, esV3)}
+                      </span>
+                    </div>
+                    <p className="mt-1 flex flex-wrap gap-x-2 text-xs text-gray-600">
+                      {c.fecha_inicio && (
+                        <span>
+                          Inicio {formatDate(c.fecha_inicio)} · {c.duracion_meses || 12} meses
+                        </span>
+                      )}
+                      {c.fecha_firma ? (
+                        <span>Firmado el {formatDate(c.fecha_firma)}</span>
+                      ) : (
+                        <span>Generado el {formatDateTime(generado)}</span>
+                      )}
+                    </p>
+                    {!esV3 && c.nombre_archivo && (
+                      <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-gray-500">
+                        <IconFileText size={14} className="shrink-0" aria-hidden="true" />
+                        <span className="truncate" title={c.nombre_archivo}>{c.nombre_archivo}</span>
+                      </p>
+                    )}
+                    {c.motivo_cancelacion && (
+                      <p className="mt-1 text-xs text-gray-700">
+                        <span className="font-medium">Motivo:</span> {c.motivo_cancelacion}
+                      </p>
+                    )}
+                  </div>
+                  {accionesContrato(c, esV3)}
+                </div>
+              </li>
             )
           })}
-        </div>
-        </>
+        </ul>
       )}
 
-      {/* Firma Solicitudes */}
+      {/* Firmas del contrato en firma (flujo anterior): se abre solo y se cierra con «Ocultar firmas». */}
       {firmaContratoId && (
-        <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
+        <section id="contrato-firmas" aria-label="Firmas del contrato" className="space-y-4">
           {/* Progreso multi-parte (solo si el contrato tiene firmantes). El
               recordatorio a las partes pendientes vive aquí. */}
           {/* canRegenerate y no canCreate: reenviar/cancelar la firma también
@@ -586,7 +586,7 @@ export function ContratosSection({
           <FirmantesContratoSection
             contratoId={firmaContratoId}
             canManage={canRegenerate}
-            enFirma={contratos.find((c) => c.id === firmaContratoId)?.estado === 'pendiente_firma'}
+            enFirma={contratoFirmas?.estado === 'pendiente_firma'}
             onAllSigned={() => { fetchContratos(); onContratoActualizado?.() }}
             onFirmantesLoaded={(total) => setTieneMultiparte(total > 0)}
           />
@@ -594,14 +594,16 @@ export function ContratosSection({
               oculta cuando el contrato ya usa firma multi-parte: el panel de
               arriba es la fuente de verdad y el recordatorio ya está ahí. */}
           {tieneMultiparte === false && (
-            <FirmaSolicitudesSection
-              contratoId={firmaContratoId}
-              estadoContrato={contratos.find((c) => c.id === firmaContratoId)?.estado || ''}
-              canManage={canRegenerate}
-              onEvaluacionVencida={setEvaluacionVencida}
-            />
+            <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+              <FirmaSolicitudesSection
+                contratoId={firmaContratoId}
+                estadoContrato={contratoFirmas?.estado || ''}
+                canManage={canRegenerate}
+                onEvaluacionVencida={setEvaluacionVencida}
+              />
+            </div>
           )}
-        </div>
+        </section>
       )}
 
       {/* Generar Modal */}

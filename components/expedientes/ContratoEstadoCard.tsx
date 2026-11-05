@@ -4,7 +4,8 @@
  *
  * Auto-oculto cuando no hay contrato (en ese caso AccionContratoPendienteCard
  * cubre el "siguiente paso"). Cuando hay contrato muestra estado, version,
- * archivo y fechas clave + CTA para abrir la pestaña Contratos.
+ * archivo y fechas clave + CTA para abrir la pestaña Contratos, con el mismo
+ * marco que las demás tarjetas del Resumen (TarjetaSiguientePaso).
  */
 
 'use client'
@@ -12,10 +13,12 @@
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import Link from 'next/link'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { IconAlertTriangle, IconArrowRight, IconCheck, IconCalendar, IconRefresh } from '@/components/icons'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { IconAlertTriangle, IconArrowRight, IconCheck, IconClock, IconHistory, IconRefresh } from '@/components/icons'
+import { TarjetaSiguientePaso, SeccionPaso, type TonoPaso } from './TarjetaSiguientePaso'
+import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
-import { ESTADOS_CONTRATO, etiquetaContrato, formatDate } from '@/lib/constants'
+import { etiquetaContrato, formatDate } from '@/lib/constants'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IContrato } from '@/types/contrato'
 import type { ICierreSinActa } from '@/types/expediente'
@@ -90,7 +93,7 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
   if (loading) return null
   if (!contrato && errorCarga) {
     return (
-      <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+      <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
         <p className="text-sm text-red-700">No pudimos cargar el contrato de este estudio.</p>
         <button
           type="button"
@@ -104,134 +107,112 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
   }
   if (!contrato) return null
 
-  // Respaldo: un estado que esta web todavía no conoce no tumba el detalle del estudio.
-  const estadoConfig = ESTADOS_CONTRATO[contrato.estado] ?? ESTADOS_CONTRATO.borrador
   const isFinal = contrato.estado === 'vigente' || contrato.estado === 'firmado'
   const isInactivo = contrato.estado === 'cancelado' || contrato.estado === 'finalizado'
   // V3: la firma venció o la rechazaron; la fianza no opera hasta reenviarla.
   const isIncompleta = contrato.estado === 'firma_incompleta'
   // V3 (asistente): se identifica por su número y se abre en el asistente; versión y archivo son del flujo anterior.
   const esV3 = !!contrato.destinacion
+  const etiqueta = etiquetaContrato(contrato.estado, esV3)
 
-  // Tono de la card por bloque de progreso del contrato.
-  const cardTone = isFinal
-    ? 'bg-green-50 border-green-200'
-    : isInactivo
-      ? 'bg-gray-50 border-gray-200'
-      : isIncompleta
-        ? 'bg-red-50 border-red-200'
-        : 'bg-purple-50 border-purple-200'
+  // Mismo marco que las demás tarjetas del Resumen: el color dice en qué está.
+  const tono: TonoPaso = isFinal ? 'accion' : isInactivo ? 'neutro' : isIncompleta ? 'alerta' : 'revision'
+  const icono = isIncompleta ? <IconAlertTriangle size={18} /> : isInactivo ? <IconHistory size={18} /> : isFinal ? <IconCheck size={18} /> : <IconClock size={18} />
 
-  const iconTone = isFinal
-    ? 'bg-green-100 text-green-600'
-    : isInactivo
-      ? 'bg-gray-100 text-gray-500'
-      : isIncompleta
-        ? 'bg-red-100 text-red-600'
-        : 'bg-purple-100 text-purple-600'
+  const accion = esV3 ? (
+    <Link href={`/expedientes/${expedienteId}/contrato`} className={BOTON}>
+      {contrato.estado === 'borrador' ? 'Continuar el contrato' : 'Ver el contrato'}
+      <IconArrowRight size={16} />
+    </Link>
+  ) : onVerContratos ? (
+    <button type="button" onClick={onVerContratos} className={BOTON}>
+      Ver detalle del contrato
+      <IconArrowRight size={16} />
+    </button>
+  ) : null
 
   return (
-    <div className={`border rounded-lg p-4 ${cardTone}`}>
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-        <IconCalendar size={16} />
-        Contrato
-        <InfoTip texto={AYUDA.contrato} lado="derecha" />
-      </h3>
-
-      <div className="flex items-start gap-3">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${iconTone}`}>
-          {isIncompleta ? <IconAlertTriangle size={16} /> : <IconCheck size={16} />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${estadoConfig.bgColor} ${estadoConfig.textColor} ${estadoConfig.borderColor}`}
-            >
-              {etiquetaContrato(contrato.estado, !!contrato.destinacion)}
-            </span>
-            {esV3 ? (
-              contrato.numero && <span className="text-xs text-gray-500 font-mono">N° {contrato.numero}</span>
-            ) : (
-              <span className="text-xs text-gray-500 font-mono">v{contrato.version}</span>
-            )}
-          </div>
-
-          <div className="space-y-0.5 text-sm">
-            {!esV3 && contrato.nombre_archivo && (
-              <p className="text-gray-700 truncate" title={contrato.nombre_archivo}>
-                {contrato.nombre_archivo}
-              </p>
-            )}
-            {contrato.fecha_inicio && (
-              <p className="text-xs text-gray-600">
-                Inicio: {formatDate(contrato.fecha_inicio)}
-                {contrato.duracion_meses ? ` · ${contrato.duracion_meses} meses` : ''}
-              </p>
-            )}
-            {contrato.fecha_firma && (
-              <p className="text-xs text-gray-600">
-                Firmado: {formatDate(contrato.fecha_firma)}
-              </p>
-            )}
-            {contrato.motivo_cancelacion && (
-              <p className="text-xs text-red-600">
-                Motivo: {contrato.motivo_cancelacion}
-              </p>
-            )}
-          </div>
-          {cierreSinActa ? (
-            <p className="mt-2 text-xs text-gray-700">
-              Estudio cerrado sin acta de entrega por {cierreSinActa.porNombre ?? 'un administrador de Cofianza'} el{' '}
-              {formatDate(cierreSinActa.en)}. Motivo: {cierreSinActa.motivo}
-            </p>
+    <TarjetaSiguientePaso
+      tono={tono}
+      icono={icono}
+      titulo={
+        <span className="inline-flex flex-wrap items-center gap-x-1">
+          Contrato: {etiqueta}
+          <InfoTip texto={AYUDA.contrato} lado="derecha" />
+        </span>
+      }
+    >
+      <div className="px-4 py-4 sm:px-5">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          {esV3 ? (
+            contrato.numero && <Dato etiqueta="Número">{contrato.numero}</Dato>
           ) : (
-            actaPendiente && (
-              <p className="mt-2 flex items-start gap-1.5 text-xs font-medium text-amber-800">
-                <IconAlertTriangle size={14} className="mt-px shrink-0 text-amber-600" />
-                {/* Adenda 1 contratos (respuesta 21): el acta la carga la inmobiliaria, nunca Cofianza. */}
-                {rol === 'inmobiliaria' ? (
-                  <span>
-                    Falta el acta de entrega e inventario: sin ella no se puede cerrar el estudio.{' '}
-                    <Link href={`/expedientes/${expedienteId}/contrato`} className="underline hover:text-amber-900">
-                      Cargarla
-                    </Link>
-                  </span>
-                ) : (
-                  <span>
-                    Falta el acta de entrega e inventario: la carga la inmobiliaria.
-                    {rol === 'administrador'
-                      ? ' Si no la va a cargar, puede cerrar el estudio sin acta desde «Cambiar estado».'
-                      : ' Sin ella no se puede cerrar el estudio.'}
-                  </span>
-                )}
-              </p>
-            )
+            <Dato etiqueta="Versión">{contrato.version}</Dato>
           )}
-        </div>
+          {!esV3 && contrato.nombre_archivo && (
+            <Dato etiqueta="Archivo">
+              <span className="block truncate" title={contrato.nombre_archivo}>{contrato.nombre_archivo}</span>
+            </Dato>
+          )}
+          {contrato.fecha_inicio && (
+            <Dato etiqueta="Inicio">
+              {formatDate(contrato.fecha_inicio)}
+              {contrato.duracion_meses ? ` · ${contrato.duracion_meses} meses` : ''}
+            </Dato>
+          )}
+          {contrato.fecha_firma && <Dato etiqueta="Firmado">{formatDate(contrato.fecha_firma)}</Dato>}
+          {contrato.motivo_cancelacion && (
+            <Dato etiqueta="Motivo" className="sm:col-span-2">{contrato.motivo_cancelacion}</Dato>
+          )}
+        </dl>
+        {accion && <div className="mt-4">{accion}</div>}
       </div>
-
-      {esV3 ? (
-        <div className="mt-3 pt-3 border-t border-gray-200/60">
-          <Link
-            href={`/expedientes/${expedienteId}/contrato`}
-            className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-800"
-          >
-            {contrato.estado === 'borrador' ? 'Continuar el contrato' : 'Ver el contrato'} <IconArrowRight size={12} />
-          </Link>
-        </div>
+      {cierreSinActa ? (
+        <SeccionPaso titulo="Cerrado sin acta de entrega">
+          <p>
+            Lo cerró {cierreSinActa.porNombre ?? 'un administrador de Cofianza'} el {formatDate(cierreSinActa.en)}. Motivo:{' '}
+            {cierreSinActa.motivo}
+          </p>
+        </SeccionPaso>
       ) : (
-        onVerContratos && (
-          <div className="mt-3 pt-3 border-t border-gray-200/60">
-            <button
-              type="button"
-              onClick={onVerContratos}
-              className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-800"
-            >
-              Ver detalle del contrato <IconArrowRight size={12} />
-            </button>
-          </div>
+        actaPendiente && (
+          // Adenda 1 contratos (respuesta 21): el acta la carga la inmobiliaria, nunca Cofianza.
+          <SeccionPaso
+            titulo="Falta el acta de entrega e inventario"
+            propio={rol === 'inmobiliaria'}
+            icono={rol === 'inmobiliaria' ? <IconArrowRight size={16} /> : <IconAlertTriangle size={16} className="text-amber-700" />}
+          >
+            {rol === 'inmobiliaria' ? (
+              <>
+                <p>Sin ella no se puede cerrar el estudio.</p>
+                <Link href={`/expedientes/${expedienteId}/contrato`} className={BOTON}>
+                  Cargarla
+                  <IconArrowRight size={16} />
+                </Link>
+              </>
+            ) : (
+              <p>
+                La carga la inmobiliaria.
+                {rol === 'administrador'
+                  ? ' Si no la va a cargar, puede cerrar el estudio sin acta desde «Cambiar estado».'
+                  : ' Sin ella no se puede cerrar el estudio.'}
+              </p>
+            )}
+          </SeccionPaso>
         )
       )}
+    </TarjetaSiguientePaso>
+  )
+}
+
+const BOTON =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1'
+
+function Dato({ etiqueta, children, className }: { etiqueta: string; children: ReactNode; className?: string }) {
+  return (
+    <div className={cn('min-w-0', className)}>
+      <dt className="text-xs text-gray-600">{etiqueta}</dt>
+      <dd className="mt-0.5 font-medium text-gray-900">{children}</dd>
     </div>
   )
 }
