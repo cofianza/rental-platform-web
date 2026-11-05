@@ -120,4 +120,6 @@ test('Adenda 5: el paz y salvo pendiente espera al candidato y no dice el detall
   assert.doesNotMatch(queSigue('decision', { ...o, vista: 'cofianza' }), /acredítelo/)
   // Sin paz y salvo, la decisión sigue siendo del analista.
   assert.equal(queSigue('decision', { ...o, vista: 'cofianza', analista: true, fechaPazYSalvo: null }), 'Revise el caso y decida si lo aprueba.')
+  // A quién le escribió Cofianza: al candidato, no al gestor.
+  assert.match(gestor, /Cofianza ya le escribió al candidato con el detalle/)
 })

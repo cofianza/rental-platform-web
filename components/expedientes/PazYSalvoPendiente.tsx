@@ -28,6 +28,7 @@ import { diaMes, obligacionesExigidas, textoRequisitoPendiente } from '@/lib/paz
 import { fechaCondicion } from './textoVisible'
 import { ObligacionesEnMora } from './ObligacionesEnMora'
 import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
+import { useRefrescoExpediente } from './ExpedienteRefresco'
 
 const MIN_NOTA = 10
 
@@ -37,15 +38,21 @@ interface Props {
   esCofianza: boolean
   /** Las obligaciones en mora de la escalera (GET mora-vigente), para el detalle de las exigidas. */
   obligacionesEnMora?: IObligacionMoraA5[]
+  /** Estudio sin propiedad: al acreditarlo, el contrato espera a que se vincule el inmueble. */
+  sinInmueble?: boolean
   /** Acreditado: el estudio pasó a Aprobado; quien monta la tarjeta recarga. */
   onAcreditado?: () => void
 }
 
-export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obligacionesEnMora = [], onAcreditado }: Props) {
+export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obligacionesEnMora = [], sinInmueble, onAcreditado }: Props) {
   const [enviandoEnlace, setEnviandoEnlace] = useState(false)
   const [acreditarAbierto, setAcreditarAbierto] = useState(false)
-  const [soportes, setSoportes] = useState<SoporteListItem[]>([])
+  // null = leyendo (o sin leer todavía); con errorSoportes, la lectura falló: no es «no cargó nada».
+  const [soportes, setSoportes] = useState<SoporteListItem[] | null>(null)
+  const [errorSoportes, setErrorSoportes] = useState(false)
   const [versionSoportes, setVersionSoportes] = useState(0)
+  // Relee la lista con cada recarga del detalle («Actualizar», avisos): el documento pudo llegar con la página abierta.
+  const cargas = useRefrescoExpediente()
   // Hora fijada al montar: Date.now() en render es impuro (cambia en cada render).
   const [ahora] = useState(() => Date.now())
   const fecha = fechaCondicion(pazYSalvo.vence_en)
@@ -98,15 +105,22 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
                   expedienteId={expedienteId}
                   permitirSubir={false}
                   soloProposito="paz_y_salvo"
-                  onSoportes={setSoportes}
-                  version={versionSoportes}
+                  onSoportes={(lista, error) => {
+                    setSoportes(lista)
+                    setErrorSoportes(!!error)
+                  }}
+                  version={versionSoportes + cargas}
                 />
               </div>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <button
                   type="button"
-                  onClick={() => setAcreditarAbierto(true)}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-800"
+                  onClick={() => {
+                    // Lo último que cargó el candidato, no lo que había al abrir la página.
+                    setVersionSoportes((n) => n + 1)
+                    setAcreditarAbierto(true)
+                  }}
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-800"
                 >
                   <IconShieldCheck size={16} />
                   Acreditar paz y salvo
@@ -117,7 +131,7 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
                     void handleEnviarEnlace()
                   }}
                   disabled={enviandoEnlace}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
+                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50"
                 >
                   {enviandoEnlace ? 'Enviando…' : 'Reenviar el enlace al candidato'}
                 </button>
@@ -151,6 +165,9 @@ export function PazYSalvoPendiente({ expedienteId, pazYSalvo, esCofianza, obliga
           expedienteId={expedienteId}
           venceEn={pazYSalvo.vence_en}
           soportes={soportes}
+          errorSoportes={errorSoportes}
+          onReintentarSoportes={() => setVersionSoportes((n) => n + 1)}
+          sinInmueble={sinInmueble}
           onClose={() => setAcreditarAbierto(false)}
           onAcreditado={() => {
             setAcreditarAbierto(false)
@@ -173,23 +190,46 @@ function AcreditarPazYSalvoModal({
   expedienteId,
   venceEn,
   soportes,
+  errorSoportes,
+  onReintentarSoportes,
+  sinInmueble,
   onClose,
   onAcreditado,
 }: {
   expedienteId: string
   venceEn: string
-  soportes: SoporteListItem[]
+  /** null = todavía leyendo (o la lectura falló, con errorSoportes). */
+  soportes: SoporteListItem[] | null
+  errorSoportes: boolean
+  onReintentarSoportes: () => void
+  sinInmueble?: boolean
   onClose: () => void
   onAcreditado: () => void
 }) {
-  const [via, setVia] = useState<'documento' | 'consulta'>(soportes.length > 0 ? 'documento' : 'consulta')
-  const [soporteId, setSoporteId] = useState<string>(soportes.length === 1 ? soportes[0].id : '')
+  // Nada se fija al abrir: mientras la lista llega, la vía y el documento salen de lo último leído.
+  const [viaElegida, setVia] = useState<'documento' | 'consulta' | null>(null)
+  const via = viaElegida ?? (soportes === null || soportes.length > 0 ? 'documento' : 'consulta')
+  const [soporteElegido, setSoporteId] = useState('')
+  const soporteId =
+    soporteElegido && soportes?.some((s) => s.id === soporteElegido)
+      ? soporteElegido
+      : soportes?.length === 1
+        ? soportes[0].id
+        : ''
   const [nota, setNota] = useState('')
   const [enviando, setEnviando] = useState(false)
 
   const faltantes: string[] = []
   if (via === 'documento' && !soporteId) {
-    faltantes.push(soportes.length === 0 ? 'El candidato todavía no ha cargado el paz y salvo: elija «Nueva consulta» o espere el documento.' : 'Elija el documento que revisó.')
+    faltantes.push(
+      errorSoportes
+        ? 'No se pudieron leer los documentos del candidato: reintente la lectura o elija «Nueva consulta».'
+        : soportes === null
+          ? 'Espere a que carguen los documentos del candidato.'
+          : soportes.length === 0
+            ? 'El candidato todavía no ha cargado el paz y salvo: elija «Nueva consulta» o espere el documento.'
+            : 'Elija el documento que revisó.',
+    )
   }
   if (via === 'consulta' && nota.trim().length < MIN_NOTA) faltantes.push(`Escriba qué mostró la nueva consulta (mínimo ${MIN_NOTA} caracteres).`)
 
@@ -202,7 +242,11 @@ function AcreditarPazYSalvoModal({
           ? { via: 'documento', soporte_id: soporteId, ...(nota.trim() ? { nota: nota.trim() } : {}) }
           : { via: 'consulta', nota: nota.trim() }
       await expedienteService.acreditarPazYSalvo(expedienteId, body)
-      toast.success('Paz y salvo acreditado: el estudio quedó aprobado y ya se puede crear el contrato.')
+      toast.success(
+        sinInmueble
+          ? 'Paz y salvo acreditado: el estudio quedó aprobado. Para crear el contrato, primero vincule el inmueble.'
+          : 'Paz y salvo acreditado: el estudio quedó aprobado y ya se puede crear el contrato.',
+      )
       onAcreditado()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo acreditar el paz y salvo.')
@@ -251,7 +295,19 @@ function AcreditarPazYSalvoModal({
         </fieldset>
 
         {via === 'documento' &&
-          (soportes.length === 0 ? (
+          (errorSoportes ? (
+            <p role="status" className="rounded-lg bg-red-50 p-3 text-xs text-red-700">
+              No se pudieron leer los documentos que cargó el candidato.{' '}
+              <button type="button" onClick={onReintentarSoportes} className="font-medium underline">
+                Reintentar
+              </button>
+            </p>
+          ) : soportes === null ? (
+            <p role="status" className="flex items-center gap-2 rounded-lg bg-gray-100 p-3 text-xs text-gray-700">
+              <IconLoader size={14} className="shrink-0 animate-spin" />
+              Leyendo los documentos que cargó el candidato…
+            </p>
+          ) : soportes.length === 0 ? (
             <p className="rounded-lg bg-gray-100 p-3 text-xs text-gray-700">
               El candidato todavía no ha cargado el paz y salvo. Puede reenviarle el enlace desde la tarjeta.
             </p>
@@ -277,7 +333,7 @@ function AcreditarPazYSalvoModal({
                       href={s.archivo_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="shrink-0 text-xs font-medium text-primary-700 hover:underline"
+                      className="-my-2 -mr-1 inline-flex min-h-10 shrink-0 items-center px-2 text-xs font-medium text-primary-700 hover:underline"
                     >
                       Ver
                     </a>
@@ -307,9 +363,13 @@ function AcreditarPazYSalvoModal({
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700">
           <p className="font-semibold text-gray-900">Al acreditar</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
-            <li>El estudio pasa a Aprobado con la decisión que se tomó al exigir el paz y salvo, y se puede crear el contrato.</li>
+            <li>
+              {sinInmueble
+                ? 'El estudio pasa a Aprobado con la decisión que se tomó al exigir el paz y salvo. Para crear el contrato, primero vincule el inmueble.'
+                : 'El estudio pasa a Aprobado con la decisión que se tomó al exigir el paz y salvo, y se puede crear el contrato.'}
+            </li>
             <li>Se cobra la tarifa de aprobación no automática.</li>
-            <li>Se le avisa al candidato y a la inmobiliaria o al propietario.</li>
+            <li>{sinInmueble ? 'Se le avisa al candidato y al responsable del estudio.' : 'Se le avisa al candidato y a la inmobiliaria o al propietario.'}</li>
           </ul>
         </div>
 
@@ -335,7 +395,7 @@ function AcreditarPazYSalvoModal({
               type="button"
               onClick={onClose}
               disabled={enviando}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               Cancelar
             </button>
@@ -345,7 +405,7 @@ function AcreditarPazYSalvoModal({
                 void acreditar()
               }}
               disabled={enviando || faltantes.length > 0}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 disabled:opacity-50"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 disabled:opacity-50"
             >
               {enviando ? <IconLoader size={16} className="animate-spin" /> : <IconShieldCheck size={16} />}
               {enviando ? 'Acreditando…' : 'Acreditar y aprobar'}

@@ -57,8 +57,11 @@ interface SoportesCondicionadoSectionProps {
   permitirSubir: boolean
   /** Solo los soportes de este propósito (p. ej. 'paz_y_salvo' en el requisito de la Adenda 5). */
   soloProposito?: PropositoSoporte
-  /** Lo que se leyó, para que quien monta la sección no lo pida otra vez. */
-  onSoportes?: (soportes: SoporteListItem[]) => void
+  /**
+   * Lo que se leyó, para que quien monta la sección no lo pida otra vez: null
+   * mientras lee y, con `error`, si la lectura falló (no es «no hay documentos»).
+   */
+  onSoportes?: (soportes: SoporteListItem[] | null, error?: boolean) => void
   /** Sube al acreditar o recargar: vuelve a leer la lista. */
   version?: number
 }
@@ -84,6 +87,7 @@ export function SoportesCondicionadoSection({
   }, [onSoportes])
 
   const fetchSoportes = useCallback(async () => {
+    avisar.current?.(null)
     try {
       const todos = await expedienteSoportesService.listar(expedienteId)
       const data = soloProposito ? todos.filter((s) => s.proposito === soloProposito) : todos
@@ -96,6 +100,7 @@ export function SoportesCondicionadoSection({
       // documentos ya subidos — y el gestor decide con ese dato.
       setSoportes([])
       setFetchError(true)
+      avisar.current?.(null, true)
     } finally {
       setLoading(false)
     }

@@ -111,7 +111,7 @@ export function queSigue(
         : `El candidato debe acreditar el paz y salvo antes del ${o.fechaPazYSalvo}; luego lo acredita un analista de Cofianza.`
     }
     return gestor
-      ? `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}. Cofianza ya le escribió con el detalle: usted no tiene que hacer nada; le avisamos cuando se resuelva.`
+      ? `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}. Cofianza ya le escribió al candidato con el detalle; usted no tiene que hacer nada y le avisamos cuando se resuelva.`
       : `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}.`
   }
   if (etapa === 'contrato' && o.sinInmueble) {

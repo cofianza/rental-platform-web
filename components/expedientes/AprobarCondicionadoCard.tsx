@@ -145,6 +145,7 @@ export function AprobarCondicionadoCard({
   const [versionA5, setVersionA5] = useState(0)
   const {
     moraVigente,
+    cargando: cargandoA5,
     error: errorA5,
     reintentar: reintentarA5,
   } = useMoraVigente(
@@ -157,6 +158,11 @@ export function AprobarCondicionadoCard({
   const obligacionesMora = moraVigente?.obligaciones ?? []
   // §7: solo en el tramo de revisión el analista puede exigir el paz y salvo.
   const enRevisionA5 = esCofianza && moraVigente?.tramo === 'revision'
+  // El tramo que trae el estudio (no depende de GET mora-vigente): lo que se dice
+  // aunque la lectura siga cargando o haya fallado. Con ADENDA5 apagada llega null.
+  const tramoRevisionA5 = esCofianza && adenda5Tramo === 'revision'
+  // Sin las obligaciones todavía no se ofrece «Aprobar sujeto a paz y salvo»: se espera la lectura.
+  const esperandoA5 = tramoRevisionA5 && cargandoA5
   const pctRazon = razonMoraPct(moraVigente)
   const [modo, setModo] = useState<'aprobar' | 'sujeto'>('aprobar')
   const [exigidas, setExigidas] = useState<string[]>([])
@@ -171,6 +177,7 @@ export function AprobarCondicionadoCard({
   const faltantes: string[] = []
   if (cargandoMotivos) faltantes.push('Esperar a que carguen los motivos.')
   else if (!motivoListo) faltantes.push(catalogo ? (errorMotivos('aprobar', motivos, catalogo) ?? 'Elija al menos un motivo.') : 'Escriba el fundamento de la decisión (mínimo 10 caracteres).')
+  if (esperandoA5) faltantes.push('Esperar a que carguen las obligaciones en mora.')
   if (errorFundamento) faltantes.push(errorFundamento)
   if (!evaluacion.estabilidad_laboral) faltantes.push('Elija la «Situación laboral verificada».')
   if (!evaluacion.arrendamiento_previo) faltantes.push('Elija el «Historial de arrendamiento verificado» (si no tiene, elija «Sin historial de arrendamiento previo»).')
@@ -258,6 +265,7 @@ export function AprobarCondicionadoCard({
         pazYSalvo={pazYSalvoVivo}
         esCofianza={esCofianza}
         obligacionesEnMora={obligacionesMora}
+        sinInmueble={sinInmueble}
         onAcreditado={() => {
           setVersionA5((n) => n + 1)
           onAprobado?.()
@@ -307,7 +315,7 @@ export function AprobarCondicionadoCard({
 
   const handleAprobar = async () => {
     // Doble clic: el segundo llega antes de que se pinte «Aprobando…».
-    if (aprobando.current || !evaluacionCompleta(evaluacion) || !motivoListo || errorFundamento || faltaNotaIdentidad) return
+    if (aprobando.current || esperandoA5 || !evaluacionCompleta(evaluacion) || !motivoListo || errorFundamento || faltaNotaIdentidad) return
     if (sujeto && exigidas.length === 0) return
     aprobando.current = true
     setLoading(true)
@@ -410,7 +418,7 @@ export function AprobarCondicionadoCard({
                     Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
                     Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
                   </p>
-                  {enRevisionA5 && (
+                  {tramoRevisionA5 && (
                     <p className="mt-2">
                       Llegó a revisión por una mora vigente de bajo monto en sector no financiero. Dentro de «Aprobar
                       estudio» verá las obligaciones en mora y podrá aprobarlo o aprobarlo sujeto a paz y salvo; si lo
@@ -565,6 +573,21 @@ export function AprobarCondicionadoCard({
             </div>
           </div>
         )}
+        {/* El tercer estado de la lectura: sin ella no se ve la mora ni «Aprobar sujeto a paz y salvo». */}
+        {tramoRevisionA5 && !enRevisionA5 && (cargandoA5 || errorA5) && (
+          <div role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            {cargandoA5 ? (
+              'Cargando las obligaciones en mora…'
+            ) : (
+              <>
+                No se pudo leer el detalle de la mora vigente; sin él no puede aprobar sujeto a paz y salvo.{' '}
+                <button type="button" onClick={reintentarA5} className="font-medium underline">
+                  Reintentar
+                </button>
+              </>
+            )}
+          </div>
+        )}
         {/* Dos columnas en pantallas anchas: a la izquierda por qué se aprueba; a la
             derecha lo que se verificó. Así el formulario cabe casi sin desplazarse. */}
         <div className="grid gap-6 lg:grid-cols-2">
@@ -701,9 +724,12 @@ export function AprobarCondicionadoCard({
               <li>El estudio no pasa a Aprobado: queda pendiente de un requisito a cargo del candidato y no se puede crear el contrato.</li>
               <li>
                 Al candidato le escribimos con el detalle de las obligaciones y el plazo; a la inmobiliaria o al propietario solo les
-                decimos que hay un requisito pendiente a su cargo.
+                decimos que hay un requisito pendiente a cargo del candidato.
               </li>
-              <li>Cuando lo acredite, el estudio pasa a Aprobado con esta decisión y se cobra la tarifa de aprobación no automática.</li>
+              <li>
+                Cuando un analista de Cofianza acredite el paz y salvo, el estudio pasa a Aprobado con esta decisión y se cobra la tarifa
+                de aprobación no automática.
+              </li>
               <li>Queda en el registro interno con su usuario, la fecha, los motivos, los documentos y las obligaciones que marcó.</li>
             </ul>
           ) : (
@@ -718,7 +744,7 @@ export function AprobarCondicionadoCard({
                   ? 'Se le avisa al solicitante.'
                   : 'Se le avisa al solicitante y a la inmobiliaria o al propietario.'}
               </li>
-              {enRevisionA5 && <li>Por la mora vigente, se cobra la tarifa de aprobación no automática.</li>}
+              {tramoRevisionA5 && <li>Por la mora vigente, se cobra la tarifa de aprobación no automática.</li>}
               <li>Queda en el registro interno con su usuario, la fecha, los motivos y los documentos que marcó.</li>
             </ul>
           )}
@@ -750,7 +776,7 @@ export function AprobarCondicionadoCard({
           <button
             type="button"
             onClick={() => { void handleAprobar() }}
-            disabled={loading || !motivoListo || !evaluacionCompleta(evaluacion) || !!errorFundamento || faltaNotaIdentidad || (sujeto && exigidas.length === 0)}
+            disabled={loading || esperandoA5 || !motivoListo || !evaluacionCompleta(evaluacion) || !!errorFundamento || faltaNotaIdentidad || (sujeto && exigidas.length === 0)}
             className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
           >
             {loading ? 'Aprobando…' : etiquetaAprobar}
