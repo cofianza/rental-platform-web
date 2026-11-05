@@ -7,14 +7,17 @@
 
 import { useState } from 'react'
 import type { IExpediente } from '@/types/expediente'
-import { ETAPA_LABEL, type EtapaEstudio, type VistaTurno } from '@/lib/etapaEstudio'
+import { ETAPA_LABEL, type EtapaEstudio, type Turno, type VistaTurno } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
 import { etapaDeFila, accionDeFila, revisionDemorada } from '@/lib/etapaFila'
 import { cn } from '@/lib/utils'
-import { PastillaTurno } from './PastillaTurno'
+import { PastillaTurno, type OpcionesTurno } from './PastillaTurno'
 import { fechaCondicion } from './textoVisible'
 
-type Tono = 'verde' | 'rojo' | 'ambar' | 'azul' | 'gris'
+export const AYUDA_PUNTAJE =
+  'Puntaje de la central de riesgo, de 0 a 999. Cofianza decide con ese puntaje y además con ingresos, deudas y el canon: por eso un puntaje alto puede no aprobarse.'
+
+export type Tono = 'verde' | 'rojo' | 'ambar' | 'azul' | 'gris'
 
 const TONO: Record<Tono, { wrap: string; dot: string }> = {
   verde: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600' },
@@ -98,8 +101,7 @@ function pastillaEtapa(e: IExpediente, etapa: EtapaEstudio, interno: boolean): {
  * Adenda de precios §8.2: el caso R2 entra a la cola del analista con
  * prioridad baja. Discreto y solo para Cofianza: es orden interno de la cola.
  */
-function PrioridadBaja({ expediente }: { expediente: IExpediente }) {
-  if (expediente.estado !== 'condicionado' || expediente.prioridad_revision !== 'baja') return null
+export function PrioridadBaja() {
   return (
     <span
       title="Puntaje de la central en la franja media: se revisa al final de la cola"
@@ -110,23 +112,29 @@ function PrioridadBaja({ expediente }: { expediente: IExpediente }) {
   )
 }
 
-export function EstadoFila({
-  expediente,
-  interno,
-  vista,
-  analista = false,
-  compacto = false,
-}: {
-  expediente: IExpediente
-  interno: boolean
-  vista: VistaTurno
-  /** Administrador u operador: deciden la revisión y ejecutan la consulta que no arrancó. */
-  analista?: boolean
-  /** Inicio: las pastillas en fila, no apiladas. */
-  compacto?: boolean
-}) {
-  // Hora fijada al montar: Date.now() en render es impuro (cambia en cada render).
-  const [ahora] = useState(() => Date.now())
+export interface DatosEstadoFila {
+  etapa: EtapaEstudio
+  texto: string
+  tono: Tono
+  /** La frase «Qué sigue» del detalle, según quién mira (title de la etapa). */
+  ayuda: string
+  /** Puntaje de la central; 0 = no se muestra. */
+  score: number
+  /** Pastilla de turno; null = no se muestra. */
+  turno: ({ turno: Turno } & OpcionesTurno) | null
+  demora: ReturnType<typeof revisionDemorada>
+  /** Adenda de precios §8.2: solo Cofianza (orden interno de la cola). */
+  prioridadBaja: boolean
+}
+
+/**
+ * Lo que pinta una fila, separado del cómo: EstadoFila lo apila en una celda y
+ * la cola de Cofianza (ExpedientesTablaCofianza) lo reparte en «Etapa» y «Qué sigue».
+ */
+export function datosEstadoFila(
+  expediente: IExpediente,
+  { interno, vista, analista = false, ahora }: { interno: boolean; vista: VistaTurno; analista?: boolean; ahora: number },
+): DatosEstadoFila {
   const etapa = etapaDeFila(expediente)
   const { texto, tono } = pastillaEtapa(expediente, etapa, interno)
   const ev = expediente.estudio_vigente
@@ -155,51 +163,86 @@ export function EstadoFila({
     etapa !== 'espera_coarrendatario' &&
     !(revision && vista !== 'cofianza')
 
+  return {
+    etapa,
+    texto,
+    tono,
+    // La frase «Qué sigue» del detalle, según quién mira: AYUDA_ETAPA sola le hablaba al gestor y,
+    // en la condición del coarrendatario, decía que lo decide un analista.
+    ayuda: queSigue(etapa, {
+      vista,
+      analista,
+      fechaCondicion: c ? fechaCondicion(c.vence_en) : null,
+      esperaHasta: ev?.espera_coarrendatario_hasta ?? null,
+      sinInmueble: !expediente.inmueble_id,
+      fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo) : null,
+      pazYSalvoCargado,
+    }),
+    score,
+    turno:
+      conTurno && turno
+        ? {
+            turno,
+            revision,
+            analista,
+            sinEjecutar: etapa === 'sin_ejecutar',
+            pazYSalvoCargado,
+            accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
+          }
+        : null,
+    demora,
+    prioridadBaja: interno && expediente.estado === 'condicionado' && expediente.prioridad_revision === 'baja',
+  }
+}
+
+/** Pastilla de la etapa: la misma en la celda apilada y en la cola de Cofianza. */
+export function PastillaEtapa({ texto, tono, ayuda }: Pick<DatosEstadoFila, 'texto' | 'tono' | 'ayuda'>) {
+  return (
+    <span
+      title={ayuda}
+      // rounded-xl: en una línea se ve igual que rounded-full; si el plazo la parte en dos, no queda una cápsula estirada.
+      className={cn('inline-flex items-center gap-1.5 rounded-xl px-2.5 py-0.5 text-xs font-medium', TONO[tono].wrap)}
+    >
+      <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', TONO[tono].dot)} />
+      {texto}
+    </span>
+  )
+}
+
+export function EstadoFila({
+  expediente,
+  interno,
+  vista,
+  analista = false,
+  compacto = false,
+}: {
+  expediente: IExpediente
+  interno: boolean
+  vista: VistaTurno
+  /** Administrador u operador: deciden la revisión y ejecutan la consulta que no arrancó. */
+  analista?: boolean
+  /** Inicio: las pastillas en fila, no apiladas. */
+  compacto?: boolean
+}) {
+  // Hora fijada al montar: Date.now() en render es impuro (cambia en cada render).
+  const [ahora] = useState(() => Date.now())
+  const d = datosEstadoFila(expediente, { interno, vista, analista, ahora })
+
   return (
     <div className={cn('flex items-start gap-1', compacto ? 'flex-row flex-wrap items-center gap-1.5' : 'flex-col')}>
-      <span
-        // La frase «Qué sigue» del detalle, según quién mira: AYUDA_ETAPA sola le hablaba al gestor y,
-        // en la condición del coarrendatario, decía que lo decide un analista.
-        title={queSigue(etapa, {
-          vista,
-          analista,
-          fechaCondicion: c ? fechaCondicion(c.vence_en) : null,
-          esperaHasta: ev?.espera_coarrendatario_hasta ?? null,
-          sinInmueble: !expediente.inmueble_id,
-          fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo) : null,
-          pazYSalvoCargado,
-        })}
-        // rounded-xl: en una línea se ve igual que rounded-full; si el plazo la parte en dos, no queda una cápsula estirada.
-        className={cn('inline-flex items-center gap-1.5 rounded-xl px-2.5 py-0.5 text-xs font-medium', TONO[tono].wrap)}
-      >
-        <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', TONO[tono].dot)} />
-        {texto}
-      </span>
-      {score > 0 && (
-        <span
-          title="Puntaje de la central de riesgo, de 0 a 999. Cofianza decide con ese puntaje y además con ingresos, deudas y el canon: por eso un puntaje alto puede no aprobarse."
-          className="text-[11px] text-gray-500"
-        >
-          Puntaje de la central: {score} (no es el de Cofianza)
+      <PastillaEtapa texto={d.texto} tono={d.tono} ayuda={d.ayuda} />
+      {d.score > 0 && (
+        <span title={AYUDA_PUNTAJE} className="text-[11px] text-gray-500">
+          Puntaje de la central: {d.score} (no es el de Cofianza)
         </span>
       )}
-      {conTurno && (
-        <PastillaTurno
-          turno={turno}
-          vista={vista}
-          revision={revision}
-          analista={analista}
-          sinEjecutar={etapa === 'sin_ejecutar'}
-          pazYSalvoCargado={pazYSalvoCargado}
-          accion={turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined}
-        />
-      )}
-      {demora && (
-        <span className={cn('text-[11px] font-medium', demora.tono === 'rojo' ? 'text-red-600' : 'text-amber-700')}>
-          {demora.texto}
+      {d.turno && <PastillaTurno vista={vista} {...d.turno} />}
+      {d.demora && (
+        <span className={cn('text-[11px] font-medium', d.demora.tono === 'rojo' ? 'text-red-600' : 'text-amber-700')}>
+          {d.demora.texto}
         </span>
       )}
-      {interno && <PrioridadBaja expediente={expediente} />}
+      {d.prioridadBaja && <PrioridadBaja />}
     </div>
   )
 }

@@ -19,10 +19,9 @@ import { IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/componen
 import { useExpedientes } from '@/hooks/useExpedientes'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
-import { BandejaTabs } from './BandejaTabs'
+import { BandejaTabs, ToggleAsignados } from './BandejaTabs'
 import { ExpedientesFilters } from './ExpedientesFilters'
-import { ExpedientesTable } from './ExpedientesTable'
-import { ExpedientesSkeleton } from './ExpedientesSkeleton'
+import { ExpedientesTablaCofianza, ExpedientesTablaCofianzaSkeleton } from './ExpedientesTablaCofianza'
 import { EXPEDIENTE_UI_MESSAGES } from './constants'
 
 export function ExpedientesListado() {
@@ -113,7 +112,7 @@ export function ExpedientesListado() {
         }
       />
 
-      {/* Bandejas operativas: Tabs + Toggle «Asignados a mí» */}
+      {/* Bandejas operativas; «Asignados a mí» va con los filtros */}
       <BandejaTabs
         activeBandeja={activeBandeja}
         misExpedientes={misExpedientes}
@@ -121,76 +120,80 @@ export function ExpedientesListado() {
         onBandejaChange={elegirBandeja}
         onToggleMisExpedientes={toggleMisExpedientes}
         requiereAccionActivo={requiereAccionActivo}
+        mostrarToggle={false}
       />
 
-      {/* Filtros (sin chips de estado, ahora están en bandejas) */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <ExpedientesFilters
-          filters={filters}
-          analistas={analistas}
-          isLoading={isLoading}
-          onFilterChange={setFilters}
-          onClearFilters={clearFilters}
-          hasActiveFilters={hasActiveFilters()}
-        />
-      </div>
-
-      {/* Tabla / Skeleton / Empty */}
-      <div
-        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && expedientes.length > 0 ? ' opacity-60 pointer-events-none' : ''}`}
-        aria-busy={isLoading}
-      >
-        {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
-        {isLoading && expedientes.length > 0 && (
-          <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
-            <IconLoader size={12} className="animate-spin" /> Actualizando…
-          </span>
-        )}
-        {isLoading && expedientes.length === 0 ? (
-          <ExpedientesSkeleton count={filters.limit} />
-        ) : (
-          <ExpedientesTable
-            expedientes={expedientes}
-            meta={meta}
+      {/* Una sola superficie: la barra de filtros encabeza la cola que filtra. */}
+      <section aria-label="Estudios" className="rounded-lg border border-gray-200 bg-white">
+        <div className="border-b border-gray-100 p-3 sm:p-4">
+          <ExpedientesFilters
+            barra
             filters={filters}
-            onSort={handleSort}
-            onOrdenar={(sortBy, sortOrder) => setFilters({ sortBy, sortOrder, page: 1 })}
-            onPageChange={(page) => setFilters({ page })}
-            onLimitChange={(limit) => setFilters({ limit, page: 1 })}
-            vacio={
-              // U22: «Asignados a mí» filtra por analista; sin otro filtro, el vacío lo explica.
-              // X11: con una pestaña activa, «en esta bandeja» (puede tener asignados en otras).
-              misExpedientes && !filters.search && !filters.fecha_desde && !filters.fecha_hasta
-                ? activeBandeja === null
-                  ? 'asignados'
-                  : 'asignados_bandeja'
-                : hasActiveFilters()
-                  ? 'filtros'
-                  : 'bandeja'
-            }
+            analistas={analistas}
+            isLoading={isLoading}
+            onFilterChange={setFilters}
             onClearFilters={clearFilters}
-            tomandoId={tomandoId}
-            onTomar={
-              puedeAsignar
-                ? async (id) => {
-                    setTomandoId(id)
-                    try {
-                      await expedienteService.asignarResponsable(id, user!.id, true)
-                      toast.success('Estudio asignado a usted')
-                      await fetchExpedientes()
-                    } catch (e) {
-                      toast.error(e instanceof Error ? e.message : 'No se pudo asignar')
-                      // Si otro ya lo tomó, la lista estaba vieja: se refresca.
-                      if ((e as { code?: string }).code === 'EXPEDIENTE_YA_ASIGNADO') void fetchExpedientes()
-                    } finally {
-                      setTomandoId(null)
-                    }
-                  }
-                : undefined
-            }
+            hasActiveFilters={hasActiveFilters()}
+            accesorio={<ToggleAsignados activo={misExpedientes} onToggle={toggleMisExpedientes} />}
           />
-        )}
-      </div>
+        </div>
+
+        <div
+          className={`relative p-3 sm:p-4${isLoading && expedientes.length > 0 ? ' pointer-events-none opacity-60' : ''}`}
+          aria-busy={isLoading}
+        >
+          {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
+          {isLoading && expedientes.length > 0 && (
+            <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
+              <IconLoader size={12} className="animate-spin" /> Actualizando…
+            </span>
+          )}
+          {isLoading && expedientes.length === 0 ? (
+            <ExpedientesTablaCofianzaSkeleton count={filters.limit} />
+          ) : (
+            <ExpedientesTablaCofianza
+              expedientes={expedientes}
+              meta={meta}
+              filters={filters}
+              onSort={handleSort}
+              onOrdenar={(sortBy, sortOrder) => setFilters({ sortBy, sortOrder, page: 1 })}
+              onPageChange={(page) => setFilters({ page })}
+              onLimitChange={(limit) => setFilters({ limit, page: 1 })}
+              vacio={
+                // U22: «Asignados a mí» filtra por analista; sin otro filtro, el vacío lo explica.
+                // X11: con una pestaña activa, «en esta bandeja» (puede tener asignados en otras).
+                misExpedientes && !filters.search && !filters.fecha_desde && !filters.fecha_hasta
+                  ? activeBandeja === null
+                    ? 'asignados'
+                    : 'asignados_bandeja'
+                  : hasActiveFilters()
+                    ? 'filtros'
+                    : 'bandeja'
+              }
+              onClearFilters={clearFilters}
+              tomandoId={tomandoId}
+              onTomar={
+                puedeAsignar
+                  ? async (id) => {
+                      setTomandoId(id)
+                      try {
+                        await expedienteService.asignarResponsable(id, user!.id, true)
+                        toast.success('Estudio asignado a usted')
+                        await fetchExpedientes()
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : 'No se pudo asignar')
+                        // Si otro ya lo tomó, la lista estaba vieja: se refresca.
+                        if ((e as { code?: string }).code === 'EXPEDIENTE_YA_ASIGNADO') void fetchExpedientes()
+                      } finally {
+                        setTomandoId(null)
+                      }
+                    }
+                  : undefined
+              }
+            />
+          )}
+        </div>
+      </section>
     </div>
   )
 }
