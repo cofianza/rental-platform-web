@@ -49,7 +49,15 @@ export interface MetaParametro {
   /** Subtema dentro de la sección. */
   sub?: string
   unidad: Unidad
+  /** Resumen corto de la regla (qué pasa por debajo / por encima, o encendido / apagado). */
   queHace: string
+  /**
+   * Las excepciones a la regla del resumen, una por viñeta: «condición → qué
+   * pasa». La tarjeta las pliega; el diálogo y la búsqueda las leen enteras.
+   */
+  excepciones?: string[]
+  /** Cómo se nombran en el plegable si no son excepciones: [singular, plural]. */
+  etiquetaExcepciones?: [string, string]
   ejemplo?: (v: Valores) => string | null
   rige: Rige
   notaRige?: string
@@ -142,7 +150,12 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'aprobacion',
     sub: 'Puntaje del solicitante',
     unidad: 'puntos',
-    queHace: 'Por debajo de este puntaje el estudio se rechaza, salvo que la central exija un analista o, con la Adenda 4, que lo baje solo el canon sin ingreso comprobado (decide un analista, que pide soporte de ingreso) o, en estudios de inmobiliaria y desde el piso, solo el endeudamiento, o el endeudamiento y el canon, sin ingreso comprobado (se exige coarrendatario). De aquí hasta el de aprobar solo, se pide coarrendatario («Está cerca»).',
+    queHace: 'Por debajo de este puntaje el estudio se rechaza, salvo las excepciones. De aquí hasta el de aprobar solo, se pide coarrendatario («Está cerca»).',
+    excepciones: [
+      'La central exige un analista → no se rechaza: decide un analista.',
+      'Con la Adenda 4, lo baja solo el canon sin ingreso comprobado → decide un analista, que pide soporte de ingreso.',
+      'Con la Adenda 4, en estudios de inmobiliaria y desde el piso, lo baja solo el endeudamiento, o el endeudamiento y el canon, sin ingreso comprobado → se exige coarrendatario.',
+    ],
     ejemplo: (v) =>
       `Con ${v.UMBRAL_ZONA_GRIS}: ${Math.min(v.UMBRAL_ZONA_GRIS + 5, v.UMBRAL_APROBACION_AUTOMATICA - 1)} puntos queda pendiente de un coarrendatario (sin inmobiliaria, decide un analista); ${v.UMBRAL_ZONA_GRIS - 5} se rechaza.`,
     rige: 'siempre',
@@ -153,7 +166,11 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'aprobacion',
     sub: 'Segunda central',
     unidad: 'puntos',
-    queHace: 'Para ahorrar consultas: si con la primera central (casi siempre DataCrédito) el puntaje del solicitante (0 a 100) sale por debajo de este valor, el caso ya es claramente malo y se rechaza sin pagar la segunda consulta. Excepciones: si el puntaje que reporta la central cae en la franja que exige un analista, o, con la Adenda 4, si solo lo baja el canon frente a un ingreso no comprobado, se consulta la segunda central.',
+    queHace: 'Para ahorrar consultas: si con la primera central (casi siempre DataCrédito) el puntaje del solicitante (0 a 100) sale por debajo de este valor, el caso ya es claramente malo y se rechaza sin pagar la segunda consulta, salvo las excepciones.',
+    excepciones: [
+      'El puntaje que reporta la central cae en la franja que exige un analista → se consulta la segunda central.',
+      'Con la Adenda 4, solo lo baja el canon frente a un ingreso no comprobado → se consulta la segunda central.',
+    ],
     ejemplo: (v) =>
       `Con ${v.UMBRAL_CASCADA_RECHAZO}: ${Math.max(0, v.UMBRAL_CASCADA_RECHAZO - 5)} puntos se rechaza solo con la primera central; ${v.UMBRAL_CASCADA_RECHAZO + 15} puntos consulta también la segunda.`,
     rige: 'siempre',
@@ -206,7 +223,14 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Mora vigente y reciente',
     unidad: 'onoff',
     queHace:
-      'Encendido: una mora vigente deja de rechazar siempre. Si toda la mora es de sector no financiero (telefonía, comunicaciones, servicios públicos, comercio), sin castigo, dudoso recaudo ni cobro jurídico, la persona tiene suficientes créditos financieros al día y no tuvo mora financiera reciente, el saldo en mora se compara con el canon: por debajo de la mora tolerada sigue la evaluación normal; entre la tolerada y la de rechazo decide un analista, que puede aprobarlo sujeto a paz y salvo; por encima se rechaza. Apagado: toda mora vigente rechaza.',
+      'Encendido: una mora vigente deja de rechazar siempre; si cumple las condiciones, el saldo en mora se compara con el canon. Apagado: toda mora vigente rechaza.',
+    excepciones: [
+      'Condiciones: toda la mora es de sector no financiero (telefonía, comunicaciones, servicios públicos, comercio), sin castigo, dudoso recaudo ni cobro jurídico; la persona tiene suficientes créditos financieros al día y no tuvo mora financiera reciente.',
+      'Saldo en mora por debajo de la mora tolerada → sigue la evaluación normal.',
+      'Saldo entre la tolerada y la de rechazo → decide un analista, que puede aprobarlo sujeto a paz y salvo.',
+      'Saldo por encima de la de rechazo → se rechaza.',
+    ],
+    etiquetaExcepciones: ['condición y caso', 'condiciones y casos'],
     nota: 'Solo se puede encender con las reglas de capacidad de pago (Adenda 4) encendidas, y estas no se pueden apagar mientras esta esté encendida. Solo aplica cuando la central principal es DataCrédito: con TransUnion, la mora vigente rechaza.',
     rige: 'siempre',
     motivo: true,
@@ -263,7 +287,10 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Mora vigente y reciente',
     unidad: 'dias',
     queHace:
-      'Si en los últimos 6 meses la persona tuvo una mora de al menos estos días, el estudio se rechaza sin importar el puntaje. La central reporta la mora por tramos: 30, 60, 90 o 120 días. En 30, cualquier mora reportada rechaza. Con las reglas de mora vigente de bajo monto encendidas, esta regla no cuenta la mora vigente que esas reglas toleran o mandan a un analista; cualquier otra mora de los últimos 6 meses sigue rechazando.',
+      'Si en los últimos 6 meses la persona tuvo una mora de al menos estos días, el estudio se rechaza sin importar el puntaje. La central reporta la mora por tramos (30, 60, 90 o 120 días); en 30, cualquier mora reportada rechaza.',
+    excepciones: [
+      'Reglas de mora vigente de bajo monto encendidas → esta regla no cuenta la mora vigente que esas reglas toleran o mandan a un analista; cualquier otra mora de los últimos 6 meses sigue rechazando.',
+    ],
     ejemplo: (v) =>
       v.DIAS_MORA_RECIENTE_RECHAZO === 30
         ? 'Con 30: una mora de 30 días hace 4 meses rechaza el estudio.'
@@ -381,9 +408,12 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Cuándo se pide',
     unidad: 'puntos',
     queHace: 'Desde este puntaje, el solicitante de una inmobiliaria que no alcanza a aprobarse solo recibe «Está cerca» y puede presentar un coarrendatario. Por debajo, ningún coarrendatario cuenta.',
+    excepciones: [
+      'Solicitante sin historial en las centrales → no aplica.',
+      'Quedó por debajo solo por el endeudamiento, o por el endeudamiento y el canon → manda el puntaje mínimo para exigir coarrendatario.',
+    ],
     ejemplo: (v) =>
       `Con ${v.PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO}: ${Math.min(v.PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO + 8, v.UMBRAL_APROBACION_AUTOMATICA - 1)} puntos recibe «Está cerca»; ${v.PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO - 2} no.`,
-    nota: 'No aplica al solicitante sin historial en las centrales. Si quedó por debajo solo por el endeudamiento, o por el endeudamiento y el canon, manda el puntaje mínimo para exigir coarrendatario.',
     rige: 'v2',
     ...DECISION,
   },
@@ -392,7 +422,8 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'coarrendatarios',
     sub: 'Cuándo se pide',
     unidad: 'puntos',
-    queHace: 'En estudios de una inmobiliaria: si el solicitante queda por debajo de la zona gris solo por el endeudamiento, o por el endeudamiento y el canon, sin ingreso comprobado, desde este puntaje se le exige un coarrendatario y decide un analista. Por debajo, o sin inmobiliaria, se rechaza, salvo que solo lo baje el canon sin ingreso comprobado: entonces decide un analista, que pide soporte de ingreso.',
+    queHace: 'En estudios de una inmobiliaria: si el solicitante queda por debajo de la zona gris solo por el endeudamiento, o por el endeudamiento y el canon, sin ingreso comprobado, desde este puntaje se le exige un coarrendatario y decide un analista. Por debajo, o sin inmobiliaria, se rechaza, salvo la excepción.',
+    excepciones: ['Lo baja solo el canon sin ingreso comprobado → no se rechaza: decide un analista, que pide soporte de ingreso.'],
     ejemplo: (v) =>
       v.PUNTAJE_PISO_COARRENDATARIO > 0
         ? `Con ${v.PUNTAJE_PISO_COARRENDATARIO}: ${Math.min(v.PUNTAJE_PISO_COARRENDATARIO + 4, v.UMBRAL_ZONA_GRIS - 1)} puntos por esas causas debe presentar coarrendatario; ${v.PUNTAJE_PISO_COARRENDATARIO - 1} se rechaza.`
@@ -405,7 +436,11 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'coarrendatarios',
     sub: 'Cuándo se pide',
     unidad: 'dias',
-    queHace: 'Días para presentar el coarrendatario después de «Está cerca». Al vencer sin uno que resuelva la condición, se rechaza si el coarrendatario era obligatorio o si el ingreso comprobado del solicitante no alcanzaba; si no, decide un analista.',
+    queHace: 'Días para presentar el coarrendatario después de «Está cerca». Al vencer sin uno que resuelva la condición, decide un analista, salvo las excepciones.',
+    excepciones: [
+      'El coarrendatario era obligatorio → se rechaza.',
+      'El ingreso comprobado del solicitante no alcanzaba → se rechaza.',
+    ],
     rige: 'v2',
     ...DECISION,
   },
@@ -626,7 +661,11 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'precios',
     sub: 'Tarifa mensual de la fianza',
     unidad: 'pct',
-    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza si el estudio se aprueba solo (también con coarrendatario), o si un analista lo aprueba sin condiciones y solo lo frenaron la capacidad de pago o la identidad (no si también lo frenó una mora vigente de bajo monto).',
+    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza si el estudio se aprueba solo (también con coarrendatario) y en otro caso.',
+    excepciones: [
+      'Un analista lo aprueba sin condiciones y solo lo frenaron la capacidad de pago o la identidad (no si también lo frenó una mora vigente de bajo monto) → también se cobra esta tarifa.',
+    ],
+    etiquetaExcepciones: ['otro caso', 'otros casos'],
     ejemplo: (v) => tarifaEjemplo(v.TARIFA_VIA_AUTOMATICA, v.TARIFA_IVA),
     rige: 'siempre',
   },
@@ -709,7 +748,8 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Plazos',
     unidad: 'dias',
     queHace:
-      'Días calendario que tiene el candidato para acreditar el paz y salvo de una mora cuando el analista aprueba el estudio sujeto a ese requisito. Mientras tanto no se puede crear el contrato. Vencido sin acreditarlo, el estudio se cierra como no aprobado; si el candidato cargó el documento a tiempo y nadie lo ha revisado, decide un analista.',
+      'Días calendario que tiene el candidato para acreditar el paz y salvo de una mora cuando el analista aprueba el estudio sujeto a ese requisito; mientras tanto no se puede crear el contrato. Vencido sin acreditarlo, el estudio se cierra como no aprobado, salvo la excepción.',
+    excepciones: ['El candidato cargó el documento a tiempo y nadie lo ha revisado → decide un analista.'],
     nota: 'Debe quedar por debajo de los días que vale el certificado de riesgo. Aplica a los requisitos que se exijan desde el cambio: los ya exigidos conservan su fecha.',
     rige: 'a5',
   },
@@ -938,6 +978,10 @@ function tarifaEjemplo(pct: number, iva: number): string {
 export const metaDe = (clave: string): MetaParametro =>
   META[clave] ?? { nombre: clave, seccion: 'otros', unidad: 'num', queHace: '', rige: 'siempre' }
 export const nombreDe = (clave: string) => metaDe(clave).nombre
+
+/** El resumen con sus excepciones en un solo texto (diálogo de edición y búsqueda). */
+export const textoCompleto = (m: MetaParametro) =>
+  m.excepciones?.length ? `${m.queHace} ${m.excepciones.join(' ')}` : m.queHace
 
 // El orden de META es el de la pantalla (subtemas incluidos), no el del API.
 const ORDEN = Object.keys(META)
