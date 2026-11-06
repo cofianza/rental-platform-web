@@ -200,9 +200,6 @@ class ExpedienteService {
   // ============================================
 
   /**
-   * Obtiene el detalle completo de un expediente
-   */
-  /**
    * Activa el modo «ver como» (solo administrador): la API deja la traza en la
    * bitácora y responde a quién se simula según el dueño real del estudio.
    * Va SIN la cabecera X-Ver-Como (con ella la API rechaza toda escritura).
@@ -212,6 +209,9 @@ class ExpedienteService {
     return response.data
   }
 
+  /**
+   * Obtiene el detalle completo de un expediente
+   */
   async getExpedienteDetalle(id: string): Promise<IExpedienteDetalle> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const response = (await apiClient.get(`/expedientes/${id}`)) as any

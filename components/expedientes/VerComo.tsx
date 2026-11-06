@@ -67,19 +67,27 @@ export function usuarioSimulado(real: IUser, rol: RolVista): IUser {
 
 export function VerComoBanner({ vista }: { vista: IVerComo }) {
   const quien = vista.rol === 'inmobiliaria' ? `la inmobiliaria «${vista.nombre}»` : `el propietario «${vista.nombre}»`
+  const actor = vista.rol === 'inmobiliaria' ? 'la inmobiliaria' : 'el propietario'
   return (
+    // Pegado bajo el encabezado del panel (h-16 = top-16), también en móvil.
     <div
       role="status"
-      className="sticky top-0 z-30 -mx-4 sm:mx-0 mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-b sm:border sm:rounded-xl border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm"
+      className="sticky top-16 z-20 -mx-4 sm:mx-0 mb-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-b sm:border sm:rounded-xl border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm"
     >
       <IconEye className="h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />
-      <p className="min-w-0 flex-1">
-        Está viendo este estudio como {quien}. <strong className="font-semibold">Solo lectura.</strong>
-      </p>
+      <div className="min-w-0 flex-1">
+        <p>
+          Está viendo este estudio como {quien}. <strong className="font-semibold">Solo lectura.</strong>
+        </p>
+        <p className="mt-0.5 text-xs text-amber-800">
+          Los botones se ven como los ve {actor}, pero no hacen cambios.
+          {vista.rol === 'inmobiliaria' ? ' Aquí no se muestran el saldo de cupos ni el equipo.' : ''} Al salir de esta página vuelve a su vista de administrador.
+        </p>
+      </div>
       <button
         type="button"
         onClick={vista.salir}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400 bg-white px-3 py-1.5 font-medium text-amber-900 hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-amber-400 bg-white px-4 font-medium text-amber-900 hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
       >
         <IconLogOut className="h-4 w-4" aria-hidden="true" />
         Salir

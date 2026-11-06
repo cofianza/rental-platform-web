@@ -61,12 +61,13 @@ function getAuthToken(): string | null {
 
 /**
  * Rol que simula el administrador en el detalle del estudio, o null. Lo pone
- * y lo quita SOLO la página de detalle (al salir de ella se apaga): mientras
- * está activo, cada lectura lleva `X-Ver-Como` y la API responde con la
- * redacción de la agencia o el propietario. La API ignora la cabecera para
- * cualquier otro rol y rechaza toda escritura que la lleve; aquí además las
- * escrituras se cortan antes de salir. Sesión y notificaciones propias del
- * administrador van sin cabecera.
+ * y lo quita SOLO la página de detalle (al salir de ella se apaga). Mientras
+ * está activo, las lecturas DEL ESTUDIO (prefijos de RUTAS_DEL_ESTUDIO) llevan
+ * `X-Ver-Como` y la API responde con la redacción de la agencia o el
+ * propietario. El resto (layout, sidebar, notificaciones, sesión, sondeos
+ * globales) va sin cabecera, como siempre. La API ignora la cabecera para
+ * cualquier otro rol y rechaza toda escritura que la lleve; aquí además
+ * cualquier escritura se corta antes de salir, con un aviso único.
  */
 let verComoActivo: 'inmobiliaria' | 'propietario' | null = null
 
@@ -74,16 +75,38 @@ export function setVerComoApi(rol: 'inmobiliaria' | 'propietario' | null): void 
   verComoActivo = rol
 }
 
-const RUTAS_SIN_VER_COMO = ['/auth', '/notificaciones']
+/** Lo que carga el detalle del estudio (sus pestañas). Si una pestaña nueva usa otro recurso, agréguelo. */
+const RUTAS_DEL_ESTUDIO = [
+  '/expedientes/',
+  '/estudios',
+  '/contratos',
+  '/documentos',
+  '/tipos-documento',
+  '/pagos',
+  '/citas',
+  '/firma',
+]
+const RUTAS_SIN_BLOQUEO = ['/auth', '/notificaciones']
 const METODOS_ESCRITURA = ['POST', 'PUT', 'PATCH', 'DELETE']
+
+function avisarSoloLectura(): void {
+  // Importación diferida (sonner es solo de cliente) y un aviso con id fijo: no se apila.
+  const etiqueta = verComoActivo === 'propietario' ? 'el propietario' : 'la inmobiliaria'
+  import('sonner')
+    .then(({ toast }) =>
+      toast.info(`Está viendo como ${etiqueta}: esta acción no está disponible en modo de solo lectura.`, { id: 'ver-como-solo-lectura' })
+    )
+    .catch(() => {})
+}
 
 /** Cabecera del modo para este endpoint, o lanza si es una escritura en modo solo lectura. */
 function cabeceraVerComo(endpoint: string, method: string | undefined): Record<string, string> {
-  if (!verComoActivo || RUTAS_SIN_VER_COMO.some((r) => endpoint.startsWith(r))) return {}
+  if (!verComoActivo || RUTAS_SIN_BLOQUEO.some((r) => endpoint.startsWith(r))) return {}
   if (METODOS_ESCRITURA.includes((method ?? 'GET').toUpperCase())) {
-    throw new ApiClientError('Está viendo este estudio en modo de solo lectura: esta acción no está disponible.', 403, 'SOLO_LECTURA')
+    avisarSoloLectura()
+    throw new ApiClientError('Esta acción no está disponible en modo de solo lectura.', 403, 'SOLO_LECTURA')
   }
-  return { 'X-Ver-Como': verComoActivo }
+  return RUTAS_DEL_ESTUDIO.some((r) => endpoint.startsWith(r)) ? { 'X-Ver-Como': verComoActivo } : {}
 }
 
 /**

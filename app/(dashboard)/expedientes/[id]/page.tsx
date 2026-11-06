@@ -660,13 +660,15 @@ function ExpedienteDetalleContenido() {
           {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
             <div className="flex flex-wrap gap-3 pl-12 sm:pl-0">
               {/* Solo el administrador: revisar el estudio tal como lo ve su dueño (solo lectura). */}
-              {usuarioReal?.rol === 'administrador' && !verComo && expediente.inmueble && (
+              {/* De la inmobiliaria si tiene inmobiliaria_id; si no, del propietario del inmueble.
+                  Sin ninguno de los dos (estudio sin inmueble ni inmobiliaria) no hay a quién simular. */}
+              {usuarioReal?.rol === 'administrador' && !verComo && (expediente.inmobiliaria_id || expediente.inmueble) && (
                 <Link
-                  href={`/expedientes/${id}?verComo=${expediente.inmueble.inmobiliaria_id ? 'inmobiliaria' : 'propietario'}`}
+                  href={`/expedientes/${id}?verComo=${expediente.inmobiliaria_id ? 'inmobiliaria' : 'propietario'}`}
                   className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                   <IconEye size={16} />
-                  {expediente.inmueble.inmobiliaria_id ? 'Ver como la inmobiliaria' : 'Ver como el propietario'}
+                  {expediente.inmobiliaria_id ? 'Ver como la inmobiliaria' : 'Ver como el propietario'}
                 </Link>
               )}
               {transiciones === null ? (
