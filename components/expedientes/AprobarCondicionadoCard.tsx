@@ -73,7 +73,7 @@ interface AprobarCondicionadoCardProps {
   motivoRevision?: string | null
   /**
    * Observaciones de la evaluación del coarrendatario si también está en
-   * revisión: sus motivos van agrupados en «Por qué no se aprobó solo».
+   * revisión: sus motivos van agrupados en «Por qué no se aprobó automáticamente».
    */
   motivoRevisionCoarrendatario?: string | null
   /** Estudio sin propiedad: al aprobar no hay dueño a quien avisar y el contrato espera el inmueble. */
@@ -413,7 +413,7 @@ export function AprobarCondicionadoCard({
           {verMotivosArriba && (
             <div className="mt-2">
               <MotivosRevision
-                titulo="Por qué no se aprobó solo:"
+                titulo="Por qué no se aprobó automáticamente:"
                 motivos={motivosTitular}
                 grupos={[{ etiqueta: 'Coarrendatario', motivos: motivosCoa }]}
               />

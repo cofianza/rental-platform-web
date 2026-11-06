@@ -113,17 +113,27 @@ export function textoVisible(texto: string | null | undefined, opts: { externo?:
 }
 
 /**
- * Frases del resumen de la central (providers de la API): «Resultado de
- * DataCrédito: puntaje 773; …», «TransUnion no entregó puntaje: …», y las del
- * formato anterior a 2026-10 («Score CreditVision: 741. Obligaciones totales:
- * 4. Saldo total: …»). Para quien no es de Cofianza la central ya llega como
- * «la central de riesgo».
+ * Primera frase del resumen de la central en el formato actual (providers de la
+ * API): «Resultado de DataCrédito: puntaje 773; …», «TransUnion no entregó
+ * puntaje: …». Para quien no es de Cofianza la central llega como «la central
+ * de riesgo».
  */
-const FRASE_RESUMEN_CENTRAL =
-  /^(?:Resultado de [^:]+:|Score\b|Obligaciones totales\b|Saldo total\b|(?:DataCr[eé]dito|TransUnion|Experian|La central de riesgo)\b[^.:;]*\bno entreg[oó] puntaje)/i
+const RESUMEN_CENTRAL_ACTUAL =
+  /^(?:Resultado de (?:DataCr[eé]dito|TransUnion|la central de riesgo):|(?:DataCr[eé]dito|TransUnion|La central de riesgo) no entreg[oó] puntaje)/i
 
-/** El aviso que la API pone entre el resumen y los motivos (AVISO_REVISION_ANALISTA). */
-const AVISO_REVISION = /pasa a revisi[oó]n/i
+/** Formato anterior a 2026-10: «Score CreditVision: 741. Obligaciones totales: 4. Saldo total: $25.756.» */
+const RESUMEN_CENTRAL_ANTERIOR = /^Score CreditVision: \d+\.?$/
+const SIGUE_RESUMEN_ANTERIOR = /^(?:Obligaciones totales|Saldo total):/
+
+/**
+ * El aviso que la API pone entre el resumen y los motivos: AVISO_REVISION_ANALISTA
+ * («El caso pasa a revisión de un analista de Cofianza.») y, con listas por
+ * confirmar, VISIBLE_LISTAS_POR_CONFIRMAR («… de Cofianza antes de decidir.»).
+ * Ninguno es un motivo.
+ */
+const AVISO_REVISION = /^El caso pasa a revisi[oó]n de (?:un analista de )?Cofianza\b/i
+
+const CONDICION_PENDIENTE = /^Condici[oó]n pendiente:/i
 
 /**
  * Separa las observaciones de una evaluación en revisión (ya pasadas por
@@ -131,28 +141,45 @@ const AVISO_REVISION = /pasa a revisi[oó]n/i
  *
  * La API las guarda como un solo texto (observacionesVisibles, reglas-duras.ts):
  * resumen de la central + «El caso pasa a revisión de un analista de Cofianza.»
- * + los motivos. Se corta en ese aviso, que no es un motivo. Sin el aviso
- * (filas viejas, registro manual), las frases del inicio que son del resumen
- * de la central van a `datos` y el resto a `motivos`. No corta en «$18.450.000»
- * ni en «C.C. 79…»: solo en un punto seguido de espacio y mayúscula.
+ * + los motivos. Se corta en ese aviso (`conAviso`), que no es un motivo. Sin
+ * el aviso (filas viejas, registro manual, decisión de una persona) solo es
+ * resumen una primera frase con el formato de la central (actual o el anterior
+ * completo); una frase del analista que empiece por «Score…» sigue siendo
+ * motivo. Las alertas de DataCrédito («alertas: …») pueden traer puntos: sin
+ * el aviso, el resumen que las trae llega hasta el final (o hasta la condición).
+ * Solo corta en un punto seguido de espacio y mayúscula: no en «$18.450.000».
  */
-export function partirObservaciones(texto: string | null | undefined): { datos: string; motivos: string[] } {
-  if (!texto?.trim()) return { datos: '', motivos: [] }
-  const partes = texto.trim().split(/(?<=\.)\s+(?=[A-ZÁÉÍÓÚÑ¿«])/)
-  const frases = partes
+export function partirObservaciones(texto: string | null | undefined): { datos: string; motivos: string[]; conAviso: boolean } {
+  if (!texto?.trim()) return { datos: '', motivos: [], conAviso: false }
+  const frases = texto
+    .trim()
+    .split(/(?<=\.)\s+(?=[A-ZÁÉÍÓÚÑ¿«])/)
     .map((f) => f.trim())
-    // La API no reescribe las observaciones cuando la condición de coarrendatario
-    // vence o no se cumple: aquí ya no está vigente.
-    .filter((f) => f && !/^Condici[oó]n pendiente:/i.test(f))
+    .filter(Boolean)
+  // La API no reescribe las observaciones cuando la condición de coarrendatario
+  // vence o no se cumple: aquí ya no está vigente.
+  const sinCondicion = (lista: string[]) => lista.filter((f) => !CONDICION_PENDIENTE.test(f))
   const corte = frases.findIndex((f) => AVISO_REVISION.test(f))
-  const otraFrase = frases.findIndex((f) => !FRASE_RESUMEN_CENTRAL.test(f))
-  const finResumen = corte >= 0 ? corte : otraFrase < 0 ? frases.length : otraFrase
-  const resumen = frases.slice(0, finResumen)
-  const motivos = frases.slice(corte >= 0 ? corte + 1 : finResumen)
+
+  let finResumen = 0
+  if (corte >= 0) finResumen = corte
+  else if (RESUMEN_CENTRAL_ACTUAL.test(frases[0])) {
+    finResumen = 1
+    if (/\balertas:/i.test(frases[0])) {
+      while (finResumen < frases.length && !CONDICION_PENDIENTE.test(frases[finResumen])) finResumen++
+    }
+  } else if (RESUMEN_CENTRAL_ANTERIOR.test(frases[0])) {
+    finResumen = 1
+    while (finResumen < frases.length && SIGUE_RESUMEN_ANTERIOR.test(frases[finResumen])) finResumen++
+  }
+
+  const resumen = sinCondicion(frases.slice(0, finResumen))
+  const motivos = sinCondicion(frases.slice(corte >= 0 ? corte + 1 : finResumen)).filter((f) => !AVISO_REVISION.test(f))
   return {
     // «Resultado de DataCrédito: puntaje 773; …» → «DataCrédito, puntaje 773; …»: ya va bajo «Datos de la central».
     datos: resumen.join(' ').replace(/^Resultado de ([^:]+):\s*/, '$1, '),
     motivos,
+    conAviso: corte >= 0,
   }
 }
 

@@ -22,15 +22,25 @@ interface MotivosRevisionProps {
   datos?: string
   /** Motivos de otra persona del estudio (el coarrendatario), agrupados. */
   grupos?: GrupoMotivos[]
+  /**
+   * Sin ningún motivo escrito (formato viejo, solo el aviso, la condición ya
+   * vencida): lo que se dice tras el título. Nunca queda solo la línea de datos.
+   */
+  sinMotivos?: string
 }
 
-export function MotivosRevision({ titulo, motivos, datos, grupos = [] }: MotivosRevisionProps) {
+export function MotivosRevision({ titulo, motivos, datos, grupos = [], sinMotivos = 'lo decide un analista de Cofianza.' }: MotivosRevisionProps) {
   const id = useId()
   const conGrupos = grupos.filter((g) => g.motivos.length > 0)
-  if (motivos.length === 0 && conGrupos.length === 0 && !datos) return null
+  const conMotivos = motivos.length > 0 || conGrupos.length > 0
   return (
     <div>
-      {(motivos.length > 0 || conGrupos.length > 0) && (
+      {!conMotivos && (
+        <p>
+          <span className="font-semibold">{titulo}</span> {sinMotivos}
+        </p>
+      )}
+      {conMotivos && (
         <>
           <p id={id} className="font-semibold">
             {titulo}
