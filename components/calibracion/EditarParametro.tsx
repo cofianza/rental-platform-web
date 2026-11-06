@@ -16,7 +16,7 @@ import { IconAlertTriangle, IconCheck, IconLoader, IconLock } from '@/components
 import { cn } from '@/lib/utils'
 import { CambioItem } from './Historial'
 import { EscalaPuntaje, ESCALA_CLAVES } from './EscalaDecision'
-import { conUnidad, fmt, humanizar, MES_APAGADO, metaDe, rigeHoy, type Valores } from './parametros'
+import { conUnidad, fmt, humanizar, MES_APAGADO, metaDe, rigeHoy, textoCompleto, type Valores } from './parametros'
 
 interface Props {
   p: IParametroCalibracion
@@ -93,7 +93,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
   return (
     <Modal isOpen onClose={guardando ? () => {} : onClose} title={meta.nombre} size="lg">
       <div className="space-y-4 text-sm">
-        <p className="text-gray-700">{meta.queHace || humanizar(p.descripcion)}</p>
+        <p className="text-gray-700">{textoCompleto(meta) || humanizar(p.descripcion)}</p>
         {meta.ejemplo?.(valores) && <p className="text-gray-600">{meta.ejemplo(valores)}</p>}
         {meta.nota && <p className="text-gray-600">{meta.nota}</p>}
         {aplicaHoy && meta.notaRige && (
