@@ -122,3 +122,15 @@ export function sinReferenciasInternas(texto: string): string {
     .replace(/(^|[.:]\s+)(?:Adenda|Pol[ií]tica|Flujo)[^§.:]{0,25}§[\d.]+(?:\s?[a-z])?\s*:\s*(\S)/g, (_, antes: string, letra: string) => antes + letra.toUpperCase())
     .replace(/\s+—\s+sesi[oó]n\s+\S+/g, '')
 }
+
+/**
+ * Filtro de fecha de creación: el API compara created_at (timestamptz) con lo
+ * que recibe, y «2026-11-05» solo se lee como 00:00 UTC (las 7 p. m. del día
+ * anterior en Colombia): «hoy» quedaba vacío y el día «hasta» por fuera. Se
+ * manda el instante completo de Bogotá (UTC−5, sin horario de verano).
+ * Lo que no es AAAA-MM-DD pasa tal cual.
+ */
+export function instanteBogota(fecha: string, extremo: 'inicio' | 'fin'): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return fecha
+  return extremo === 'inicio' ? `${fecha}T00:00:00-05:00` : `${fecha}T23:59:59.999-05:00`
+}

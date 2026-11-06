@@ -23,6 +23,7 @@ import { BandejaTabs, ToggleAsignados } from './BandejaTabs'
 import { ExpedientesFilters } from './ExpedientesFilters'
 import { ExpedientesTablaCofianza, ExpedientesTablaCofianzaSkeleton } from './ExpedientesTablaCofianza'
 import { EXPEDIENTE_UI_MESSAGES } from './constants'
+import { instanteBogota } from '@/lib/utils'
 
 export function ExpedientesListado() {
   const user = useAuthStore((s) => s.user)
@@ -98,8 +99,8 @@ export function ExpedientesListado() {
                 ...(filters.analista_id ? { analista_id: filters.analista_id } : {}),
                 ...(filters.miembro_responsable_id ? { miembro_responsable_id: filters.miembro_responsable_id } : {}),
                 // El API de exportar lee fecha_desde/fecha_hasta (dateFrom es de los reportes).
-                ...(filters.fecha_desde ? { fecha_desde: filters.fecha_desde } : {}),
-                ...(filters.fecha_hasta ? { fecha_hasta: filters.fecha_hasta } : {}),
+                ...(filters.fecha_desde ? { fecha_desde: instanteBogota(filters.fecha_desde, 'inicio') } : {}),
+                ...(filters.fecha_hasta ? { fecha_hasta: instanteBogota(filters.fecha_hasta, 'fin') } : {}),
               }}
               entityName="Estudios"
             />

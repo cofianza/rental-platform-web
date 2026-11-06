@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '@/lib/api'
+import { instanteBogota } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import type {
   IExpediente,
@@ -64,8 +65,8 @@ function buildQueryString(filters: Partial<IExpedienteFilters>): string {
   if (filters.sin_analista) params.append('sin_analista', 'true')
   if (filters.con_contrato_vivo) params.append('con_contrato_vivo', 'true')
   if (filters.inmueble_id) params.append('inmueble_id', filters.inmueble_id)
-  if (filters.fecha_desde) params.append('fecha_desde', filters.fecha_desde)
-  if (filters.fecha_hasta) params.append('fecha_hasta', filters.fecha_hasta)
+  if (filters.fecha_desde) params.append('fecha_desde', instanteBogota(filters.fecha_desde, 'inicio'))
+  if (filters.fecha_hasta) params.append('fecha_hasta', instanteBogota(filters.fecha_hasta, 'fin'))
   if (filters.estudio_filtro && filters.estudio_filtro !== 'todos') {
     params.append('estudio_filtro', filters.estudio_filtro)
   }

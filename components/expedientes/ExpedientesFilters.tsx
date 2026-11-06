@@ -73,7 +73,7 @@ function FiltroPeriodo({
   onChange: (f: Partial<IExpedienteFilters>) => void
   campo: string
 }) {
-  // Fijada al montar: leer la hora en cada render es impuro.
+  // Solo para reconocer el periodo elegido (leer la hora en cada render es impuro); elegir() la recalcula.
   const [hoy] = useState(hoyBogota)
   const [abrirRango, setAbrirRango] = useState(false)
   // «Limpiar filtros» (o borrar las dos fechas) cierra el rango personalizado.
@@ -90,7 +90,8 @@ function FiltroPeriodo({
       return
     }
     setAbrirRango(false)
-    onChange(p === '' ? { fecha_desde: '', fecha_hasta: '' } : rangoPeriodo(p, hoy))
+    // «Hoy» al elegir, no al montar: con la pantalla abierta desde ayer, «Creado hoy» sería ayer.
+    onChange(p === '' ? { fecha_desde: '', fecha_hasta: '' } : rangoPeriodo(p, hoyBogota()))
   }
 
   const fecha = 'h-8 min-w-0 flex-1 rounded-md px-1 text-sm text-gray-900 focus:outline-none md:w-[8.5rem] md:flex-none'

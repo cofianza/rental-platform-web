@@ -108,9 +108,17 @@ function rotuloInmobiliaria(e: IExpediente): string {
   return e.inmobiliaria_nombre ? `Inmobiliaria: ${e.inmobiliaria_nombre}` : nombreInmobiliaria(e)
 }
 
-/** Días completos transcurridos desde una fecha ISO. */
+/** Medianoche (UTC) del día de calendario de Colombia en que cae el instante. */
+const diaBogota = (d: Date) => Date.parse(d.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }))
+
+/**
+ * Días de calendario de Colombia desde una fecha ISO (como plazo() en EstadoFila):
+ * algo de anoche a las 11 p. m. es «Ayer», no «Hoy» por no cumplir 24 h.
+ */
 function diasDesde(iso: string): number {
-  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+  const f = new Date(iso)
+  if (Number.isNaN(f.getTime())) return 0
+  return Math.round((diaBogota(new Date()) - diaBogota(f)) / 86_400_000)
 }
 
 /**

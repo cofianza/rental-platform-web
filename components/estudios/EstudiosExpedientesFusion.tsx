@@ -116,11 +116,12 @@ export function EstudiosExpedientesFusion() {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar estudios</h3>
-        <p className="text-sm text-gray-500 mb-4">{error}</p>
+        <h2 className="text-lg font-medium text-gray-900 mb-2">No se pudieron cargar los estudios</h2>
+        <p className="mx-auto max-w-md text-sm text-gray-500 mb-4">{error}</p>
         <button
+          type="button"
           onClick={() => fetchExpedientes()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
+          className="inline-flex min-h-10 items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconRefresh size={18} />
           Reintentar

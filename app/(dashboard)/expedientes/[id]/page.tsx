@@ -63,7 +63,7 @@ import {
 import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
 import { ResumenPorEtapa, Plegable } from '@/components/expedientes/ResumenPorEtapa'
 import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
-import { textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
+import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
 import { revisionDemorada } from '@/lib/etapaFila'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
@@ -775,6 +775,9 @@ export default function ExpedienteDetallePage() {
             analista: puedeAsignar,
             sinEjecutar: etapaTurno === 'sin_ejecutar',
             pazYSalvoCargado: pazYSalvoRecibido,
+            // Como en la lista: si otro analista ya la tomó, «En revisión de X» y sin coral.
+            tomadoPor:
+              etapaTurno === 'decision' && !esperaCandidato && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
           }
           const propio = !!turno && turnoPropio(turno, vistaTurno, opcionesTurno)
           // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
@@ -784,7 +787,8 @@ export default function ExpedienteDetallePage() {
                 revisionDemorada(pazYSalvoCargadoEn ?? expediente.en_revision_desde, Date.now())
               : null
           // La decisión está en el Resumen: un atajo para llegar a ella desde cualquier pestaña.
-          const irADecision = propio && etapaTurno === 'decision' && esCondicionado && puedeActuar
+          // Con la revisión tomada por otro, el atajo se conserva: un analista puede seguir decidiendo.
+          const irADecision = (propio || !!opcionesTurno.tomadoPor) && etapaTurno === 'decision' && esCondicionado && puedeActuar
           return (
             <div
               className={`mt-5 flex flex-col gap-3 rounded-lg px-4 py-3 sm:flex-row sm:items-center sm:gap-4 ${

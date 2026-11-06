@@ -37,14 +37,15 @@ type Props = Omit<ExpedientesTableProps, 'miembrosResponsablesById'>
 interface Fila {
   expediente: IExpediente
   datos: DatosEstadoFila
-  /** «Su turno…»: le toca actuar a quien mira. */
+  /** «Su turno…»: le toca actuar a quien mira (no, si la revisión ya la tomó otro analista). */
   propio: boolean
-  /** La revisión ya la tomó otro analista: no es «Su turno», es el de esa persona. */
-  deOtro: string | null
 }
 
-/** Etapas sin nada por hacer: «Qué sigue» lo dice en vez de dejar un guion. */
-const TERMINADAS: EtapaEstudio[] = ['no_aprobado', 'cancelado', 'finalizado']
+/**
+ * Etapas sin nada por hacer: «Qué sigue» lo dice en vez de dejar un guion. No
+ * aprobado no entra: puede tener una apelación o reevaluación por decidir.
+ */
+const TERMINADAS: EtapaEstudio[] = ['cancelado', 'finalizado']
 
 /** Ciudad e inmobiliaria en una línea: la inmobiliaria ya no tiene columna propia que la recorte. */
 function lugar(e: IExpediente): string {
@@ -52,16 +53,29 @@ function lugar(e: IExpediente): string {
   return partes.join(' · ')
 }
 
+/** Siglas que se dejan en mayúscula aunque tengan vocales. */
+const SIGLAS = new Set(['BBVA', 'NIT', 'SAS', 'IPS', 'EPS', 'UPZ', 'ESE'])
+/** Conectores en minúscula salvo al inicio («Calle 10 de la Sierra»). */
+const CONECTORES = new Set(['EN', 'EL', 'LA', 'DE', 'DEL', 'LOS', 'LAS', 'Y'])
+
 /**
  * Las direcciones llegan como se digitaron: «CALLE 45 # 12-30 APTO 301» junto a
  * «Calle 10 Sur # 43-21». Solo las escritas todo en mayúsculas se pasan a
- * mayúscula inicial; las palabras con números («40A», «12-30») quedan igual.
+ * mayúscula inicial. Quedan igual las palabras con números («40A», «12-30»),
+ * las que no tienen vocales («PH», «KR») y las siglas («BBVA», «S.A.S.»).
  */
 export function direccionLegible(texto: string): string {
   if (/\p{Ll}/u.test(texto)) return texto
   return texto
     .split(' ')
-    .map((w) => (/\d/.test(w) ? w : w.charAt(0) + w.slice(1).toLocaleLowerCase('es-CO')))
+    .map((w, i) => {
+      const letras = w.replace(/[^\p{L}]/gu, '')
+      if (!letras || /\d/.test(w)) return w
+      const minuscula = w.toLocaleLowerCase('es-CO')
+      if (i > 0 && CONECTORES.has(letras)) return minuscula
+      if (!/[AEIOUÁÉÍÓÚ]/.test(letras) || SIGLAS.has(letras) || /^(\p{L}\.){2,}/u.test(w)) return w
+      return minuscula.charAt(0).toLocaleUpperCase('es-CO') + minuscula.slice(1)
+    })
     .join(' ')
 }
 
@@ -102,12 +116,10 @@ function Etapa({ datos }: { datos: DatosEstadoFila }) {
 
 /** De quién es el turno y qué hay que hacer; lo propio resalta, lo ajeno queda en segundo plano. */
 function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
-  const { datos, propio, deOtro } = fila
+  const { datos, propio } = fila
   return (
     <div className="flex flex-col items-start gap-1">
-      {deOtro ? (
-        <span className="text-sm text-gray-600">En revisión de {deOtro}</span>
-      ) : datos.turno ? (
+      {datos.turno ? (
         propio ? (
           <span className="inline-flex items-start gap-1.5 text-sm font-semibold text-coral-700">
             <IconArrowRight size={16} className="mt-0.5 shrink-0" />
@@ -167,15 +179,12 @@ export function ExpedientesTablaCofianza({
   }
 
   const filas: Fila[] = expedientes.map((expediente) => {
-    const datos = datosEstadoFila(expediente, { interno: true, vista, analista, ahora })
-    const turnoMio = !!datos.turno && turnoPropio(datos.turno.turno, vista, datos.turno)
-    // Si ya lo tomó otro analista, el coral se lo marcaba a todos igual.
-    const tomadoPorOtro = turnoMio && !!expediente.analista_id && expediente.analista_id !== yo
+    // yo: si la revisión ya la tomó otro analista, «En revisión de X» en gris (antes el coral se lo marcaba a todos).
+    const datos = datosEstadoFila(expediente, { interno: true, vista, analista, ahora, yo })
     return {
       expediente,
       datos,
-      propio: turnoMio && !tomadoPorOtro,
-      deOtro: tomadoPorOtro ? (expediente.analista?.nombre ?? 'otro analista') : null,
+      propio: !!datos.turno && turnoPropio(datos.turno.turno, vista, datos.turno),
     }
   })
   const conPuntaje = filas.some((f) => f.datos.score > 0)
