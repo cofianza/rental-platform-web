@@ -29,7 +29,7 @@ export const AYUDA = {
   cupo:
     'El cupo queda reservado al habilitar el estudio y se descuenta solo cuando una consulta da resultado, la del titular o la del coarrendatario. Si no se llega a consultar, vuelve al saldo de la inmobiliaria, salvo que el paquete ya haya vencido.',
   visita:
-    'La visita al inmueble va antes de habilitar la evaluación. Si ya se hizo por fuera (WhatsApp u otro medio), se puede marcar como omitida.',
+    'La visita al inmueble va antes de habilitar la evaluación. Si ya se hizo por fuera (WhatsApp u otro medio), se puede marcar como hecha.',
   contrato:
     'El contrato de arrendamiento afianzado por Cofianza. Se firma por medios electrónicos entre las partes: arrendatario, coarrendatario si lo hay y arrendador.',
   // Sin el plazo en días: es calibrable.
@@ -59,7 +59,8 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   fallida:
     'La consulta a las centrales no se completó (no es un rechazo de crédito). En «Evaluación crediticia», aquí abajo, está qué corregir y cómo reintentarla.',
   decision:
-    'Lo decide un analista de Cofianza y le avisamos cuando decida. Mientras tanto puede reforzar el caso con soportes de ingreso.',
+    // Veraz con la API: correo a quien creó el inmueble (propietario_id) y aviso en la plataforma al responsable.
+    'Lo decide un analista de Cofianza y le avisamos a quien creó el inmueble y al responsable del estudio cuando decida. Mientras tanto puede reforzar el caso con soportes de ingreso.',
   contrato: 'El estudio está aprobado: cree el contrato aquí abajo.',
   firma: 'El contrato está en firma electrónica: falta que firmen todas las partes.',
   firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Abra el contrato: allí verá qué aviso aceptar y si puede reenviarlo o debe cancelarlo.',
@@ -99,7 +100,7 @@ export const AYUDA_ETAPA_EQUIPO: Partial<Record<EtapaEstudio, string>> = {
     'La persona autorizó y el estudio está pagado, pero la consulta no arrancó sola. Alguien de su equipo con permiso de edición puede ejecutarla.',
   fallida:
     'La consulta a las centrales no se completó (no es un rechazo de crédito). Alguien de su equipo con permiso de edición puede corregir los datos y reintentarla.',
-  decision: 'Lo decide un analista de Cofianza; le avisamos a su equipo cuando decida.',
+  decision: 'Lo decide un analista de Cofianza; avisamos a quien creó el inmueble y al responsable del estudio cuando decida.',
   contrato: 'El estudio está aprobado. Falta que alguien de su equipo con permiso de edición cree el contrato.',
   firma_incompleta:
     'La firma quedó incompleta y la fianza no opera. Falta que alguien de su equipo con permiso de edición la reenvíe o cancele el contrato.',
@@ -126,8 +127,21 @@ export function queSigue(
     fechaPazYSalvo?: string | null
     /** Adenda 5 §7: el candidato ya cargó el paz y salvo; falta que Cofianza lo revise y lo acredite. */
     pazYSalvoCargado?: boolean
+    /** Visita: ya hay una cita solicitada o confirmada (falta hacerla, no agendarla). */
+    citaActiva?: boolean
+    /** Miembro de la inmobiliaria con el perfil personal incompleto: no actúa hasta completarlo. */
+    perfilIncompleto?: boolean
   },
 ): string {
+  const texto = queSigueBase(etapa, o)
+  // Sin edición por el perfil incompleto, «alguien de su equipo con permiso de edición» no le decía qué hacer.
+  if (o.vista === 'equipo' && o.perfilIncompleto && /permiso de edición/.test(texto)) {
+    return 'Complete su perfil para poder actuar en este estudio.'
+  }
+  return texto
+}
+
+function queSigueBase(etapa: EtapaEstudio, o: Parameters<typeof queSigue>[1]): string {
   const gestor = o.vista === 'gestor'
   // §10: a la inmobiliaria y al propietario, sin el detalle de la obligación.
   if (etapa === 'decision' && o.fechaPazYSalvo) {
@@ -150,6 +164,13 @@ export function queSigue(
     return gestor
       ? `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}. Cofianza ya le escribió al candidato con el detalle; usted no tiene que hacer nada y le avisamos cuando se resuelva.`
       : `Hay un requisito pendiente a cargo del candidato hasta el ${o.fechaPazYSalvo}.`
+  }
+  if (etapa === 'visita' && o.citaActiva && o.vista !== 'cofianza') {
+    return o.vista === 'gestor'
+      ? 'La visita ya está agendada. Cuando se haga, márquela como realizada en la tarjeta de la cita, aquí abajo.'
+      : o.vista === 'equipo'
+        ? 'La visita ya está agendada. Cuando se haga, alguien de su equipo con permiso de edición la marca como realizada.'
+        : AYUDA_ETAPA.visita
   }
   if (etapa === 'contrato' && o.sinInmueble) {
     return 'El estudio está aprobado: falta vincular el inmueble que eligió la persona; después se crea el contrato.'

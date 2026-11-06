@@ -134,13 +134,13 @@ export function AccionHabilitarEstudioCard({
     setSubmitting(true)
     try {
       await expedienteService.omitirCita(expedienteId, motivoOmitir.trim() || undefined)
-      toast.success('Cita omitida. Ya puede habilitar la evaluación.')
+      toast.success('Visita marcada como hecha. Ya puede habilitar la evaluación.')
       setShowOmitir(false)
       setMotivoOmitir('')
       await onAction()
     } catch (err: unknown) {
       const errObj = err as { message?: string }
-      toast.error(errObj.message || 'No se pudo omitir la cita')
+      toast.error(errObj.message || 'No se pudo marcar la visita como hecha.')
     } finally {
       setSubmitting(false)
     }
@@ -275,7 +275,10 @@ export function AccionHabilitarEstudioCard({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-              Siguiente paso: ¿habilita la evaluación crediticia?
+              {/* Para Cofianza, «¿habilitamos?» (habla por Cofianza); a quien tramita, en usted. */}
+              {userRol === 'administrador' || userRol === 'operador_analista'
+                ? 'Acción requerida: ¿habilitamos la evaluación crediticia?'
+                : 'Siguiente paso: ¿habilita la evaluación crediticia?'}
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               {citaOmitida ? 'Marcó la visita como ya realizada.' : 'La cita de visita se realizó.'}{' '}

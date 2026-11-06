@@ -33,6 +33,7 @@ import { CobroTarifaContrato } from '@/components/contratos/CobroTarifaContrato'
 import { contratoService } from '@/services/contratoService'
 import { firmaService } from '@/services/firmaService'
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import type { useContratoV3 } from '@/hooks/useContratoV3'
 import type { EnvioV3, EstadoFirmanteV3, EstadoSobreV3 } from '@/types/contratoV3'
 import type { IVerificacionIdentidad } from '@/types/firma'
@@ -65,13 +66,16 @@ const CHIP: Record<EstadoFirmanteV3, { texto: string; tono: string }> = {
 
 /** EN FIRMA con el proceso a medio registrar: lo que el API todavía está haciendo. */
 const NOTA_SOBRE: Partial<Record<EstadoSobreV3, string>> = {
-  creando: 'Estamos creando el proceso de firma en Auco.',
+  creando: 'Estamos creando el proceso de firma electrónica.',
   completo: 'Firmaron todas las partes: la fianza se activa en unos minutos.',
   incompleto: 'El proceso terminó sin todas las firmas: en unos minutos queda como firma incompleta.',
 }
 
 /** Por qué terminó (o no salió) el último proceso de firma. */
-function motivoDe(s: EnvioV3['sobre']): string | null {
+/** Cofianza lee el nombre del proveedor de firma; la inmobiliaria y el propietario, «firma electrónica». */
+const NOTA_CREANDO_INTERNO = 'Estamos creando el proceso de firma en Auco.'
+
+function motivoDe(s: EnvioV3['sobre'], interno: boolean): string | null {
   if (!s) return null
   switch (s.motivo) {
     case 'EXPIRED':
@@ -85,10 +89,10 @@ function motivoDe(s: EnvioV3['sobre']): string | null {
     case 'CANCELADO':
       return 'El proceso de firma se anuló.'
     case 'AUCO_DATOS':
-      return s.motivoDetalle ?? 'Auco rechazó los datos del envío.'
+      return s.motivoDetalle ?? (interno ? 'Auco rechazó los datos del envío.' : 'La plataforma de firma electrónica rechazó los datos del envío.')
     case 'AUCO_UPLOAD':
     case 'HUERFANO':
-      return `El proceso de firma no se creó en Auco${s.motivoDetalle ? `: ${s.motivoDetalle}` : '.'}`
+      return `El proceso de firma no se creó${interno ? ' en Auco' : ''}${s.motivoDetalle ? `: ${s.motivoDetalle}` : '.'}`
     default:
       return null
   }
@@ -119,6 +123,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   // Adenda 1 contratos (respuesta 21): el acta la carga la inmobiliaria; Cofianza no la carga en su nombre.
   // Si un administrador cerró el estudio sin acta, ya no se pide.
   const rol = useUsuarioVista()?.rol
+  const interno = esRolInterno(rol)
   const sinActa = e.acta?.cierreSinActa ?? null
   const cargaActa = editable && rol === 'inmobiliaria' && !sinActa
 
@@ -141,8 +146,9 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const bloqueados = s?.estado === 'en_firma' ? firmantes.filter((f) => f.estado === 'bloqueado') : []
   // Las partes están congeladas: reintentar daría el mismo rechazo (la API tampoco lo deja).
   const rechazoDatos = (enFirma || incompleta) && s?.estado === 'fallido' && s.motivo === 'AUCO_DATOS'
-  const nota = !enFirma || e.reintento || rechazoDatos ? undefined : s ? NOTA_SOBRE[s.estado] : e.identidadPendientes === 0 ? NOTA_SOBRE.creando : undefined
-  const motivo = motivoDe(s)
+  const notaBase = !enFirma || e.reintento || rechazoDatos ? undefined : s ? NOTA_SOBRE[s.estado] : e.identidadPendientes === 0 ? NOTA_SOBRE.creando : undefined
+  const nota = interno && notaBase === NOTA_SOBRE.creando ? NOTA_CREANDO_INTERNO : notaBase
+  const motivo = motivoDe(s, interno)
   // Adenda 1 (respuesta 11): el aviso lo acepta la inmobiliaria y, hasta entonces, ella no reenvía ni cancela (el API igual).
   // Sin el acuse disponible (falta la migración) el API no lo exige: aquí tampoco.
   const acuse = e.aviso?.aceptado ?? null
@@ -157,7 +163,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
     const r = await contratoService.descargarContrato(e.id, { inline })
     // Firmado, "Documento firmado" nunca muestra el PDF sin firmas.
     if (firmado && r.firmado === false)
-      throw new Error('La versión firmada todavía se está archivando desde Auco. Intente de nuevo en unos minutos.')
+      throw new Error(`La versión firmada todavía se está archivando${interno ? ' desde Auco' : ''}. Intente de nuevo en unos minutos.`)
     return r.url
   }
 
@@ -201,7 +207,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   }
 
   const actualizar = async () => {
-    if (await v3.actualizarFirma()) toast.success('Estado actualizado con Auco')
+    if (await v3.actualizarFirma()) toast.success(interno ? 'Estado actualizado con Auco' : 'Estado de la firma actualizado')
   }
   const reintentar = async () => {
     if (await v3.reintentar()) toast.success(`Contrato ${e.numero} enviado a firma`)
@@ -318,7 +324,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         {activa && (
           <Aviso tono="exito">
             {e.fechaActivacion
-              ? `Fianza activa desde el ${formatDateTime(e.fechaActivacion)} (hora de Colombia): la última firma registrada por Auco.`
+              ? `Fianza activa desde el ${formatDateTime(e.fechaActivacion)} (hora de Colombia): la última firma registrada${interno ? ' por Auco' : ''}.`
               : 'Fianza activa: firmaron todas las partes.'}
           </Aviso>
         )}
@@ -390,8 +396,8 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         {esAnalista && <RevisionIdentidad contratoId={e.id} onCambio={() => void v3.recargar()} />}
         {bloqueados.length > 0 && (
           <Aviso tono="aviso">
-            {bloqueados.map((f) => f.nombre).join(', ')} {bloqueados.length === 1 ? 'quedó bloqueado' : 'quedaron bloqueados'} en
-            Auco por intentos fallidos con el código. Cofianza debe desbloquearlo; ya le avisamos al equipo.
+            {bloqueados.map((f) => f.nombre).join(', ')} {bloqueados.length === 1 ? 'quedó bloqueado' : 'quedaron bloqueados'}
+            {interno ? ' en Auco' : ''} por intentos fallidos con el código. Cofianza debe desbloquearlo; ya le avisamos al equipo.
           </Aviso>
         )}
 
@@ -408,7 +414,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
 
         {enFirma && e.reintento && (
           <Aviso tono="error">
-            <p>{motivo ?? 'El proceso de firma no se creó en Auco.'}</p>
+            <p>{motivo ?? (interno ? 'El proceso de firma no se creó en Auco.' : 'El proceso de firma no se creó.')}</p>
             {editable && (
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 <Button variante="primary" tamano="sm" onClick={() => setConfirmarReintento(true)} disabled={ocupado}>
@@ -539,9 +545,8 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         }}
         title="¿Reenviar a firma?"
         message={
-          e.identidadPendientes > 0
-            ? 'Primero le llega un correo nuevo para verificar su identidad a quien no lo ha hecho. Cuando todos terminen, se crea un proceso de firma nuevo en Auco con el mismo documento: todas las partes vuelven a firmar, en el mismo orden. Cada envío consume un crédito de firma.'
-            : 'Se crea un proceso de firma nuevo en Auco con el mismo documento: todas las partes vuelven a firmar, en el mismo orden. Cada envío consume un crédito de firma.'
+          // A la inmobiliaria y al propietario, sin el proveedor ni el crédito de firma (costo de Cofianza).
+          `${e.identidadPendientes > 0 ? 'Primero le llega un correo nuevo para verificar su identidad a quien no lo ha hecho. Cuando todos terminen, se crea' : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
         }
         confirmLabel="Reenviar a firma"
         isLoading={accion === 'reenviar'}
@@ -566,7 +571,11 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         onClose={() => setConfirmarReintento(false)}
         onConfirm={reintentar}
         title="¿Reintentar el envío a firma?"
-        message="Se crea el proceso de firma en Auco con el documento enviado y se notifica a todas las partes. Consume un crédito de firma."
+        message={
+          interno
+            ? 'Se crea el proceso de firma en Auco con el documento enviado y se notifica a todas las partes. Consume un crédito de firma.'
+            : 'Se crea el proceso de firma electrónica con el documento enviado y se notifica a todas las partes.'
+        }
         confirmLabel="Reintentar envío"
         isLoading={accion === 'reintentar'}
       />
@@ -611,7 +620,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         title="¿Cancelar el contrato?"
         descripcion={
           enFirma && creado
-            ? `Se anula el proceso de firma en Auco, el número ${e.numero} queda anulado y el inmueble se libera.`
+            ? `Se anula el proceso de firma${interno ? ' en Auco' : ''}, el número ${e.numero} queda anulado y el inmueble se libera.`
             : `El número ${e.numero} queda anulado y el inmueble se libera.`
         }
         label="Motivo de la cancelación"

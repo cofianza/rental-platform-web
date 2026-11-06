@@ -9,6 +9,8 @@
  * multi-parte desactivada), no renderiza nada.
  */
 
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 import { IconLoader, IconUser, IconBuilding2, IconShieldCheck, IconCheck, IconClock, IconRefresh, IconWhatsapp, IconMail, IconAlertTriangle } from '@/components/icons'
@@ -63,6 +65,8 @@ export function FirmantesContratoSection({
    *  "Solicitudes de Firma" cuando hay multi-parte. */
   onFirmantesLoaded?: (total: number) => void
 }) {
+  // Cofianza conserva el nombre del proveedor de firma; la agencia lo lee sin él.
+  const interno = esRolInterno(useUsuarioVista()?.rol)
   const [firmantes, setFirmantes] = useState<IContratoFirmante[]>([])
   // Adenda 2 §9: verificación de identidad del arrendatario antes del sobre.
   const [verificaciones, setVerificaciones] = useState<IVerificacionIdentidad[]>([])
@@ -254,7 +258,7 @@ export function FirmantesContratoSection({
             onClick={() => { void actualizarDesdeAuco() }}
             disabled={refreshing || consultandoAuco || isLoading}
             className={`${BOTON} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50`}
-            title="Consultar el estado de cada firma en la plataforma de firma electrónica"
+            title={interno ? 'Consultar en Auco el estado de cada firma' : 'Consultar el estado de cada firma en la plataforma de firma electrónica'}
           >
             <IconRefresh size={16} className={refreshing || consultandoAuco ? 'animate-spin' : ''} />
             Actualizar
@@ -265,7 +269,7 @@ export function FirmantesContratoSection({
               onClick={handleRecordatorio}
               disabled={enviandoRecordatorio || recordatoriosAgotados}
               className={`${BOTON} bg-primary-700 text-white hover:bg-primary-800`}
-              title={recordatoriosAgotados ? 'Alcanzó el máximo de recordatorios' : 'Recordar a las partes pendientes'}
+              title={recordatoriosAgotados ? 'Alcanzó el máximo de recordatorios' : interno ? 'Recordar a las partes pendientes (sin costo de Auco)' : 'Recordar a las partes pendientes'}
             >
               {enviandoRecordatorio ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
               Enviar recordatorio
@@ -300,7 +304,7 @@ export function FirmantesContratoSection({
           <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
           <span>
             Un firmante quedó bloqueado tras varios intentos fallidos del código de firma. Cofianza lo
-            desbloquea; el proceso sigue abierto y después podrá firmar.
+            desbloquea{interno ? ' en Auco' : ''}; el proceso sigue abierto y después podrá firmar.
           </span>
         </div>
       )}

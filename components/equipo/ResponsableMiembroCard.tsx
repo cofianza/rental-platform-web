@@ -110,7 +110,7 @@ export function ResponsableMiembroCard({ miembroResponsableId, onAssign, titulo,
       <div className="col-span-2 min-w-0">
         <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
           {soyOwner ? <label htmlFor={idSelector}>{titulo}</label> : titulo}
-          {soyOwner && ayuda && <InfoTip texto={ayuda} lado="izquierda" />}
+          {soyOwner && ayuda && <InfoTip texto={ayuda} lado="derecha" />}
           {saving && <IconLoader size={12} className="animate-spin text-gray-500" aria-label="Guardando" />}
         </dt>
         <dd className="mt-0.5 text-sm font-medium text-gray-900">

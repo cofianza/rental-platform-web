@@ -16,13 +16,14 @@
 
 'use client'
 
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { formatCurrency } from '@/lib/constants'
 import { IconUsers, IconArrowRight, IconCalendar, IconDollarSign, IconAlertTriangle } from '@/components/icons'
 import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
-import { ADVERTENCIA_INGRESO_ADICIONAL, fechaCondicion, mensajeCondicionCoarrendatario, seCierraSiVence } from './textoVisible'
+import { ADVERTENCIA_INGRESO_ADICIONAL, esRolInterno, fechaCondicion, mensajeCondicionCoarrendatario, seCierraSiVence } from './textoVisible'
 
 // Sin tarjeta de identidad (el servicio es solo para mayores de edad), ni
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría), ni
@@ -107,8 +108,10 @@ export function CoarrendatarioInviteForm({
   condicionGestor = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
+  // Cofianza (también con «ver como» apagado) conserva su texto y su botón de siempre.
+  const interno = esRolInterno(useUsuarioVista()?.rol)
   // Opcional para quien gestiona salvo con la condición: no compite con lo que sí le toca.
-  const botonPrincipal = !esGestor || condicionGestor
+  const botonPrincipal = !esGestor || condicionGestor || interno
   const conCondicion = !esGestor && !!condicion
   const fechaLimite = condicion?.vence_en && !condicion.vencida ? fechaCondicion(condicion.vence_en) : null
   const cifra = condicion?.ingreso_adicional_requerido && condicion.ingreso_adicional_requerido > 0 ? condicion.ingreso_adicional_requerido : null
@@ -225,11 +228,17 @@ export function CoarrendatarioInviteForm({
                 la persona con quien vivirá el solicitante como <strong>coarrendatario</strong>, se evalúa a ambos y los
                 respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
-            ) : esGestor && condicionGestor ? (
+            ) : esGestor && condicionGestor && !interno ? (
               <>
-                Para aprobar el estudio falta un <strong>coarrendatario</strong>. La persona puede agregarlo desde su
+                Para seguir con el estudio en el plazo falta un <strong>coarrendatario</strong>. La persona puede agregarlo desde su
                 enlace, o usted puede invitar aquí a quien vivirá con el solicitante: se evalúa a ambos y los respaldamos
                 juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
+            ) : esGestor && interno ? (
+              <>
+                El estudio quedó condicionado. Puede invitar a la persona con quien vivirá el
+                solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
+                respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             ) : esGestor ? (
               <>

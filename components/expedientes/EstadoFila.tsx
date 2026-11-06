@@ -201,6 +201,7 @@ export function datosEstadoFila(
             analista,
             sinEjecutar: etapa === 'sin_ejecutar',
             pazYSalvoCargado,
+            condicion: !!c && etapa === 'decision',
             tomadoPor: revision && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
           }

@@ -162,7 +162,7 @@ function ExpedienteDetalleContenido() {
   // refrescan en sitio (sin desmontarse ni pasar por el skeleton de página).
   const [cargas, setCargas] = useState(0)
   // Etapa real del estudio (revisión del Resumen, 23-oct): ordena el Resumen, la barra y el chip.
-  const { etapa, esperaHasta, coaFallido } = useEtapaEstudio(
+  const { etapa, esperaHasta, coaFallido, citaActiva } = useEtapaEstudio(
     user?.rol === 'solicitante' ? null : expediente,
     user?.rol !== 'gerencia_consulta',
     cargas,
@@ -176,7 +176,7 @@ function ExpedienteDetalleContenido() {
   // Cada clic en «Reevaluar con documentos» del banner abre la apelación del
   // titular una vez: EstudiosSection lo devuelve a 0 al atenderlo (F5).
   const [pedidoReevaluar, setPedidoReevaluar] = useState(0)
-  const pedidoAtendido = useCallback(() => setPedidoReevaluar(0), [])
+  const pedidoAtendido = useCallback(() => setPedidoReevaluar(0), [setPedidoReevaluar])
   // Documentos queda montado (oculto) por el contador de pendientes; al abrir
   // la pestaña se remonta para traer lo último, como antes.
   const [visitasDocumentos, setVisitasDocumentos] = useState(0)
@@ -830,6 +830,7 @@ function ExpedienteDetalleContenido() {
             analista: puedeAsignar,
             sinEjecutar: etapaTurno === 'sin_ejecutar',
             pazYSalvoCargado: pazYSalvoRecibido,
+            condicion: etapaTurno === 'decision' && !!condicionCoa,
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» y sin coral.
             tomadoPor:
               etapaTurno === 'decision' && !esperaCandidato && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
@@ -846,25 +847,22 @@ function ExpedienteDetalleContenido() {
           const irADecision = (propio || !!opcionesTurno.tomadoPor) && etapaTurno === 'decision' && esCondicionado && puedeActuar
           return (
             <div
-              role="status"
-              aria-live="polite"
               className={`mt-5 flex flex-col gap-3 rounded-lg px-4 py-3 sm:flex-row sm:items-center sm:gap-4 ${
                 propio ? 'bg-coral-50 ring-1 ring-inset ring-coral-200' : 'bg-gray-50'
               }`}
             >
               <div className="min-w-0 flex-1">
-                {turno && (
-                  <p
-                    className={`flex items-start gap-1.5 text-sm font-semibold ${propio ? 'text-coral-800' : 'text-gray-800'}`}
-                  >
-                    {propio && <IconArrowRight size={16} className="mt-0.5 shrink-0" />}
-                    {/* Con la condición de coarrendatario lo que se espera es el coarrendatario (lo invita
-                        la persona o quien gestiona), no «al prospecto». */}
-                    {turno === 'prospecto' && condicionCoa && !isInternalRole
-                      ? 'Esperando al coarrendatario'
-                      : textoTurno(turno, vistaTurno, opcionesTurno)}
-                  </p>
-                )}
+                {/* Solo la línea del turno es región viva: tras una acción se anuncia de quién es ahora. */}
+                <div role="status" aria-live="polite">
+                  {turno && (
+                    <p
+                      className={`flex items-start gap-1.5 text-sm font-semibold ${propio ? 'text-coral-800' : 'text-gray-800'}`}
+                    >
+                      {propio && <IconArrowRight size={16} className="mt-0.5 shrink-0" aria-hidden="true" />}
+                      {textoTurno(turno, vistaTurno, opcionesTurno)}
+                    </p>
+                  )}
+                </div>
                 <p className={`text-sm leading-relaxed text-gray-700 ${turno ? 'mt-0.5' : ''} ${propio ? 'pl-[22px]' : ''}`}>
                   {queSigue(etapaTurno, {
                     vista: vistaTurno,
@@ -874,6 +872,8 @@ function ExpedienteDetalleContenido() {
                     sinInmueble: !expediente.inmueble,
                     fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo.vence_en) : null,
                     pazYSalvoCargado: pazYSalvoRecibido,
+                    citaActiva,
+                    perfilIncompleto: bloqueadoPorPerfil,
                     // Propietario directo: la API no admite coarrendatario (espera el Convenio).
                   })}
                 </p>

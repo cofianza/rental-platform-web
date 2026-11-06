@@ -21,6 +21,8 @@ import { contratoService } from '@/services/contratoService'
 import { etiquetaContrato, formatDate } from '@/lib/constants'
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
+import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import type { IContrato } from '@/types/contrato'
 import type { ICierreSinActa } from '@/types/expediente'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -51,7 +53,11 @@ const PRIORIDAD: Record<string, number> = {
 export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa }: ContratoEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
-  const rol = useUsuarioVista()?.rol
+  const usuario = useUsuarioVista()
+  const rol = usuario?.rol
+  // Cofianza conserva los botones de antes; los textos nuevos son para la agencia y el propietario.
+  const interno = esRolInterno(rol)
+  const perfilIncompleto = miembroDebeCompletarPerfil(usuario)
   // Solo lectura (y Gerencia) ven el contrato, pero no cargan el acta ni reenvían la firma.
   const puedeEditar = usePuedeEditar()
   const cargaActa = rol === 'inmobiliaria' && puedeEditar
@@ -125,11 +131,15 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
 
   // Firma incompleta: resolverla es lo que toca a quien gestiona (botón principal). En firma,
   // el botón dice a qué se entra: el estado de cada firmante está en el contrato.
-  const claseAccion = isIncompleta && puedeEditar ? BOTON_PRINCIPAL : BOTON
+  const claseAccion = isIncompleta && puedeEditar && !interno ? BOTON_PRINCIPAL : BOTON
   const textoAccion =
     contrato.estado === 'borrador'
       ? 'Continuar el contrato'
-      : isIncompleta && puedeEditar
+      : interno
+        ? esV3
+          ? 'Ver el contrato'
+          : 'Ver detalle del contrato'
+        : isIncompleta && puedeEditar
         ? 'Abrir el contrato para resolverlo'
         : contrato.estado === 'pendiente_firma'
           ? 'Ver quién falta por firmar'
@@ -209,7 +219,11 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
               </>
             ) : (
               <p>
-                {rol === 'inmobiliaria' ? 'La carga alguien de su equipo con permiso de edición.' : 'La carga la inmobiliaria.'}
+                {rol !== 'inmobiliaria'
+                  ? 'La carga la inmobiliaria.'
+                  : perfilIncompleto
+                    ? 'Complete su perfil para poder cargarla.'
+                    : 'La carga alguien de su equipo con permiso de edición.'}
                 {rol === 'administrador'
                   ? ' Si no la va a cargar, puede cerrar el estudio sin acta desde «Cambiar estado».'
                   : ' Sin ella no se puede cerrar el estudio.'}

@@ -241,8 +241,11 @@ export function AprobarCondicionadoCard({
               reasignarlo a otra propiedad: lo que falta es el coarrendatario. Para no aprobarlo, use «Cambiar estado», arriba.
             </>
           ) : (
-            // La agencia nunca aprueba: «a mano» le hablaba de algo que no puede hacer.
-            'Mientras la condición esté vigente, lo único que falta es el coarrendatario: no se piden más soportes ni se puede reasignar el estudio a otra propiedad.'
+            // La agencia nunca aprueba: «a mano» le hablaba de algo que no puede hacer. Sin la obligatoria,
+            // al vencer no se cierra (pasa a revisión): falta el coarrendatario para seguir en el plazo.
+            condicion.obligatoria
+              ? 'Mientras la condición esté vigente, lo único que falta es el coarrendatario: no se piden más soportes ni se puede reasignar el estudio a otra propiedad.'
+              : 'Para seguir con el estudio en el plazo falta un coarrendatario: mientras la condición esté vigente no se piden más soportes ni se puede reasignar el estudio a otra propiedad.'
           )
         }
       >
@@ -523,7 +526,7 @@ export function AprobarCondicionadoCard({
         ) : (
           <p>
             Un analista revisa el caso y decide si lo aprueba. Usted no tiene que hacer nada para que avance: le
-            avisamos por notificación y correo cuando decida.
+            avisamos a quien creó el inmueble y al responsable del estudio cuando decida.
           </p>
         )}
       </SeccionPaso>
