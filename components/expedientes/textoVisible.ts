@@ -113,6 +113,50 @@ export function textoVisible(texto: string | null | undefined, opts: { externo?:
 }
 
 /**
+ * Frases del resumen de la central (providers de la API): «Resultado de
+ * DataCrédito: puntaje 773; …», «TransUnion no entregó puntaje: …», y las del
+ * formato anterior a 2026-10 («Score CreditVision: 741. Obligaciones totales:
+ * 4. Saldo total: …»). Para quien no es de Cofianza la central ya llega como
+ * «la central de riesgo».
+ */
+const FRASE_RESUMEN_CENTRAL =
+  /^(?:Resultado de [^:]+:|Score\b|Obligaciones totales\b|Saldo total\b|(?:DataCr[eé]dito|TransUnion|Experian|La central de riesgo)\b[^.:;]*\bno entreg[oó] puntaje)/i
+
+/** El aviso que la API pone entre el resumen y los motivos (AVISO_REVISION_ANALISTA). */
+const AVISO_REVISION = /pasa a revisi[oó]n/i
+
+/**
+ * Separa las observaciones de una evaluación en revisión (ya pasadas por
+ * textoVisible) en los datos de la central y los motivos, uno por frase.
+ *
+ * La API las guarda como un solo texto (observacionesVisibles, reglas-duras.ts):
+ * resumen de la central + «El caso pasa a revisión de un analista de Cofianza.»
+ * + los motivos. Se corta en ese aviso, que no es un motivo. Sin el aviso
+ * (filas viejas, registro manual), las frases del inicio que son del resumen
+ * de la central van a `datos` y el resto a `motivos`. No corta en «$18.450.000»
+ * ni en «C.C. 79…»: solo en un punto seguido de espacio y mayúscula.
+ */
+export function partirObservaciones(texto: string | null | undefined): { datos: string; motivos: string[] } {
+  if (!texto?.trim()) return { datos: '', motivos: [] }
+  const partes = texto.trim().split(/(?<=\.)\s+(?=[A-ZÁÉÍÓÚÑ¿«])/)
+  const frases = partes
+    .map((f) => f.trim())
+    // La API no reescribe las observaciones cuando la condición de coarrendatario
+    // vence o no se cumple: aquí ya no está vigente.
+    .filter((f) => f && !/^Condici[oó]n pendiente:/i.test(f))
+  const corte = frases.findIndex((f) => AVISO_REVISION.test(f))
+  const otraFrase = frases.findIndex((f) => !FRASE_RESUMEN_CENTRAL.test(f))
+  const finResumen = corte >= 0 ? corte : otraFrase < 0 ? frases.length : otraFrase
+  const resumen = frases.slice(0, finResumen)
+  const motivos = frases.slice(corte >= 0 ? corte + 1 : finResumen)
+  return {
+    // «Resultado de DataCrédito: puntaje 773; …» → «DataCrédito, puntaje 773; …»: ya va bajo «Datos de la central».
+    datos: resumen.join(' ').replace(/^Resultado de ([^:]+):\s*/, '$1, '),
+    motivos,
+  }
+}
+
+/**
  * Por qué falló la consulta. Solo la falla técnica es «problema técnico»: que
  * la persona no aparezca en la central (Adenda de precios §2.2 a) o que el
  * apellido no coincida son respuestas de la central y se corrigen distinto.

@@ -33,7 +33,8 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { TarifaEstudioBlock } from './TarifaEstudioBlock'
 import type { IEstudio, EstadoEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { motivoCoarrendatario, textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida, fechaCondicion } from './textoVisible'
+import { motivoCoarrendatario, textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida, fechaCondicion, partirObservaciones } from './textoVisible'
+import { MotivosRevision } from './MotivosRevision'
 import { pazYSalvoPendiente, pazYSalvoYaCargado, textoRequisitoPendiente } from '@/lib/pazYSalvo'
 
 interface EstudioEstadoCardProps {
@@ -654,10 +655,9 @@ function EstudioPanel({
             {/* El motivo de la revisión (R2, R4, listas, identidad, puntaje de la
                 central…): antes solo se veía abriendo el detalle. Compara con el
                 rótulo de rotuloEvaluacion (antes con «Condicionado», que ya no sale). */}
+            {/* Una viñeta por motivo; el resumen de la central va aparte: no es un motivo. */}
             {mostrarPorQueRevision && (
-              <p>
-                <span className="font-semibold">Por qué está en revisión:</span> {visible(estudio.observaciones)}
-              </p>
+              <MotivosRevision titulo="Por qué está en revisión:" {...partirObservaciones(visible(estudio.observaciones))} />
             )}
             {/* Motivo real del fallo. El texto de arriba es genérico para
                 cualquier error; el backend guarda en `observaciones` la causa
