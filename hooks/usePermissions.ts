@@ -5,11 +5,12 @@
 
 import { useCallback } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import type { Resource, Action } from '@/types/permissions'
 import type { UserRole } from '@/types/auth'
 
 export function usePermissions() {
-  const user = useAuthStore((state) => state.user)
+  const user = useUsuarioVista()
   const permissions = useAuthStore((state) => state.permissions)
 
   const userRole = user?.rol ?? null

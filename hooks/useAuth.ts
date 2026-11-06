@@ -5,6 +5,7 @@
 
 import { useCallback } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { authService } from '@/services/authService'
 import { AUTH_ROUTES } from '@/lib/constants'
 import { rutaInterna } from '@/lib/utils'
@@ -12,7 +13,7 @@ import type { ILoginCredentials } from '@/types/auth'
 
 export function useAuth() {
   // Estado del store
-  const user = useAuthStore((state) => state.user)
+  const user = useUsuarioVista()
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
   const isLoading = useAuthStore((state) => state.isLoading)
   const isInitialized = useAuthStore((state) => state.isInitialized)

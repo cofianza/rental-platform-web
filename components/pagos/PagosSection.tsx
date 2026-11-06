@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { pagoService, type IPago } from '@/services/pagoService'
 import { facturacionService } from '@/services/facturacionService'
@@ -90,7 +90,7 @@ const ITEMS_PER_PAGE = 10
 // ============================================
 
 export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionProps) {
-  const user = useAuthStore((s) => s.user)
+  const user = useUsuarioVista()
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   // Facturar tiene un permiso más amplio: admin, operador, inmobiliaria y
   // propietario pueden disparar la creación de la factura electrónica; el

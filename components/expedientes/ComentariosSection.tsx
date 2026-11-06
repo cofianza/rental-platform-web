@@ -17,7 +17,7 @@ import { IconLoader, IconRefresh, IconEdit, IconTrash, IconX, IconCheck, IconAle
 import { formatDateTime } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { expedienteService } from '@/services/expedienteService'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IComentarioExpediente } from '@/types/expediente'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
@@ -71,7 +71,7 @@ export interface ComentariosSectionProps {
 }
 
 export function ComentariosSection({ expedienteId }: ComentariosSectionProps) {
-  const user = useAuthStore((s) => s.user)
+  const user = useUsuarioVista()
 
   const [comentarios, setComentarios] = useState<IComentarioExpediente[]>([])
   const [nuevoComentario, setNuevoComentario] = useState('')

@@ -18,7 +18,7 @@ import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconLoader, IconCalendar, IconPhone, IconShieldCheck, IconMail, IconId, IconUser } from '@/components/icons'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
@@ -41,7 +41,7 @@ interface CitaCardProps {
 type ActionState = 'idle' | 'confirmar' | 'cancelar' | 'realizar' | 'no_asistio' | 'habilitar_estudio'
 
 export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
-  const userRol = useAuthStore((s) => s.user?.rol)
+  const userRol = useUsuarioVista()?.rol
   // Gerencia y el miembro «Sólo lectura» ven la cita sin acciones (el API se las niega).
   const puedeEditar = usePuedeEditar()
   const [action, setAction] = useState<ActionState>('idle')

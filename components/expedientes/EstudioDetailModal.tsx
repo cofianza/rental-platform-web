@@ -27,7 +27,7 @@ import type { TransUnionResponse } from '@/types/transunion'
 import type { DataCreditoResponse } from '@/types/datacredito'
 import { abrirEnPestana } from '@/lib/utils'
 import { formatCurrency, formatDateTime, TIPOS_DOCUMENTO } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { motivoCoarrendatario, textoVisible, esRolInterno, centralDefinida } from './textoVisible'
 import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
 
@@ -117,7 +117,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 
 export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly: readOnlyProp = false, solicitante, irAReevaluacion = false, onApelacionCambiada }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
-  const rol = useAuthStore((s) => s.user?.rol)
+  const rol = useUsuarioVista()?.rol
   // Texto de la API: sin citas a documentos, y sin datos internos del modelo para quien no es de Cofianza.
   const externo = !esRolInterno(rol)
   // Solo admin/operador escriben aquí (certificado, re-evaluación, listas); Gerencia

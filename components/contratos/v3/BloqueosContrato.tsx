@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/Button'
 import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudioNuevo'
 import { estudioService } from '@/services/estudioService'
 import { ApiClientError } from '@/lib/api'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { CONTACTO_COFIANZA } from '@/lib/constants'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
@@ -134,7 +134,7 @@ export function BloqueosContrato({
   onIrPaso,
   onCambio,
 }: Props) {
-  const user = useAuthStore((s) => s.user)
+  const user = useUsuarioVista()
   const rol = user?.rol
   const puntos: Punto[] = [
     ...puntosDe(bloqueos),

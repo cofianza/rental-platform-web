@@ -15,7 +15,7 @@ import { formatCurrency } from '@/lib/constants'
 import type { IEstudio, IMotivosElegidos, IRegistrarResultadoInput } from '@/types/estudio'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { CargandoMotivos, LoVeLaInmobiliaria, SelectorMotivos, errorMotivoNoAplica, errorMotivos, motivosParaEnviar } from './SelectorMotivos'
 
 const SIN_MOTIVOS: IMotivosElegidos = { motivos: [] }
@@ -74,7 +74,7 @@ export function RegistrarResultadoModal({
   // H58/H103: con el catálogo del API, rechazo y condiciones se eligen de una
   // lista; sin él (API anterior), siguen los campos de texto.
   // B11: solo Cofianza decide; a los demás roles el API les responde 403.
-  const rol = useAuthStore((s) => s.user?.rol)
+  const rol = useUsuarioVista()?.rol
   const { catalogo, cargando: cargandoMotivos } = useMotivosDecision(rol === 'administrador' || rol === 'operador_analista')
   const [motivos, setMotivos] = useState<IMotivosElegidos>(SIN_MOTIVOS)
   // B14: rechazo y condicionado irán con lista, pero el catálogo aún no llega.

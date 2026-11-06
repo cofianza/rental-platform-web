@@ -8,7 +8,7 @@
 import { Badge } from '@/components/ui/Badge'
 import { cn } from '@/lib/utils'
 import type { IEstudioHistorial } from '@/types/estudio'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { textoVisible, esRolInterno } from './textoVisible'
 import { Skeleton } from '@/components/ui/Skeleton'
 
@@ -33,7 +33,7 @@ export function EstudioHistorialSection({
   isLoading,
   onEstudioSelect,
 }: EstudioHistorialSectionProps) {
-  const externo = !esRolInterno(useAuthStore((s) => s.user?.rol))
+  const externo = !esRolInterno(useUsuarioVista()?.rol)
   if (isLoading) {
     return (
       <div role="status" className="space-y-2 py-2">

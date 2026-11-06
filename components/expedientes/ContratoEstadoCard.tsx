@@ -19,7 +19,7 @@ import { TarjetaSiguientePaso, SeccionPaso, type TonoPaso } from './TarjetaSigui
 import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
 import { etiquetaContrato, formatDate } from '@/lib/constants'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import type { IContrato } from '@/types/contrato'
 import type { ICierreSinActa } from '@/types/expediente'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -50,7 +50,7 @@ const PRIORIDAD: Record<string, number> = {
 export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa }: ContratoEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
-  const rol = useAuthStore((st) => st.user?.rol)
+  const rol = useUsuarioVista()?.rol
   const [contrato, setContrato] = useState<IContrato | null>(null)
   // V3 §12.1: fianza activa o terminada sin acta de entrega e inventario cargada.
   const [actaPendiente, setActaPendiente] = useState(false)

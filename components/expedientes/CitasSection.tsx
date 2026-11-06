@@ -16,7 +16,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 import { citaService } from '@/services/citaService'
 import { solicitanteService } from '@/services/solicitanteService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { formatDateTime } from '@/lib/constants'
 import type { ICita } from '@/types/cita'
 import { ESTADO_CITA_CONFIG } from '@/types/cita'
@@ -56,7 +56,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
   // El estudio ya corrió (o el expediente cerró): el pago del estudio ya no es
   // accionable, así que no mostramos el pill "Aún sin pago"/"Pago pendiente".
   const estudioYaCorrio = ['en_revision', 'aprobado', 'condicionado', 'rechazado', 'cerrado'].includes(expedienteEstado ?? '')
-  const user = useAuthStore((s) => s.user)
+  const user = useUsuarioVista()
   const [citas, setCitas] = useState<ICita[]>([])
   const [confirmRealizar, setConfirmRealizar] = useState<ICita | null>(null)
   const [confirmNoAsistio, setConfirmNoAsistio] = useState<ICita | null>(null)
