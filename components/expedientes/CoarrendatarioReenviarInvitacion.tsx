@@ -200,8 +200,9 @@ export function CoarrendatarioReenviarInvitacion({
       </div>
       )}
       <p className="text-[11px] text-gray-500 mb-2">
-        Si solo la reenvía, le llega el mismo enlace. Si corrige el nombre, el documento, el correo o el teléfono, le llega
-        uno nuevo y el anterior deja de funcionar; al cancelarla, también. Reenviada, vale 7 días.
+        {protegidos
+          ? 'Si la cancela, el enlace que recibió deja de funcionar.'
+          : 'Si solo la reenvía, le llega el mismo enlace. Si corrige el nombre, el documento, el correo o el teléfono, le llega uno nuevo y el anterior deja de funcionar; al cancelarla, también. Reenviada, vale 7 días o hasta que venza el plazo para presentar el coarrendatario, lo que ocurra primero.'}
       </p>
       <div className="flex items-center justify-end gap-2 flex-wrap">
         <button

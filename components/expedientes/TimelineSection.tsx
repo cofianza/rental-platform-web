@@ -109,7 +109,7 @@ function configEvento(evento: ITimelineEvento): ConfigEvento {
   if (evento.tipo !== 'estudio') return EVENTO_CONFIG[evento.tipo] || EVENTO_CONFIG.comentario
   if (pideAtencion(evento)) return ESTUDIO_ATENCION
   const d = evento.descripcion.toLowerCase()
-  if (/no aprobad|no aprobable|rechazad|sin efecto|no califica/.test(d)) return ESTUDIO_NEGATIVO
+  if (/no aprobad|rechazad|sin efecto|no califica/.test(d)) return ESTUDIO_NEGATIVO
   if (/aprobad|autoriz/.test(d)) return ESTUDIO_POSITIVO
   return ESTUDIO_NEUTRO
 }
