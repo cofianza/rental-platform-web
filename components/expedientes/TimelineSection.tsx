@@ -122,8 +122,8 @@ function esResultadoRepetido(evento: ITimelineEvento, eventos: ITimelineEvento[]
 
 /**
  * «X indicó que el número de documento de su invitación está mal… corrija el
- * documento y reenvíela» pide una acción. Si después autorizó con ese
- * documento, la API deja un evento de resolución (más nuevo, así que llega en
+ * documento y reenvíela» pide una acción. Si después autorizó (con el mismo
+ * documento o con el corregido tras el reenvío), la API deja un evento de resolución (más nuevo, así que llega en
  * la misma página o antes): el aviso se pinta como resuelto.
  */
 function reportesDocumentoResueltos(eventos: ITimelineEvento[]): Set<string> {
@@ -417,7 +417,7 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
                       {reportesResueltos.has(evento.id) && (
                         <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-800">
                           <IconCheckCircle size={14} className="text-primary-700" />
-                          Resuelto: después autorizó con ese documento
+                          Resuelto: después autorizó
                         </p>
                       )}
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-600">
