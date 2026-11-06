@@ -12,7 +12,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { calibracionService, type IHistorialCalibracion, type IParametroCalibracion } from '@/services/calibracionService'
-import { IconAlertTriangle, IconCheck, IconLoader, IconLock } from '@/components/icons'
+import { IconAlertTriangle, IconCheck, IconLoader, IconLock, IconShieldCheck } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { CambioItem } from './Historial'
 import { EscalaPuntaje, ESCALA_CLAVES } from './EscalaDecision'
@@ -92,10 +92,10 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
     <Modal isOpen onClose={guardando ? () => {} : onClose} title={meta.nombre} size="lg">
       <div className="space-y-4 text-sm">
         <p className="text-gray-700">{meta.queHace || humanizar(p.descripcion)}</p>
-        {meta.ejemplo?.(valores) && <p className="text-gray-500">{meta.ejemplo(valores)}</p>}
-        {meta.nota && <p className="text-gray-500">{meta.nota}</p>}
+        {meta.ejemplo?.(valores) && <p className="text-gray-600">{meta.ejemplo(valores)}</p>}
+        {meta.nota && <p className="text-gray-600">{meta.nota}</p>}
         {aplicaHoy && meta.notaRige && (
-          <p className="text-gray-500">
+          <p className="text-gray-600">
             <span className="font-semibold">Cuándo aplica:</span> {meta.notaRige}.
           </p>
         )}
@@ -110,8 +110,8 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
             <p className="text-xs font-semibold text-gray-600">Valor actual</p>
-            <p className="mt-1 text-2xl font-bold text-gray-900">{conUnidad(p.valor, p)}</p>
-            {p.valor !== p.valorDefault && <p className="text-xs text-gray-500">Valor inicial: {conUnidad(p.valorDefault, p)}</p>}
+            <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">{conUnidad(p.valor, p)}</p>
+            {p.valor !== p.valorDefault && <p className="text-xs text-gray-600">Valor inicial: {conUnidad(p.valorDefault, p)}</p>}
           </div>
           {!soloLectura && (
             <div className={cn('rounded-lg border p-3', cambiado ? 'border-primary-300 bg-primary-50' : 'border-gray-200')}>
@@ -126,7 +126,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                         aria-pressed={nuevo === o}
                         onClick={() => setValor(String(o))}
                         className={cn(
-                          'flex-1 rounded-lg border px-3 py-2 font-semibold',
+                          'min-h-10 flex-1 rounded-lg border px-3 py-2 font-semibold',
                           nuevo === o ? 'border-primary-600 bg-white text-primary-800' : 'border-gray-300 text-gray-600',
                         )}
                       >
@@ -135,7 +135,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-1 text-2xl font-bold text-primary-800">{conUnidad(nuevo, p)}</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-primary-800">{conUnidad(nuevo, p)}</p>
                 )
               ) : meta.opciones ? (
                 <div role="group" aria-label="Nuevo valor" className="mt-1 flex flex-wrap gap-2">
@@ -149,7 +149,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                         setError(null)
                       }}
                       className={cn(
-                        'rounded-lg border px-3 py-2 font-semibold',
+                        'min-h-10 rounded-lg border px-3 py-2 font-semibold tabular-nums',
                         nuevo === o ? 'border-primary-600 bg-white text-primary-800' : 'border-gray-300 text-gray-600',
                       )}
                     >
@@ -171,7 +171,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                       setValor(m ? `${m[1]}${m[2]}` : '')
                       setError(null)
                     }}
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+                    className="min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
                   />
                   <button
                     type="button"
@@ -180,7 +180,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                       setValor(String(MES_APAGADO))
                       setError(null)
                     }}
-                    className="self-start text-xs font-medium text-primary-700 hover:underline"
+                    className="inline-flex min-h-10 items-center self-start text-sm font-medium text-primary-700 hover:underline"
                   >
                     Dejar sin activar
                   </button>
@@ -205,13 +205,13 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                     }}
                     aria-invalid={!!error}
                     aria-describedby={`rango-${p.clave}`}
-                    className="w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-right font-mono text-lg"
+                    className="min-h-11 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-right text-lg font-semibold tabular-nums text-gray-900"
                   />
                   <span className="shrink-0 text-gray-500">{sufijo(unidad, nuevo)}</span>
                 </label>
               )}
               {!binario && !meta.opciones && (
-                <p id={`rango-${p.clave}`} className="mt-1 text-xs text-gray-500">
+                <p id={`rango-${p.clave}`} className="mt-1 text-xs text-gray-600">
                   {unidad === 'mes'
                     ? 'Primer mes que cobra la plataforma (AAAA-MM, por ejemplo 2026-11).'
                     : unidad === 'fraccion_canon'
@@ -240,9 +240,12 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
           </p>
         )}
         {!soloLectura && meta.matriz && (
-          <p className="text-xs text-gray-600">
+          <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <IconShieldCheck size={14} className="mt-0.5 shrink-0" />
+            <span>
             Este valor cambia resultados de la plataforma (qué se aprueba o se rechaza, o hasta qué canon llega la cobertura): antes de
             guardarlo, pida a Tecnología que valide la matriz de casos de prueba y confirme que ningún caso crítico cambia de resultado.
+            </span>
           </p>
         )}
 
@@ -253,9 +256,10 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
           </p>
         ) : (
           <>
-            <label className="block text-xs font-medium text-gray-700">
+            <label className="block text-sm font-medium text-gray-800">
               Motivo {exigeMotivo ? '(obligatorio)' : '(opcional)'} — queda en el historial
               <textarea
+                aria-required={exigeMotivo || undefined}
                 value={motivo}
                 onChange={(e) => {
                   setMotivo(e.target.value)
@@ -263,17 +267,22 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                 }}
                 maxLength={500}
                 rows={2}
-                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-normal text-gray-900"
               />
             </label>
-            {cambiado && (
-              <p className="font-medium text-gray-900">
-                Pasa de {conUnidad(p.valor, p)} a {conUnidad(nuevo, p)}. Aplica desde ya a lo que se procese de aquí en adelante.
+            {cambiado ? (
+              <p className="rounded-lg border border-primary-200 bg-primary-50 p-3 font-medium text-gray-900">
+                Pasa de <span className="tabular-nums">{conUnidad(p.valor, p)}</span> a{' '}
+                <span className="font-bold tabular-nums text-primary-800">{conUnidad(nuevo, p)}</span>. Aplica desde ya a lo que se procese de aquí en
+                adelante.
               </p>
+            ) : (
+              valido && <p className="text-xs text-gray-600">El valor nuevo es igual al actual: no hay nada que guardar.</p>
             )}
             {error && (
-              <p role="alert" className="text-sm text-red-600">
-                {error}
+              <p role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>{error}</span>
               </p>
             )}
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -281,7 +290,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                 type="button"
                 onClick={onClose}
                 disabled={guardando}
-                className="rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="min-h-11 rounded-lg border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -290,7 +299,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                 onClick={guardar}
                 disabled={guardando || (valido && nuevo === p.valor)}
                 className={cn(
-                  'flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 font-bold text-white disabled:opacity-50',
+                  'flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-4 py-2 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50',
                   unidad === 'onoff' && nuevo === 0 ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800',
                 )}
               >
@@ -303,7 +312,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
 
         {anteriores.length > 0 && (
           <details className="rounded-lg border border-gray-200">
-            <summary className="cursor-pointer px-4 py-2 text-xs font-semibold text-gray-700">Cambios anteriores de este valor ({anteriores.length})</summary>
+            <summary className="flex min-h-10 cursor-pointer items-center px-4 py-2 text-sm font-semibold text-gray-700">Cambios anteriores de este valor ({anteriores.length})</summary>
             <ul className="divide-y divide-gray-100 border-t border-gray-100">
               {anteriores.map((h) => (
                 <CambioItem key={h.id} h={h} params={params} conNombre={false} />

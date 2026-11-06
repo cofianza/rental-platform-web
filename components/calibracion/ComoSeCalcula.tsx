@@ -52,33 +52,36 @@ export function ComoSeCalcula({ valores }: { valores: Valores }) {
   return (
     <div className="space-y-4 text-sm text-gray-700">
       <div className="rounded-lg bg-gray-50 p-3">
-        <p className="font-semibold text-gray-900">Puntaje = puntos obtenidos ÷ puntos posibles × 100</p>
-        <p className="mt-1 text-gray-600">
+        <p className="font-semibold tabular-nums text-gray-900">Puntaje = puntos obtenidos ÷ puntos posibles × 100</p>
+        <p className="mt-1 max-w-prose text-gray-600">
           Se suman los puntos de nueve factores. Solo se divide entre el máximo de los factores que sí se pudieron medir,
           para no castigar a la persona por un dato que no existe: hoy no se miden la estabilidad laboral ni los arriendos
           anteriores, así que el máximo queda entre 96 y 104 puntos.
         </p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[520px] text-left">
-          <thead>
-            <tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
-              <th className="py-2 pr-3 font-semibold">Factor</th>
-              <th className="py-2 pr-3 text-right font-semibold">Máx.</th>
-              <th className="py-2 font-semibold">Cómo da puntos</th>
-            </tr>
-          </thead>
-          <tbody>
-            {factores(valores).map((f) => (
-              <tr key={f.nombre} className="border-b border-gray-100 align-top">
-                <td className="py-2 pr-3 font-medium text-gray-900">{f.nombre}</td>
-                <td className="py-2 pr-3 text-right tabular-nums">{f.max}</td>
-                <td className="py-2 text-gray-600">{f.como}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Una lista y no una tabla: en el celular la tabla de 520 px se cortaba y obligaba a desplazar de lado. */}
+      <div>
+        <div aria-hidden className="hidden border-b border-gray-200 pb-2 text-xs font-semibold text-gray-600 sm:grid sm:grid-cols-[11rem_3.5rem_minmax(0,1fr)] sm:gap-x-3">
+          <span>Factor</span>
+          <span className="text-right">Máx.</span>
+          <span>Cómo da puntos</span>
+        </div>
+        <dl className="divide-y divide-gray-100">
+          {factores(valores).map((f) => (
+            <div key={f.nombre} className="py-2.5 sm:grid sm:grid-cols-[11rem_3.5rem_minmax(0,1fr)] sm:gap-x-3">
+              <dt className="flex items-baseline justify-between gap-3 font-medium text-gray-900 sm:contents">
+                <span>{f.nombre}</span>
+                <span className="text-xs font-normal tabular-nums text-gray-600 sm:text-right sm:text-sm sm:text-gray-700">
+                  <span className="sm:hidden">máximo </span>
+                  {f.max}
+                  <span className="sm:hidden"> puntos</span>
+                </span>
+              </dt>
+              <dd className="mt-0.5 text-gray-600 sm:mt-0">{f.como}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
       <div className="rounded-lg border border-gray-200 p-3">
@@ -90,7 +93,7 @@ export function ComoSeCalcula({ valores }: { valores: Valores }) {
         </p>
       </div>
 
-      <p className="text-xs text-gray-500">
+      <p className="max-w-prose text-xs text-gray-600">
         Antes de este puntaje mandan las reglas que rechazan siempre: listas restrictivas,{' '}
         {valores.ADENDA5 === 1 ? 'mora vigente (salvo la de bajo monto en sector no financiero) o reciente' : 'mora vigente o reciente'} y
         puntaje de la central por debajo de {minCentral}. Las tablas de puntos de cada factor salen de la Política y no se cambian desde

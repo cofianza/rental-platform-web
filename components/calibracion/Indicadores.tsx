@@ -14,8 +14,8 @@ function Dato({ label, valor, sub }: { label: string; valor: string; sub?: strin
   return (
     <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
       <dt className="text-xs font-semibold text-gray-600">{label}</dt>
-      <dd className="mt-1 text-2xl font-bold text-gray-900">{valor}</dd>
-      {sub && <dd className="text-xs text-gray-500">{sub}</dd>}
+      <dd className="mt-1 text-2xl font-bold tabular-nums text-gray-900">{valor}</dd>
+      {sub && <dd className="text-xs text-gray-600">{sub}</dd>}
     </div>
   )
 }
