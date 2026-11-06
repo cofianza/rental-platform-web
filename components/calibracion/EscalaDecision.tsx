@@ -48,19 +48,23 @@ function tramosPuntaje(v: Valores): Tramo[] {
   const auto = v.UMBRAL_APROBACION_AUTOMATICA
   const piso = v.ADENDA4 === 1 ? v.PUNTAJE_PISO_COARRENDATARIO : null
   const t: Tramo[] = []
+  // Adenda 4: el canon solo, sin ingreso comprobado, no rechaza (decide un analista).
+  const rojoPuntaje =
+    v.ADENDA4 === 1 ? 'No alcanza el mínimo (salvo que solo lo baje el canon sin ingreso comprobado: decide un analista).' : 'No alcanza el mínimo.'
   if (piso !== null && piso < gris) {
     // En 0, todo el que quede bajo la zona gris solo por el endeudamiento puede presentar coarrendatario.
-    if (piso > 0) t.push({ desde: 0, hasta: piso, titulo: 'Se rechaza', detalle: 'No alcanza el mínimo.', tono: 'rojo' })
+    if (piso > 0) t.push({ desde: 0, hasta: piso, titulo: 'Se rechaza', detalle: rojoPuntaje, tono: 'rojo' })
     t.push({
       desde: piso,
       hasta: gris,
       clave: 'PUNTAJE_PISO_COARRENDATARIO',
-      titulo: 'Se rechaza, salvo un caso',
-      detalle: 'Con inmobiliaria, si solo lo baja el endeudamiento, o el endeudamiento y el canon, sin ingreso comprobado, se le exige un coarrendatario y decide un analista.',
+      titulo: 'Se rechaza, salvo dos casos',
+      detalle:
+        'Si solo lo baja el canon sin ingreso comprobado, decide un analista (pide soporte de ingreso); con inmobiliaria, si solo lo baja el endeudamiento, o el endeudamiento y el canon, sin ingreso comprobado, se le exige un coarrendatario y decide un analista.',
       tono: 'naranja',
     })
   } else {
-    t.push({ desde: 0, hasta: gris, titulo: 'Se rechaza', detalle: 'No alcanza el mínimo.', tono: 'rojo' })
+    t.push({ desde: 0, hasta: gris, titulo: 'Se rechaza', detalle: rojoPuntaje, tono: 'rojo' })
   }
   // Entre la zona gris y el mínimo para ofrecer coarrendatario: con los valores
   // iniciales (70 y 70) este tramo no existe; aparece si Gerencia sube el segundo.
@@ -103,7 +107,8 @@ function tramosCentrales(v: Valores): Tramo[] {
       desde: 0,
       hasta: v.UMBRAL_CASCADA_RECHAZO,
       titulo: 'Basta una central',
-      detalle: 'Se rechaza sin consultar la segunda, salvo que la central dé un puntaje de la franja del analista.',
+      detalle:
+        'Se rechaza sin consultar la segunda, salvo que la central dé un puntaje de la franja del analista o que solo lo baje el canon frente a un ingreso no comprobado.',
       tono: 'rojo',
     },
     {
@@ -205,13 +210,19 @@ function Barra({ titulo, tramos, min, max, resaltar, onAbrir, decimales }: Barra
   const texto = (t: Tramo) =>
     t.hasta > max ? `${t.desde} o más` : t.desde <= min ? `Menos de ${t.hasta}` : `${t.desde} a ${decimales ? fmt(t.hasta - 0.1) : t.hasta - 1}`
   // Dos cortes muy juntos (p. ej. 65 y 70) se tapaban: el segundo baja a otra fila.
-  // «Juntos» se mide en píxeles: cada número es un botón de 44 px de ancho.
+  // «Juntos» se mide en píxeles (cada número es un botón de 44 px) y contra el
+  // último corte de la MISMA fila; si no cabe en ninguna, va a la de abajo.
   const separacion = anchoPx > 0 ? (48 / anchoPx) * 100 : 7
   const cortes = tramos.filter((t) => t.clave && t.desde > min)
-  const filas = cortes.reduce<number[]>((acc, t, i) => {
-    const cerca = i > 0 && pos(t.desde) - pos(cortes[i - 1].desde) < separacion && acc[i - 1] === 0
-    return [...acc, cerca ? 1 : 0]
-  }, [])
+  const ultimoEn: (number | null)[] = [null, null]
+  const filas = cortes.map((t) => {
+    const x = pos(t.desde)
+    const fila = ultimoEn[0] === null || x - ultimoEn[0] >= separacion ? 0 : 1
+    ultimoEn[fila] = x
+    return fila
+  })
+  // El número no se sale de la barra en los extremos (22 px = medio botón).
+  const izquierda = (x: number) => (anchoPx > 0 ? `${Math.min(Math.max((x / 100) * anchoPx, 22), anchoPx - 22)}px` : `${x}%`)
   const tocables = !!onAbrir
 
   return (
@@ -231,7 +242,7 @@ function Barra({ titulo, tramos, min, max, resaltar, onAbrir, decimales }: Barra
             <span
               key={t.clave}
               className="absolute -translate-x-1/2"
-              style={{ left: `${pos(t.desde)}%`, top: filas[i] ? (tocables ? '2.75rem' : '1.75rem') : 0 }}
+              style={{ left: izquierda(pos(t.desde)), top: filas[i] ? (tocables ? '2.75rem' : '1.75rem') : 0 }}
             >
               {tocables ? (
                 // El área tocable mide 44 px; el número se ve como una ficha unida a su corte.

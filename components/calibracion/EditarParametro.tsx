@@ -12,7 +12,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { Modal } from '@/components/ui/Modal'
 import { calibracionService, type IHistorialCalibracion, type IParametroCalibracion } from '@/services/calibracionService'
-import { IconAlertTriangle, IconCheck, IconLoader, IconLock, IconShieldCheck } from '@/components/icons'
+import { IconAlertTriangle, IconCheck, IconLoader, IconLock } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { CambioItem } from './Historial'
 import { EscalaPuntaje, ESCALA_CLAVES } from './EscalaDecision'
@@ -40,6 +40,8 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
     unidad === 'mes' && p.valor < MES_APAGADO ? `${String(p.valor).slice(0, 4)}-${String(p.valor).slice(4)}` : '',
   )
   const [motivo, setMotivo] = useState('')
+  // «Es igual al actual» solo después de que la persona toque el valor, no al abrir.
+  const [tocado, setTocado] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [guardando, setGuardando] = useState(false)
 
@@ -124,7 +126,10 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                         key={o}
                         type="button"
                         aria-pressed={nuevo === o}
-                        onClick={() => setValor(String(o))}
+                        onClick={() => {
+                          setTocado(true)
+                          setValor(String(o))
+                        }}
                         className={cn(
                           'min-h-10 flex-1 rounded-lg border px-3 py-2 font-semibold',
                           nuevo === o ? 'border-primary-600 bg-white text-primary-800' : 'border-gray-300 text-gray-600',
@@ -145,6 +150,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                       type="button"
                       aria-pressed={nuevo === o}
                       onClick={() => {
+                        setTocado(true)
                         setValor(String(o))
                         setError(null)
                       }}
@@ -168,6 +174,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                     onChange={(e) => {
                       setMesTxt(e.target.value)
                       const m = /^(\d{4})-?(\d{2})$/.exec(e.target.value.trim())
+                      setTocado(true)
                       setValor(m ? `${m[1]}${m[2]}` : '')
                       setError(null)
                     }}
@@ -177,6 +184,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                     type="button"
                     onClick={() => {
                       setMesTxt('')
+                      setTocado(true)
                       setValor(String(MES_APAGADO))
                       setError(null)
                     }}
@@ -200,6 +208,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                     value={valor}
                     autoFocus
                     onChange={(e) => {
+                      setTocado(true)
                       setValor(e.target.value)
                       setError(null)
                     }}
@@ -241,10 +250,10 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
         )}
         {!soloLectura && meta.matriz && (
           <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-            <IconShieldCheck size={14} className="mt-0.5 shrink-0" />
+            <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
             <span>
-            Este valor cambia resultados de la plataforma (qué se aprueba o se rechaza, o hasta qué canon llega la cobertura): antes de
-            guardarlo, pida a Tecnología que valide la matriz de casos de prueba y confirme que ningún caso crítico cambia de resultado.
+              Este valor cambia resultados de la plataforma (qué se aprueba o se rechaza, o hasta qué canon llega la cobertura): antes de
+              guardarlo, pida a Tecnología que valide la matriz de casos de prueba y confirme que ningún caso crítico cambia de resultado.
             </span>
           </p>
         )}
@@ -277,7 +286,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                 adelante.
               </p>
             ) : (
-              valido && <p className="text-xs text-gray-600">El valor nuevo es igual al actual: no hay nada que guardar.</p>
+              valido && tocado && <p className="text-xs text-gray-600">El valor nuevo es igual al actual: no hay nada que guardar.</p>
             )}
             {error && (
               <p role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">

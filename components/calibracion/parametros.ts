@@ -142,7 +142,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'aprobacion',
     sub: 'Puntaje del solicitante',
     unidad: 'puntos',
-    queHace: 'Por debajo de este puntaje el estudio se rechaza, salvo que solo lo baje el endeudamiento o la central exija un analista. De aquí hasta el de aprobar solo, se pide coarrendatario («Está cerca»).',
+    queHace: 'Por debajo de este puntaje el estudio se rechaza, salvo que solo lo baje el endeudamiento, que solo lo baje el canon sin ingreso comprobado (decide un analista, que pide soporte de ingreso) o que la central exija un analista. De aquí hasta el de aprobar solo, se pide coarrendatario («Está cerca»).',
     ejemplo: (v) =>
       `Con ${v.UMBRAL_ZONA_GRIS}: ${Math.min(v.UMBRAL_ZONA_GRIS + 5, v.UMBRAL_APROBACION_AUTOMATICA - 1)} puntos queda pendiente de un coarrendatario (sin inmobiliaria, decide un analista); ${v.UMBRAL_ZONA_GRIS - 5} se rechaza.`,
     rige: 'siempre',
@@ -153,7 +153,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'aprobacion',
     sub: 'Segunda central',
     unidad: 'puntos',
-    queHace: 'Para ahorrar consultas: si con la primera central (casi siempre DataCrédito) el puntaje del solicitante (0 a 100) sale por debajo de este valor, el caso ya es claramente malo y se rechaza sin pagar la segunda consulta. Excepción: si el puntaje que reporta la central cae en la franja que exige un analista, decide el analista.',
+    queHace: 'Para ahorrar consultas: si con la primera central (casi siempre DataCrédito) el puntaje del solicitante (0 a 100) sale por debajo de este valor, el caso ya es claramente malo y se rechaza sin pagar la segunda consulta. Excepciones: si el puntaje que reporta la central cae en la franja que exige un analista, o si solo lo baja el canon frente a un ingreso no comprobado, se consulta la segunda central.',
     ejemplo: (v) =>
       `Con ${v.UMBRAL_CASCADA_RECHAZO}: ${Math.max(0, v.UMBRAL_CASCADA_RECHAZO - 5)} puntos se rechaza solo con la primera central; ${v.UMBRAL_CASCADA_RECHAZO + 15} puntos consulta también la segunda.`,
     rige: 'siempre',
@@ -392,7 +392,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'coarrendatarios',
     sub: 'Cuándo se pide',
     unidad: 'puntos',
-    queHace: 'En estudios de una inmobiliaria: si el solicitante queda por debajo de la zona gris solo por el endeudamiento, o por el endeudamiento y el canon, sin ingreso comprobado, desde este puntaje se le exige un coarrendatario y decide un analista. Por debajo, o sin inmobiliaria, se rechaza.',
+    queHace: 'En estudios de una inmobiliaria: si el solicitante queda por debajo de la zona gris solo por el endeudamiento, o por el endeudamiento y el canon, sin ingreso comprobado, desde este puntaje se le exige un coarrendatario y decide un analista. Por debajo, o sin inmobiliaria, se rechaza, salvo que solo lo baje el canon sin ingreso comprobado: entonces decide un analista, que pide soporte de ingreso.',
     ejemplo: (v) =>
       v.PUNTAJE_PISO_COARRENDATARIO > 0
         ? `Con ${v.PUNTAJE_PISO_COARRENDATARIO}: ${Math.min(v.PUNTAJE_PISO_COARRENDATARIO + 4, v.UMBRAL_ZONA_GRIS - 1)} puntos por esas causas debe presentar coarrendatario; ${v.PUNTAJE_PISO_COARRENDATARIO - 1} se rechaza.`

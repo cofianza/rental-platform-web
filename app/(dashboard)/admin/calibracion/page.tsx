@@ -63,7 +63,7 @@ export default function AdminCalibracionPage() {
   const [busqueda, setBusqueda] = useState('')
   const [vista, setVista] = useState<Vista>('resumen')
   const [abierto, setAbierto] = useState<string | null>(null)
-  // Al cambiar de sección el foco va al contenido: el lector de pantalla no se queda en el menú sin saber qué cambió.
+  // Al cambiar de sección el foco va al título de la sección: el lector de pantalla no se queda en el menú sin saber qué cambió.
   const contenidoRef = useRef<HTMLDivElement>(null)
 
   const cargar = async () => {
@@ -102,7 +102,7 @@ export default function AdminCalibracionPage() {
     setBusqueda('')
     window.history.replaceState(null, '', `#${v}`)
     window.scrollTo({ top: 0 })
-    requestAnimationFrame(() => contenidoRef.current?.focus({ preventScroll: true }))
+    requestAnimationFrame(() => contenidoRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true }))
   }
   const reintentar = () => {
     setLoading(true)
@@ -166,7 +166,7 @@ export default function AdminCalibracionPage() {
       ) : errorCarga ? (
         <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
           <p className="font-semibold text-red-800">No se pudo cargar la calibración.</p>
-          <p className="mt-1 text-sm text-red-700">Revise su conexión e intente de nuevo. Ningún valor cambió.</p>
+          <p className="mt-1 text-sm text-red-700">Intente de nuevo en un momento. Ningún valor cambió.</p>
           <button
             type="button"
             onClick={reintentar}
@@ -291,10 +291,10 @@ export default function AdminCalibracionPage() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-3 hidden px-3 text-xs text-gray-500 lg:block">El número es cuántos valores de la sección aplican hoy.</p>
+                <p className="mt-2 text-xs text-gray-600 lg:mt-3 lg:px-3">El número es cuántos valores de la sección aplican hoy.</p>
               </nav>
 
-              <div ref={contenidoRef} tabIndex={-1} className="min-w-0 focus:outline-none">
+              <div ref={contenidoRef} className="min-w-0">
                 {vista === 'resumen' ? (
                   <Resumen params={params} valores={valores} ultimo={ultimo} onAbrir={setAbierto} onIr={irA} />
                 ) : vista === 'indicadores' ? (
@@ -334,7 +334,9 @@ export default function AdminCalibracionPage() {
 function Encabezado({ titulo, ayuda }: { titulo: string; ayuda: string }) {
   return (
     <div className="mb-4">
-      <h2 className="text-lg font-bold text-gray-900 text-balance">{titulo}</h2>
+      <h2 tabIndex={-1} className="text-lg font-bold text-gray-900 text-balance focus:outline-none">
+        {titulo}
+      </h2>
       <p className="mt-0.5 max-w-prose text-sm text-gray-600">{ayuda}</p>
     </div>
   )

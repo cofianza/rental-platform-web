@@ -47,18 +47,19 @@ function Tarjeta({
     </div>
   )
   if (plegable) {
+    // El título queda fuera del <summary>: dentro, el lector lo anunciaba como botón y no como encabezado.
     return (
-      <details className="group rounded-xl border border-gray-200 bg-white">
-        <summary className="flex min-h-12 cursor-pointer list-none items-start justify-between gap-3 rounded-xl px-4 py-3 hover:bg-gray-50 sm:px-5 [&::-webkit-details-marker]:hidden">
-          {cabecera}
-          <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary-700">
-            <span className="group-open:hidden">Ver</span>
-            <span className="hidden group-open:inline">Ocultar</span>
+      <section className="rounded-xl border border-gray-200 bg-white">
+        <div className="px-4 pt-3 sm:px-5">{cabecera}</div>
+        <details className="group">
+          <summary className="mx-2 mb-2 mt-1 flex min-h-10 cursor-pointer list-none items-center gap-1 rounded-lg px-2 text-sm font-medium text-primary-700 hover:bg-gray-50 sm:mx-3 [&::-webkit-details-marker]:hidden">
+            <span className="group-open:hidden">Ver la fórmula y los factores</span>
+            <span className="hidden group-open:inline">Ocultar la fórmula y los factores</span>
             <IconChevronDown size={16} className="transition-transform group-open:rotate-180 motion-reduce:transition-none" />
-          </span>
-        </summary>
-        <div className="border-t border-gray-100">{children}</div>
-      </details>
+          </summary>
+          <div className="border-t border-gray-100">{children}</div>
+        </details>
+      </section>
     )
   }
   return (
@@ -84,11 +85,13 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
         <button
           type="button"
           onClick={() => onAbrir(p.clave)}
-          aria-label={`${soloVer ? 'Ver' : 'Cambiar'}: ${meta.nombre} (${conUnidad(p.valor, p)})`}
           className="group flex h-full min-h-24 w-full flex-col rounded-lg border border-gray-200 p-3 text-left transition-colors hover:border-primary-300 hover:bg-primary-50/40 motion-reduce:transition-none"
         >
           <span className="flex items-start justify-between gap-2">
-            <span className="text-xs font-semibold text-gray-600">{meta.nombre}</span>
+            <span className="text-xs font-semibold text-gray-600">
+              <span className="sr-only">{soloVer ? 'Ver: ' : 'Cambiar: '}</span>
+              {meta.nombre}
+            </span>
             {soloVer ? (
               <IconLock size={14} className="mt-0.5 shrink-0 text-gray-400" />
             ) : (
@@ -116,7 +119,7 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
   return (
     <div className="space-y-5">
       <section aria-labelledby="antes-de-cambiar" className="rounded-xl border border-gray-200 bg-white px-4 py-3 sm:px-5">
-        <h2 id="antes-de-cambiar" className="text-sm font-semibold text-gray-900">
+        <h2 id="antes-de-cambiar" tabIndex={-1} className="text-sm font-semibold text-gray-900 focus:outline-none">
           Antes de cambiar un valor
         </h2>
         <ul className="mt-2 grid gap-x-6 gap-y-2 text-sm text-gray-700 xl:grid-cols-3">
