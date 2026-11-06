@@ -152,7 +152,7 @@ export function LineaPagoEstudio({
       : estado.estado === 'completado'
         ? estado.paga === 'arrendatario' ? 'lo pagó el prospecto' : estado.paga === 'gestor' ? `lo pagó ${gestor}` : 'confirmado'
         : estado.estado === 'reembolsado'
-          ? 'evaluación devuelta'
+          ? 'devuelto'
           : null
   if (!texto) return null
   // Un dato más de la ficha del encabezado (dt/dd dentro de su <dl>).
@@ -344,7 +344,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         nombre_pagador: solicitanteNombre,
         telefono: solicitanteTelefono || undefined,
       })
-      toast.success('Listo: el cobro de la evaluación pasa al arrendatario.')
+      toast.success('Listo: el cobro del estudio de arrendamiento pasa al arrendatario.')
       await fetchEstado()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo pasar el cobro al arrendatario')
@@ -608,8 +608,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         <TarjetaSiguientePaso
           tono="neutro"
           icono={<IconRefresh size={18} />}
-          titulo="Evaluación devuelta"
-          descripcion={montoCOP ? `Esta evaluación de ${montoCOP} se devolvió.` : 'Esta evaluación se devolvió.'}
+          titulo="Pago del estudio devuelto"
+          descripcion={montoCOP ? `El pago del estudio de arrendamiento (${montoCOP}) se devolvió.` : 'El pago del estudio de arrendamiento se devolvió.'}
         />
       )}
 
@@ -952,7 +952,7 @@ function EnviarLinkModal({
         <dl className="grid grid-cols-1 gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-gray-600">Concepto</dt>
-            <dd className="font-medium text-gray-900">Evaluación crediticia</dd>
+            <dd className="font-medium text-gray-900">Estudio de arrendamiento</dd>
           </div>
           <div>
             <dt className="text-gray-600">Monto</dt>
@@ -1181,10 +1181,10 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
                   ? '¡Pago confirmado!'
                   : estado.estado === 'asumido_inmobiliaria'
                     ? 'Costo cubierto por la inmobiliaria'
-                    : 'Costo de la evaluación cubierto'}
+                    : 'Costo del estudio de arrendamiento cubierto'}
               </p>
               <p className="text-xs text-green-600">
-                {estado.monto_formateado} COP — {pagoPropio ? 'Recibimos su pago correctamente.' : 'El costo de la evaluación ya está cubierto.'}
+                {estado.monto_formateado} COP — {pagoPropio ? 'Recibimos su pago correctamente.' : 'El costo del estudio de arrendamiento ya está cubierto.'}
               </p>
             </div>
           </div>
@@ -1294,7 +1294,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   if (estado.paga === 'gestor' && ['pendiente', 'procesando', 'fallido'].includes(estado.estado)) {
     return (
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm font-semibold text-blue-900 mb-0.5">Quien gestiona su estudio está pagando la evaluación</p>
+        <p className="text-sm font-semibold text-blue-900 mb-0.5">Quien gestiona su estudio de arrendamiento lo está pagando</p>
         <p className="text-sm text-blue-800">No tiene que pagar nada. Le avisaremos cuando la evaluación avance.</p>
       </div>
     )
@@ -1328,7 +1328,7 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
             <IconCreditCard size={24} className="text-primary-700" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900 mb-1">Pague su evaluación crediticia</h3>
+            <h3 className="text-base font-semibold text-gray-900 mb-1">Pague su estudio de arrendamiento</h3>
             <p className="text-sm text-gray-600 mb-1">
               Monto a pagar: <span className="text-lg font-bold text-gray-900">{montoProspecto(estado)}</span>
             </p>
@@ -1389,8 +1389,8 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
   if (estado.estado === 'reembolsado') {
     return (
       <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <p className="text-sm font-medium text-gray-800">La evaluación se devolvió</p>
-        <p className="text-xs text-gray-500 mt-1">Esta evaluación se devolvió a quien la pagó.</p>
+        <p className="text-sm font-medium text-gray-800">El pago del estudio de arrendamiento se devolvió</p>
+        <p className="text-xs text-gray-500 mt-1">Se le devolvió a quien lo pagó.</p>
       </div>
     )
   }

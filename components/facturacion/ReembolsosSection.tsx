@@ -111,7 +111,7 @@ export function ReembolsosSection() {
         <IconCheck size={32} className="mx-auto text-green-500 mb-3" />
         <h3 className="text-base font-semibold text-gray-900 mb-1">No hay pagos por devolver</h3>
         <p className="text-sm text-gray-500">
-          Aquí aparecen las evaluaciones pagadas de estudios que terminaron sin consultar el buró, los pagos que
+          Aquí aparecen los estudios de arrendamiento pagados que terminaron sin consultar las centrales de riesgo, los pagos que
           entraron sin un cobro que les corresponda y los que hay que revisar a mano (reembolsos parciales,
           contracargos ganados).
         </p>
@@ -148,7 +148,7 @@ export function ReembolsosSection() {
         onConfirm={(nota) => (resolviendo ? resolver(resolviendo, nota) : undefined)}
         isLoading={reembolsando !== null}
         title="Marcar resuelto"
-        descripcion="La fila sale de la lista sin llamar a Mercado Pago. Si es la evaluación de un estudio que terminó sin consultar el buró, su pago queda como reembolsado."
+        descripcion="La fila sale de la lista sin llamar a Mercado Pago. Si es el pago de un estudio de arrendamiento que terminó sin consultar las centrales de riesgo, queda como reembolsado."
         label="Qué se hizo con el pago"
         placeholder="Ej.: transferencia devuelta el 24/09, comprobante 123…"
         confirmLabel="Marcar resuelto"

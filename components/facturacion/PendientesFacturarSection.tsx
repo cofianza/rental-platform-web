@@ -254,8 +254,8 @@ function describirFaltantes(faltantes?: string[]): string {
 // que no este en el mapa, devolvemos el slug capitalizado.
 function inferConceptoLabel(concepto: string): string {
   const map: Record<string, string> = {
-    estudio: 'Evaluación crediticia',
-    estudio_credito: 'Evaluación crediticia',
+    estudio: 'Estudio de arrendamiento',
+    estudio_credito: 'Estudio de arrendamiento',
     afianzamiento: 'Afianzamiento',
     garantia: 'Prima de vinculación de la fianza',
     creditos_estudios: 'Paquete de cupos de estudios',

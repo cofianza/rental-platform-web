@@ -8,7 +8,7 @@ import { IconLoader, IconCheck } from '@/components/icons'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 
 const CONCEPTO_LABELS: Record<string, string> = {
-  estudio: 'Evaluación crediticia',
+  estudio: 'Estudio de arrendamiento',
   garantia: 'Prima de vinculación de la fianza',
   primer_canon: 'Primer canon',
   deposito: 'Depósito',
@@ -78,10 +78,10 @@ export function TarifasIvaSection() {
         <h3 className="text-base font-semibold text-gray-900">Tarifas de IVA por concepto</h3>
         <p className="text-sm text-gray-500 mt-1">
           Tasa aplicada al emitir facturas electrónicas; si es mayor que 0, el monto cobrado lleva
-          el IVA incluido. <strong>0 = exento</strong>. La evaluación y la prima de vinculación van
+          el IVA incluido. <strong>0 = exento</strong>. El estudio de arrendamiento y la prima de vinculación van
           gravadas con la tasa de IVA de Calibración, la misma con la que se cobran; cada cobro guarda
           la tasa con la que se facturará. Los paquetes de
-          cupos son el pago anticipado de evaluaciones y llevan su misma tasa. La tarifa mensual se
+          cupos son el pago anticipado de estudios y llevan su misma tasa. La tarifa mensual se
           factura con la tasa que guardó cada línea de la cuenta de cobro.
         </p>
       </div>
@@ -107,7 +107,7 @@ export function TarifasIvaSection() {
               <span className="text-sm text-gray-500 w-4">%</span>
               {t.derivada ? (
                 <span className="text-xs text-gray-500">
-                  {t.derivada_de === 'estudio' ? 'igual a la evaluación' : 'de Calibración'}
+                  {t.derivada_de === 'estudio' ? 'igual al estudio de arrendamiento' : 'de Calibración'}
                 </span>
               ) : (
                 t.tasa === 0 && <span className="text-xs text-emerald-600 font-medium">Exento</span>

@@ -25,7 +25,7 @@ interface GenerarLinkPagoModalProps {
 }
 
 const CONCEPTOS = [
-  { value: 'estudio', label: 'Evaluación crediticia' },
+  { value: 'estudio', label: 'Estudio de arrendamiento' },
   { value: 'garantia', label: 'Prima de vinculación de la fianza' },
   { value: 'primer_canon', label: 'Primer canon de arrendamiento' },
   // Sin 'deposito': en vivienda no se cobra (Ley 820 de 2003, art. 16) y la API lo rechaza.
@@ -251,7 +251,7 @@ export function GenerarLinkPagoModal({
           </div>
           <p id="generar-link-pago-modal-monto-ayuda" className="mt-1 text-xs text-gray-500">
             {esEstudio && montoEstudio !== null
-              ? `$${formatMontoDisplay(monto)} COP — precio de la evaluación, fijado por Cofianza.`
+              ? `$${formatMontoDisplay(monto)} COP — precio del estudio de arrendamiento, fijado por Cofianza.`
               : monto
                 ? `$${formatMontoDisplay(monto)} COP`
                 : ''}
