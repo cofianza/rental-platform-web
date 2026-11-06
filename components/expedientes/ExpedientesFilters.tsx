@@ -172,7 +172,8 @@ export function ExpedientesFilters({
             placeholder="Código, inmueble o solicitante"
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
-            className={`${campo} w-full pl-9 pr-9 placeholder:text-gray-500`}
+            // Sin la «x» nativa de type=search: ya hay un botón para borrar (salían dos).
+            className={`${campo} w-full pl-9 pr-9 placeholder:text-gray-500 [&::-webkit-search-cancel-button]:appearance-none`}
           />
           {filters.search && (
             <button
@@ -196,7 +197,7 @@ export function ExpedientesFilters({
                   usaMiembros ? { miembro_responsable_id: e.target.value } : { analista_id: e.target.value },
                 )
               }
-              className={`${campo} min-w-0 grow basis-full px-3 sm:basis-40 md:w-48 md:grow-0 md:basis-auto`}
+              className={`${campo} min-w-0 grow basis-full px-3 sm:basis-40 md:w-52 md:grow-0 md:basis-auto`}
             >
               {/* La columna de la cola se llama «Analista»: el filtro, igual. */}
               <option value="">{usaMiembros ? 'Todos los responsables' : 'Todos los analistas'}</option>
