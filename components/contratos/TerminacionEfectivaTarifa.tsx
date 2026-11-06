@@ -12,7 +12,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconCalendar, IconLoader } from '@/components/icons'
 import { formatDate, fechaCompleta } from '@/lib/constants'
 import { mesTexto, primerDiaMesSiguiente } from '@/lib/tarifaCobro'
@@ -47,7 +47,7 @@ export function TerminacionEfectivaTarifa({
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fechaCompleta(fecha)) return setError('Indique una fecha efectiva de terminación válida')
+    if (!fechaCompleta(fecha)) return setError('Indique una fecha efectiva de terminación válida.')
     if (fechaInicio && fecha < fechaInicio.slice(0, 10))
       return setError(`La fecha no puede ser anterior al inicio del contrato (${formatDate(fechaInicio.slice(0, 10))}).`)
     setError(null)
@@ -62,7 +62,7 @@ export function TerminacionEfectivaTarifa({
       setAbierto(false)
       onRegistrada()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo registrar la fecha')
+      setError(err instanceof Error ? err.message : 'No se pudo registrar la fecha. Intente de nuevo.')
     } finally {
       setEnviando(false)
     }
@@ -92,23 +92,51 @@ export function TerminacionEfectivaTarifa({
         {actual ? 'Corregir fecha efectiva' : 'Registrar fecha efectiva'}
       </button>
 
-      <Modal isOpen={abierto} onClose={cerrar} title="Fecha efectiva de terminación" size="md" closeOnBackdrop={false}>
-        <form onSubmit={enviar} noValidate className="space-y-4">
+      <Modal
+        isOpen={abierto}
+        onClose={cerrar}
+        title="Fecha efectiva de terminación"
+        description="Para el cobro de la tarifa mensual, prevalece sobre la fecha de terminación registrada."
+        size="md"
+        closeOnBackdrop={false}
+        footer={
+          <div className="space-y-2">
+            {error && (
+              <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {error}
+              </p>
+            )}
+            <ModalAcciones>
+              <button type="button" onClick={cerrar} disabled={enviando} className={botonModal('secondary')}>
+                Cancelar
+              </button>
+              <button type="submit" form="terminacion-efectiva-form" disabled={enviando} aria-busy={enviando || undefined} className={botonModal('primary')}>
+                {enviando && <IconLoader size={16} className="animate-spin" aria-hidden="true" />}
+                {enviando ? 'Registrando…' : 'Registrar fecha'}
+              </button>
+            </ModalAcciones>
+          </div>
+        }
+      >
+        <form id="terminacion-efectiva-form" onSubmit={enviar} noValidate className="space-y-4">
           <p className="text-sm text-gray-600">
-            Prevalece sobre la fecha de terminación para el cobro de la tarifa mensual. Las líneas de los meses posteriores
-            se anulan; si ya salieron en una factura, quedan marcadas para nota crédito.
+            Las líneas de la tarifa de los meses posteriores se anulan; si ya salieron en una factura, quedan marcadas para
+            nota crédito.
           </p>
-          {error && <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>}
           <div>
             <label htmlFor="terminacion-efectiva" className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha efectiva de terminación <span className="text-red-500">*</span>
+              Fecha efectiva de terminación <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <input
               id="terminacion-efectiva"
               type="date"
               value={fecha}
+              required
               min={fechaInicio?.slice(0, 10) || undefined}
-              onChange={(e) => setFecha(e.target.value)}
+              onChange={(e) => {
+                setFecha(e.target.value)
+                setError(null)
+              }}
               disabled={enviando}
               aria-describedby={fecha ? 'terminacion-efectiva-efecto' : undefined}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
@@ -118,24 +146,6 @@ export function TerminacionEfectivaTarifa({
                 La tarifa se cobra hasta {mesTexto(fecha)}, completo, y se anula desde {mesTexto(primerDiaMesSiguiente(fecha))}.
               </p>
             )}
-          </div>
-          <div className="flex justify-end gap-3 pt-2 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={cerrar}
-              disabled={enviando}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={enviando}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {enviando && <IconLoader size={16} className="animate-spin" />}
-              {enviando ? 'Registrando…' : 'Registrar fecha'}
-            </button>
           </div>
         </form>
       </Modal>

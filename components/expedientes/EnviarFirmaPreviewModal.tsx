@@ -2,7 +2,7 @@
  * EnviarFirmaPreviewModal (tarea 4.3) — pre-chequeo antes de enviar a firma.
  *
  * Muestra los firmantes derivados del expediente con el número al que le llega
- * SU código (OTP) por WhatsApp, y bloquea el envío si dos firmantes comparten
+ * SU código de firma por WhatsApp, y bloquea el envío si dos firmantes comparten
  * número o si a alguno le faltan datos. Así el gestor ve, ANTES de enviar, a
  * qué firmante corresponde cada celular (evita la confusión del reporte 4.3).
  *
@@ -13,10 +13,10 @@
 
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { IconX, IconLoader, IconWhatsapp, IconAlertTriangle, IconUser, IconBuilding2, IconShieldCheck, IconPencil, IconCheck } from '@/components/icons'
+import { IconLoader, IconWhatsapp, IconAlertTriangle, IconUser, IconBuilding2, IconShieldCheck, IconPencil, IconCheck } from '@/components/icons'
 import { solicitanteService } from '@/services/solicitanteService'
 import { perfilArrendadorService } from '@/services/perfilArrendadorService'
 import type { IFirmantePreview, RolFirmante } from '@/types/firma'
@@ -46,6 +46,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
   const [editingRol, setEditingRol] = useState<RolFirmante | null>(null)
   const [editValue, setEditValue] = useState('')
   const [savingRol, setSavingRol] = useState<RolFirmante | null>(null)
+  const [errorEdicion, setErrorEdicion] = useState<string | null>(null)
 
   if (!isOpen) return null
 
@@ -57,14 +58,16 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
   function abrirEdicion(f: IFirmantePreview) {
     setEditingRol(f.rol_firmante)
     setEditValue(f.telefono ?? '')
+    setErrorEdicion(null)
   }
 
   async function guardarTelefono(f: IFirmantePreview) {
     const nuevo = editValue.trim()
     if (!nuevo) {
-      toast.error('Ingrese un número de WhatsApp')
+      setErrorEdicion('Escriba un número de WhatsApp.')
       return
     }
+    setErrorEdicion(null)
     setSavingRol(f.rol_firmante)
     try {
       if (f.origen === 'solicitante' && f.origen_id) {
@@ -72,7 +75,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
       } else if (f.origen === 'arrendador') {
         await perfilArrendadorService.updateMe({ whatsapp_recaudo: nuevo })
       } else {
-        toast.error('Este firmante no se puede editar desde aquí')
+        setErrorEdicion('Este firmante no se puede editar desde aquí.')
         return
       }
       // El API regenera el borrador al enviar (contratos.service, enviarContratoAFirma).
@@ -80,30 +83,49 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
       setEditingRol(null)
       await onFirmanteUpdated?.()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo actualizar el teléfono')
+      setErrorEdicion(err instanceof Error ? err.message : 'No se pudo actualizar el teléfono. Intente de nuevo.')
     } finally {
       setSavingRol(null)
     }
   }
 
-  return (
-    <Modal isOpen={isOpen} onClose={submitting ? () => {} : onClose} bare ariaLabel="Enviar a firma" closeOnBackdrop={false} className="rounded-xl w-full max-w-lg mx-4 max-h-[90dvh] flex flex-col">
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Enviar a firma</h2>
-        <button type="button" data-modal-close aria-label="Cerrar"
-          onClick={onClose}
-          disabled={submitting}
-          className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-        >
-          <IconX size={20} />
-        </button>
-      </div>
+  function handleClose() {
+    if (submitting || savingRol) return
+    onClose()
+  }
 
-      <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
-        <p className="text-sm text-gray-600">
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Enviar a firma"
+      description={
+        <>
           Cada parte recibe <strong>su propio</strong> código de firma por WhatsApp en el número indicado.
           Verifique a quién le llega cada uno antes de enviar.
-        </p>
+        </>
+      }
+      size="md"
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={handleClose} disabled={submitting || !!savingRol} className={botonModal('secondary')}>
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={submitting || !puedeEnviar || !!savingRol}
+            aria-busy={submitting || undefined}
+            aria-describedby={!puedeEnviar ? 'enviar-firma-bloqueo' : undefined}
+            className={botonModal('primary')}
+          >
+            {submitting && <IconLoader size={16} className="animate-spin" />}
+            {submitting ? 'Enviando…' : 'Confirmar y enviar'}
+          </button>
+        </ModalAcciones>
+      }
+    >
+      <div className="space-y-4">
         {biometria && (
           <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
             Antes de firmar, al arrendatario le llega un <strong>correo para confirmar su identidad</strong>. El
@@ -112,18 +134,18 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
         )}
 
         {!puedeEnviar && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
-            <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
+          <div id="enviar-firma-bloqueo" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            <IconAlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
             <span>
-              No se puede enviar todavía: hay firmantes con el <strong>mismo número</strong>, con el
+              Todavía no se puede enviar: hay firmantes con el <strong>mismo número</strong>, con el
               <strong> mismo correo</strong> o con datos faltantes. Cada parte necesita un número de WhatsApp
-              y un correo distintos. Corrija el teléfono con el botón de editar de cada firmante (el correo,
-              en la ficha del solicitante o en «Datos para contrato») y vuelva a intentar.
+              y un correo distintos. Corrija el teléfono con «Editar» en cada firmante (el correo, en la
+              ficha del solicitante o en «Datos para contrato») y vuelva a intentar.
             </span>
           </div>
         )}
 
-        <ul className="space-y-2">
+        <ul className="space-y-2" aria-label="Firmantes">
           {firmantes.map((f) => {
             const meta = ROL_META[f.rol_firmante]
             const Icon = meta?.icon ?? IconUser
@@ -131,32 +153,36 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
             const editable = esEditable(f)
             const editando = editingRol === f.rol_firmante
             const guardando = savingRol === f.rol_firmante
+            const marcas = [
+              f.duplicado && 'número repetido',
+              f.correo_duplicado && 'correo repetido',
+              f.falta_datos && !f.telefono && 'falta teléfono',
+              f.falta_datos && f.telefono && !f.email && 'falta correo',
+            ].filter(Boolean) as string[]
+            const inputId = `enviar-firma-tel-${f.rol_firmante}`
             return (
               <li
                 key={f.rol_firmante}
-                className={`rounded-lg border px-3 py-2 ${problema ? 'border-red-200 bg-red-50/40' : 'border-gray-100'}`}
+                className={`rounded-lg border px-3 py-2.5 ${problema ? 'border-red-200 bg-red-50/40' : 'border-gray-200'}`}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={`shrink-0 ${problema ? 'text-red-500' : 'text-gray-500'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className={`mt-0.5 shrink-0 ${problema ? 'text-red-600' : 'text-gray-500'}`} aria-hidden="true">
                       <Icon size={16} />
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                      <p className="text-sm font-medium text-gray-900 break-words">
                         {meta?.label ?? f.rol_firmante}
-                        <span className="font-normal text-gray-500"> · {f.nombre}</span>
+                        <span className="font-normal text-gray-600"> · {f.nombre}</span>
                       </p>
                       {f.auto ? (
-                        <p className="text-xs text-gray-500">Firma automática (sello institucional) — no requiere número</p>
+                        <p className="text-xs text-gray-600">Firma automática con sello institucional; no necesita número.</p>
                       ) : (
-                        <p className={`text-xs flex items-center gap-1 truncate ${problema ? 'text-red-700' : 'text-gray-500'}`}>
-                          <IconWhatsapp size={11} className="text-green-600 shrink-0" />
-                          <span className="truncate">
-                            {f.telefono ? <>Su código llega a <span className="font-medium">{f.telefono}</span></> : 'Sin teléfono'}
-                            {f.duplicado && ' · repetido'}
-                            {f.correo_duplicado && ' · correo repetido'}
-                            {f.falta_datos && !f.telefono && ' · falta teléfono'}
-                            {f.falta_datos && f.telefono && !f.email && ' · falta correo'}
+                        <p className={`mt-0.5 flex items-start gap-1 text-xs ${problema ? 'text-red-700' : 'text-gray-600'}`}>
+                          <IconWhatsapp size={12} className="mt-0.5 shrink-0 text-green-700" aria-hidden="true" />
+                          <span className="min-w-0 break-words">
+                            {f.telefono ? <>Su código llega a <span className="font-medium tabular-nums">{f.telefono}</span></> : 'Sin teléfono'}
+                            {marcas.length > 0 && <span className="font-medium"> · {marcas.join(' · ')}</span>}
                           </span>
                         </p>
                       )}
@@ -164,11 +190,13 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
                   </div>
                   {editable && !editando && (
                     <button
+                      type="button"
                       onClick={() => abrirEdicion(f)}
-                      disabled={submitting}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 disabled:opacity-50"
+                      disabled={submitting || !!savingRol}
+                      aria-label={`Editar el teléfono de ${meta?.label ?? f.rol_firmante}`}
+                      className="inline-flex min-h-10 shrink-0 items-center gap-1 rounded-lg px-3 text-sm font-medium text-primary-700 hover:bg-primary-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50"
                     >
-                      <IconPencil size={13} />
+                      <IconPencil size={14} aria-hidden="true" />
                       Editar
                     </button>
                   )}
@@ -183,36 +211,55 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
                 )}
 
                 {editable && editando && (
-                  <div className="mt-2">
-                    <div className="flex items-center gap-2">
+                  <div className="mt-2.5">
+                    <label htmlFor={inputId} className="mb-1 block text-xs font-medium text-gray-700">
+                      Nuevo número de WhatsApp
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
                       <input
+                        id={inputId}
                         type="tel"
                         value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
+                        onChange={(e) => { setEditValue(e.target.value); setErrorEdicion(null) }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault()
+                            if (!guardando) void guardarTelefono(f)
+                          }
+                        }}
                         placeholder="+57 300 000 0000"
                         autoFocus
+                        autoComplete="tel"
                         disabled={guardando}
-                        className="flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 disabled:opacity-50"
+                        aria-invalid={errorEdicion ? true : undefined}
+                        aria-describedby={errorEdicion ? `${inputId}-error` : undefined}
+                        className="min-h-10 min-w-0 flex-1 basis-40 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
                       />
                       <button
-                        onClick={() => guardarTelefono(f)}
-                        disabled={guardando}
-                        className="inline-flex items-center gap-1 rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-800 disabled:opacity-50"
-                      >
-                        {guardando ? <IconLoader size={13} className="animate-spin" /> : <IconCheck size={13} />}
-                        Guardar
-                      </button>
-                      <button
+                        type="button"
                         onClick={() => setEditingRol(null)}
                         disabled={guardando}
-                        className="rounded-lg px-2 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-100 disabled:opacity-50"
+                        className={botonModal('secondary', 'text-sm')}
                       >
                         Cancelar
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => guardarTelefono(f)}
+                        disabled={guardando}
+                        aria-busy={guardando || undefined}
+                        className={botonModal('secondary', 'text-primary-700')}
+                      >
+                        {guardando ? <IconLoader size={14} className="animate-spin" /> : <IconCheck size={14} />}
+                        {guardando ? 'Guardando…' : 'Guardar número'}
+                      </button>
                     </div>
+                    {errorEdicion && (
+                      <p id={`${inputId}-error`} role="alert" className="mt-1.5 text-xs text-red-700">{errorEdicion}</p>
+                    )}
                     {f.origen === 'arrendador' && (
-                      <p className="mt-1.5 flex items-start gap-1 text-xs text-amber-600">
-                        <IconAlertTriangle size={12} className="mt-0.5 shrink-0" />
+                      <p className="mt-1.5 flex items-start gap-1 text-xs text-amber-800">
+                        <IconAlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
                         <span>
                           Este es el WhatsApp de recaudo de la inmobiliaria: se usa en todos sus
                           contratos y avisos, no solo en esta firma.
@@ -225,25 +272,6 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
             )
           })}
         </ul>
-      </div>
-
-      <div className="flex flex-wrap justify-end gap-2 px-4 sm:px-6 py-4 border-t border-gray-200">
-        <button
-          onClick={onClose}
-          disabled={submitting}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={onConfirm}
-          disabled={submitting || !puedeEnviar}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-          title={!puedeEnviar ? 'Corrija los números repetidos o faltantes antes de enviar' : undefined}
-        >
-          {submitting && <IconLoader size={16} className="animate-spin" />}
-          {submitting ? 'Enviando…' : 'Confirmar y enviar'}
-        </button>
       </div>
     </Modal>
   )

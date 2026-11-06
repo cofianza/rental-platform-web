@@ -9,7 +9,7 @@
 
 import { useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconLoader, IconArrowRight, IconCheckCircle } from '@/components/icons'
 import { ariaError, scrollToFirstError } from '@/components/auth/registro-ui'
@@ -122,47 +122,63 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
     <Modal
       isOpen={isOpen}
       onClose={cerrar}
-      title="Me interesa este inmueble"
+      title={enviado ? 'Listo, recibimos su interés' : 'Me interesa este inmueble'}
+      description={enviado ? undefined : resumen}
       size="md"
       closeOnBackdrop={false}
       // scroll-pb en el cuerpo desplazable del diálogo: al enfocar un campo (Tab
-      // o «Siguiente» del teclado del celular) el navegador lo deja por encima
-      // de la franja fija de botones, no escondido debajo de ella.
-      className="[&>.overflow-y-auto]:scroll-pb-32"
+      // o «Siguiente» del teclado del celular) el navegador lo deja visible por
+      // encima del pie fijo de la base.
+      className="[&>.overflow-y-auto]:scroll-pb-8"
+      footer={
+        enviado ? (
+          <ModalAcciones>
+            <button type="button" onClick={cerrar} className={botonModal('primary')}>
+              Seguir viendo inmuebles
+            </button>
+          </ModalAcciones>
+        ) : (
+          <ModalAcciones>
+            <button type="button" onClick={cerrar} disabled={submitting} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="lead-interes-form"
+              disabled={submitting}
+              aria-busy={submitting || undefined}
+              className={botonModal('primary')}
+            >
+              {submitting && <IconLoader size={16} className="animate-spin" />}
+              {submitting ? 'Enviando…' : 'Solicitar visita'}
+              {!submitting && <IconArrowRight size={16} />}
+            </button>
+          </ModalAcciones>
+        )
+      }
     >
       {enviado ? (
-        <div className="space-y-4 text-center py-2" role="status">
+        <div className="space-y-3 py-2 text-center" role="status">
           <IconCheckCircle size={44} className="mx-auto text-primary-600" />
-          <div>
-            <p className="text-lg font-semibold text-gray-900">Listo, recibimos su interés</p>
-            <p className="mt-1 text-sm text-gray-600">
-              El propietario o la inmobiliaria lo contactará al <strong>{telefono}</strong> para
-              agendar la visita.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={cerrar}
-            className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800"
-          >
-            Seguir viendo inmuebles
-          </button>
+          <p className="text-sm leading-relaxed text-gray-600">
+            El propietario o la inmobiliaria lo contactará al <strong className="text-gray-900">{telefono}</strong> para
+            agendar la visita.
+          </p>
         </div>
       ) : (
       <form
+        id="lead-interes-form"
         ref={formRef}
         noValidate
         onSubmit={(e) => {
           e.preventDefault()
-          enviar()
+          if (!submitting) void enviar()
         }}
         className="space-y-4"
       >
-        {resumen && <p className="text-sm text-gray-600 -mt-1">{resumen}</p>}
-
         <div>
           <label htmlFor="lead-interes-nombre" className="block text-sm font-medium text-gray-700 mb-1">
-            Su nombre <span className="text-coral-700">*</span>
+            Su nombre <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <input
             id="lead-interes-nombre"
@@ -173,6 +189,8 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
               setNombre(e.target.value)
               limpiarError('nombre')
             }}
+            disabled={submitting}
+            required
             placeholder="Nombre completo"
             className={`${INPUT}${errors.nombre ? ' border-red-500' : ''}`}
             {...ariaError(errors, 'nombre')}
@@ -194,7 +212,7 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
 
         <div>
           <label htmlFor="lead-interes-email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email <span className="font-normal text-gray-500">(opcional)</span>
+            Correo <span className="font-normal text-gray-500">(opcional)</span>
           </label>
           <input
             id="lead-interes-email"
@@ -205,7 +223,8 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
               setEmail(e.target.value)
               limpiarError('email')
             }}
-            placeholder="nombre@email.com"
+            disabled={submitting}
+            placeholder="nombre@correo.com"
             className={`${INPUT}${errors.email ? ' border-red-500' : ''}`}
             {...ariaError(errors, 'email')}
           />
@@ -222,64 +241,41 @@ export function LeadInteresModal({ inmuebleId, resumen, isOpen, onClose }: LeadI
             onChange={(e) => setMensaje(e.target.value)}
             rows={2}
             maxLength={500}
+            disabled={submitting}
             placeholder="Ej. ¿Sigue disponible? Me gustaría verlo el sábado."
             className={INPUT}
           />
         </div>
 
         <div>
-        <label className="flex items-start gap-2 text-xs text-gray-600">
-          <input
-            type="checkbox"
-            checked={acepta}
-            onChange={(e) => {
-              setAcepta(e.target.checked)
-              limpiarError('acepta')
-            }}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-            {...ariaError(errors, 'acepta')}
-          />
-          <span>
-            Autorizo que Cofianza comparta mis datos de contacto con el anunciante de este
-            inmueble y acepto la{' '}
-            <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">
-              Política de Tratamiento de Datos
-            </a>
-            .
-          </span>
-        </label>
-        {errors.acepta && <p id="error-acepta" className="mt-1.5 text-sm text-red-600">{errors.acepta}</p>}
+          <label className="flex min-h-10 items-start gap-3 text-sm leading-relaxed text-gray-600">
+            <input
+              type="checkbox"
+              checked={acepta}
+              onChange={(e) => {
+                setAcepta(e.target.checked)
+                limpiarError('acepta')
+              }}
+              disabled={submitting}
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+              {...ariaError(errors, 'acepta')}
+            />
+            <span>
+              Autorizo que Cofianza comparta mis datos de contacto con el anunciante de este
+              inmueble y acepto la{' '}
+              <a href="/privacidad" target="_blank" rel="noopener noreferrer" className="text-primary-700 underline underline-offset-2">
+                Política de Tratamiento de Datos
+              </a>
+              .
+            </span>
+          </label>
+          {errors.acepta && <p id="error-acepta" className="mt-1.5 text-sm text-red-600">{errors.acepta}</p>}
         </div>
 
-        <p className="text-xs text-gray-500 leading-relaxed">
-          El propietario o inmobiliaria lo contactará para agendar una visita. Si decide tomarlo,
+        <p className="text-xs leading-relaxed text-gray-500">
+          El propietario o la inmobiliaria lo contactará para agendar una visita. Si decide tomarlo,
           Cofianza se encarga del estudio y firma como su fiador.
         </p>
-
-        {/* Botones pegados al pie del cuerpo desplazable del diálogo: en teléfonos
-            bajos el formulario no cabe entero y «Solicitar visita» quedaba fuera
-            de la vista. Los márgenes y el bottom negativos deshacen el padding
-            del cuerpo (px-6 py-4 en Modal) para que la franja llegue a sus bordes;
-            rounded-b-lg conserva las esquinas redondeadas del diálogo. */}
-        <div className="sticky -bottom-4 -mx-6 -mb-4 flex gap-2 rounded-b-lg border-t border-gray-100 bg-white px-6 py-3">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-          >
-            {submitting ? <IconLoader size={14} className="animate-spin" /> : null}
-            Solicitar visita
-            {!submitting && <IconArrowRight size={14} />}
-          </button>
-          <button
-            type="button"
-            onClick={cerrar}
-            disabled={submitting}
-            className="px-4 py-2.5 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-        </div>
       </form>
       )}
     </Modal>

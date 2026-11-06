@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconLoader, IconArrowRight, IconAlertTriangle } from '@/components/icons'
 import { ESTADOS_CONTRATO, type EstadoContratoKey } from '@/lib/constants'
 import type { EstadoContrato } from '@/types/contrato'
@@ -73,12 +73,12 @@ export function ContratoTransicionModal({
 
   const handleConfirmar = async () => {
     if (!estadoSeleccionado) {
-      setError('Seleccione un estado destino')
+      setError('Elija el nuevo estado del contrato.')
       return
     }
 
     if (!texto.trim()) {
-      setError(requiresMotivo ? 'Escriba el motivo' : 'El comentario es obligatorio')
+      setError(requiresMotivo ? 'Escriba el motivo.' : 'Escriba un comentario sobre el cambio.')
       return
     }
 
@@ -101,29 +101,53 @@ export function ContratoTransicionModal({
       isOpen={isOpen}
       onClose={handleClose}
       title="Cambiar estado del contrato"
+      description="Elija el nuevo estado y deje constancia del motivo."
       size="md"
+      footer={
+        <div className="space-y-2">
+          {error && (
+            <p role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              <IconAlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              {error}
+            </p>
+          )}
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isLoading} className={botonModal('secondary')}>
+              Volver
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmar}
+              disabled={isLoading || !estadoSeleccionado || !texto.trim()}
+              aria-busy={isLoading || undefined}
+              className={botonModal(terminal ? 'danger' : 'primary')}
+            >
+              {isLoading && <IconLoader size={16} className="animate-spin" aria-hidden="true" />}
+              {isLoading ? 'Guardando…' : terminal?.boton ?? 'Confirmar cambio'}
+            </button>
+          </ModalAcciones>
+        </div>
+      }
     >
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Advertencia de moras activas: la mora NO se cancela al terminar el
             contrato (el cobro de la fianza continúa), así que el operador debe
             decidir explícitamente si marcarla pagada o cancelarla. Solo aplica a
             transiciones de terminación (finalizado/cancelado). */}
         {morasActivas > 0 && (!estadoSeleccionado || ESTADOS_CON_MOTIVO.includes(estadoSeleccionado)) && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
             <span>
               Este contrato tiene <strong>{morasActivas} mora{morasActivas > 1 ? 's' : ''} activa{morasActivas > 1 ? 's' : ''}</strong>.
               Terminar o cancelar el contrato <strong>no cierra</strong> la mora: el cobro sigue su curso.
-              Si ya se saldó o quiere detenerla, márquela como pagada o cancélela en <em>Reportar Mora</em>.
+              Si ya se saldó o quiere detenerla, márquela como pagada o cancélela en <em>Reportar mora</em>.
             </span>
           </div>
         )}
 
         {/* Estado actual */}
-        <div>
-          <p className="block text-sm font-medium text-gray-700 mb-2">
-            Estado actual
-          </p>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-medium text-gray-700">Estado actual:</span>
           <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${configActual?.bgColor || 'bg-gray-100'} ${configActual?.textColor || 'text-gray-700'}`}>
             {configActual?.label || estadoActual}
           </span>
@@ -131,56 +155,67 @@ export function ContratoTransicionModal({
 
         {/* Selector de estado destino */}
         <div>
-          <p id="contrato-transicion-modal-nuevo-estado" className="block text-sm font-medium text-gray-700 mb-3">
-            Nuevo estado
+          <p id="contrato-transicion-modal-nuevo-estado" className="mb-2 block text-sm font-medium text-gray-700">
+            Nuevo estado <span className="text-red-600" aria-hidden="true">*</span>
           </p>
-          <div role="group" aria-labelledby="contrato-transicion-modal-nuevo-estado" className="grid grid-cols-2 gap-2">
-            {transiciones.map((transicion) => {
-              const config = ESTADOS_CONTRATO[transicion.estado as EstadoContratoKey]
-              const isSelected = estadoSeleccionado === transicion.estado
+          {transiciones.length === 0 ? (
+            <p className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-600">
+              Desde el estado actual no hay cambios disponibles.
+            </p>
+          ) : (
+            <div role="group" aria-labelledby="contrato-transicion-modal-nuevo-estado" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {transiciones.map((transicion) => {
+                const config = ESTADOS_CONTRATO[transicion.estado as EstadoContratoKey]
+                const isSelected = estadoSeleccionado === transicion.estado
 
-              return (
-                <button
-                  key={transicion.estado}
-                  type="button"
-                  onClick={() => {
-                    setEstadoSeleccionado(transicion.estado)
-                    setError(null)
-                  }}
-                  disabled={isLoading}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 text-left transition-all ${
-                    isSelected
-                      ? `${config?.borderColor || 'border-gray-300'} ${config?.bgColor || 'bg-gray-100'}`
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                  }`}
-                >
-                  <span
-                    className={`w-3 h-3 rounded-full ${
+                return (
+                  <button
+                    key={transicion.estado}
+                    type="button"
+                    aria-pressed={isSelected}
+                    onClick={() => {
+                      setEstadoSeleccionado(transicion.estado)
+                      setError(null)
+                    }}
+                    disabled={isLoading}
+                    className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 ${
                       isSelected
-                        ? (config?.textColor || 'text-gray-700').replace('text-', 'bg-')
-                        : 'bg-gray-300'
-                    }`}
-                  />
-                  <span
-                    className={`text-sm font-medium ${
-                      isSelected ? config?.textColor || 'text-gray-700' : 'text-gray-700'
+                        ? `${config?.borderColor || 'border-gray-400'} ${config?.bgColor || 'bg-gray-100'} ${config?.textColor || 'text-gray-700'} ring-1 ring-inset ring-current`
+                        // ring-current toma el color del estado: textColor viene escrito
+                        // completo en ESTADOS_CONTRATO (lib/constants.ts), así Tailwind lo genera.
+                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    {transicion.label}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+                    <span
+                      aria-hidden="true"
+                      className={`h-3 w-3 shrink-0 rounded-full ${
+                        isSelected
+                          ? `${config?.textColor || 'text-gray-700'} bg-current`
+                          : 'bg-gray-300'
+                      }`}
+                    />
+                    <span
+                      className={`text-sm font-medium ${
+                        isSelected ? config?.textColor || 'text-gray-700' : 'text-gray-700'
+                      }`}
+                    >
+                      {transicion.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         {/* Visualizacion de la transicion */}
         {estadoSeleccionado && (
-          <div className="flex items-center justify-center gap-4 py-4 bg-gray-50 rounded-lg">
+          <div className="flex flex-wrap items-center justify-center gap-3 rounded-lg bg-gray-50 py-3">
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${configActual?.bgColor || 'bg-gray-100'} ${configActual?.textColor || 'text-gray-700'}`}>
               {configActual?.label || estadoActual}
             </span>
-            <IconArrowRight size={20} className="text-gray-500" />
+            <IconArrowRight size={18} className="text-gray-500" aria-hidden="true" />
+            <span className="sr-only">pasa a</span>
             {(() => {
               const targetConfig = ESTADOS_CONTRATO[estadoSeleccionado as EstadoContratoKey]
               return (
@@ -197,67 +232,39 @@ export function ContratoTransicionModal({
         {/* Terminar/cancelar piden solo el motivo; las demás transiciones, un comentario. */}
         {requiresMotivo ? (
           <div>
-            <label htmlFor="contrato-transicion-modal-motivo" className="block text-sm font-medium text-gray-700 mb-2">
-              Motivo <span className="text-red-500">*</span>
+            <label htmlFor="contrato-transicion-modal-motivo" className="mb-1 block text-sm font-medium text-gray-700">
+              Motivo <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <textarea id="contrato-transicion-modal-motivo"
               value={motivo}
-              onChange={(e) => setMotivo(e.target.value)}
+              onChange={(e) => { setMotivo(e.target.value); setError(null) }}
               placeholder={
                 estadoSeleccionado === 'cancelado'
-                  ? 'Motivo de la cancelación del contrato...'
-                  : 'Motivo de la terminación del contrato...'
+                  ? 'Motivo de la cancelación del contrato…'
+                  : 'Motivo de la terminación del contrato…'
               }
               rows={3}
+              required
               disabled={isLoading}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
             />
           </div>
         ) : (
           <div>
-            <label htmlFor="contrato-transicion-modal-comentario" className="block text-sm font-medium text-gray-700 mb-2">
-              Comentario <span className="text-red-500">*</span>
+            <label htmlFor="contrato-transicion-modal-comentario" className="mb-1 block text-sm font-medium text-gray-700">
+              Comentario <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <textarea id="contrato-transicion-modal-comentario"
               value={comentario}
-              onChange={(e) => setComentario(e.target.value)}
-              placeholder="Describa el motivo del cambio de estado..."
+              onChange={(e) => { setComentario(e.target.value); setError(null) }}
+              placeholder="Describa el motivo del cambio de estado…"
               rows={3}
+              required
               disabled={isLoading}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none disabled:bg-gray-100"
             />
           </div>
         )}
-
-        {/* Mensaje de error */}
-        {error && (
-          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
-
-        {/* Botones de accion */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            Volver
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirmar}
-            disabled={isLoading || !estadoSeleccionado || !texto.trim()}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
-              terminal ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
-            }`}
-          >
-            {isLoading && <IconLoader size={16} className="animate-spin" />}
-            {terminal?.boton ?? 'Confirmar cambio'}
-          </button>
-        </div>
       </div>
     </Modal>
   )

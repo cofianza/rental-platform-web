@@ -13,7 +13,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Modal, ConfirmDialog } from '@/components/ui'
+import { ConfirmDialog } from '@/components/ui'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconLoader, IconCalendar, IconPhone, IconShieldCheck, IconMail, IconId, IconUser } from '@/components/icons'
 import { citaService } from '@/services/citaService'
 import { expedienteService } from '@/services/expedienteService'
@@ -61,6 +62,11 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
     setSlotElegido(null)
     setNotasPropietario('')
     setMotivoCancelacion('')
+  }
+
+  // Mientras se guarda, Escape / la X / «Cancelar» no cierran el diálogo.
+  const cerrarSiLibre = () => {
+    if (!isLoading) closeModals()
   }
 
   const runAction = async (fn: () => Promise<unknown>, successMsg: string) => {
@@ -326,56 +332,84 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
       {/* Modal: Confirmar / Reprogramar cita */}
       <Modal
         isOpen={action === 'confirmar'}
-        onClose={closeModals}
+        onClose={cerrarSiLibre}
         title={confirmMode === 'reprogramar' ? 'Proponer otro horario' : 'Confirmar cita'}
+        description={
+          confirmMode === 'reprogramar'
+            ? 'Elija un horario disponible. Al guardar, el prospecto recibe un aviso con la nueva fecha.'
+            : 'Se confirma en la fecha que propuso el prospecto y se le avisa.'
+        }
         size={confirmMode === 'reprogramar' ? 'lg' : 'sm'}
+        footer={
+          <ModalAcciones>
+            <button type="button" onClick={cerrarSiLibre} disabled={isLoading} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form={`cita-card-confirmar-${cita.id}`}
+              disabled={isLoading || (confirmMode === 'reprogramar' && !slotElegido)}
+              aria-busy={isLoading || undefined}
+              className={botonModal('primary')}
+            >
+              {isLoading && <IconLoader size={16} className="animate-spin" />}
+              {isLoading ? 'Guardando…' : confirmMode === 'reprogramar' ? 'Guardar nuevo horario' : 'Confirmar cita'}
+            </button>
+          </ModalAcciones>
+        }
       >
-        <div className="space-y-4">
+        <form
+          id={`cita-card-confirmar-${cita.id}`}
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!isLoading) void handleConfirmar()
+          }}
+          className="space-y-4"
+        >
           {/* Resumen del horario propuesto por el solicitante */}
           {cita.fecha_propuesta && (
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm">
-              <p className="text-xs text-gray-500">El prospecto propuso:</p>
+            <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+              <p className="text-xs text-gray-600">El prospecto propuso</p>
               <p className="font-medium text-gray-900">
                 {formatFechaCompleta(cita.fecha_propuesta)} a las {formatSlotHora(cita.fecha_propuesta)}
               </p>
             </div>
           )}
 
-          {/* Toggle aceptar / reprogramar */}
-          <div className="flex gap-2 border border-gray-200 rounded-lg p-1 bg-gray-50">
-            <button
-              type="button"
-              onClick={() => setConfirmMode('aceptar')}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded ${
-                confirmMode === 'aceptar' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Aceptar este horario
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmMode('reprogramar')}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded ${
-                confirmMode === 'reprogramar' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Proponer otro horario
-            </button>
+          {/* Aceptar / reprogramar */}
+          <div role="group" aria-label="Qué hacer con el horario" className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {([
+              ['aceptar', 'Aceptar este horario'],
+              ['reprogramar', 'Proponer otro horario'],
+            ] as const).map(([modo, texto]) => (
+              <button
+                key={modo}
+                type="button"
+                aria-pressed={confirmMode === modo}
+                onClick={() => setConfirmMode(modo)}
+                disabled={isLoading}
+                className={`min-h-10 rounded-lg border px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 ${
+                  confirmMode === modo
+                    ? 'border-primary-600 bg-primary-50 text-primary-900'
+                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {texto}
+              </button>
+            ))}
           </div>
 
           {/* Selector de slots — solo en modo reprogramar */}
           {confirmMode === 'reprogramar' && inmueble?.id && (
             <div>
-              <p className="text-sm text-gray-600 mb-2">
-                Elija un horario disponible. Al guardar, el prospecto recibirá un aviso con la nueva fecha.
-              </p>
               <SlotSelector
                 inmuebleId={inmueble.id}
                 value={slotElegido}
                 onChange={setSlotElegido}
               />
               {slotElegido && (
-                <p className="text-xs text-gray-700 mt-2">
+                <p role="status" className="mt-2 text-sm text-gray-700">
                   Nuevo horario:{' '}
                   <strong>
                     {formatFechaCompleta(slotElegido)} a las {formatSlotHora(slotElegido)}
@@ -386,85 +420,73 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
           )}
 
           <div>
-            <label htmlFor="cita-card-notas-para-el-solicitante-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-              Notas para el prospecto (opcional)
+            <label htmlFor="cita-card-notas-para-el-solicitante-opcional" className="mb-1 block text-sm font-medium text-gray-700">
+              Notas para el prospecto <span className="font-normal text-gray-500">(opcional)</span>
             </label>
             <textarea id="cita-card-notas-para-el-solicitante-opcional"
               value={notasPropietario}
               onChange={(e) => setNotasPropietario(e.target.value)}
               rows={3}
               maxLength={2000}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              disabled={isLoading}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
               placeholder={
                 confirmMode === 'reprogramar'
                   ? 'Cuéntele por qué cambia el horario.'
-                  : 'Instrucciones, punto de encuentro, etc.'
+                  : 'Instrucciones, punto de encuentro…'
               }
             />
           </div>
-
-          <div className="flex flex-wrap justify-end gap-3 pt-2">
-            <button
-              onClick={closeModals}
-              disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleConfirmar}
-              disabled={isLoading || (confirmMode === 'reprogramar' && !slotElegido)}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
-            >
-              {isLoading && <IconLoader size={14} className="animate-spin" />}
-              {confirmMode === 'reprogramar' ? 'Enviar nueva propuesta' : 'Confirmar cita'}
-            </button>
-          </div>
-        </div>
+        </form>
       </Modal>
 
       {/* Modal: Cancelar cita */}
       <Modal
         isOpen={action === 'cancelar'}
-        onClose={closeModals}
+        onClose={cerrarSiLibre}
         title="Cancelar cita"
+        description="El motivo se le envía a la otra parte y queda en el historial del estudio."
         size="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Indique el motivo de la cancelación. El prospecto recibirá esta información.
-          </p>
-          <div>
-            <label htmlFor="cita-card-motivo" className="block text-sm font-medium text-gray-700 mb-1">
-              Motivo <span className="text-red-500">*</span>
-            </label>
-            <textarea id="cita-card-motivo"
-              value={motivoCancelacion}
-              onChange={(e) => setMotivoCancelacion(e.target.value)}
-              rows={3}
-              maxLength={2000}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="Ejemplo: imprevisto del propietario, reprogramaremos..."
-            />
-          </div>
-          <div className="flex flex-wrap justify-end gap-3 pt-2">
-            <button
-              onClick={closeModals}
-              disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-            >
+        footer={
+          <ModalAcciones>
+            <button type="button" onClick={cerrarSiLibre} disabled={isLoading} className={botonModal('secondary')}>
               Volver
             </button>
             <button
-              onClick={handleCancelar}
+              type="submit"
+              form={`cita-card-cancelar-${cita.id}`}
               disabled={isLoading || !motivoCancelacion.trim()}
-              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+              aria-busy={isLoading || undefined}
+              className={botonModal('danger')}
             >
-              {isLoading && <IconLoader size={14} className="animate-spin" />}
-              Cancelar cita
+              {isLoading && <IconLoader size={16} className="animate-spin" />}
+              {isLoading ? 'Cancelando…' : 'Cancelar cita'}
             </button>
-          </div>
-        </div>
+          </ModalAcciones>
+        }
+      >
+        <form
+          id={`cita-card-cancelar-${cita.id}`}
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!isLoading && motivoCancelacion.trim()) void handleCancelar()
+          }}
+        >
+          <label htmlFor="cita-card-motivo" className="mb-1 block text-sm font-medium text-gray-700">
+            Motivo <span className="text-red-600" aria-hidden="true">*</span>
+          </label>
+          <textarea id="cita-card-motivo"
+            value={motivoCancelacion}
+            onChange={(e) => setMotivoCancelacion(e.target.value)}
+            rows={3}
+            maxLength={2000}
+            required
+            disabled={isLoading}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
+            placeholder="Ejemplo: imprevisto del propietario; reprogramaremos la visita."
+          />
+        </form>
       </Modal>
 
       {/* ConfirmDialog: Realizar */}

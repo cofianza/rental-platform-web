@@ -6,7 +6,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { toast } from 'sonner'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { pagoService, type IPago, type IPagoEvento } from '@/services/pagoService'
 import {
@@ -18,6 +19,9 @@ import {
   IconDollarSign,
   IconMail,
   IconRefresh,
+  IconCopy,
+  IconDownload,
+  IconFileText,
 } from '@/components/icons'
 import { abrirEnPestana } from '@/lib/utils'
 
@@ -113,6 +117,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
   const [pago, setPago] = useState<IPago | null>(null)
   const [pageState, setPageState] = useState<PageState>('loading')
   const [errorMessage, setErrorMessage] = useState('')
+  const [descargando, setDescargando] = useState(false)
 
   const fetchPago = useCallback(async () => {
     setPageState('loading')
@@ -140,206 +145,209 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
     onClose()
   }, [onClose])
 
-  // ============================================
-  // Render: Loading
-  // ============================================
-  if (pageState === 'loading') {
-    return (
-      <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg" closeOnBackdrop>
-        <SkeletonDetail bloques={1} etiqueta="Cargando el detalle del pago…" className="py-2" />
-      </Modal>
-    )
+  const estadoConfig = pago ? ESTADOS_CONFIG[pago.estado] || ESTADOS_CONFIG.pendiente : null
+  const EstadoIcon = estadoConfig?.icon
+
+  const copiarEnlace = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url)
+      toast.success('Enlace copiado.')
+    } catch {
+      toast.error('No se pudo copiar el enlace. Selecciónelo y cópielo a mano.')
+    }
   }
 
-  // ============================================
-  // Render: Error
-  // ============================================
-  if (pageState === 'error') {
-    return (
-      <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg" closeOnBackdrop>
-        <div className="text-center py-8">
-          <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
-          <p className="text-gray-600 mb-4">{errorMessage}</p>
-          <button
-            onClick={fetchPago}
-            className="px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
-          >
-            Reintentar
-          </button>
-        </div>
-      </Modal>
-    )
+  const descargarComprobante = async (id: string) => {
+    if (descargando) return
+    setDescargando(true)
+    try {
+      await abrirEnPestana(async () => (await pagoService.getComprobanteUrl(id)).url)
+    } catch {
+      toast.error('No se pudo abrir el comprobante. Intente de nuevo.')
+    } finally {
+      setDescargando(false)
+    }
   }
-
-  if (!pago) return null
-
-  const estadoConfig = ESTADOS_CONFIG[pago.estado] || ESTADOS_CONFIG.pendiente
-  const EstadoIcon = estadoConfig.icon
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Detalle del Pago" size="lg" closeOnBackdrop>
-      {/* Scrollable content container */}
-      <div className="max-h-[70vh] overflow-y-auto space-y-6 pr-1">
-        {/* Header with status */}
-        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Detalle del pago"
+      description={pago && pageState === 'ready' ? `${CONCEPTOS_LABELS[pago.concepto] || pago.concepto} · ${formatCOP(pago.monto)}` : undefined}
+      size="lg"
+      closeOnBackdrop
+      footer={
+        <ModalAcciones>
+          {pageState === 'error' && (
+            <button type="button" onClick={() => void fetchPago()} className={botonModal('secondary')}>
+              <IconRefresh size={16} />
+              Reintentar
+            </button>
+          )}
+          <button type="button" onClick={handleClose} className={botonModal('primary')}>
+            Cerrar
+          </button>
+        </ModalAcciones>
+      }
+    >
+      {pageState === 'loading' && (
+        <SkeletonDetail bloques={1} etiqueta="Cargando el detalle del pago…" className="py-2" />
+      )}
+
+      {pageState === 'error' && (
+        <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-red-600" />
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">
-              {CONCEPTOS_LABELS[pago.concepto] || pago.concepto}
-            </h3>
-            {pago.descripcion && (
-              <p className="text-sm text-gray-500 mt-0.5">{pago.descripcion}</p>
+            <p className="font-medium">No se pudo cargar el detalle del pago.</p>
+            {errorMessage && <p className="mt-1 text-red-700">{errorMessage}</p>}
+            <p className="mt-1 text-red-700">Revise su conexión y pulse «Reintentar».</p>
+          </div>
+        </div>
+      )}
+
+      {pageState === 'ready' && pago && estadoConfig && EstadoIcon && (
+        <div className="space-y-6">
+          {/* Concepto y estado */}
+          <div className="flex flex-col gap-3 rounded-lg bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h3 className="text-base font-semibold text-gray-900 sm:text-lg">
+                {CONCEPTOS_LABELS[pago.concepto] || pago.concepto}
+              </h3>
+              {pago.descripcion && <p className="mt-0.5 text-sm text-gray-600">{pago.descripcion}</p>}
+            </div>
+            <span className={`inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium ${estadoConfig.bg} ${estadoConfig.color}`}>
+              <EstadoIcon size={16} />
+              {estadoConfig.label}
+            </span>
+          </div>
+
+          {/* Monto y método */}
+          <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <dt className="mb-1 text-sm text-gray-600">Monto</dt>
+              <dd className="text-xl font-bold tabular-nums text-gray-900">{formatCOP(pago.monto)}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <dt className="mb-1 text-sm text-gray-600">Método</dt>
+              <dd className="text-lg font-medium text-gray-900">{METODOS_LABELS[pago.metodo] || pago.metodo}</dd>
+            </div>
+          </dl>
+
+          {/* Datos */}
+          <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-gray-600">Fecha de creación</dt>
+              <dd className="font-medium text-gray-900">{formatDateTime(pago.created_at)}</dd>
+            </div>
+            {pago.fecha_pago && (
+              <div>
+                <dt className="text-gray-600">Fecha de pago</dt>
+                <dd className="font-medium text-gray-900">{formatDateTime(pago.fecha_pago)}</dd>
+              </div>
+            )}
+            {pago.nombre_pagador && (
+              <div>
+                <dt className="text-gray-600">Nombre de quien pagó</dt>
+                <dd className="break-words font-medium text-gray-900">{pago.nombre_pagador}</dd>
+              </div>
+            )}
+            {pago.email_pagador && (
+              <div>
+                <dt className="text-gray-600">Correo de quien pagó</dt>
+                <dd className="break-all font-medium text-gray-900">{pago.email_pagador}</dd>
+              </div>
+            )}
+            {pago.transaction_ref && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-600">Referencia de la transacción</dt>
+                <dd className="break-all font-mono text-xs font-medium text-gray-900">{pago.transaction_ref}</dd>
+              </div>
+            )}
+            {pago.referencia_bancaria && (
+              <div>
+                <dt className="text-gray-600">Referencia bancaria</dt>
+                <dd className="break-all font-medium text-gray-900">{pago.referencia_bancaria}</dd>
+              </div>
+            )}
+            {pago.external_id && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-600">Identificador en la pasarela</dt>
+                <dd className="break-all font-mono text-xs font-medium text-gray-900">{pago.external_id}</dd>
+              </div>
+            )}
+          </dl>
+
+          {pago.notas && (
+            <div className="rounded-lg bg-gray-50 p-4">
+              <p className="mb-1 text-sm font-medium text-gray-700">Notas</p>
+              <p className="whitespace-pre-wrap text-sm text-gray-700">{pago.notas}</p>
+            </div>
+          )}
+
+          {pago.payment_link_url && (
+            <div className="rounded-lg border border-gray-200 p-4">
+              <label htmlFor="pago-detalle-enlace" className="mb-2 block text-sm font-medium text-gray-700">
+                Enlace de pago
+              </label>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input
+                  id="pago-detalle-enlace"
+                  type="text"
+                  readOnly
+                  value={pago.payment_link_url}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="min-h-10 min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-xs text-gray-800"
+                />
+                <button type="button" onClick={() => void copiarEnlace(pago.payment_link_url!)} className={botonModal('secondary')}>
+                  <IconCopy size={16} />
+                  Copiar enlace
+                </button>
+              </div>
+            </div>
+          )}
+
+          {pago.comprobante_storage_key && (
+            <div className="rounded-lg border border-gray-200 p-4">
+              <p className="mb-2 text-sm font-medium text-gray-700">Comprobante adjunto</p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <IconFileText size={20} className="shrink-0 text-gray-500" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-gray-900">{pago.comprobante_nombre_original || 'Comprobante'}</p>
+                    {pago.comprobante_tipo_mime && <p className="text-xs text-gray-600">{pago.comprobante_tipo_mime}</p>}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void descargarComprobante(pago.id)}
+                  disabled={descargando}
+                  aria-busy={descargando || undefined}
+                  className={botonModal('secondary')}
+                >
+                  {descargando ? <IconLoader size={16} className="animate-spin" /> : <IconDownload size={16} />}
+                  {descargando ? 'Abriendo…' : 'Ver comprobante'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h4 className="mb-3 text-sm font-medium text-gray-900">Historial de eventos</h4>
+            {pago.eventos && pago.eventos.length > 0 ? (
+              <ol className="space-y-0">
+                {[...pago.eventos]
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                  .map((evento, index) => (
+                    <EventoTimelineItem key={evento.id} evento={evento} isLast={index === pago.eventos!.length - 1} />
+                  ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-gray-600">Este pago todavía no tiene eventos registrados.</p>
             )}
           </div>
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full ${estadoConfig.bg} ${estadoConfig.color}`}>
-            <EstadoIcon size={16} />
-            {estadoConfig.label}
-          </span>
         </div>
-
-        {/* Main info grid */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-white border border-gray-200 rounded-lg">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Monto</p>
-            <p className="text-xl font-bold text-gray-900">{formatCOP(pago.monto)}</p>
-          </div>
-          <div className="p-4 bg-white border border-gray-200 rounded-lg">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Metodo</p>
-            <p className="text-lg font-medium text-gray-900">
-              {METODOS_LABELS[pago.metodo] || pago.metodo}
-            </p>
-          </div>
-        </div>
-
-        {/* Details grid */}
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-gray-500">Fecha de creacion</p>
-            <p className="font-medium text-gray-900">{formatDateTime(pago.created_at)}</p>
-          </div>
-          {pago.fecha_pago && (
-            <div>
-              <p className="text-gray-500">Fecha de pago</p>
-              <p className="font-medium text-gray-900">{formatDateTime(pago.fecha_pago)}</p>
-            </div>
-          )}
-          {pago.nombre_pagador && (
-            <div>
-              <p className="text-gray-500">Nombre del pagador</p>
-              <p className="font-medium text-gray-900">{pago.nombre_pagador}</p>
-            </div>
-          )}
-          {pago.email_pagador && (
-            <div>
-              <p className="text-gray-500">Email del pagador</p>
-              <p className="font-medium text-gray-900">{pago.email_pagador}</p>
-            </div>
-          )}
-          {pago.transaction_ref && (
-            <div className="col-span-2">
-              <p className="text-gray-500">Referencia de transaccion</p>
-              <p className="font-medium text-gray-900 font-mono text-xs break-all">{pago.transaction_ref}</p>
-            </div>
-          )}
-          {pago.referencia_bancaria && (
-            <div>
-              <p className="text-gray-500">Referencia bancaria</p>
-              <p className="font-medium text-gray-900">{pago.referencia_bancaria}</p>
-            </div>
-          )}
-          {pago.external_id && (
-            <div className="col-span-2">
-              <p className="text-gray-500">ID externo</p>
-              <p className="font-medium text-gray-900 font-mono text-xs break-all">{pago.external_id}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Notes */}
-        {pago.notas && (
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Notas</p>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{pago.notas}</p>
-          </div>
-        )}
-
-        {/* Payment link */}
-        {pago.payment_link_url && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-xs text-blue-600 uppercase tracking-wide mb-1">Enlace de pago</p>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                readOnly
-                value={pago.payment_link_url}
-                className="flex-1 text-sm bg-white border border-blue-200 rounded px-2 py-1 font-mono text-xs"
-              />
-              <button
-                onClick={() => navigator.clipboard.writeText(pago.payment_link_url!)}
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-              >
-                Copiar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Comprobante */}
-        {pago.comprobante_storage_key && (
-          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-xs text-green-600 uppercase tracking-wide mb-2">Comprobante adjunto</p>
-            <div className="flex items-center gap-3">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">
-                  {pago.comprobante_nombre_original || 'Comprobante'}
-                </p>
-                {pago.comprobante_tipo_mime && (
-                  <p className="text-xs text-gray-500">{pago.comprobante_tipo_mime}</p>
-                )}
-              </div>
-              <button
-                onClick={async () => {
-                  try {
-                    await abrirEnPestana(async () => (await pagoService.getComprobanteUrl(pago.id)).url)
-                  } catch {
-                    // Handle error silently
-                  }
-                }}
-                className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-              >
-                Descargar
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Timeline */}
-        {pago.eventos && pago.eventos.length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium text-gray-900 mb-3">Historial de eventos</h4>
-            <div className="space-y-0">
-              {pago.eventos
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .map((evento, index) => (
-                  <EventoTimelineItem
-                    key={evento.id}
-                    evento={evento}
-                    isLast={index === pago.eventos!.length - 1}
-                  />
-                ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Close button - outside scrollable area */}
-      <div className="flex justify-end pt-4 mt-4 border-t border-gray-200">
-        <button
-          onClick={handleClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          Cerrar
-        </button>
-      </div>
+      )}
     </Modal>
   )
 }
@@ -348,28 +356,76 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
 // Timeline Item Component
 // ============================================
 
+// Detalles del evento: solo las claves con etiqueta en español. Las técnicas
+// (ids de usuario, de pasarela, de lote, marcas de simulación) no se muestran.
+const DETALLE_LABELS: Record<string, string> = {
+  estado_anterior: 'Estado anterior',
+  estado_nuevo: 'Estado nuevo',
+  motivo: 'Motivo',
+  metodo: 'Método',
+  email: 'Correo',
+  email_anterior: 'Correo anterior',
+  provider: 'Pasarela',
+  gateway: 'Pasarela',
+  transaction_ref: 'Referencia de la transacción',
+  saldo_restante: 'Cupos restantes',
+  devolucion: 'Devolución',
+  cancelado_por: 'Cancelado por',
+}
+
+const VALOR_LABELS: Record<string, string> = {
+  sistema: 'El sistema',
+  mercadopago: 'Mercado Pago',
+  stripe: 'Stripe',
+  credito: 'Cupo del paquete',
+  credito_inmobiliaria: 'Cupo de la inmobiliaria',
+  reemplazado_por_nuevo_cobro: 'Reemplazado por un cobro nuevo',
+  gestor_paga_por_pasarela: 'El gestor paga por la pasarela',
+  inmobiliaria_libera_credito: 'La inmobiliaria liberó el cupo',
+}
+
+const PARECE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function detallesLegibles(detalles: IPagoEvento['detalles']): [string, string][] {
+  if (!detalles || typeof detalles !== 'object') return []
+  const filas: [string, string][] = []
+  for (const [clave, valor] of Object.entries(detalles as Record<string, unknown>)) {
+    const etiqueta = DETALLE_LABELS[clave]
+    if (!etiqueta || valor === null || valor === undefined || valor === '' || typeof valor === 'object') continue
+    const texto = String(valor)
+    if (PARECE_ID.test(texto)) continue
+    const legible =
+      clave === 'estado_anterior' || clave === 'estado_nuevo'
+        ? ESTADOS_CONFIG[texto]?.label ?? texto
+        : VALOR_LABELS[texto] ?? texto
+    filas.push([etiqueta, legible])
+  }
+  return filas
+}
+
 interface EventoTimelineItemProps {
   evento: IPagoEvento
   isLast: boolean
 }
 
 function EventoTimelineItem({ evento, isLast }: EventoTimelineItemProps) {
+  const detallesVisibles = detallesLegibles(evento.detalles)
   const config = EVENTO_ICONS[evento.tipo] || { icon: IconClock, color: 'text-gray-500' }
   const Icon = config.icon
   const label = EVENTO_LABELS[evento.tipo] || evento.tipo
 
   return (
-    <div className="flex gap-3">
+    <li className="flex gap-3">
       {/* Icon and line */}
       <div className="flex flex-col items-center">
-        <div className={`w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center ${config.color}`}>
+        <div className={`w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center ${config.color}`} aria-hidden="true">
           <Icon size={16} />
         </div>
         {!isLast && <div className="w-0.5 flex-1 bg-gray-200 my-1" />}
       </div>
 
       {/* Content */}
-      <div className={`flex-1 pb-4 ${isLast ? '' : ''}`}>
+      <div className="min-w-0 flex-1 pb-4">
         <p className="text-sm font-medium text-gray-900">{label}</p>
         <p className="text-xs text-gray-500 mt-0.5">
           {formatDateTime(evento.created_at)}
@@ -377,16 +433,17 @@ function EventoTimelineItem({ evento, isLast }: EventoTimelineItemProps) {
             <span className="ml-2 text-gray-500">({evento.origen})</span>
           )}
         </p>
-        {evento.detalles && Object.keys(evento.detalles).length > 0 && (
-          <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600">
-            {Object.entries(evento.detalles).map(([key, value]) => (
-              <div key={key}>
-                <span className="font-medium">{key}:</span> {String(value)}
+        {detallesVisibles.length > 0 && (
+          <dl className="mt-2 break-words rounded bg-gray-50 p-2 text-xs text-gray-600">
+            {detallesVisibles.map(([etiqueta, valor]) => (
+              <div key={etiqueta} className="flex flex-wrap gap-x-1">
+                <dt className="font-medium">{etiqueta}:</dt>
+                <dd>{valor}</dd>
               </div>
             ))}
-          </div>
+          </dl>
         )}
       </div>
-    </div>
+    </li>
   )
 }

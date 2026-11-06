@@ -1,12 +1,12 @@
 /**
  * GenerarLinkPagoModal - HP-351
- * Modal para generar link de pago via pasarela
+ * Modal para generar un enlace de pago por la pasarela
  */
 
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconLoader } from '@/components/icons'
 import { pagoService } from '@/services/pagoService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
@@ -20,7 +20,8 @@ interface GenerarLinkPagoModalProps {
   isOpen: boolean
   onClose: () => void
   expedienteId: string
-  onSuccess: () => void
+  /** Recarga del padre: se espera antes de cerrar, para no generar dos enlaces. */
+  onSuccess: () => void | Promise<void>
 }
 
 const CONCEPTOS = [
@@ -105,39 +106,40 @@ export function GenerarLinkPagoModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isSubmitting) return
     setError(null)
 
     // Validations
     if (!concepto) {
-      setError('Seleccione un concepto')
+      setError('Seleccione el concepto del pago.')
       return
     }
 
     const montoNum = parseInt(monto, 10)
     if (!monto || montoNum <= 0 || isNaN(montoNum)) {
-      setError('Ingrese un monto válido mayor a 0')
+      setError('Escriba un monto mayor que 0.')
       return
     }
 
     if (!descripcion.trim()) {
-      setError('Ingrese una descripcion')
+      setError('Escriba la descripción que verá quien paga.')
       return
     }
 
     if (!emailPagador.trim()) {
-      setError('Ingrese el email del pagador')
+      setError('Escriba el correo de quien paga.')
       return
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(emailPagador)) {
-      setError('Ingrese un correo válido')
+      setError('Revise el correo: no parece válido.')
       return
     }
 
     if (!nombrePagador.trim()) {
-      setError('Ingrese el nombre del pagador')
+      setError('Escriba el nombre de quien paga.')
       return
     }
 
@@ -153,11 +155,13 @@ export function GenerarLinkPagoModal({
         enviar_email: enviarEmail,
       })
 
+      // onSuccess puede devolver una promesa (PagosSection recarga la lista):
+      // se espera antes de soltar el botón, así no hay doble envío.
+      await onSuccess()
       resetForm()
-      onSuccess()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo generar el enlace de pago')
+      setError(err instanceof Error ? err.message : 'No se pudo generar el enlace de pago. Intente de nuevo.')
     } finally {
       setIsSubmitting(false)
     }
@@ -171,18 +175,37 @@ export function GenerarLinkPagoModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Generar enlace de pago" size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-            {error}
-          </div>
-        )}
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Generar enlace de pago"
+      description="Se genera un enlace seguro para pagar con tarjeta de crédito, débito o PSE."
+      size="md"
+      footer={
+        <div className="space-y-2">
+          {error && (
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              {error}
+            </p>
+          )}
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isSubmitting} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button type="submit" form="generar-enlace-pago-form" disabled={isSubmitting} aria-busy={isSubmitting || undefined} className={botonModal('primary')}>
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              {isSubmitting ? 'Generando…' : 'Generar enlace'}
+            </button>
+          </ModalAcciones>
+        </div>
+      }
+    >
+      <form id="generar-enlace-pago-form" noValidate onSubmit={handleSubmit} className="space-y-4">
 
         {/* Concepto */}
         <div>
           <label htmlFor="generar-link-pago-modal-concepto" className="block text-sm font-medium text-gray-700 mb-1">
-            Concepto <span className="text-red-500">*</span>
+            Concepto <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <select id="generar-link-pago-modal-concepto"
             value={concepto}
@@ -194,7 +217,7 @@ export function GenerarLinkPagoModal({
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             disabled={isSubmitting}
           >
-            <option value="">Seleccionar...</option>
+            <option value="">Seleccione…</option>
             {CONCEPTOS.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
             ))}
@@ -204,10 +227,10 @@ export function GenerarLinkPagoModal({
         {/* Monto */}
         <div>
           <label htmlFor="generar-link-pago-modal-monto-cop" className="block text-sm font-medium text-gray-700 mb-1">
-            Monto (COP) <span className="text-red-500">*</span>
+            Monto (COP) <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" aria-hidden="true">$</span>
             {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
             <input id="generar-link-pago-modal-monto-cop"
               type="text"
@@ -217,7 +240,7 @@ export function GenerarLinkPagoModal({
                 setMonto(e.target.value.replace(/\D/g, '').slice(0, 12))
                 setMontoEditado(true)
               }}
-              placeholder="Ej: 150.000"
+              placeholder="Ej.: 150.000"
               readOnly={esEstudio && montoEstudio !== null}
               aria-describedby="generar-link-pago-modal-monto-ayuda"
               className={`w-full rounded-lg border border-gray-300 pl-7 pr-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 ${
@@ -228,7 +251,7 @@ export function GenerarLinkPagoModal({
           </div>
           <p id="generar-link-pago-modal-monto-ayuda" className="mt-1 text-xs text-gray-500">
             {esEstudio && montoEstudio !== null
-              ? `$${formatMontoDisplay(monto)} COP — precio del estudio, fijado por Cofianza.`
+              ? `$${formatMontoDisplay(monto)} COP — precio de la evaluación, fijado por Cofianza.`
               : monto
                 ? `$${formatMontoDisplay(monto)} COP`
                 : ''}
@@ -241,24 +264,25 @@ export function GenerarLinkPagoModal({
         {/* Descripcion */}
         <div>
           <label htmlFor="generar-link-pago-modal-descripcion" className="block text-sm font-medium text-gray-700 mb-1">
-            Descripcion <span className="text-red-500">*</span>
+            Descripción <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <textarea id="generar-link-pago-modal-descripcion"
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
-            placeholder="Descripcion del pago que vera el cliente"
+            placeholder="Descripción del pago que verá quien paga"
             maxLength={500}
             rows={2}
+            aria-describedby="generar-enlace-pago-descripcion-contador"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 resize-none"
             disabled={isSubmitting}
           />
-          <p className="mt-1 text-xs text-gray-500 text-right">{descripcion.length}/500</p>
+          <p id="generar-enlace-pago-descripcion-contador" className="mt-1 text-right text-xs tabular-nums text-gray-600">{descripcion.length}/500</p>
         </div>
 
         {/* Nombre del pagador */}
         <div>
           <label htmlFor="generar-link-pago-modal-nombre-del-pagador" className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre del pagador <span className="text-red-500">*</span>
+            Nombre de quien paga <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <input id="generar-link-pago-modal-nombre-del-pagador"
             type="text"
@@ -274,20 +298,21 @@ export function GenerarLinkPagoModal({
         {/* Email del pagador */}
         <div>
           <label htmlFor="generar-link-pago-modal-email-del-pagador" className="block text-sm font-medium text-gray-700 mb-1">
-            Email del pagador <span className="text-red-500">*</span>
+            Correo de quien paga <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <input id="generar-link-pago-modal-email-del-pagador"
             type="email"
             value={emailPagador}
             onChange={(e) => setEmailPagador(e.target.value)}
             placeholder="correo@ejemplo.com"
+            autoComplete="off"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             disabled={isSubmitting}
           />
         </div>
 
         {/* Enviar email */}
-        <div className="flex items-center gap-2">
+        <div className="flex min-h-10 items-center gap-2">
           <input
             type="checkbox"
             id="enviarEmail"
@@ -297,38 +322,10 @@ export function GenerarLinkPagoModal({
             disabled={isSubmitting}
           />
           <label htmlFor="enviarEmail" className="text-sm text-gray-700">
-            Enviar el enlace por correo automáticamente
+            Enviarle el enlace por correo a quien paga
           </label>
         </div>
 
-        {/* Info box */}
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            Se generará un enlace de pago seguro que el cliente podrá usar para pagar con tarjeta de crédito/débito o PSE.
-          </p>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex justify-end gap-3 pt-2 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            disabled={isSubmitting}
-          >
-            {isSubmitting && (
-              <IconLoader size={16} className="animate-spin" />
-            )}
-            {isSubmitting ? 'Generando...' : 'Generar enlace'}
-          </button>
-        </div>
       </form>
     </Modal>
   )

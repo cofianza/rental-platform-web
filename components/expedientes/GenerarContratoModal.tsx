@@ -11,10 +11,10 @@
 
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { IconX, IconLoader, IconFileText } from '@/components/icons'
+import { IconLoader, IconFileText } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
@@ -98,22 +98,49 @@ export function GenerarContratoModal({
     }
   }
 
+  const handleClose = () => {
+    if (generating) return
+    onClose()
+  }
+
+  const puedeGenerar = !generating && fechaCompleta(fechaInicio) && !!duracionMeses && !comisionInvalida
+
   if (!isOpen) return null
 
   return (
-    <Modal isOpen={isOpen} onClose={generating ? () => {} : onClose} bare ariaLabel="Generar contrato" closeOnBackdrop={false} className="rounded-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Generar contrato</h2>
-        <button type="button" data-modal-close aria-label="Cerrar"
-          onClick={onClose}
-          disabled={generating}
-          className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-        >
-          <IconX size={20} />
-        </button>
-      </div>
-
-      <div className="p-4 sm:p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Generar contrato"
+      description="El contrato sale de la plantilla vigente con los datos del estudio. Elija la fecha, la duración y quién paga los servicios."
+      size="md"
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={handleClose} disabled={generating} className={botonModal('secondary')}>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="generar-contrato-form"
+            disabled={!puedeGenerar}
+            aria-busy={generating || undefined}
+            className={botonModal('primary')}
+          >
+            {generating ? <IconLoader size={16} className="animate-spin" /> : <IconFileText size={16} />}
+            {generating ? 'Generando…' : 'Generar contrato PDF'}
+          </button>
+        </ModalAcciones>
+      }
+    >
+      <form
+        id="generar-contrato-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (puedeGenerar) void handleGenerar()
+        }}
+        className="space-y-5"
+      >
         <div>
           <label htmlFor="generar-contrato-modal-fecha-de-inicio-del-contrato" className="block text-sm font-medium text-gray-700 mb-1">
             Fecha de inicio del contrato
@@ -161,9 +188,10 @@ export function GenerarContratoModal({
               onChange={(e) => setComision(e.target.value)}
               disabled={generating}
               aria-invalid={comisionInvalida}
+              aria-describedby="generar-contrato-comision-ayuda"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
             />
-            <p className={`text-xs mt-1 ${comisionInvalida ? 'text-red-600' : 'text-gray-500'}`}>
+            <p id="generar-contrato-comision-ayuda" className={`text-xs mt-1 ${comisionInvalida ? 'text-red-600' : 'text-gray-500'}`}>
               {comisionInvalida
                 ? 'Escriba un porcentaje entre 0 y 100.'
                 : 'La que cobra la inmobiliaria al arrendatario, más IVA, una sola vez al inicio. En 0 o vacía, el contrato no lleva esa cláusula.'}
@@ -172,9 +200,7 @@ export function GenerarContratoModal({
         )}
 
         <div className="space-y-4 pt-3 border-t border-gray-200">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
-            Condiciones de la fianza
-          </p>
+          <h3 className="text-sm font-semibold text-gray-900">Condiciones de la fianza</h3>
 
           {/* Modalidad */}
           <div>
@@ -209,12 +235,13 @@ export function GenerarContratoModal({
             <div role="group" aria-labelledby="generar-contrato-modal-servicios-publicos-quien-paga" className="space-y-1.5">
               {SERVICIOS_CONTRATO.map((s) => (
                 <div key={s.key} className="flex items-center justify-between gap-2">
-                  <span className="text-xs text-gray-600">{s.label}</span>
+                  <label htmlFor={`generar-contrato-servicio-${s.key}`} className="text-sm text-gray-700">{s.label}</label>
                   <select
+                    id={`generar-contrato-servicio-${s.key}`}
                     value={servicios[s.key]}
                     onChange={(e) => setServicios({ ...servicios, [s.key]: e.target.value as CargoServicio })}
                     disabled={generating}
-                    className="px-2 py-1 border border-gray-300 rounded-md text-xs disabled:bg-gray-50"
+                    className="min-h-10 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50"
                   >
                     <option value="arrendatario">Arrendatario</option>
                     <option value="arrendador">Arrendador</option>
@@ -224,25 +251,7 @@ export function GenerarContratoModal({
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-wrap justify-end gap-2 px-4 sm:px-6 py-4 border-t border-gray-200">
-        <button
-          onClick={onClose}
-          disabled={generating}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleGenerar}
-          disabled={generating || !fechaCompleta(fechaInicio) || !duracionMeses || comisionInvalida}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-        >
-          {generating ? <IconLoader size={16} className="animate-spin" /> : <IconFileText size={16} />}
-          {generating ? 'Generando…' : 'Generar contrato PDF'}
-        </button>
-      </div>
+      </form>
     </Modal>
   )
 }

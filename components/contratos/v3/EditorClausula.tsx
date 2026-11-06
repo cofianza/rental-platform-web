@@ -11,7 +11,9 @@
 'use client'
 
 import { useEffect, useId, useState, type FormEvent } from 'react'
-import { Button, Modal } from '@/components/ui'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { IconLoader } from '@/components/icons'
 import type { ResultadoGuardado } from '@/hooks/useClausulasAdicionales'
 import type { ClausulaEntrada } from '@/services/clausulasService'
 import type { ClausulaCatalogo, Hallazgo } from '@/types/contratoV3'
@@ -103,26 +105,50 @@ export function EditorClausula({ isOpen, onClose, ...resto }: EditorProps) {
     if (sucio) setPidiendoSalir(true)
     else salir()
   }
+  const formId = useId()
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={cerrar}
-      title={resto.clausula ? 'Editar cláusula' : 'Nueva cláusula'}
-      size="lg"
-      closeOnBackdrop={false}
-    >
-      {/* Modal no pinta nada cerrado: el formulario arranca limpio en cada apertura. */}
-      <Formulario
-        {...resto}
-        onClose={salir}
-        onCancelar={cerrar}
-        onSucio={setSucio}
-        pidiendoSalir={pidiendoSalir}
-        onSeguir={() => setPidiendoSalir(false)}
-        guardando={guardando}
-        setGuardando={setGuardando}
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={cerrar}
+        title={resto.clausula ? 'Editar cláusula' : 'Nueva cláusula'}
+        description="Al guardarla, una validación automática busca algunos contenidos prohibidos. No es una revisión jurídica."
+        size="lg"
+        closeOnBackdrop={false}
+        footer={
+          <ModalAcciones>
+            <button type="button" onClick={cerrar} disabled={guardando} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button type="submit" form={formId} disabled={guardando} aria-busy={guardando || undefined} className={botonModal('primary')}>
+              {guardando && <IconLoader size={16} className="animate-spin" aria-hidden="true" />}
+              {guardando ? 'Guardando…' : 'Guardar cláusula'}
+            </button>
+          </ModalAcciones>
+        }
+      >
+        {/* Modal no pinta nada cerrado: el formulario arranca limpio en cada apertura. */}
+        <Formulario
+          {...resto}
+          formId={formId}
+          onClose={salir}
+          onSucio={setSucio}
+          guardando={guardando}
+          setGuardando={setGuardando}
+        />
+      </Modal>
+      {/* Escape, la X o Cancelar con cambios: se confirma encima del editor. */}
+      <ConfirmDialog
+        isOpen={isOpen && pidiendoSalir}
+        onClose={() => setPidiendoSalir(false)}
+        onConfirm={salir}
+        title="¿Descartar los cambios?"
+        message="Tiene cambios sin guardar en esta cláusula. Si sale ahora, se pierden."
+        confirmLabel="Descartar cambios"
+        cancelLabel="Seguir editando"
+        variant="danger"
       />
-    </Modal>
+    </>
   )
 }
 
@@ -132,19 +158,15 @@ function Formulario({
   onGuardar,
   onGuardada,
   onClose,
-  onCancelar,
   onSucio,
-  pidiendoSalir,
-  onSeguir,
   guardando,
   setGuardando,
+  formId,
 }: Omit<EditorProps, 'isOpen'> & {
   guardando: boolean
   setGuardando: (v: boolean) => void
-  onCancelar: () => void
   onSucio: (v: boolean) => void
-  pidiendoSalir: boolean
-  onSeguir: () => void
+  formId: string
 }) {
   const [titulo, setTitulo] = useState(clausula?.titulo ?? '')
   const [texto, setTexto] = useState(clausula?.texto ?? '')
@@ -182,7 +204,7 @@ function Formulario({
   }
 
   return (
-    <form onSubmit={guardar} noValidate className="space-y-4">
+    <form id={formId} onSubmit={guardar} noValidate className="space-y-4">
       <Campo
         label="Título"
         requerido
@@ -225,7 +247,7 @@ function Formulario({
             {miles(texto.length)}/{miles(TEXTO_MAX)}
           </span>
         </div>
-        {errTexto && <p className="mt-1 text-xs text-red-600">{errTexto}</p>}
+        {errTexto && <p role="alert" className="mt-1 text-xs text-red-700">{errTexto}</p>}
       </div>
 
       {fallo?.revisionNoDisponible && (
@@ -235,30 +257,6 @@ function Formulario({
       )}
       {fallo && <ListaHallazgos hallazgos={fallo.hallazgos} avisos={fallo.avisos} />}
 
-      {pidiendoSalir && (
-        <Aviso tono="aviso">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span>Tiene cambios sin guardar. ¿Los descarta?</span>
-            <div className="flex flex-wrap gap-2">
-              <Button variante="secondary" tamano="sm" onClick={onSeguir}>
-                Seguir editando
-              </Button>
-              <Button variante="secondary" tamano="sm" onClick={onClose}>
-                Descartar
-              </Button>
-            </div>
-          </div>
-        </Aviso>
-      )}
-
-      <div className="flex justify-end gap-3 pt-2">
-        <Button variante="secondary" onClick={onCancelar} disabled={guardando}>
-          Cancelar
-        </Button>
-        <Button type="submit" disabled={guardando}>
-          {guardando ? 'Guardando…' : 'Guardar cláusula'}
-        </Button>
-      </div>
     </form>
   )
 }

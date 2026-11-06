@@ -248,11 +248,18 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
     setShowDetalleModal(true)
   }, [])
 
-  const handleSuccess = useCallback(() => {
-    fetchPagos()
-    onPagoActualizado?.()
-    toast.success('Pago registrado correctamente')
-  }, [fetchPagos, onPagoActualizado])
+  // Los modales esperan esta promesa antes de soltar el botón: la lista ya
+  // viene recargada cuando el modal se cierra.
+  const recargarTras = useCallback(
+    async (mensaje: string) => {
+      await fetchPagos()
+      onPagoActualizado?.()
+      toast.success(mensaje)
+    },
+    [fetchPagos, onPagoActualizado],
+  )
+  const handlePagoManualRegistrado = useCallback(() => recargarTras('Pago registrado correctamente'), [recargarTras])
+  const handleEnlaceGenerado = useCallback(() => recargarTras('Enlace de pago generado'), [recargarTras])
 
   // ============================================
   // Render: Loading
@@ -293,13 +300,13 @@ export function PagosSection({ expedienteId, onPagoActualizado }: PagosSectionPr
         isOpen={showManualModal}
         onClose={() => setShowManualModal(false)}
         expedienteId={expedienteId}
-        onSuccess={handleSuccess}
+        onSuccess={handlePagoManualRegistrado}
       />
       <GenerarLinkPagoModal
         isOpen={showLinkModal}
         onClose={() => setShowLinkModal(false)}
         expedienteId={expedienteId}
-        onSuccess={handleSuccess}
+        onSuccess={handleEnlaceGenerado}
       />
     </>
   )

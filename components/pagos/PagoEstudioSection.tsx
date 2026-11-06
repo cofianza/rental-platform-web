@@ -21,7 +21,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { pagoEstudioService, type IPagoEstudioEstado } from '@/services/pagoEstudioService'
 import { estudioService } from '@/services/estudioService'
@@ -813,9 +813,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         defaultNombre={solicitanteNombre}
         defaultEmail={solicitanteEmail}
         defaultTelefono={solicitanteTelefono}
-        onSuccess={() => {
+        onSuccess={async () => {
+          // Se espera la recarga antes de cerrar: el botón no se suelta con el estado viejo.
+          await fetchEstado()
           setShowLinkModal(false)
-          fetchEstado()
         }}
       />
     </div>
@@ -843,7 +844,7 @@ function EnviarLinkModal({
   defaultNombre?: string
   defaultEmail?: string
   defaultTelefono?: string | null
-  onSuccess: () => void
+  onSuccess: () => void | Promise<void>
 }) {
   const [email, setEmail] = useState('')
   const [nombre, setNombre] = useState('')
@@ -878,10 +879,11 @@ function EnviarLinkModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isSubmitting) return
     setError(null)
 
-    if (!email || !nombre) {
-      setError('Email y nombre son requeridos')
+    if (!nombre.trim() || !email.trim()) {
+      setError('Escriba el nombre y el correo del arrendatario.')
       return
     }
 
@@ -892,46 +894,70 @@ function EnviarLinkModal({
         nombre_pagador: nombre,
         telefono: telefono || undefined,
       })
+      await onSuccess()
       resetForm()
-      onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo enviar el enlace')
+      setError(err instanceof Error ? err.message : 'No se pudo enviar el enlace. Intente de nuevo.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Enviar al arrendatario (autorización y luego el cobro)" size="md">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{error}</div>
-        )}
-
-        <div className="p-3 bg-primary-50 border border-primary-200 rounded-lg">
-          {/* §6.3: lo primero que recibe el arrendatario es la AUTORIZACIÓN.
-              El cobro se le genera y se le envía cuando la firme. */}
-          <p className="text-sm text-primary-800 mb-2">
-            Le enviaremos primero el enlace para <span className="font-medium">autorizar la consulta en centrales</span>.
-            Apenas lo firme le llega automáticamente el cobro a este mismo correo y WhatsApp.
-          </p>
-          <p className="text-sm text-primary-800">
-            <span className="font-medium">Concepto:</span> Estudio de arrendamiento
-          </p>
-          <p className="text-sm text-primary-800">
-            <span className="font-medium">Monto:</span> {montoFormateado}
-          </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Enviar al arrendatario"
+      description="Primero recibe el enlace para autorizar la consulta en centrales; apenas lo firme, le llega el cobro."
+      size="md"
+      footer={
+        <div className="space-y-2">
+          {error && (
+            <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              {error}
+            </p>
+          )}
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isSubmitting} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button type="submit" form="enviar-enlace-arrendatario-form" disabled={isSubmitting} aria-busy={isSubmitting || undefined} className={botonModal('primary')}>
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              {isSubmitting ? 'Enviando…' : 'Enviar al arrendatario'}
+            </button>
+          </ModalAcciones>
         </div>
+      }
+    >
+      <form id="enviar-enlace-arrendatario-form" noValidate onSubmit={handleSubmit} className="space-y-4">
+        {/* §6.3: lo primero que recibe el arrendatario es la AUTORIZACIÓN.
+            El cobro se le genera y se le envía cuando la firme. */}
+        <dl className="grid grid-cols-1 gap-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm sm:grid-cols-2">
+          <div>
+            <dt className="text-gray-600">Concepto</dt>
+            <dd className="font-medium text-gray-900">Evaluación crediticia</dd>
+          </div>
+          <div>
+            <dt className="text-gray-600">Monto</dt>
+            <dd className="font-medium tabular-nums text-gray-900">{montoFormateado}</dd>
+          </div>
+        </dl>
+        <p className="text-sm text-gray-600">
+          La autorización y el cobro llegan al correo y al WhatsApp registrados del arrendatario. Para cambiarlos,
+          corrija la ficha del arrendatario. Los datos de abajo solo se usan para el cobro si el arrendatario ya
+          autorizó la consulta.
+        </p>
 
         <div>
           <label htmlFor="pago-nombre" className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre del arrendatario <span className="text-red-500">*</span>
+            Nombre del arrendatario <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <input id="pago-nombre"
             type="text"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             placeholder="Nombre completo"
+            autoComplete="off"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             disabled={isSubmitting}
           />
@@ -939,13 +965,14 @@ function EnviarLinkModal({
 
         <div>
           <label htmlFor="pago-email" className="block text-sm font-medium text-gray-700 mb-1">
-            Email del arrendatario <span className="text-red-500">*</span>
+            Correo del arrendatario <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <input id="pago-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="correo@ejemplo.com"
+            autoComplete="off"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             disabled={isSubmitting}
           />
@@ -958,27 +985,6 @@ function EnviarLinkModal({
           placeholder="300 123 4567"
           disabled={isSubmitting}
         />
-
-        <div className="flex justify-end gap-3 pt-2 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            disabled={isSubmitting}
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors disabled:opacity-50 flex items-center gap-2"
-            disabled={isSubmitting}
-          >
-            {isSubmitting && (
-              <IconLoader size={16} className="animate-spin" />
-            )}
-            {isSubmitting ? 'Enviando...' : 'Enviar al arrendatario'}
-          </button>
-        </div>
       </form>
     </Modal>
   )
@@ -1189,15 +1195,28 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
           isOpen={!!facturaModal}
           onClose={() => !facturando && setFacturaModal(null)}
           title="Datos fiscales para su factura"
+          description="Faltan algunos datos para emitir la factura electrónica ante la DIAN. Solo se usan en esta factura."
           size="md"
+          footer={
+            <ModalAcciones>
+              <button type="button" onClick={() => setFacturaModal(null)} disabled={facturando} className={botonModal('secondary')}>
+                Cancelar
+              </button>
+              <button type="submit" form="pago-factura-datos-form" disabled={facturando} aria-busy={facturando || undefined} className={botonModal('primary')}>
+                {facturando && <IconLoader size={16} className="animate-spin" />}
+                {facturando ? 'Emitiendo…' : 'Emitir factura'}
+              </button>
+            </ModalAcciones>
+          }
         >
           {facturaModal && (
             <PagoFacturaDatosForm
               faltantes={facturaModal.faltantes}
               datos={facturaModal.datos}
               onChange={(d) => setFacturaModal({ ...facturaModal, datos: d })}
-              onSubmit={handleSubmitFacturaModal}
-              onCancel={() => setFacturaModal(null)}
+              onSubmit={() => {
+                if (!facturando) void handleSubmitFacturaModal()
+              }}
               loading={facturando}
             />
           )}
@@ -1208,18 +1227,32 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
           isOpen={!!confirmModal}
           onClose={() => !facturando && setConfirmModal(null)}
           title="Confirme los datos de su factura"
+          description="La factura electrónica no se puede modificar después de emitirla. Revise que los datos sean correctos."
           size="md"
+          footer={
+            <ModalAcciones>
+              <button type="button" onClick={() => setConfirmModal(null)} disabled={facturando} className={botonModal('secondary')}>
+                Cancelar
+              </button>
+              <button type="button" onClick={handleAjustarDesdeConfirm} disabled={facturando} className={botonModal('secondary')}>
+                Corregir datos
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!facturando) void handleConfirmEmitir()
+                }}
+                disabled={facturando}
+                aria-busy={facturando || undefined}
+                className={botonModal('primary')}
+              >
+                {facturando && <IconLoader size={16} className="animate-spin" />}
+                {facturando ? 'Emitiendo…' : 'Confirmar y emitir'}
+              </button>
+            </ModalAcciones>
+          }
         >
-          {confirmModal && (
-            <ConfirmFacturaModal
-              datos={confirmModal.datos}
-              monto={confirmModal.monto}
-              onConfirmar={handleConfirmEmitir}
-              onAjustar={handleAjustarDesdeConfirm}
-              onCancelar={() => setConfirmModal(null)}
-              loading={facturando}
-            />
-          )}
+          {confirmModal && <ConfirmFacturaModal datos={confirmModal.datos} monto={confirmModal.monto} />}
         </Modal>
       </>
     )
@@ -1380,7 +1413,7 @@ const PAGO_FACTURA_LABEL: Record<string, string> = {
   tipo_documento: 'Tipo de documento',
   nombre_completo: 'Nombre completo',
   direccion: 'Dirección',
-  email: 'Email',
+  email: 'Correo',
   telefono: 'Teléfono',
   municipio_codigo: 'Municipio',
 }
@@ -1390,11 +1423,11 @@ interface PagoFacturaDatosFormProps {
   datos: IDatosFiscalesPagoFactura
   onChange: (d: IDatosFiscalesPagoFactura) => void
   onSubmit: () => void
-  onCancel: () => void
   loading: boolean
 }
 
-function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, loading }: PagoFacturaDatosFormProps) {
+/** Cuerpo del modal de datos fiscales; el botón «Emitir factura» vive en el pie del modal (form="pago-factura-datos-form"). */
+function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, loading }: PagoFacturaDatosFormProps) {
   const set = (key: keyof IDatosFiscalesPagoFactura, value: string) => {
     onChange({ ...datos, [key]: value })
   }
@@ -1403,22 +1436,28 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
   const [municipioNombre, setMunicipioNombre] = useState('')
 
   return (
-    <div className="space-y-4">
-      <div className="bg-amber-50 border border-amber-200 rounded-md p-3 text-xs text-amber-800">
-        Necesitamos completar sus datos para emitir la factura electrónica ante la DIAN. Solo se
-        usan en esta factura — no se guardan en su perfil.
-      </div>
+    <form
+      id="pago-factura-datos-form"
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSubmit()
+      }}
+      className="space-y-4"
+    >
+      <p className="text-sm text-gray-600">No se guardan en su perfil.</p>
 
       {faltantes.includes('numero_documento') && (
         <div>
           <label htmlFor="pago-datos-numero_documento" className="block text-sm font-medium text-gray-700 mb-1">
-            {PAGO_FACTURA_LABEL.numero_documento} <span className="text-red-500">*</span>
+            {PAGO_FACTURA_LABEL.numero_documento} <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <input id="pago-datos-numero_documento"
             type="text"
             value={datos.numero_documento || ''}
             onChange={(e) => set('numero_documento', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            disabled={loading}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
             placeholder="1234567890"
           />
         </div>
@@ -1427,30 +1466,33 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
       {faltantes.includes('direccion') && (
         <div>
           <label htmlFor="pago-datos-direccion" className="block text-sm font-medium text-gray-700 mb-1">
-            {PAGO_FACTURA_LABEL.direccion} <span className="text-red-500">*</span>
+            {PAGO_FACTURA_LABEL.direccion} <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <input id="pago-datos-direccion"
             type="text"
             value={datos.direccion || ''}
             onChange={(e) => set('direccion', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            disabled={loading}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
             placeholder="Calle 100 # 20-30"
           />
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {faltantes.includes('email') && (
           <div>
             <label htmlFor="pago-datos-email" className="block text-sm font-medium text-gray-700 mb-1">
-              {PAGO_FACTURA_LABEL.email} <span className="text-red-500">*</span>
+              {PAGO_FACTURA_LABEL.email} <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <input id="pago-datos-email"
               type="email"
               value={datos.email || ''}
               onChange={(e) => set('email', e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              disabled={loading}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
               placeholder="nombre@correo.com"
+              autoComplete="email"
             />
           </div>
         )}
@@ -1458,13 +1500,14 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
         {faltantes.includes('telefono') && (
           <div>
             <label htmlFor="pago-datos-telefono" className="block text-sm font-medium text-gray-700 mb-1">
-              {PAGO_FACTURA_LABEL.telefono} <span className="text-red-500">*</span>
+              {PAGO_FACTURA_LABEL.telefono} <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <input id="pago-datos-telefono"
               type="tel"
               value={datos.telefono || ''}
               onChange={(e) => set('telefono', e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              disabled={loading}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 disabled:bg-gray-100"
               placeholder="3001234567"
             />
           </div>
@@ -1484,26 +1527,7 @@ function PagoFacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, 
         />
       )}
 
-      <div className="flex justify-end gap-2 pt-3 border-t border-gray-200">
-        <button
-          onClick={onCancel}
-          disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={onSubmit}
-          disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-md hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
-        >
-          {loading && (
-            <IconLoader size={16} className="animate-spin" />
-          )}
-          Emitir factura
-        </button>
-      </div>
-    </div>
+    </form>
   )
 }
 
@@ -1521,13 +1545,10 @@ const TIPO_DOC_LABEL: Record<string, string> = {
   pasaporte: 'Pasaporte',
 }
 
+/** Cuerpo del modal de confirmación; las acciones viven en el pie del modal. */
 function ConfirmFacturaModal({
   datos,
   monto,
-  onConfirmar,
-  onAjustar,
-  onCancelar,
-  loading,
 }: {
   datos: {
     nombre_completo: string
@@ -1540,10 +1561,6 @@ function ConfirmFacturaModal({
     municipio_nombre: string
   }
   monto: number
-  onConfirmar: () => void | Promise<void>
-  onAjustar: () => void
-  onCancelar: () => void
-  loading: boolean
 }) {
   const tipoDocLabel = TIPO_DOC_LABEL[datos.tipo_documento?.toLowerCase()] || datos.tipo_documento || '—'
   const formattedMonto = monto > 0
@@ -1553,22 +1570,21 @@ function ConfirmFacturaModal({
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-600">
-        Vamos a emitir su factura electrónica con los datos de su registro.
-        Verifique que sean correctos — la factura no puede modificarse después de emitirse.
+        Se emitirá con los datos de su registro. Si algo no está bien, use «Corregir datos».
       </p>
 
       {formattedMonto && (
-        <div className="px-3 py-2 bg-primary-50 border border-primary-200 rounded text-sm">
-          <p className="text-xs text-primary-700">Monto a facturar:</p>
-          <p className="font-semibold text-primary-900">{formattedMonto}</p>
+        <div className="rounded-lg border border-gray-200 px-3 py-2">
+          <p className="text-sm text-gray-600">Monto a facturar</p>
+          <p className="text-lg font-semibold tabular-nums text-gray-900">{formattedMonto}</p>
         </div>
       )}
 
-      <div className="bg-gray-50 border border-gray-200 rounded-lg divide-y divide-gray-200">
+      <dl className="bg-gray-50 border border-gray-200 rounded-lg divide-y divide-gray-200">
         <DataRow label="Nombre" value={datos.nombre_completo || '—'} />
         <DataRow label="Tipo de documento" value={tipoDocLabel} />
         <DataRow label="Número de documento" value={datos.numero_documento || '—'} />
-        <DataRow label="Email" value={datos.email || '—'} />
+        <DataRow label="Correo" value={datos.email || '—'} />
         <DataRow label="Teléfono" value={datos.telefono || '—'} />
         <DataRow label="Dirección" value={datos.direccion || '—'} />
         <DataRow
@@ -1579,34 +1595,7 @@ function ConfirmFacturaModal({
               : datos.municipio_codigo || '—'
           }
         />
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:justify-end gap-2 pt-2">
-        <button
-          onClick={onCancelar}
-          disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={onAjustar}
-          disabled={loading}
-          className="px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50"
-        >
-          Ajustar datos
-        </button>
-        <button
-          onClick={onConfirmar}
-          disabled={loading}
-          className="px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {loading && (
-            <IconLoader size={16} className="animate-spin" />
-          )}
-          Confirmar y emitir
-        </button>
-      </div>
+      </dl>
     </div>
   )
 }
@@ -1614,8 +1603,8 @@ function ConfirmFacturaModal({
 function DataRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-3 px-3 py-2 text-sm">
-      <span className="text-gray-500 shrink-0">{label}</span>
-      <span className="text-gray-900 font-medium text-right break-words">{value}</span>
+      <dt className="text-gray-600 shrink-0">{label}</dt>
+      <dd className="min-w-0 text-gray-900 font-medium text-right break-words">{value}</dd>
     </div>
   )
 }

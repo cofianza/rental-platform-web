@@ -17,7 +17,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconLoader, IconCheck } from '@/components/icons'
 import { useAuthStore } from '@/stores/auth.store'
 import { expedienteService } from '@/services/expedienteService'
@@ -259,13 +259,43 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary', resumen }: MeIn
         isOpen={showModal}
         onClose={closeModal}
         title="Solicitar visita al inmueble"
+        description="Elija un horario disponible. Quien publica el inmueble confirmará o ajustará la fecha."
         size="lg"
+        footer={
+          <div className="space-y-2">
+            {!fechaPropuesta && (
+              <p id="me-interesa-falta-horario" className="text-sm text-gray-600 sm:text-right">
+                Seleccione fecha y hora para continuar.
+              </p>
+            )}
+            <ModalAcciones>
+              <button type="button" onClick={closeModal} disabled={submitting} className={botonModal('secondary')}>
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="me-interesa-cita-form"
+                disabled={submitting || !fechaPropuesta}
+                aria-busy={submitting || undefined}
+                aria-describedby={!fechaPropuesta ? 'me-interesa-falta-horario' : undefined}
+                className={botonModal('primary')}
+              >
+                {submitting && <IconLoader size={16} className="animate-spin" />}
+                {submitting ? 'Enviando…' : 'Enviar solicitud'}
+              </button>
+            </ModalAcciones>
+          </div>
+        }
       >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Elija un horario disponible. Quien publica el inmueble confirmará o ajustará la fecha.
-          </p>
-
+        <form
+          id="me-interesa-cita-form"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!submitting) void handleSubmit()
+          }}
+          className="space-y-4"
+        >
           <SlotSelector
             inmuebleId={inmuebleId}
             value={fechaPropuesta}
@@ -273,56 +303,33 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary', resumen }: MeIn
           />
 
           {/* Resumen de la selección actual */}
-          {fechaPropuesta ? (
-            <div className="flex items-start gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded">
-              <IconCheck size={16} className="text-primary-600 mt-0.5 shrink-0" />
-              <p className="text-sm text-primary-900">
+          {fechaPropuesta && (
+            <p role="status" className="flex items-start gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
+              <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-700" />
+              <span>
                 Visitará el <strong>{formatFechaCompleta(fechaPropuesta)}</strong> a las{' '}
                 <strong>{formatSlotHora(fechaPropuesta)}</strong>
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-500 italic">Seleccione un horario arriba.</p>
+              </span>
+            </p>
           )}
 
           <div>
             <label htmlFor="me-interesa-c-t-a-notas-para-el-propietario-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-              Notas para quien publica el inmueble (opcional)
+              Notas para quien publica el inmueble <span className="font-normal text-gray-500">(opcional)</span>
             </label>
             <textarea id="me-interesa-c-t-a-notas-para-el-propietario-opcional"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               rows={3}
               maxLength={500}
+              disabled={submitting}
+              aria-describedby="me-interesa-notas-contador"
               placeholder="Cuéntele por qué le interesa, o deje alguna observación para la visita."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
             />
-            <p className="text-xs text-gray-500 mt-1 text-right">{notas.length}/500</p>
+            <p id="me-interesa-notas-contador" className="text-xs text-gray-500 mt-1 text-right tabular-nums">{notas.length}/500</p>
           </div>
-
-          <div className="flex flex-col items-end gap-2 pt-2">
-            <div className="flex gap-3">
-              <button
-                onClick={closeModal}
-                disabled={submitting}
-                className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || !fechaPropuesta}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
-              >
-                {submitting && <IconLoader size={14} className="animate-spin" />}
-                Enviar solicitud
-              </button>
-            </div>
-            {!fechaPropuesta && (
-              <p className="text-xs text-gray-500">Seleccione fecha y hora para continuar.</p>
-            )}
-          </div>
-        </div>
+        </form>
       </Modal>
 
       {/* Modal del visitante SIN cuenta: formulario corto de interés (lead) */}

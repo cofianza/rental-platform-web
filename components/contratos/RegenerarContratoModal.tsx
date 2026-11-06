@@ -15,10 +15,10 @@
 
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { IconX, IconLoader, IconRefresh } from '@/components/icons'
+import { IconLoader, IconRefresh } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { SERVICIOS_CONTRATO } from '@/components/expedientes/serviciosContrato'
@@ -51,6 +51,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
   const [reasignarServicios, setReasignarServicios] = useState(false)
   const [servicios, setServicios] = useState<Record<string, CargoOpt>>(SERVICIOS_DEFAULT)
   const [submitting, setSubmitting] = useState(false)
+  const [errorCanon, setErrorCanon] = useState<string | null>(null)
 
   useEffect(() => {
     if (isOpen && contrato) {
@@ -60,18 +61,27 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
       setReasignarServicios(false)
       setServicios(SERVICIOS_DEFAULT)
       setSubmitting(false)
+      setErrorCanon(null)
     }
   }, [isOpen, contrato])
 
   if (!isOpen || !contrato) return null
 
+  const handleClose = () => {
+    if (submitting) return
+    onClose()
+  }
+
+  const puedeGuardar = !submitting && fechaCompleta(fechaInicio) && !!duracionMeses
+
   async function handleSubmit() {
-    if (!contrato) return
+    if (!contrato || submitting) return
+    setErrorCanon(null)
     setSubmitting(true)
     try {
       const valor = valorArriendo.trim() ? Number(valorArriendo) : undefined
       if (valor !== undefined && (Number.isNaN(valor) || valor <= 0)) {
-        toast.error('El valor del canon debe ser un número positivo')
+        setErrorCanon('El valor del canon debe ser un número mayor que cero.')
         setSubmitting(false)
         return
       }
@@ -108,24 +118,39 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={submitting ? () => {} : onClose} bare ariaLabel="Regenerar contrato" closeOnBackdrop={false} className="rounded-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col">
-      <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Editar y regenerar contrato</h2>
-        <button type="button" data-modal-close aria-label="Cerrar"
-          onClick={onClose}
-          disabled={submitting}
-          className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100 disabled:opacity-50"
-        >
-          <IconX size={20} />
-        </button>
-      </div>
-
-      <div className="p-4 sm:p-6 space-y-5 overflow-y-auto">
-        <p className="text-sm text-gray-600">
-          Ajuste los datos modificables de común acuerdo. Al guardar se genera una nueva versión del PDF.
-          La identidad del arrendatario no es editable.
-        </p>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Editar y regenerar contrato"
+      description="Ajuste los datos que se cambian de común acuerdo. Al guardar se genera una nueva versión del PDF; la identidad del arrendatario no se puede editar."
+      size="md"
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={handleClose} disabled={submitting} className={botonModal('secondary')}>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="regenerar-contrato-form"
+            disabled={!puedeGuardar}
+            aria-busy={submitting || undefined}
+            className={botonModal('primary')}
+          >
+            {submitting ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
+            {submitting ? 'Regenerando…' : 'Guardar y regenerar'}
+          </button>
+        </ModalAcciones>
+      }
+    >
+      <form
+        id="regenerar-contrato-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (puedeGuardar) void handleSubmit()
+        }}
+        className="space-y-5"
+      >
         <div>
           <label htmlFor="regenerar-contrato-modal-fecha-de-inicio" className="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio</label>
           <input id="regenerar-contrato-modal-fecha-de-inicio"
@@ -159,12 +184,20 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
             type="text"
             inputMode="numeric"
             value={valorArriendo ? Number(valorArriendo).toLocaleString('es-CO') : ''}
-            onChange={(e) => setValorArriendo(e.target.value.replace(/\D/g, '').slice(0, 12))}
+            onChange={(e) => {
+              setValorArriendo(e.target.value.replace(/\D/g, '').slice(0, 12))
+              setErrorCanon(null)
+            }}
+            aria-invalid={errorCanon ? true : undefined}
+            aria-describedby="regenerar-contrato-canon-ayuda"
             placeholder="Sin cambios se conserva el canon actual"
             disabled={submitting}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm disabled:bg-gray-50"
           />
-          <p className="text-xs text-gray-500 mt-1">
+          {errorCanon && (
+            <p role="alert" className="mt-1 text-xs text-red-600">{errorCanon}</p>
+          )}
+          <p id="regenerar-contrato-canon-ayuda" className="text-xs text-gray-500 mt-1">
             Si no lo cambia, se conserva el canon actual del contrato. Un canon nuevo no puede
             superar el <strong>10%</strong> sobre el valor del inmueble.
           </p>
@@ -172,7 +205,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
 
         {/* 4.1e — distribución de obligaciones (opt-in para no resetear la actual) */}
         <div className="border-t border-gray-100 pt-4">
-          <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <label className="flex min-h-10 items-center gap-2 text-sm font-medium text-gray-700">
             <input
               type="checkbox"
               checked={reasignarServicios}
@@ -184,19 +217,20 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
           </label>
           {reasignarServicios && (
             <div className="mt-3 space-y-2">
-              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                 Solo se actualizan los servicios que cambie; el resto conserva su asignación actual.
               </p>
               {SERVICIOS_CONTRATO.map((s) => (
                 <div key={s.key} className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-gray-700">{s.label}</span>
+                  <label htmlFor={`regenerar-contrato-servicio-${s.key}`} className="text-sm text-gray-700">{s.label}</label>
                   <select
+                    id={`regenerar-contrato-servicio-${s.key}`}
                     value={servicios[s.key]}
                     onChange={(e) =>
                       setServicios({ ...servicios, [s.key]: e.target.value as CargoOpt })
                     }
                     disabled={submitting}
-                    className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
+                    className="min-h-10 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
                   >
                     <option value="">(sin cambio)</option>
                     <option value="arrendatario">Arrendatario</option>
@@ -207,29 +241,7 @@ export function RegenerarContratoModal({ isOpen, onClose, contrato, onRegenerate
             </div>
           )}
         </div>
-      </div>
-
-      <div className="flex flex-wrap justify-end gap-2 px-4 py-4 sm:px-6 border-t border-gray-200">
-        <button
-          onClick={onClose}
-          disabled={submitting}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={submitting || !fechaCompleta(fechaInicio) || !duracionMeses}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-        >
-          {submitting ? (
-            <IconLoader size={16} className="animate-spin" />
-          ) : (
-            <IconRefresh size={16} />
-          )}
-          {submitting ? 'Regenerando…' : 'Guardar y regenerar'}
-        </button>
-      </div>
+      </form>
     </Modal>
   )
 }
