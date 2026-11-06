@@ -77,17 +77,29 @@ export function EstudiosExpedientesFusion() {
   // evaluación (coarrendatarios, reevaluaciones, canceladas) decían 9 y al
   // pulsarlas la lista traía 5.
   const [conteos, setConteos] = useState<Partial<Record<EstudioFiltro, number>> | null>(null)
+  // Se recalculan al montar (volver a la lista) y al recuperar la ventana: un estudio
+  // movido en otra pestaña dejaba los números del aviso y de los chips viejos.
+  useEffect(() => {
+    const contar = () =>
+      Promise.all(
+        (['requiere_accion', 'sin_estudio', 'en_proceso', 'condicionado', 'aprobado', 'rechazado'] as const).map((f) =>
+          expedienteService.getExpedientes({ estudio_filtro: f, page: 1, limit: 1 }).then((r) => [f, r.meta.total] as const),
+        ),
+      )
+        .then((rs) => setConteos(Object.fromEntries(rs)))
+        // Sin conteos los chips van sin número y no sale el aviso (nunca un «0» falso).
+        .catch(() => {})
+    void contar()
+    const alVolver = () => {
+      if (document.visibilityState === 'visible') void contar()
+    }
+    document.addEventListener('visibilitychange', alVolver)
+    return () => document.removeEventListener('visibilitychange', alVolver)
+  }, [])
+
   useEffect(() => {
     // Solo alimenta la frase del encabezado: si falla, la frase no sale.
     estudioService.getStats().then(setStats).catch(() => {})
-    Promise.all(
-      (['requiere_accion', 'sin_estudio', 'en_proceso', 'condicionado', 'aprobado', 'rechazado'] as const).map((f) =>
-        expedienteService.getExpedientes({ estudio_filtro: f, page: 1, limit: 1 }).then((r) => [f, r.meta.total] as const),
-      ),
-    )
-      .then((rs) => setConteos(Object.fromEntries(rs)))
-      // Sin conteos los chips van sin número y no sale el aviso (nunca un «0» falso).
-      .catch(() => {})
     if (esPropietario) return
     creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => setSaldoError(true))
     listMiembros()
@@ -109,6 +121,13 @@ export function EstudiosExpedientesFusion() {
   const tasa = decididos > 0 ? Math.round((aprobados / decididos) * 1000) / 10 : null
   const activeChip: EstudioFiltro = filters.estudio_filtro ?? 'todos'
   const pendientes = conteos?.requiere_accion ?? 0
+  // Los conteos son de toda la cartera: con búsqueda, responsable o periodo no coinciden con la lista y se ocultan.
+  const conFiltros = hasActiveFilters()
+  // «Todos»: el total de la lista cuando no hay chip ni filtros; se recuerda al cambiar de chip.
+  const [totalTodos, setTotalTodos] = useState<number | null>(null)
+  if (activeChip === 'todos' && !conFiltros && !isLoading && meta && meta.total !== totalTodos) setTotalTodos(meta.total)
+  const conteoChip = (f: EstudioFiltro): number | undefined =>
+    conFiltros ? undefined : f === 'todos' ? (totalTodos ?? undefined) : conteos?.[f]
   const elegir = (f: EstudioFiltro) => setFilters({ estudio_filtro: f, page: 1 })
   // Sin ningún estudio todavía: los chips y la barra de filtros no tienen qué filtrar.
   const sinEstudios = !isLoading && !error && meta?.total === 0 && activeChip === 'todos' && !hasActiveFilters()
@@ -128,7 +147,8 @@ export function EstudiosExpedientesFusion() {
               (stats.este_mes === 1
                 ? ' Este mes se inició 1 evaluación crediticia.'
                 : ` Este mes se iniciaron ${stats.este_mes} evaluaciones crediticias.`)}
-            {tasa != null && ` Tasa de aprobación: ${tasa.toLocaleString('es-CO')} % (${aprobados} de ${decididos} con resultado).`}
+            {tasa != null &&
+              ` Tasa de aprobación: ${tasa.toLocaleString('es-CO')} % (${aprobados} ${aprobados === 1 ? 'aprobado' : 'aprobados'} de ${decididos} ${decididos === 1 ? 'decidido' : 'decididos'}).`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -189,7 +209,7 @@ export function EstudiosExpedientesFusion() {
           <nav aria-label="Filtrar por etapa" className="flex min-w-max gap-1 pr-6 sm:min-w-0 sm:flex-wrap sm:pr-0">
             {CHIPS.map((c) => {
               const activo = activeChip === c.id
-              const n = conteos?.[c.id]
+              const n = conteoChip(c.id)
               const turno = c.id === 'requiere_accion' && !!n && puedeEditar
               return (
                 <button

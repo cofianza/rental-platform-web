@@ -175,6 +175,7 @@ const M = EXPEDIENTE_UI_MESSAGES
 const VACIO: Record<NonNullable<ExpedientesTableProps['vacio']>, [string, string | null]> = {
   accion: [M.VACIO_ACCION_TITULO, M.VACIO_ACCION_TEXTO],
   accion_equipo: [M.VACIO_ACCION_EQUIPO_TITULO, M.VACIO_ACCION_EQUIPO_TEXTO],
+  nada_equipo: [M.VACIO_NADA_TITULO, M.VACIO_NADA_EQUIPO_TEXTO],
   filtros: [M.VACIO_FILTROS_TITULO, M.VACIO_FILTROS_TEXTO],
   nada: [M.VACIO_NADA_TITULO, M.VACIO_NADA_TEXTO],
   bandeja: [M.VACIO_BANDEJA_TITULO, null],
@@ -203,7 +204,7 @@ export interface ExpedientesTableProps {
   /** Id del estudio que se está asignando ahora mismo (deshabilita su botón). */
   tomandoId?: string | null
   /** Por qué está vacía: pendientes del gestor, filtros, sin estudios o bandeja de Cofianza. */
-  vacio?: 'accion' | 'accion_equipo' | 'filtros' | 'nada' | 'bandeja' | 'asignados' | 'asignados_bandeja'
+  vacio?: 'accion' | 'accion_equipo' | 'nada_equipo' | 'filtros' | 'nada' | 'bandeja' | 'asignados' | 'asignados_bandeja'
   onClearFilters?: () => void
 }
 
@@ -218,28 +219,33 @@ interface Fila {
 /** Sin nada por hacer de nadie: «Qué sigue» lo dice en vez de dejar un guion. */
 const SIN_PENDIENTES: EtapaEstudio[] = ['vigente', 'finalizado', 'cancelado', 'no_aprobado', 'no_habilitada']
 
-/**
- * Turno del gestor sin acción en ACCION_GESTOR: en la lista «Su turno» a secas
- * no decía qué hacer (el detalle lo explica con «aquí abajo», que aquí no sirve).
- */
-const ACCION_LISTA: Partial<Record<EtapaEstudio, string>> = {
-  visita: 'agendar la visita',
-}
+/** Identidad rechazada: el RPC la cuenta como turno del gestor, pero datosEstadoFila le quita la pastilla de turno. */
+const identidadRechazada = (e: IExpediente) => e.estudio_vigente?.estado_bloqueo === 'identidad_rechazada'
 
 /** Qué sigue cuando la fila no lleva turno (la etapa ya nombra a quién se espera o el estudio terminó). */
-function sinTurno(datos: DatosEstadoFila, e: IExpediente): string | null {
+function sinTurno(datos: DatosEstadoFila, e: IExpediente, vista: VistaTurno): string | null {
   if (SIN_PENDIENTES.includes(datos.etapa)) return 'Nada pendiente'
-  if (e.estudio_vigente?.estado_bloqueo === 'identidad_rechazada') return 'Comuníquese con Cofianza'
+  // En la visita el RPC no da turno (depende_de NULL): la lista dice qué falta.
+  if (datos.etapa === 'visita') return vista === 'gestor' ? 'Agende la visita o indique que ya se hizo' : 'Falta la visita'
+  if (identidadRechazada(e)) return 'Su equipo debe comunicarse con Cofianza'
   if (datos.etapa === 'decision' && e.depende_de === 'cofianza') return 'Esperando a Cofianza'
-  if (datos.etapa === 'espera_coarrendatario') return 'Esperando al coarrendatario'
+  // La etapa ya dice «Esperando al coarrendatario»: aquí, lo que falta.
+  if (datos.etapa === 'espera_coarrendatario') return 'Esperando su autorización'
   return null
 }
 
 function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
   const { datos, propio, expediente } = fila
+  if (propio && identidadRechazada(expediente)) {
+    return (
+      <span className="inline-flex items-start gap-1.5 text-sm font-semibold text-coral-700">
+        <IconArrowRight size={16} className="mt-0.5 shrink-0" />
+        Su turno: comuníquese con Cofianza
+      </span>
+    )
+  }
   if (datos.turno) {
-    const accion = datos.turno.accion ?? (datos.turno.turno === 'gestor' ? ACCION_LISTA[datos.etapa] : undefined)
-    const texto = textoTurno(datos.turno.turno, vista, { ...datos.turno, accion })
+    const texto = textoTurno(datos.turno.turno, vista, datos.turno)
     if (propio) {
       return (
         <span className="inline-flex items-start gap-1.5 text-sm font-semibold text-coral-700">
@@ -251,7 +257,7 @@ function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
     // Solo lectura: el turno es de su equipo, no de quien mira (sin coral: no puede hacerlo).
     return <span className={cn('block text-sm', datos.turno.turno === 'gestor' ? 'font-medium text-gray-800' : 'text-gray-600')}>{texto}</span>
   }
-  const texto = sinTurno(datos, expediente)
+  const texto = sinTurno(datos, expediente, vista)
   if (texto) return <span className="block text-sm text-gray-500">{texto}</span>
   return (
     <span className="text-sm text-gray-400">
@@ -325,8 +331,13 @@ export function ExpedientesTable({
   }
 
   const filas: Fila[] = expedientes.map((expediente) => {
-    const datos = datosEstadoFila(expediente, { interno: false, vista, ahora, yo })
-    return { expediente, datos, propio: vista === 'gestor' && !!datos.turno && turnoPropio(datos.turno.turno, vista, datos.turno) }
+    const d = datosEstadoFila(expediente, { interno: false, vista, ahora, yo })
+    // «Qué sigue» ya dice que hay que comunicarse con Cofianza: la etapa no lo repite.
+    const datos = identidadRechazada(expediente) ? { ...d, texto: 'Identidad rechazada' } : d
+    const propio =
+      vista === 'gestor' &&
+      ((!!datos.turno && turnoPropio(datos.turno.turno, vista, datos.turno)) || (identidadRechazada(expediente) && expediente.depende_de === 'gestor'))
+    return { expediente, datos, propio }
   })
   const conPuntaje = filas.some((f) => f.datos.score > 0)
 
@@ -498,7 +509,7 @@ export function ExpedientesTable({
       {/* Una sola vez al pie, no en cada fila: «(no es el de Cofianza)» competía con la etapa. */}
       {conPuntaje && (
         <p className="pt-3 text-xs text-gray-500">
-          Puntaje de la central: el de la central de riesgo, de 0 a 999. No es el puntaje de Cofianza.
+          El puntaje que se muestra es el de la central de riesgo (0 a 999), no el de Cofianza.
         </p>
       )}
 
@@ -520,7 +531,8 @@ export function EstadoVacio({
   /** Solo lectura: lo pendiente es de su equipo, no de quien mira. */
   equipo?: boolean
 }) {
-  const [titulo, texto] = VACIO[vacio === 'accion' && equipo ? 'accion_equipo' : vacio]
+  // Solo lectura (o sin poder crear): lo pendiente y lo nuevo son de su equipo, no de quien mira.
+  const [titulo, texto] = VACIO[equipo && vacio === 'accion' ? 'accion_equipo' : equipo && vacio === 'nada' ? 'nada_equipo' : vacio]
   return (
     <div className="text-center py-12">
       {vacio === 'accion' || vacio === 'accion_equipo' ? (
