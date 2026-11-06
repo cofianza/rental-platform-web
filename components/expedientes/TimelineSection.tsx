@@ -92,12 +92,24 @@ type ConfigEvento = (typeof EVENTO_CONFIG)[string]
 const ESTUDIO_NEGATIVO: ConfigEvento = { icon: IconX, color: 'text-red-600', bgColor: 'bg-red-100' }
 const ESTUDIO_POSITIVO: ConfigEvento = { icon: IconCheck, color: 'text-green-600', bgColor: 'bg-green-100' }
 const ESTUDIO_NEUTRO: ConfigEvento = { icon: IconSearch, color: 'text-amber-600', bgColor: 'bg-amber-100' }
+const ESTUDIO_ATENCION: ConfigEvento = { icon: IconAlertTriangle, color: 'text-orange-700', bgColor: 'bg-orange-100' }
+
+/**
+ * Eventos que el analista tiene que mirar aunque no sean un resultado: el
+ * coarrendatario evaluado que no se pondera y los antecedentes que llegaron
+ * tarde con hallazgos (revisión de estudios 15-23).
+ */
+function pideAtencion(evento: ITimelineEvento): boolean {
+  const origen = evento.detalle?.origen
+  return origen === 'coarrendatario_no_ponderado' || (origen === 'antecedentes_tardios' && evento.detalle?.hallazgo === true)
+}
 
 /** El ícono de un evento de evaluación dice cómo salió: un ✓ en un rechazo engañaba. */
 function configEvento(evento: ITimelineEvento): ConfigEvento {
   if (evento.tipo !== 'estudio') return EVENTO_CONFIG[evento.tipo] || EVENTO_CONFIG.comentario
+  if (pideAtencion(evento)) return ESTUDIO_ATENCION
   const d = evento.descripcion.toLowerCase()
-  if (/no aprobad|rechazad|sin efecto|no califica/.test(d)) return ESTUDIO_NEGATIVO
+  if (/no aprobad|no aprobable|rechazad|sin efecto|no califica/.test(d)) return ESTUDIO_NEGATIVO
   if (/aprobad|autoriz/.test(d)) return ESTUDIO_POSITIVO
   return ESTUDIO_NEUTRO
 }
