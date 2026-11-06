@@ -70,9 +70,10 @@ export function BandejaTabs({
     <div className="space-y-4">
       {/* Tabs + Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        {/* Bandeja tabs con scroll horizontal */}
-        <div className="flex-1 overflow-x-auto">
-          <nav className="flex gap-1 min-w-max sm:min-w-0 sm:flex-wrap" aria-label="Bandejas">
+        {/* Bandeja tabs con scroll horizontal. En móvil el borde derecho se
+            desvanece: sin esa pista, «Condicionados» cortado no parecía deslizable. */}
+        <div className="-mx-4 flex-1 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
+          <nav className="flex gap-1 min-w-max pr-6 sm:min-w-0 sm:flex-wrap sm:pr-0" aria-label="Bandejas">
             {/* Cofianza no tiene esa pestaña: llega al filtro por el enlace del aviso
                 de bloqueos, y sin este chip quedaba activo sin decirlo ni poder quitarse. */}
             {requiereAccionActivo && (
@@ -80,7 +81,7 @@ export function BandejaTabs({
                 type="button"
                 onClick={() => onBandejaChange(null)}
                 aria-label="Quitar el filtro Turno del gestor"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all border bg-coral-50 text-coral-700 border-coral-300 hover:bg-coral-100"
+                className="flex h-10 items-center gap-1.5 px-3 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border bg-coral-50 text-coral-700 border-coral-300 hover:bg-coral-100"
               >
                 Turno del gestor
                 <IconX size={14} />
@@ -99,33 +100,25 @@ export function BandejaTabs({
                   aria-pressed={isActive}
                   onClick={() => onBandejaChange(bandeja.estado)}
                   className={cn(
-                    'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all',
+                    'flex h-10 items-center gap-1.5 px-3 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
                     isActive
                       ? config
                         ? `${config.bgColor} ${config.textColor} ${config.borderColor} border`
                         : 'bg-primary-100 text-primary-700 border border-primary-300'
-                      : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-transparent'
                   )}
                 >
-                  {bandeja.estado && (
-                    <span
-                      className={cn(
-                        'w-2 h-2 rounded-full',
-                        isActive && config
-                          ? config.textColor.replace('text-', 'bg-')
-                          : 'bg-gray-400'
-                      )}
-                    />
-                  )}
+                  {/* Sin punto de color: en las inactivas era un punto gris en cada una, y el
+                      color de la activa ya lo da el fondo. */}
                   {bandeja.label}
                   <span
                     className={cn(
-                      'inline-flex items-center justify-center min-w-[20px] px-1.5 py-0.5 rounded-full text-xs font-semibold',
+                      'inline-flex items-center justify-center min-w-[20px] px-1.5 py-0.5 rounded-full text-xs font-semibold tabular-nums',
                       isActive
                         ? config
                           ? `${config.textColor} bg-white/60`
                           : 'text-primary-700 bg-white/60'
-                        : 'text-gray-500 bg-gray-100'
+                        : 'text-gray-600 bg-gray-100'
                     )}
                   >
                     {count}
@@ -133,7 +126,8 @@ export function BandejaTabs({
                   {/* U3: cuántos de los condicionados esperan la decisión de Cofianza:
                       es el trabajo del analista, por eso aparte y en coral. */}
                   {bandeja.estado === 'condicionado' && !!stats?.condicionados_por_decidir && (
-                    <span className="inline-flex items-center rounded-full bg-coral-100 px-1.5 py-0.5 text-xs font-semibold text-coral-800">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-coral-700">
+                      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-coral-500" />
                       {stats.condicionados_por_decidir} por decidir
                     </span>
                   )}
@@ -161,7 +155,7 @@ export function ToggleAsignados({ activo, onToggle }: { activo: boolean; onToggl
       aria-pressed={activo}
       onClick={onToggle}
       className={cn(
-        'flex h-10 items-center gap-2 px-3 rounded-lg text-sm font-medium whitespace-nowrap transition-all border shrink-0',
+        'flex h-10 items-center gap-2 px-3 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border shrink-0',
         activo
           ? 'bg-primary-50 text-primary-700 border-primary-300'
           : 'text-gray-600 hover:bg-gray-100 border-gray-200'

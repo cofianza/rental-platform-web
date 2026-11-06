@@ -23,6 +23,7 @@ import { BandejaTabs, ToggleAsignados } from './BandejaTabs'
 import { ExpedientesFilters } from './ExpedientesFilters'
 import { ExpedientesTablaCofianza, ExpedientesTablaCofianzaSkeleton } from './ExpedientesTablaCofianza'
 import { EXPEDIENTE_UI_MESSAGES } from './constants'
+import { instanteBogota } from '@/lib/utils'
 
 export function ExpedientesListado() {
   const user = useAuthStore((s) => s.user)
@@ -68,11 +69,12 @@ export function ExpedientesListado() {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Error al cargar estudios</h3>
-        <p className="text-sm text-gray-500 mb-4">{error}</p>
+        <h2 className="text-lg font-medium text-gray-900 mb-2">No se pudieron cargar los estudios</h2>
+        <p className="mx-auto max-w-md text-sm text-gray-500 mb-4">{error}</p>
         <button
+          type="button"
           onClick={() => fetchExpedientes()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
+          className="inline-flex min-h-10 items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconRefresh size={18} />
           {EXPEDIENTE_UI_MESSAGES.ERROR_RETRY}
@@ -97,8 +99,8 @@ export function ExpedientesListado() {
                 ...(filters.analista_id ? { analista_id: filters.analista_id } : {}),
                 ...(filters.miembro_responsable_id ? { miembro_responsable_id: filters.miembro_responsable_id } : {}),
                 // El API de exportar lee fecha_desde/fecha_hasta (dateFrom es de los reportes).
-                ...(filters.fecha_desde ? { fecha_desde: filters.fecha_desde } : {}),
-                ...(filters.fecha_hasta ? { fecha_hasta: filters.fecha_hasta } : {}),
+                ...(filters.fecha_desde ? { fecha_desde: instanteBogota(filters.fecha_desde, 'inicio') } : {}),
+                ...(filters.fecha_hasta ? { fecha_hasta: instanteBogota(filters.fecha_hasta, 'fin') } : {}),
               }}
               entityName="Estudios"
             />

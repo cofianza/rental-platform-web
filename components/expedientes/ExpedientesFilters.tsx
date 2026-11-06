@@ -5,6 +5,7 @@
 
 'use client'
 
+import { useState } from 'react'
 import { IconSearch, IconX, IconLoader, IconCalendar } from '@/components/icons'
 import { EXPEDIENTE_UI_MESSAGES } from './constants'
 import type { IExpedienteFilters, IAnalistaOption } from '@/types/expediente'
@@ -26,6 +27,116 @@ export interface ExpedientesFiltersProps {
   barra?: boolean
   /** Barra: control extra al final (p. ej. «Asignados a mí»). */
   accesorio?: React.ReactNode
+}
+
+type Periodo = '' | 'hoy' | '7' | '30' | 'mes' | 'otro'
+
+/** Fecha de hoy en Colombia como AAAA-MM-DD (lo que esperan fecha_desde/fecha_hasta). */
+function hoyBogota(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' })
+}
+
+function restarDias(iso: string, dias: number): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d - dias)).toISOString().slice(0, 10)
+}
+
+/** Rango de cada periodo; «hasta» vacío = sin tope (incluye hoy). */
+function rangoPeriodo(p: Exclude<Periodo, '' | 'otro'>, hoy: string): { fecha_desde: string; fecha_hasta: string } {
+  if (p === 'hoy') return { fecha_desde: hoy, fecha_hasta: hoy }
+  if (p === 'mes') return { fecha_desde: `${hoy.slice(0, 8)}01`, fecha_hasta: '' }
+  return { fecha_desde: restarDias(hoy, Number(p) - 1), fecha_hasta: '' }
+}
+
+function periodoDe(desde: string, hasta: string, hoy: string): Periodo {
+  if (!desde && !hasta) return ''
+  for (const p of ['hoy', '7', '30', 'mes'] as const) {
+    const r = rangoPeriodo(p, hoy)
+    if (r.fecha_desde === desde && r.fecha_hasta === hasta) return p
+  }
+  return 'otro'
+}
+
+/**
+ * Barra de la cola: un selector de periodo en vez de dos fechas nativas
+ * («dd/mm/aaaa a dd/mm/aaaa» se leía como ruido). «Otro rango…» abre
+ * las dos fechas para lo que no cabe en los periodos.
+ */
+function FiltroPeriodo({
+  desde,
+  hasta,
+  onChange,
+  campo,
+}: {
+  desde: string
+  hasta: string
+  onChange: (f: Partial<IExpedienteFilters>) => void
+  campo: string
+}) {
+  // Solo para reconocer el periodo elegido (leer la hora en cada render es impuro); elegir() la recalcula.
+  const [hoy] = useState(hoyBogota)
+  const [abrirRango, setAbrirRango] = useState(false)
+  // «Limpiar filtros» (o borrar las dos fechas) cierra el rango personalizado.
+  const [previas, setPrevias] = useState({ desde, hasta })
+  if (previas.desde !== desde || previas.hasta !== hasta) {
+    setPrevias({ desde, hasta })
+    if (!desde && !hasta) setAbrirRango(false)
+  }
+  const periodo = abrirRango ? 'otro' : periodoDe(desde, hasta, hoy)
+
+  const elegir = (p: Periodo) => {
+    if (p === 'otro') {
+      setAbrirRango(true)
+      return
+    }
+    setAbrirRango(false)
+    // «Hoy» al elegir, no al montar: con la pantalla abierta desde ayer, «Creado hoy» sería ayer.
+    onChange(p === '' ? { fecha_desde: '', fecha_hasta: '' } : rangoPeriodo(p, hoyBogota()))
+  }
+
+  const fecha = 'h-8 min-w-0 flex-1 rounded-md px-1 text-sm text-gray-900 focus:outline-none md:w-[8.5rem] md:flex-none'
+  return (
+    <>
+      <div className="relative min-w-0 grow basis-40 md:w-56 md:grow-0 md:basis-auto">
+        <IconCalendar size={16} className="pointer-events-none absolute inset-y-0 left-3 my-auto text-gray-500" />
+        <select
+          aria-label="Fecha de creación"
+          value={periodo}
+          onChange={(e) => elegir(e.target.value as Periodo)}
+          className={`${campo} w-full pl-9 pr-3`}
+        >
+          <option value="">Creado: cualquier fecha</option>
+          <option value="hoy">Creado hoy</option>
+          <option value="7">Últimos 7 días</option>
+          <option value="30">Últimos 30 días</option>
+          <option value="mes">Este mes</option>
+          <option value="otro">Otro rango…</option>
+        </select>
+      </div>
+      {periodo === 'otro' && (
+        <fieldset className="flex h-10 w-full min-w-0 items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 focus-within:ring-2 focus-within:ring-primary-500 md:w-auto">
+          <legend className="sr-only">Rango de creación</legend>
+          <input
+            type="date"
+            aria-label="Creado desde"
+            value={desde}
+            max={hasta || undefined}
+            onChange={(e) => onChange({ fecha_desde: e.target.value })}
+            className={fecha}
+          />
+          <span aria-hidden="true" className="text-sm text-gray-500">a</span>
+          <input
+            type="date"
+            aria-label="Creado hasta"
+            value={hasta}
+            min={desde || undefined}
+            onChange={(e) => onChange({ fecha_hasta: e.target.value })}
+            className={fecha}
+          />
+        </fieldset>
+      )}
+    </>
+  )
 }
 
 export function ExpedientesFilters({
@@ -78,16 +189,17 @@ export function ExpedientesFilters({
         <div className="flex flex-wrap items-center gap-2">
           {!ocultarResponsable && (
             <select
-              aria-label="Filtrar por responsable"
+              aria-label={usaMiembros ? 'Filtrar por responsable' : 'Filtrar por analista'}
               value={usaMiembros ? (filters.miembro_responsable_id ?? '') : filters.analista_id}
               onChange={(e) =>
                 onFilterChange(
                   usaMiembros ? { miembro_responsable_id: e.target.value } : { analista_id: e.target.value },
                 )
               }
-              className={`${campo} min-w-0 flex-1 px-3 md:w-52 md:flex-none`}
+              className={`${campo} min-w-0 grow basis-full px-3 sm:basis-40 md:w-48 md:grow-0 md:basis-auto`}
             >
-              <option value="">Todos los responsables</option>
+              {/* La columna de la cola se llama «Analista»: el filtro, igual. */}
+              <option value="">{usaMiembros ? 'Todos los responsables' : 'Todos los analistas'}</option>
               {usaMiembros
                 ? Object.entries(miembros ?? {}).map(([id, nombre]) => (
                     <option key={id} value={id}>
@@ -102,27 +214,7 @@ export function ExpedientesFilters({
             </select>
           )}
 
-          {/* U18: el rango lleva rótulo visible («Creado … a …»); el placeholder de un date no se ve. */}
-          <fieldset className="flex h-10 w-full min-w-0 items-center md:w-auto gap-1.5 rounded-lg border border-gray-200 bg-white pl-3 pr-1 focus-within:ring-2 focus-within:ring-primary-500">
-            <legend className="sr-only">Fecha de creación</legend>
-            <IconCalendar size={16} className="hidden shrink-0 text-gray-500 sm:block" />
-            <span aria-hidden="true" className="text-sm text-gray-600">Creado</span>
-            <input
-              type="date"
-              aria-label="Creado desde"
-              value={filters.fecha_desde}
-              onChange={(e) => onFilterChange({ fecha_desde: e.target.value })}
-              className="h-8 min-w-0 flex-1 rounded-md px-1 text-sm text-gray-900 focus:outline-none md:w-[8.5rem] md:flex-none"
-            />
-            <span aria-hidden="true" className="text-sm text-gray-500">a</span>
-            <input
-              type="date"
-              aria-label="Creado hasta"
-              value={filters.fecha_hasta}
-              onChange={(e) => onFilterChange({ fecha_hasta: e.target.value })}
-              className="h-8 min-w-0 flex-1 rounded-md px-1 text-sm text-gray-900 focus:outline-none md:w-[8.5rem] md:flex-none"
-            />
-          </fieldset>
+          <FiltroPeriodo desde={filters.fecha_desde} hasta={filters.fecha_hasta} onChange={onFilterChange} campo={campo} />
 
           {hasActiveFilters && (
             <button

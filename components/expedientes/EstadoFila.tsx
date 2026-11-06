@@ -6,12 +6,13 @@
  */
 
 import { useState } from 'react'
+import { useAuthStore } from '@/stores/auth.store'
 import type { IExpediente } from '@/types/expediente'
 import { ETAPA_LABEL, type EtapaEstudio, type Turno, type VistaTurno } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
 import { etapaDeFila, accionDeFila, revisionDemorada } from '@/lib/etapaFila'
 import { cn } from '@/lib/utils'
-import { PastillaTurno, type OpcionesTurno } from './PastillaTurno'
+import { PastillaTurno, analistaAjeno, type OpcionesTurno } from './PastillaTurno'
 import { fechaCondicion } from './textoVisible'
 
 export const AYUDA_PUNTAJE =
@@ -21,9 +22,9 @@ export type Tono = 'verde' | 'rojo' | 'ambar' | 'azul' | 'gris'
 
 const TONO: Record<Tono, { wrap: string; dot: string }> = {
   verde: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600' },
-  rojo: { wrap: 'bg-red-50 text-red-600', dot: 'bg-red-500' },
+  rojo: { wrap: 'bg-red-50 text-red-700', dot: 'bg-red-500' },
   ambar: { wrap: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' },
-  azul: { wrap: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600 animate-pulse' },
+  azul: { wrap: 'bg-blue-50 text-blue-700', dot: 'bg-blue-600 motion-safe:animate-pulse' },
   gris: { wrap: 'bg-gray-50 text-gray-600 border border-gray-200', dot: 'bg-gray-400' },
 }
 
@@ -133,7 +134,20 @@ export interface DatosEstadoFila {
  */
 export function datosEstadoFila(
   expediente: IExpediente,
-  { interno, vista, analista = false, ahora }: { interno: boolean; vista: VistaTurno; analista?: boolean; ahora: number },
+  {
+    interno,
+    vista,
+    analista = false,
+    ahora,
+    yo,
+  }: {
+    interno: boolean
+    vista: VistaTurno
+    analista?: boolean
+    ahora: number
+    /** Id de quien mira: si la revisión la tomó otro analista, «En revisión de X» en vez de «Su turno». */
+    yo?: string | null
+  },
 ): DatosEstadoFila {
   const etapa = etapaDeFila(expediente)
   const { texto, tono } = pastillaEtapa(expediente, etapa, interno)
@@ -187,6 +201,7 @@ export function datosEstadoFila(
             analista,
             sinEjecutar: etapa === 'sin_ejecutar',
             pazYSalvoCargado,
+            tomadoPor: revision && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
           }
         : null,
@@ -226,7 +241,8 @@ export function EstadoFila({
 }) {
   // Hora fijada al montar: Date.now() en render es impuro (cambia en cada render).
   const [ahora] = useState(() => Date.now())
-  const d = datosEstadoFila(expediente, { interno, vista, analista, ahora })
+  const yo = useAuthStore((st) => st.user?.id)
+  const d = datosEstadoFila(expediente, { interno, vista, analista, ahora, yo })
 
   return (
     <div className={cn('flex items-start gap-1', compacto ? 'flex-row flex-wrap items-center gap-1.5' : 'flex-col')}>
