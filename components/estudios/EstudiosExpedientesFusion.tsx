@@ -9,7 +9,9 @@
  *   `estudio_vigente`, que el RPC embebe (el más reciente por fecha).
  * - Los chips filtran EXPEDIENTES por el estado de su estudio vigente
  *   (server-side, vía filters.estudio_filtro → RPC p_estudio_filtro).
- * - Stat-cards y saldo/paquetes de estudios se conservan (datos reales).
+ * - Los chips llevan su conteo (antes había además cuatro tarjetas que filtraban
+ *   lo mismo); la tasa de aprobación y el ritmo del mes van en la frase del encabezado.
+ * - «Qué sigue» de cada fila y el aviso de arriba dicen qué le toca a quien mira.
  * - Clic en una fila → /expedientes/[id] (donde vive el estudio completo).
  */
 
@@ -21,7 +23,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils'
-import { IconCheckCircle, IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
+import { IconArrowRight, IconCheckCircle, IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
 import { estudioService } from '@/services/estudioService'
 import { expedienteService } from '@/services/expedienteService'
@@ -31,7 +33,7 @@ import type { IEstudiosStats } from '@/types/estudio'
 import type { EstudioFiltro } from '@/types/expediente'
 import { ExpedientesFilters } from '@/components/expedientes/ExpedientesFilters'
 import { ExpedientesTable } from '@/components/expedientes/ExpedientesTable'
-import { ExpedientesSkeleton } from '@/components/expedientes/ExpedientesSkeleton'
+import { ExpedientesTablaCofianzaSkeleton } from '@/components/expedientes/ExpedientesTablaCofianza'
 import { AdquirirEstudiosCredito } from './AdquirirEstudiosCredito'
 
 // En el orden del recorrido.
@@ -65,15 +67,13 @@ export function EstudiosExpedientesFusion() {
   } = useExpedientes({ conStats: false })
 
   const [stats, setStats] = useState<IEstudiosStats | null>(null)
-  // Cargando o con error, las tarjetas no muestran «0» ni «Sin decisiones aún».
-  const [statsError, setStatsError] = useState(false)
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [saldoError, setSaldoError] = useState(false)
   // Mapa perfil_id → nombre de los miembros del equipo, para mostrar en la
   // columna "Responsable" el miembro al que se asignó cada expediente.
   const [miembrosById, setMiembrosById] = useState<Record<string, string>>({})
 
-  // Las tarjetas cuentan ESTUDIOS con el mismo filtro que su chip: contadas por
+  // Los chips cuentan ESTUDIOS con el mismo filtro que aplican: contadas por
   // evaluación (coarrendatarios, reevaluaciones, canceladas) decían 9 y al
   // pulsarlas la lista traía 5.
   const [conteos, setConteos] = useState<Partial<Record<EstudioFiltro, number>> | null>(null)
@@ -81,12 +81,13 @@ export function EstudiosExpedientesFusion() {
     // Solo alimenta la frase del encabezado: si falla, la frase no sale.
     estudioService.getStats().then(setStats).catch(() => {})
     Promise.all(
-      (['requiere_accion', 'aprobado', 'en_proceso', 'rechazado'] as const).map((f) =>
+      (['requiere_accion', 'sin_estudio', 'en_proceso', 'condicionado', 'aprobado', 'rechazado'] as const).map((f) =>
         expedienteService.getExpedientes({ estudio_filtro: f, page: 1, limit: 1 }).then((r) => [f, r.meta.total] as const),
       ),
     )
       .then((rs) => setConteos(Object.fromEntries(rs)))
-      .catch(() => setStatsError(true))
+      // Sin conteos los chips van sin número y no sale el aviso (nunca un «0» falso).
+      .catch(() => {})
     if (esPropietario) return
     creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => setSaldoError(true))
     listMiembros()
@@ -106,57 +107,39 @@ export function EstudiosExpedientesFusion() {
   const rechazados = conteos?.rechazado ?? 0
   const decididos = aprobados + rechazados
   const tasa = decididos > 0 ? Math.round((aprobados / decididos) * 1000) / 10 : null
-  const tasaNoAprobable = decididos > 0 ? Math.round((rechazados / decididos) * 1000) / 10 : null
   const activeChip: EstudioFiltro = filters.estudio_filtro ?? 'todos'
   const pendientes = conteos?.requiere_accion ?? 0
-  const conteo = (f: EstudioFiltro) => (conteos ? (conteos[f] ?? 0) : statsError ? '—' : '…')
-  const sinDato = statsError ? 'No se pudo cargar' : 'Cargando…'
-
-  if (error) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-        <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
-        <h2 className="text-lg font-medium text-gray-900 mb-2">No se pudieron cargar los estudios</h2>
-        <p className="mx-auto max-w-md text-sm text-gray-500 mb-4">{error}</p>
-        <button
-          type="button"
-          onClick={() => fetchExpedientes()}
-          className="inline-flex min-h-10 items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
-        >
-          <IconRefresh size={18} />
-          Reintentar
-        </button>
-      </div>
-    )
-  }
+  const elegir = (f: EstudioFiltro) => setFilters({ estudio_filtro: f, page: 1 })
+  // Sin ningún estudio todavía: los chips y la barra de filtros no tienen qué filtrar.
+  const sinEstudios = !isLoading && !error && meta?.total === 0 && activeChip === 'todos' && !hasActiveFilters()
 
   // P22: lo que se puede gastar (lo que quedó en contra se resta).
   const disponibles = saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0
 
   return (
-    <div className="space-y-6">
-      {/* Encabezado: intro + saldo + nuevo expediente */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="space-y-5">
+      {/* Encabezado: qué es la lista, con el ritmo del mes y la tasa en una frase (antes eran tarjetas que filtraban lo mismo que los chips). */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-black tracking-tight text-gray-900">Estudios</h1>
-          {/* «Este mes» era una tarjeta que contaba evaluaciones, no estudios: queda como frase. */}
-          <p className="text-sm font-medium text-gray-500">
+          <p className="mt-0.5 max-w-2xl text-sm text-gray-600">
             Sus estudios y en qué va cada uno.
             {stats &&
               (stats.este_mes === 1
                 ? ' Este mes se inició 1 evaluación crediticia.'
                 : ` Este mes se iniciaron ${stats.este_mes} evaluaciones crediticias.`)}
+            {tasa != null && ` Tasa de aprobación: ${tasa.toLocaleString('es-CO')} % (${aprobados} de ${decididos} con resultado).`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           {!esPropietario && (
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-primary-600 bg-primary-50 px-3.5 py-1.5 text-sm font-bold text-primary-700">
+            <span className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3.5 text-sm font-semibold text-primary-800">
               <IconCheckCircle size={14} />
               {saldo
                 ? `${disponibles} ${disponibles === 1 ? 'cupo disponible' : 'cupos disponibles'}`
                 : saldoError
-                  ? '— cupos disponibles'
-                  : '… cupos disponibles'}
+                  ? 'Cupos: no se pudo cargar'
+                  : 'Cupos: cargando…'}
             </span>
           )}
           {puedeEditar && (
@@ -168,156 +151,150 @@ export function EstudiosExpedientesFusion() {
         </div>
       </div>
 
-      {/* Tarjetas: cuentan estudios con el mismo filtro que su chip y lo activan
-          al hacer clic, para no tener dos controles que parecen filtrar y solo
-          uno lo hace. Arrancan por lo que requiere acción. */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard
-          label={puedeEditar ? 'Requieren su acción' : 'Requieren acción del equipo'}
-          value={conteo('requiere_accion')}
-          color="text-coral-600"
-          sub={!conteos ? sinDato : pendientes > 0 ? (puedeEditar ? 'Le toca a usted' : 'Le toca a su equipo') : 'Nada pendiente'}
-          activo={activeChip === 'requiere_accion'}
-          onClick={() => setFilters({ estudio_filtro: 'requiere_accion', page: 1 })}
-        />
-        <StatCard
-          label="Aprobados"
-          value={conteo('aprobado')}
-          color="text-primary-600"
-          sub={!conteos ? sinDato : tasa != null ? `${tasa}% tasa de aprobación` : 'Sin decisiones aún'}
-          activo={activeChip === 'aprobado'}
-          onClick={() => setFilters({ estudio_filtro: 'aprobado', page: 1 })}
-        />
-        <StatCard
-          label="Antes del resultado"
-          value={conteo('en_proceso')}
-          color="text-blue-600"
-          sub="Todavía sin resultado"
-          activo={activeChip === 'en_proceso'}
-          onClick={() => setFilters({ estudio_filtro: 'en_proceso', page: 1 })}
-        />
-        <StatCard
-          label="No aprobables"
-          value={conteo('rechazado')}
-          color="text-red-500"
-          sub={!conteos ? sinDato : tasaNoAprobable != null ? `${tasaNoAprobable}% de lo evaluado` : 'Sin decisiones aún'}
-          activo={activeChip === 'rechazado'}
-          onClick={() => setFilters({ estudio_filtro: 'rechazado', page: 1 })}
-        />
-      </div>
-
-      {/* Chips: filtran EXPEDIENTES por el estado de su estudio vigente */}
-      <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
-        {CHIPS.map((c) => (
+      {/* Lo primero que busca quien gestiona: qué le toca. Fuera del filtro, un aviso que lleva a él. */}
+      {pendientes > 0 && activeChip !== 'requiere_accion' && (
+        <div
+          className={cn(
+            'flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border px-4 py-2.5',
+            puedeEditar ? 'border-coral-200 bg-coral-50' : 'border-gray-200 bg-white',
+          )}
+        >
+          <p className={cn('flex items-center gap-2 text-sm font-semibold', puedeEditar ? 'text-coral-800' : 'text-gray-800')}>
+            <IconArrowRight size={16} className="shrink-0" />
+            {puedeEditar
+              ? pendientes === 1
+                ? '1 estudio necesita algo de usted'
+                : `${pendientes} estudios necesitan algo de usted`
+              : pendientes === 1
+                ? '1 estudio espera una acción de su equipo'
+                : `${pendientes} estudios esperan una acción de su equipo`}
+          </p>
           <button
-            key={c.id}
             type="button"
-            aria-pressed={activeChip === c.id}
-            title={c.title}
-            onClick={() => setFilters({ estudio_filtro: c.id, page: 1 })}
+            onClick={() => elegir('requiere_accion')}
             className={cn(
-              'min-h-10 shrink-0 whitespace-nowrap rounded-full border-[1.5px] px-3.5 py-1 text-xs font-bold transition-colors',
-              activeChip === c.id
-                ? 'border-primary-600 bg-primary-50 text-primary-700'
-                : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600',
+              '-my-1 inline-flex h-10 items-center rounded-lg px-3 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary-600',
+              puedeEditar ? 'text-coral-800 hover:bg-coral-100' : 'text-primary-700 hover:bg-gray-100',
             )}
           >
-            {c.id === 'requiere_accion' && !puedeEditar ? 'Requieren acción del equipo' : c.label}
+            Ver cuáles
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
-      {/* Filtros (búsqueda / responsable / fechas) */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <ExpedientesFilters
-          filters={filters}
-          analistas={analistas}
-          miembros={miembrosById}
-          isLoading={isLoading}
-          onFilterChange={setFilters}
-          onClearFilters={clearFilters}
-          hasActiveFilters={hasActiveFilters()}
-          ocultarResponsable={esPropietario}
-        />
-      </div>
+      {/* Chips: filtran por el estado del estudio, con su conteo cuando se conoce. En móvil
+          el borde derecho se desvanece: sin esa pista no parecían deslizables. */}
+      {!sinEstudios && (
+        <div className="-mx-4 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
+          <nav aria-label="Filtrar por etapa" className="flex min-w-max gap-1 pr-6 sm:min-w-0 sm:flex-wrap sm:pr-0">
+            {CHIPS.map((c) => {
+              const activo = activeChip === c.id
+              const n = conteos?.[c.id]
+              const turno = c.id === 'requiere_accion' && !!n && puedeEditar
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={activo}
+                  title={c.title}
+                  onClick={() => elegir(c.id)}
+                  className={cn(
+                    'flex h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary-600',
+                    activo
+                      ? turno
+                        ? 'border-coral-300 bg-coral-50 text-coral-800'
+                        : 'border-primary-300 bg-primary-50 text-primary-800'
+                      : 'border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+                  )}
+                >
+                  {c.id === 'requiere_accion' && !puedeEditar ? 'Requieren acción del equipo' : c.label}
+                  {n != null && (
+                    <span
+                      className={cn(
+                        'inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
+                        turno ? 'bg-coral-100 text-coral-800' : activo ? 'bg-white/70 text-primary-800' : 'bg-gray-100 text-gray-600',
+                      )}
+                    >
+                      {n}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+      )}
 
-      {/* Lista de expedientes con badge de estudio embebido */}
-      <div
-        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && expedientes.length > 0 ? ' opacity-60 pointer-events-none' : ''}`}
-        aria-busy={isLoading}
-      >
-        {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
-        {isLoading && expedientes.length > 0 && (
-          <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
-            <IconLoader size={12} className="animate-spin" /> Actualizando…
-          </span>
+      {/* Una sola superficie: la barra de filtros encabeza la lista que filtra (como la cola de Cofianza). */}
+      <section aria-label="Estudios" className="rounded-lg border border-gray-200 bg-white">
+        {!sinEstudios && (
+          <div className="border-b border-gray-100 p-3 sm:p-4">
+            <ExpedientesFilters
+              barra
+              filters={filters}
+              analistas={analistas}
+              miembros={miembrosById}
+              isLoading={isLoading}
+              onFilterChange={setFilters}
+              onClearFilters={clearFilters}
+              hasActiveFilters={hasActiveFilters()}
+              ocultarResponsable={esPropietario}
+            />
+          </div>
         )}
-        {isLoading && expedientes.length === 0 ? (
-          <ExpedientesSkeleton count={filters.limit} />
-        ) : (
-          <ExpedientesTable
-            expedientes={expedientes}
-            meta={meta}
-            filters={filters}
-            onSort={handleSort}
-            onOrdenar={(sortBy, sortOrder) => setFilters({ sortBy, sortOrder, page: 1 })}
-            onPageChange={(page) => setFilters({ page })}
-            onLimitChange={(limit) => setFilters({ limit, page: 1 })}
-            miembrosResponsablesById={miembrosById}
-            vacio={
-              activeChip === 'requiere_accion' && !hasActiveFilters()
-                ? 'accion'
-                : hasActiveFilters() || activeChip !== 'todos'
-                  ? 'filtros'
-                  : 'nada'
-            }
-            onClearFilters={clearFilters}
-          />
-        )}
-      </div>
+
+        <div
+          className={cn('relative p-3 sm:p-4', isLoading && expedientes.length > 0 && 'pointer-events-none opacity-60')}
+          aria-busy={isLoading}
+        >
+          {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
+          {isLoading && expedientes.length > 0 && (
+            <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
+              <IconLoader size={12} className="animate-spin" /> Actualizando…
+            </span>
+          )}
+          {error ? (
+            // El error queda dentro de la lista: el encabezado («Nuevo estudio») y los filtros siguen a mano.
+            <div role="alert" className="py-10 text-center">
+              <IconAlertTriangle size={40} className="mx-auto mb-3 text-red-500" />
+              <h2 className="mb-1 text-lg font-medium text-gray-900">No se pudieron cargar los estudios</h2>
+              <p className="mx-auto mb-4 max-w-md text-sm text-gray-600">{error}</p>
+              <button
+                type="button"
+                onClick={() => fetchExpedientes()}
+                className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary-700 px-4 py-2 text-white transition-colors hover:bg-primary-800"
+              >
+                <IconRefresh size={18} />
+                Reintentar
+              </button>
+            </div>
+          ) : isLoading && expedientes.length === 0 ? (
+            <ExpedientesTablaCofianzaSkeleton count={Math.min(filters.limit, 8)} />
+          ) : (
+            <ExpedientesTable
+              expedientes={expedientes}
+              meta={meta}
+              filters={filters}
+              onSort={handleSort}
+              onOrdenar={(sortBy, sortOrder) => setFilters({ sortBy, sortOrder, page: 1 })}
+              onPageChange={(page) => setFilters({ page })}
+              onLimitChange={(limit) => setFilters({ limit, page: 1 })}
+              miembrosResponsablesById={miembrosById}
+              vacio={
+                activeChip === 'requiere_accion' && !hasActiveFilters()
+                  ? 'accion'
+                  : hasActiveFilters() || activeChip !== 'todos'
+                    ? 'filtros'
+                    : 'nada'
+              }
+              onClearFilters={clearFilters}
+            />
+          )}
+        </div>
+      </section>
 
       {/* Compra de paquetes de estudios */}
       {!esPropietario && <AdquirirEstudiosCredito />}
     </div>
-  )
-}
-
-function StatCard({
-  label,
-  value,
-  sub,
-  color = 'text-gray-900',
-  activo = false,
-  onClick,
-}: {
-  label: string
-  value: number | string
-  sub: string
-  color?: string
-  activo?: boolean
-  onClick?: () => void
-}) {
-  const contenido = (
-    <>
-      <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</div>
-      <div className={cn('text-3xl font-black leading-none tracking-tight', color)}>{value}</div>
-      <div className="mt-1 text-xs text-gray-500">{sub}</div>
-    </>
-  )
-  if (!onClick) {
-    return <div className="min-w-0 rounded-xl border border-gray-200 bg-white px-4 py-4 sm:px-5">{contenido}</div>
-  }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={activo}
-      className={cn(
-        'min-w-0 rounded-xl border bg-white px-4 py-4 text-left transition-colors hover:border-primary-600 sm:px-5',
-        activo ? 'border-primary-600 ring-1 ring-primary-600' : 'border-gray-200',
-      )}
-    >
-      {contenido}
-    </button>
   )
 }

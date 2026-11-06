@@ -40,6 +40,8 @@ export const EXPEDIENTE_UI_MESSAGES = {
   VACIO_ACCION_TITULO: 'Nada pendiente de su parte',
   VACIO_ACCION_TEXTO:
     'Cuando un estudio necesite algo de usted (habilitar la evaluación, definir el pago, reenviar un enlace o crear el contrato), aparecerá aquí.',
+  VACIO_ACCION_EQUIPO_TITULO: 'Nada pendiente de su equipo',
+  VACIO_ACCION_EQUIPO_TEXTO: 'Cuando un estudio necesite algo de su inmobiliaria, aparecerá aquí.',
   VACIO_FILTROS_TITULO: 'Ningún estudio coincide',
   VACIO_FILTROS_TEXTO: 'Pruebe con otra búsqueda o quite los filtros.',
   VACIO_NADA_TITULO: 'Todavía no tiene estudios',

@@ -21,6 +21,7 @@ import type { EtapaEstudio, VistaTurno } from '@/lib/etapaEstudio'
 import type { IExpediente } from '@/types/expediente'
 import { AYUDA_PUNTAJE, PastillaEtapa, PrioridadBaja, datosEstadoFila, type DatosEstadoFila } from './EstadoFila'
 import { textoTurno, turnoPropio } from './PastillaTurno'
+import { direccionLegible } from '@/lib/direccionLegible'
 import {
   Actividad,
   ActividadHeader,
@@ -51,32 +52,6 @@ const TERMINADAS: EtapaEstudio[] = ['cancelado', 'finalizado']
 function lugar(e: IExpediente): string {
   const partes = [e.inmueble?.ciudad, nombreInmobiliaria(e)].filter((p) => p && p !== '—')
   return partes.join(' · ')
-}
-
-/** Siglas que se dejan en mayúscula aunque tengan vocales. */
-const SIGLAS = new Set(['BBVA', 'NIT', 'SAS', 'IPS', 'EPS', 'UPZ', 'ESE'])
-/** Conectores en minúscula salvo al inicio («Calle 10 de la Sierra»). */
-const CONECTORES = new Set(['EN', 'EL', 'LA', 'DE', 'DEL', 'LOS', 'LAS', 'Y'])
-
-/**
- * Las direcciones llegan como se digitaron: «CALLE 45 # 12-30 APTO 301» junto a
- * «Calle 10 Sur # 43-21». Solo las escritas todo en mayúsculas se pasan a
- * mayúscula inicial. Quedan igual las palabras con números («40A», «12-30»),
- * las que no tienen vocales («PH», «KR») y las siglas («BBVA», «S.A.S.»).
- */
-export function direccionLegible(texto: string): string {
-  if (/\p{Ll}/u.test(texto)) return texto
-  return texto
-    .split(' ')
-    .map((w, i) => {
-      const letras = w.replace(/[^\p{L}]/gu, '')
-      if (!letras || /\d/.test(w)) return w
-      const minuscula = w.toLocaleLowerCase('es-CO')
-      if (i > 0 && CONECTORES.has(letras)) return minuscula
-      if (!/[AEIOUÁÉÍÓÚ]/.test(letras) || SIGLAS.has(letras) || /^(\p{L}\.){2,}/u.test(w)) return w
-      return minuscula.charAt(0).toLocaleUpperCase('es-CO') + minuscula.slice(1)
-    })
-    .join(' ')
 }
 
 function Inmueble({ expediente }: { expediente: IExpediente }) {
