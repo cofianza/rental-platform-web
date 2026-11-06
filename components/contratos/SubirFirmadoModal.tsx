@@ -1,9 +1,9 @@
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useState, useRef } from 'react'
 import { toast } from 'sonner'
-import { IconX, IconUpload, IconLoader } from '@/components/icons'
+import { IconUpload, IconLoader, IconFileText } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 
 interface SubirFirmadoModalProps {
@@ -27,8 +27,8 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
   if (!isOpen) return null
 
   function validateFile(f: File): string | null {
-    if (f.type !== 'application/pdf') return 'Solo se aceptan archivos PDF'
-    if (f.size > MAX_FILE_SIZE) return 'El archivo excede el limite de 20 MB'
+    if (f.type !== 'application/pdf') return 'Solo se aceptan archivos PDF.'
+    if (f.size > MAX_FILE_SIZE) return 'El archivo pesa más de 20 MB. Comprímalo o súbalo en menor resolución.'
     return null
   }
 
@@ -66,8 +66,13 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  function handleClose() {
+    if (isUploading) return
+    onClose()
+  }
+
   async function handleSubmit() {
-    if (!file) return
+    if (!file || isUploading) return
     setIsUploading(true)
     try {
       await contratoService.subirContratoFirmado(contratoId, file, {
@@ -88,64 +93,87 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
   const fileSizeMB = file ? (file.size / (1024 * 1024)).toFixed(2) : null
 
   return (
-    <Modal isOpen onClose={onClose} bare ariaLabel="Subir contrato firmado" closeOnBackdrop={false} className="rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Subir Contrato Firmado</h2>
-        <button type="button" data-modal-close aria-label="Cerrar" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-600 rounded">
-          <IconX size={20} />
-        </button>
-      </div>
-
-      <div className="p-4 sm:p-6 space-y-5">
-        {/* Drop zone */}
-        <div
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => !isUploading && fileInputRef.current?.click()}
-          role="button"
-          tabIndex={isUploading ? -1 : 0}
-          aria-label="Seleccionar el PDF firmado"
-          onKeyDown={(e) => {
-            if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
-            e.preventDefault()
-            if (!isUploading) fileInputRef.current?.click()
-          }}
-          className={`
-            border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-            ${isDragOver ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-gray-400'}
-            ${isUploading ? 'pointer-events-none opacity-70' : ''}
-            ${error ? 'border-red-300 bg-red-50' : ''}
-          `}
-        >
-          {file ? (
-            <div className="space-y-2">
-              <div className="w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                <IconUpload size={20} className="text-green-600" />
-              </div>
-              <p className="text-sm font-medium text-gray-900">{file.name}</p>
+    <Modal
+      isOpen
+      onClose={handleClose}
+      title="Subir contrato firmado"
+      description="Adjunte el PDF del contrato ya firmado por todas las partes. Queda como la versión firmada del contrato."
+      size="md"
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={handleClose} disabled={isUploading} className={botonModal('secondary')}>
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="subir-firmado-form"
+            disabled={!file || isUploading}
+            aria-busy={isUploading || undefined}
+            className={botonModal('primary')}
+          >
+            {isUploading ? <IconLoader size={16} className="animate-spin" /> : <IconUpload size={16} />}
+            {isUploading ? 'Subiendo…' : 'Subir contrato firmado'}
+          </button>
+        </ModalAcciones>
+      }
+    >
+      <form
+        id="subir-firmado-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSubmit()
+        }}
+        className="space-y-5"
+      >
+        {file ? (
+          // Archivo elegido: fila con nombre, peso y «Quitar» (sin botones anidados en la zona de arrastre).
+          <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5">
+            <IconFileText size={20} className="shrink-0 text-primary-700" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-gray-900">{file.name}</p>
               <p className="text-xs text-gray-500">{fileSizeMB} MB</p>
-              <button
-                onClick={(e) => { e.stopPropagation(); setFile(null); setError(null) }}
-                className="text-xs text-red-600 hover:text-red-700 font-medium"
-              >
-                Quitar archivo
-              </button>
             </div>
-          ) : (
-            <>
-              <IconUpload size={32} className="mx-auto text-gray-500 mb-2" />
-              <p className="text-sm font-medium text-gray-900">
-                Arrastre el PDF firmado o haga clic para seleccionar
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Solo PDF, máximo 20 MB</p>
-            </>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={() => { setFile(null); setError(null) }}
+              disabled={isUploading}
+              className="min-h-10 shrink-0 rounded-lg px-3 text-sm font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50"
+            >
+              Quitar
+            </button>
+          </div>
+        ) : (
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => !isUploading && fileInputRef.current?.click()}
+            role="button"
+            tabIndex={isUploading ? -1 : 0}
+            aria-label="Seleccionar el PDF firmado"
+            aria-describedby={error ? 'subir-firmado-error' : undefined}
+            onKeyDown={(e) => {
+              if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return
+              e.preventDefault()
+              if (!isUploading) fileInputRef.current?.click()
+            }}
+            className={`rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 ${
+              error
+                ? 'border-red-300 bg-red-50'
+                : isDragOver
+                  ? 'border-primary-500 bg-primary-50'
+                  : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            <IconUpload size={28} className="mx-auto mb-2 text-gray-500" aria-hidden="true" />
+            <p className="text-sm font-medium text-gray-900">Arrastre el PDF firmado o haga clic para elegirlo</p>
+            <p className="mt-1 text-xs text-gray-500">Solo PDF, máximo 20 MB.</p>
+          </div>
+        )}
 
         {error && (
-          <p className="text-sm text-red-600">{error}</p>
+          <p id="subir-firmado-error" role="alert" className="text-sm text-red-700">{error}</p>
         )}
 
         <input
@@ -158,17 +186,17 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
           aria-hidden
         />
 
-        {/* Optional fields */}
         <div>
           <label htmlFor="subir-firmado-modal-referencia-otp-opcional" className="block text-sm font-medium text-gray-700 mb-1">
-            Referencia OTP <span className="text-gray-500 font-normal">(opcional)</span>
+            Referencia del código de verificación <span className="text-gray-500 font-normal">(opcional)</span>
           </label>
           <input id="subir-firmado-modal-referencia-otp-opcional"
             type="text"
             value={referenciaOtp}
             onChange={(e) => setReferenciaOtp(e.target.value)}
-            placeholder="Código o referencia de verificación"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            disabled={isUploading}
+            placeholder="Código o referencia con que se verificó la firma"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50"
           />
         </div>
 
@@ -179,39 +207,16 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
           <textarea id="subir-firmado-modal-notas-opcional"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
+            disabled={isUploading}
             maxLength={1000}
             rows={3}
             placeholder="Notas sobre la firma del contrato"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+            aria-describedby="subir-firmado-notas-contador"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none disabled:bg-gray-50"
           />
-          <p className="text-xs text-gray-500 mt-1 text-right">{notas.length}/1000</p>
+          <p id="subir-firmado-notas-contador" className="text-xs text-gray-500 mt-1 text-right tabular-nums">{notas.length}/1000</p>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="flex flex-wrap items-center justify-end gap-3 px-4 py-4 sm:px-6 border-t border-gray-200">
-        <button
-          onClick={onClose}
-          disabled={isUploading}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={!file || isUploading}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
-        >
-          {isUploading ? (
-            <>
-              <IconLoader size={16} className="animate-spin" />
-              Subiendo...
-            </>
-          ) : (
-            'Subir Contrato Firmado'
-          )}
-        </button>
-      </div>
+      </form>
     </Modal>
   )
 }

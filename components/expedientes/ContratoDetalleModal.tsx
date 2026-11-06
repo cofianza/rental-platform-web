@@ -1,8 +1,8 @@
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useEffect, useState } from 'react'
-import { IconX, IconHistory, IconAlertTriangle } from '@/components/icons'
+import { IconHistory, IconAlertTriangle, IconRefresh } from '@/components/icons'
 import { etiquetaContrato, formatDateTime } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { VersionHistorialSection } from './VersionHistorialSection'
@@ -26,6 +26,8 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfError, setPdfError] = useState<string | null>(null)
+  // Reintento de la vista previa sin cerrar el diálogo.
+  const [intentoPdf, setIntentoPdf] = useState(0)
 
   useEffect(() => {
     if (!contrato?.id) return
@@ -42,7 +44,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
       .then((res) => setPdfUrl(res.url))
       .catch((err) => setPdfError(err instanceof Error ? err.message : 'No se pudo cargar el PDF'))
       .finally(() => setPdfLoading(false))
-  }, [contrato?.id, contrato?.storage_key])
+  }, [contrato?.id, contrato?.storage_key, intentoPdf])
 
   if (!contrato) return null
 
@@ -52,31 +54,34 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
 
   return (
     <>
-      <Modal isOpen onClose={onClose} bare ariaLabel="Detalle del contrato" closeOnBackdrop className="rounded-xl w-full max-w-6xl max-h-[92vh] overflow-y-auto mx-4">
-        {/* Header */}
-        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Detalle del Contrato</h2>
-          <button type="button" data-modal-close aria-label="Cerrar"
-            onClick={onClose}
-            className="p-1.5 text-gray-500 hover:text-gray-600 rounded-md hover:bg-gray-100"
-          >
-            <IconX size={20} />
-          </button>
-        </div>
-
-        <div className="p-4 sm:p-6 space-y-6">
+      <Modal
+        isOpen
+        onClose={onClose}
+        title="Detalle del contrato"
+        description={`${contrato.nombre_archivo || 'contrato.pdf'} · versión ${contrato.version} · ${etiquetaContrato(contrato.estado, !!contrato.destinacion)}`}
+        size="2xl"
+        closeOnBackdrop
+        footer={
+          <ModalAcciones>
+            <button type="button" onClick={onClose} className={botonModal('secondary')}>
+              Cerrar
+            </button>
+          </ModalAcciones>
+        }
+      >
+        <div className="space-y-6">
           {/* Preview del PDF */}
           <div>
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Vista previa</h3>
             {!contrato.storage_key ? (
               <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+                <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-sm font-medium text-amber-900">
                     El PDF aún no ha sido generado.
                   </p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    Cierre este modal y pulse el botón <strong>Regenerar</strong> en la fila del
+                    Cierre esta ventana y pulse <strong>Regenerar</strong> en la fila del
                     contrato para producir el PDF con la plantilla activa.
                   </p>
                 </div>
@@ -87,22 +92,29 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
                 <Skeleton className="h-64 w-full rounded-lg" />
               </div>
             ) : pdfError ? (
-              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <IconAlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" />
-                <p className="text-sm text-red-900">{pdfError}</p>
+              <div role="alert" className="flex flex-col gap-3 rounded-lg border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-start">
+                <IconAlertTriangle size={18} className="text-red-600 mt-0.5 shrink-0" aria-hidden="true" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-red-900">No se pudo cargar la vista previa del contrato.</p>
+                  <p className="mt-0.5 text-xs text-red-800">{pdfError}</p>
+                </div>
+                <button type="button" onClick={() => setIntentoPdf((n) => n + 1)} className={botonModal('secondary', 'shrink-0')}>
+                  <IconRefresh size={16} aria-hidden="true" />
+                  Reintentar
+                </button>
               </div>
             ) : pdfUrl ? (
               <iframe
                 src={pdfUrl}
                 title="Vista previa del contrato"
                 className="w-full border border-gray-200 rounded-lg bg-white"
-                style={{ height: '80vh' }}
+                style={{ height: '70dvh' }}
               />
             ) : null}
           </div>
 
           {/* Info general */}
-          <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
             <div>
               <dt className="text-gray-500">Archivo</dt>
               <dd className="font-medium text-gray-900 mt-0.5">
@@ -120,25 +132,25 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
               <dd className="font-medium text-gray-900 mt-0.5">v{contrato.version}</dd>
             </div>
             <div>
-              <dt className="text-gray-500">Version Plantilla</dt>
+              <dt className="text-gray-500">Versión de la plantilla</dt>
               <dd className="font-medium text-gray-900 mt-0.5">
                 v{contrato.plantilla_version || '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Fecha Inicio</dt>
+              <dt className="text-gray-500">Fecha de inicio</dt>
               <dd className="font-medium text-gray-900 mt-0.5">
                 {contrato.fecha_inicio || '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Duracion</dt>
+              <dt className="text-gray-500">Duración</dt>
               <dd className="font-medium text-gray-900 mt-0.5">
                 {contrato.duracion_meses ? `${contrato.duracion_meses} meses` : '—'}
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Fecha Generacion</dt>
+              <dt className="text-gray-500">Fecha de generación</dt>
               <dd className="font-medium text-gray-900 mt-0.5">
                 {contrato.fecha_generacion
                   ? formatDateTime(contrato.fecha_generacion)
@@ -146,7 +158,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
               </dd>
             </div>
             <div>
-              <dt className="text-gray-500">Valor Arriendo</dt>
+              <dt className="text-gray-500">Canon de arrendamiento</dt>
               <dd className="font-medium text-gray-900 mt-0.5">
                 {contrato.valor_arriendo
                   ? new Intl.NumberFormat('es-CO', {
@@ -159,7 +171,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
             </div>
             {contrato.fecha_firma && (
               <div>
-                <dt className="text-gray-500">Fecha Firma</dt>
+                <dt className="text-gray-500">Fecha de firma</dt>
                 <dd className="font-medium text-gray-900 mt-0.5">
                   {formatDateTime(contrato.fecha_firma)}
                 </dd>
@@ -167,13 +179,13 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
             )}
             {contrato.fecha_terminacion && (
               <div>
-                <dt className="text-gray-500">Fecha Terminacion</dt>
+                <dt className="text-gray-500">Fecha de terminación</dt>
                 <dd className="font-medium text-gray-900 mt-0.5">
                   {formatDateTime(contrato.fecha_terminacion)}
                 </dd>
               </div>
             )}
-          </div>
+          </dl>
 
           {/* Motivo cancelacion */}
           {contrato.motivo_cancelacion && (
@@ -185,10 +197,11 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
 
           {/* Historial de estados */}
           <button
+            type="button"
             onClick={() => setHistorialOpen(true)}
-            className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 font-medium"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-medium text-primary-700 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           >
-            <IconHistory size={16} />
+            <IconHistory size={16} aria-hidden="true" />
             Ver historial de estados
           </button>
 
@@ -196,7 +209,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
           {variableEntries.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                Variables Utilizadas ({variableEntries.length})
+                Variables utilizadas ({variableEntries.length})
               </h3>
               <div className="bg-gray-50 rounded-lg p-4">
                 <dl className="grid grid-cols-1 gap-2 text-sm">
@@ -205,7 +218,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
                       <dt className="font-mono text-xs px-2 py-0.5 rounded bg-teal-100 text-teal-800 shrink-0">
                         {`{{${key}}}`}
                       </dt>
-                      <dd className="text-gray-700">{value || '(vacio)'}</dd>
+                      <dd className="text-gray-700">{value || '(vacío)'}</dd>
                     </div>
                   ))}
                 </dl>
@@ -219,16 +232,6 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
             currentVersion={contrato.version}
             onCompare={(v1, v2) => setCompareVersions({ v1, v2 })}
           />
-        </div>
-
-        {/* Footer */}
-        <div className="px-4 sm:px-6 py-3 border-t border-gray-200">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Cerrar
-          </button>
         </div>
       </Modal>
 
@@ -248,6 +251,7 @@ export function ContratoDetalleModal({ contrato, onClose }: ContratoDetalleModal
         isOpen={historialOpen}
         onClose={() => setHistorialOpen(false)}
         contratoId={contrato.id}
+        encima
       />
     </>
   )

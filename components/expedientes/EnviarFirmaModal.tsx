@@ -1,9 +1,9 @@
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { IconX, IconLoader, IconMail, IconWhatsapp } from '@/components/icons'
+import { IconLoader, IconMail, IconWhatsapp } from '@/components/icons'
 import { firmaService } from '@/services/firmaService'
 import { bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
 import type { Bloqueo } from '@/types/contratoV3'
@@ -37,9 +37,14 @@ export function EnviarFirmaModal({
 
   if (!isOpen) return null
 
+  function handleClose() {
+    if (isSubmitting) return
+    onClose()
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!nombre.trim() || !email.trim()) return
+    if (isSubmitting || !nombre.trim() || !email.trim()) return
 
     setIsSubmitting(true)
     try {
@@ -67,99 +72,86 @@ export function EnviarFirmaModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} bare ariaLabel="Enviar para firma" closeOnBackdrop={false} className="rounded-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Enviar para Firma</h2>
-        <button type="button" data-modal-close aria-label="Cerrar" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-600 rounded">
-          <IconX size={20} />
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <div className="p-4 sm:p-6 space-y-4">
-          <p className="text-sm text-gray-500">
-            Se enviará un enlace seguro al firmante para que revise y firme el contrato. El plazo para firmar nunca pasa la vigencia del certificado de riesgo.
-          </p>
-
-          <div>
-            <label htmlFor="enviar-firma-modal-nombre-completo-del-firmante" className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre completo del firmante <span className="text-red-500">*</span>
-            </label>
-            <input id="enviar-firma-modal-nombre-completo-del-firmante"
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-              maxLength={200}
-              placeholder="Nombre del firmante"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="enviar-firma-modal-email-del-firmante" className="block text-sm font-medium text-gray-700 mb-1">
-              Email del firmante <span className="text-red-500">*</span>
-            </label>
-            <input id="enviar-firma-modal-email-del-firmante"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              maxLength={255}
-              placeholder="email@ejemplo.com"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="enviar-firma-modal-celular-whatsapp-opcional-recomendado" className="block text-sm font-medium text-gray-700 mb-1">
-              Celular (WhatsApp) <span className="text-gray-500 font-normal">(opcional, recomendado)</span>
-            </label>
-            <input id="enviar-firma-modal-celular-whatsapp-opcional-recomendado"
-              type="tel"
-              value={telefono}
-              onChange={(e) => setTelefono(e.target.value)}
-              maxLength={20}
-              placeholder="+57 300 123 4567"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-            <div className="mt-2 flex items-start gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
-              <IconWhatsapp size={16} className="text-green-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-green-800">
-                Si ingresa el celular con código de país, Auco enviará el link de firma también por <strong>WhatsApp</strong> (además del correo). Formato: <code className="text-[11px] font-mono">+57 3001234567</code>.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="flex flex-wrap items-center justify-end gap-3 px-4 sm:px-6 py-4 border-t border-gray-200">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Enviar para firma"
+      description="El firmante recibe un enlace seguro para revisar y firmar el contrato. El plazo para firmar nunca pasa la vigencia del certificado de riesgo."
+      size="md"
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={handleClose} disabled={isSubmitting} className={botonModal('secondary')}>
             Cancelar
           </button>
           <button
             type="submit"
+            form="enviar-firma-form"
             disabled={isSubmitting || !nombre.trim() || !email.trim()}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50"
+            aria-busy={isSubmitting || undefined}
+            className={botonModal('primary')}
           >
-            {isSubmitting ? (
-              <>
-                <IconLoader size={16} className="animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <IconMail size={16} />
-                Enviar enlace de firma
-              </>
-            )}
+            {isSubmitting ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
+            {isSubmitting ? 'Enviando…' : 'Enviar enlace de firma'}
           </button>
+        </ModalAcciones>
+      }
+    >
+      <form id="enviar-firma-form" onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="enviar-firma-modal-nombre-completo-del-firmante" className="block text-sm font-medium text-gray-700 mb-1">
+            Nombre completo del firmante <span className="text-red-600" aria-hidden="true">*</span>
+          </label>
+          <input id="enviar-firma-modal-nombre-completo-del-firmante"
+            type="text"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            required
+            disabled={isSubmitting}
+            maxLength={200}
+            autoComplete="name"
+            placeholder="Nombre del firmante"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="enviar-firma-modal-email-del-firmante" className="block text-sm font-medium text-gray-700 mb-1">
+            Correo del firmante <span className="text-red-600" aria-hidden="true">*</span>
+          </label>
+          <input id="enviar-firma-modal-email-del-firmante"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            disabled={isSubmitting}
+            maxLength={255}
+            autoComplete="email"
+            placeholder="correo@ejemplo.com"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="enviar-firma-modal-celular-whatsapp-opcional-recomendado" className="block text-sm font-medium text-gray-700 mb-1">
+            Celular (WhatsApp) <span className="text-gray-500 font-normal">(opcional, recomendado)</span>
+          </label>
+          <input id="enviar-firma-modal-celular-whatsapp-opcional-recomendado"
+            type="tel"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+            disabled={isSubmitting}
+            maxLength={20}
+            autoComplete="tel"
+            placeholder="+57 300 123 4567"
+            aria-describedby="enviar-firma-whatsapp-ayuda"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50"
+          />
+          <div className="mt-2 flex items-start gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2">
+            <IconWhatsapp size={16} className="mt-0.5 shrink-0 text-green-700" aria-hidden="true" />
+            <p id="enviar-firma-whatsapp-ayuda" className="text-xs text-green-800">
+              Si escribe el celular con el código de país, Auco también envía el enlace de firma por <strong>WhatsApp</strong>, además del correo. Formato: <span className="tabular-nums">+57 3001234567</span>.
+            </p>
+          </div>
         </div>
       </form>
     </Modal>

@@ -14,7 +14,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconAlertTriangle, IconCheck, IconClock, IconLoader, IconMail, IconShieldCheck } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { contratoService } from '@/services/contratoService'
@@ -169,49 +169,61 @@ export function VerificacionIdentidadFirma({
         isOpen={!!revision}
         onClose={() => { if (!guardando) setRevision(null) }}
         title={revision?.resultado === 'suplantacion' ? 'Registrar suplantación' : 'Confirmar identidad'}
+        description={
+          revision?.resultado === 'suplantacion'
+            ? 'Si el contrato aún no tiene la fianza activa, se cancela; si ya la tiene, se avisa a los administradores para que decidan. Queda registrado quién lo decidió y por qué.'
+            : 'Queda registrado quién confirmó la identidad, cuándo y cómo.'
+        }
         size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            {revision?.resultado === 'suplantacion'
-              ? 'Si el contrato aún no tiene la fianza activa, se cancela; si ya la tiene, se avisa a los administradores para que decidan. Queda registrado quién lo decidió y por qué.'
-              : 'Queda registrado quién confirmó la identidad, cuándo y cómo.'}
-          </p>
-          <div>
-            <label htmlFor="nota-identidad" className="mb-1 block text-sm font-medium text-gray-700">
-              Cómo verificó la identidad <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              id="nota-identidad"
-              value={nota}
-              onChange={(e) => setNota(e.target.value)}
-              rows={3}
-              disabled={guardando}
-              placeholder="Por ejemplo: videollamada con la cédula en mano (mínimo 10 caracteres)"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
-            />
-          </div>
-          <div className="flex justify-end gap-2 border-t border-gray-100 pt-2">
+        footer={
+          <ModalAcciones>
             <button
               type="button"
               onClick={() => setRevision(null)}
               disabled={guardando}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              className={botonModal('secondary')}
             >
               Cancelar
             </button>
             <button
-              type="button"
-              onClick={() => { void handleRevisar() }}
+              type="submit"
+              form="revision-identidad-form"
               disabled={guardando || nota.trim().length < 10}
-              className={`rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 ${
-                revision?.resultado === 'suplantacion' ? 'bg-red-600 hover:bg-red-700' : 'bg-primary-700 hover:bg-primary-800'
-              }`}
+              aria-busy={guardando || undefined}
+              className={botonModal(revision?.resultado === 'suplantacion' ? 'danger' : 'primary')}
             >
+              {guardando && <IconLoader size={16} className="animate-spin" />}
               {guardando ? 'Guardando…' : revision?.resultado === 'suplantacion' ? 'Registrar suplantación' : 'Confirmar identidad'}
             </button>
-          </div>
-        </div>
+          </ModalAcciones>
+        }
+      >
+        <form
+          id="revision-identidad-form"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (!guardando && nota.trim().length >= 10) void handleRevisar()
+          }}
+        >
+          <label htmlFor="nota-identidad" className="mb-1 block text-sm font-medium text-gray-700">
+            Cómo verificó la identidad <span className="text-red-600" aria-hidden="true">*</span>
+          </label>
+          <textarea
+            id="nota-identidad"
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            rows={3}
+            required
+            disabled={guardando}
+            aria-describedby="nota-identidad-ayuda"
+            placeholder="Por ejemplo: videollamada con la cédula en mano"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
+          />
+          <p id="nota-identidad-ayuda" className="mt-1 text-xs text-gray-500 tabular-nums">
+            Mínimo 10 caracteres ({nota.trim().length}/10).
+          </p>
+        </form>
       </Modal>
     </div>
   )

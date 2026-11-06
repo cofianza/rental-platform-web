@@ -1,8 +1,8 @@
 'use client'
 
-import { Modal } from '@/components/ui/Modal'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useState, useEffect } from 'react'
-import { IconX } from '@/components/icons'
+import { IconAlertTriangle, IconRefresh } from '@/components/icons'
 import { SkeletonText } from '@/components/ui/Skeleton'
 import { contratoService } from '@/services/contratoService'
 import { formatDateTime } from '@/lib/constants'
@@ -32,6 +32,7 @@ export function LogAccesosModal({ isOpen, onClose, contratoId }: LogAccesosModal
   const [accesos, setAccesos] = useState<IContratoAccesoFirmado[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [intento, setIntento] = useState(0)
 
   useEffect(() => {
     if (!isOpen) return
@@ -41,43 +42,58 @@ export function LogAccesosModal({ isOpen, onClose, contratoId }: LogAccesosModal
       .getLogAccesos(contratoId)
       .then(setAccesos)
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : 'Error al cargar log de accesos')
+        setError(err instanceof Error ? err.message : 'No se pudo cargar el registro de accesos.')
       })
       .finally(() => setIsLoading(false))
-  }, [isOpen, contratoId])
+  }, [isOpen, contratoId, intento])
 
   if (!isOpen) return null
 
   return (
-    <Modal isOpen onClose={onClose} bare ariaLabel="Registro de accesos al contrato" closeOnBackdrop className="rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 border-b border-gray-200">
-        <h2 className="min-w-0 text-lg font-semibold text-gray-900">Log de Accesos al Documento Firmado</h2>
-        <button type="button" data-modal-close aria-label="Cerrar" onClick={onClose} className="p-1 text-gray-500 hover:text-gray-600 rounded">
-          <IconX size={20} />
-        </button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+    <Modal
+      isOpen
+      onClose={onClose}
+      title="Registro de accesos al contrato firmado"
+      description="Quién vio, descargó o verificó el documento firmado, y cuándo."
+      size="lg"
+      closeOnBackdrop
+      footer={
+        <ModalAcciones>
+          <button type="button" onClick={onClose} className={botonModal('secondary')}>
+            Cerrar
+          </button>
+        </ModalAcciones>
+      }
+    >
+      <div>
         {isLoading ? (
           <div role="status" aria-live="polite">
             <span className="sr-only">Cargando registro de accesos…</span>
             <SkeletonText lineas={6} />
           </div>
         ) : error ? (
-          <p className="text-sm text-red-600 text-center py-8">{error}</p>
+          <div role="alert" className="flex flex-col items-center gap-3 py-8 text-center">
+            <IconAlertTriangle size={24} className="text-red-600" aria-hidden="true" />
+            <p className="text-sm text-gray-700">{error}</p>
+            <button type="button" onClick={() => setIntento((n) => n + 1)} className={botonModal('secondary')}>
+              <IconRefresh size={16} aria-hidden="true" />
+              Reintentar
+            </button>
+          </div>
         ) : accesos.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-8">No hay registros de acceso</p>
+          <div className="py-8 text-center">
+            <p className="text-sm font-medium text-gray-700">Aún no hay accesos</p>
+            <p className="mt-1 text-sm text-gray-500">Cuando alguien abra o descargue el contrato firmado, aparecerá aquí.</p>
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 px-3 font-medium text-gray-600">Fecha</th>
-                  <th className="text-left py-2 px-3 font-medium text-gray-600">Usuario</th>
-                  <th className="text-left py-2 px-3 font-medium text-gray-600">Acción</th>
-                  <th className="text-left py-2 px-3 font-medium text-gray-600">IP</th>
+                  <th scope="col" className="text-left py-2 px-3 font-medium text-gray-600">Fecha</th>
+                  <th scope="col" className="text-left py-2 px-3 font-medium text-gray-600">Usuario</th>
+                  <th scope="col" className="text-left py-2 px-3 font-medium text-gray-600">Acción</th>
+                  <th scope="col" className="text-left py-2 px-3 font-medium text-gray-600">IP</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -89,14 +105,14 @@ export function LogAccesosModal({ isOpen, onClose, contratoId }: LogAccesosModal
                     <td className="py-2.5 px-3 text-gray-700">
                       {a.usuario
                         ? `${a.usuario.nombre} ${a.usuario.apellido}`
-                        : 'Sistema'}
+                        : 'Sistema (automático)'}
                     </td>
                     <td className="py-2.5 px-3">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${TIPO_COLORS[a.tipo_accion] || 'bg-gray-100 text-gray-700'}`}>
                         {TIPO_LABELS[a.tipo_accion] || a.tipo_accion}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 text-gray-500 font-mono text-xs">
+                    <td className="py-2.5 px-3 text-gray-500 tabular-nums text-xs">
                       {a.ip || '—'}
                     </td>
                   </tr>
@@ -105,16 +121,6 @@ export function LogAccesosModal({ isOpen, onClose, contratoId }: LogAccesosModal
             </table>
           </div>
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="flex items-center justify-end px-6 py-4 border-t border-gray-200">
-        <button
-          onClick={onClose}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-        >
-          Cerrar
-        </button>
       </div>
     </Modal>
   )

@@ -11,7 +11,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
 import { IconLoader, IconPlus, IconCheck, IconCalendar, IconClock, IconShieldCheck } from '@/components/icons'
-import { Modal } from '@/components/ui'
+import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { citaService } from '@/services/citaService'
 import { solicitanteService } from '@/services/solicitanteService'
@@ -605,6 +605,30 @@ function CitaCard({
   )
 }
 
+// ── Piezas comunes de los diálogos de cita ──────────────────────────
+
+const CAMPO_TEXTO =
+  'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100'
+
+/** Error del envío, en el pie junto a las acciones. */
+function ErrorDialogo({ mensaje }: { mensaje: string | null }) {
+  if (!mensaje) return null
+  return (
+    <p role="alert" className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+      {mensaje}
+    </p>
+  )
+}
+
+/** Sin inmueble no hay agenda que mostrar. */
+function SinDisponibilidad() {
+  return (
+    <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+      No pudimos cargar la disponibilidad del propietario. Recargue la página e intente de nuevo.
+    </p>
+  )
+}
+
 // ── Modal Crear Cita ──────────────────────────
 
 function CrearCitaModal({
@@ -634,6 +658,7 @@ function CrearCitaModal({
   const [notas, setNotas] = useState('')
   const [telefono, setTelefono] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   // Incrementa al volver de editar horarios en otra pestaña → recarga slots.
   const [slotRefresh, setSlotRefresh] = useState(0)
 
@@ -647,6 +672,7 @@ function CrearCitaModal({
     setSlot(null)
     setNotas('')
     setTelefono('')
+    setError(null)
   }
 
   const handleClose = () => {
@@ -656,15 +682,17 @@ function CrearCitaModal({
   }
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
     if (!slot) {
-      toast.error('Seleccione un horario disponible')
+      setError('Seleccione un horario disponible.')
       return
     }
     if (faltaTelefono && !telefonoValido) {
-      toast.error('Ingrese el teléfono (WhatsApp) del prospecto para enviarle la confirmación')
+      setError('Escriba el WhatsApp del prospecto para enviarle la confirmación.')
       return
     }
 
+    setError(null)
     setIsSubmitting(true)
     try {
       // Si el solicitante no tenía teléfono y se capturó uno, guardarlo ANTES de
@@ -689,32 +717,60 @@ function CrearCitaModal({
         notas_solicitante: notas || undefined,
         confirmar_inmediatamente: isOwnerOrAgency,
       })
-      toast.success(isOwnerOrAgency ? 'Visita agendada y confirmada' : 'Cita solicitada exitosamente')
+      toast.success(isOwnerOrAgency ? 'Visita agendada y confirmada' : 'Cita solicitada')
       reset()
       onCreated()
       if (telefonoGuardado) onSolicitanteUpdated?.()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al agendar la cita'
-      toast.error(msg)
+      setError(err instanceof Error ? err.message : 'No se pudo agendar la cita. Intente de nuevo.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const deshabilitado = isSubmitting || !slot || (faltaTelefono && !telefonoValido)
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={isOwnerOrAgency ? 'Agendar Visita Confirmada' : 'Solicitar Cita de Visita'}
+      title={isOwnerOrAgency ? 'Agendar visita confirmada' : 'Solicitar cita de visita'}
+      description={
+        isOwnerOrAgency
+          ? 'La visita queda confirmada y el prospecto recibe el aviso por correo y WhatsApp.'
+          : 'Elija un horario disponible. El propietario o la inmobiliaria confirmará o ajustará la fecha.'
+      }
       size="lg"
+      footer={
+        <>
+          <ErrorDialogo mensaje={error} />
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isSubmitting} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="crear-cita-form"
+              disabled={deshabilitado}
+              aria-busy={isSubmitting || undefined}
+              className={botonModal('primary')}
+            >
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              {isSubmitting ? 'Agendando…' : isOwnerOrAgency ? 'Confirmar visita' : 'Solicitar cita'}
+            </button>
+          </ModalAcciones>
+        </>
+      }
     >
-      <div className="space-y-4">
-        <p className="text-sm text-gray-500">
-          {isOwnerOrAgency
-            ? 'Programe una visita ya confirmada con el prospecto. Se le enviará una notificación por correo y WhatsApp.'
-            : 'Elija un horario disponible. El propietario o inmobiliaria confirmara o ajustara la fecha.'}
-        </p>
-
+      <form
+        id="crear-cita-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSubmit()
+        }}
+        className="space-y-4"
+      >
         {/* Captura del teléfono del solicitante si no lo tiene — necesario para
             enviarle la confirmación de la visita por WhatsApp. */}
         {faltaTelefono && (
@@ -726,7 +782,7 @@ function CrearCitaModal({
               onChange={setTelefono}
               placeholder="300 123 4567"
             />
-            <p className="mt-1.5 text-xs text-amber-700">
+            <p className="mt-1.5 text-xs text-amber-800">
               Este prospecto aún no tiene teléfono. Agréguelo para enviarle la confirmación de la visita por WhatsApp.
             </p>
           </div>
@@ -737,7 +793,10 @@ function CrearCitaModal({
             <SlotSelector
               inmuebleId={inmuebleId}
               value={slot}
-              onChange={setSlot}
+              onChange={(v) => {
+                setSlot(v)
+                setError(null)
+              }}
               refreshSignal={slotRefresh}
             />
             {/* Solo el gestor puede editar su propia disponibilidad. */}
@@ -746,58 +805,44 @@ function CrearCitaModal({
             )}
           </>
         ) : (
-          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-            No pudimos cargar la disponibilidad del propietario. Recargue la pagina e intente de nuevo.
-          </div>
+          <SinDisponibilidad />
         )}
 
         {slot && (
-          <div className="flex items-start gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded">
-            <IconCheck size={16} className="text-primary-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-primary-900">
+          <p role="status" className="flex items-start gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
+            <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-700" />
+            <span>
               Visitará el <strong>{formatFechaCompleta(slot)}</strong> a las{' '}
               <strong>{formatSlotHora(slot)}</strong>
-            </p>
-          </div>
+            </span>
+          </p>
         )}
 
         <div>
-          <label htmlFor="citas-section-campo" className="block text-sm font-medium text-gray-700 mb-1">
-            {isOwnerOrAgency ? 'Nota para el prospecto (opcional)' : 'Notas (opcional)'}
+          <label htmlFor="citas-section-campo" className="mb-1 block text-sm font-medium text-gray-700">
+            {isOwnerOrAgency ? 'Nota para el prospecto' : 'Notas'} <span className="font-normal text-gray-500">(opcional)</span>
           </label>
           <textarea id="citas-section-campo"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
             maxLength={500}
+            disabled={isSubmitting}
+            aria-describedby={isOwnerOrAgency ? 'citas-section-campo-ayuda' : undefined}
             placeholder={
               isOwnerOrAgency
                 ? 'Indicaciones de acceso, qué traer, punto de encuentro…'
-                : 'Indicaciones de acceso, preguntas para el propietario, etc.'
+                : 'Indicaciones de acceso, preguntas para el propietario…'
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={CAMPO_TEXTO}
           />
           {isOwnerOrAgency && (
-            <p className="mt-1 text-xs text-gray-500">
+            <p id="citas-section-campo-ayuda" className="mt-1 text-xs text-gray-500">
               Se la enviaremos al prospecto por WhatsApp y correo junto con la confirmación.
             </p>
           )}
         </div>
-
-        <div className="flex justify-end gap-3 pt-2">
-          <button onClick={handleClose} disabled={isSubmitting} className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-50">
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !slot || (faltaTelefono && !telefonoValido)}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSubmitting && <IconLoader size={14} className="animate-spin" />}
-            {isOwnerOrAgency ? 'Confirmar visita' : 'Solicitar cita'}
-          </button>
-        </div>
-      </div>
+      </form>
     </Modal>
   )
 }
@@ -817,8 +862,17 @@ function ConfirmarCitaModal({
 }) {
   const [notas, setNotas] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleClose = () => {
+    if (isSubmitting) return
+    setError(null)
+    onClose()
+  }
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
+    setError(null)
     setIsSubmitting(true)
     try {
       // Sin fecha_confirmada — el backend usa la fecha_propuesta. Si el
@@ -829,58 +883,70 @@ function ConfirmarCitaModal({
       toast.success('Cita confirmada')
       onConfirmed()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al confirmar la cita'
-      toast.error(msg)
+      setError(err instanceof Error ? err.message : 'No se pudo confirmar la cita. Intente de nuevo.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Confirmar cita">
-      <div className="space-y-4">
-        <p className="text-sm text-gray-500">
-          Confirme la cita en la fecha y hora propuesta por el prospecto. Si necesita
-          cambiar el horario, use el boton <strong>Reprogramar</strong>.
-        </p>
-
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Confirmar cita"
+      description="Se confirma en la fecha que propuso el prospecto. Para cambiar el horario, use «Reprogramar»."
+      footer={
+        <>
+          <ErrorDialogo mensaje={error} />
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isSubmitting} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="confirmar-cita-form"
+              disabled={isSubmitting}
+              aria-busy={isSubmitting || undefined}
+              className={botonModal('primary')}
+            >
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              {isSubmitting ? 'Confirmando…' : 'Confirmar cita'}
+            </button>
+          </ModalAcciones>
+        </>
+      }
+    >
+      <form
+        id="confirmar-cita-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSubmit()
+        }}
+        className="space-y-4"
+      >
         {cita.fecha_propuesta && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
-            <p className="text-xs text-blue-600">Fecha y hora a confirmar:</p>
-            <p className="font-semibold mt-0.5">{formatDateTime(cita.fecha_propuesta)}</p>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+            <p className="text-xs text-gray-600">Fecha y hora a confirmar</p>
+            <p className="mt-0.5 font-semibold text-gray-900">{formatDateTime(cita.fecha_propuesta)}</p>
           </div>
         )}
 
         <div>
-          <label htmlFor="citas-section-notas-opcional" className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+          <label htmlFor="citas-section-notas-opcional" className="mb-1 block text-sm font-medium text-gray-700">
+            Notas <span className="font-normal text-gray-500">(opcional)</span>
+          </label>
           <textarea id="citas-section-notas-opcional"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
             maxLength={2000}
-            placeholder="Indicaciones para el prospecto (punto de encuentro, etc.)"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            disabled={isSubmitting}
+            placeholder="Indicaciones para el prospecto (punto de encuentro…)"
+            className={CAMPO_TEXTO}
           />
         </div>
-
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSubmitting && <IconLoader size={14} className="animate-spin" />}
-            Confirmar cita
-          </button>
-        </div>
-      </div>
+      </form>
     </Modal>
   )
 }
@@ -905,12 +971,14 @@ function ReprogramarCitaModal({
   const [slot, setSlot] = useState<string | null>(null)
   const [notas, setNotas] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   // Incrementa al volver de editar horarios en otra pestaña → recarga slots.
   const [slotRefresh, setSlotRefresh] = useState(0)
 
   const reset = () => {
     setSlot(null)
     setNotas('')
+    setError(null)
   }
 
   const handleClose = () => {
@@ -920,10 +988,12 @@ function ReprogramarCitaModal({
   }
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
     if (!slot) {
-      toast.error('Seleccione un horario disponible')
+      setError('Seleccione un horario disponible.')
       return
     }
+    setError(null)
     setIsSubmitting(true)
     try {
       // Endpoint unico — el backend decide la transicion segun el rol:
@@ -937,14 +1007,13 @@ function ReprogramarCitaModal({
       })
       toast.success(
         isSolicitante
-          ? 'Propuesta enviada — el propietario debe confirmar la nueva fecha.'
-          : 'Cita reprogramada. Se notificó al prospecto.',
+          ? 'Propuesta enviada. El propietario debe confirmar la nueva fecha.'
+          : 'Cita reprogramada. Se le avisó al prospecto.',
       )
       reset()
       onReprogramado()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al reprogramar la cita'
-      toast.error(msg)
+      setError(err instanceof Error ? err.message : 'No se pudo reprogramar la cita. Intente de nuevo.')
     } finally {
       setIsSubmitting(false)
     }
@@ -952,35 +1021,69 @@ function ReprogramarCitaModal({
 
   // Texto y placeholders adaptados al actor.
   const descripcion = isSolicitante
-    ? 'Elija un nuevo horario disponible. Al enviar, la cita queda pendiente de confirmación del propietario.'
-    : 'Elija un nuevo horario disponible. Al guardar, el prospecto recibirá un aviso con la nueva fecha por correo, WhatsApp y una notificación en la plataforma.'
+    ? 'Al enviar, la cita queda pendiente de que el propietario confirme el nuevo horario.'
+    : 'Al guardar, el prospecto recibe la nueva fecha por correo, WhatsApp y en la plataforma.'
 
   const notasPlaceholder = isSolicitante
     ? 'Cuéntele al propietario por qué necesita cambiar el horario.'
     : 'Cuéntele al prospecto por qué cambia el horario.'
 
-  const ctaLabel = isSolicitante ? 'Enviar propuesta' : 'Enviar nueva propuesta'
+  const ctaLabel = isSolicitante ? 'Enviar propuesta' : 'Guardar nuevo horario'
+  const horarioActual = cita.fecha_confirmada || cita.fecha_propuesta
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Reprogramar visita" size="lg">
-      <div className="space-y-4">
-        {(cita.fecha_confirmada || cita.fecha_propuesta) && (
-          <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm">
-            <p className="text-xs text-gray-500">Horario actual:</p>
-            <p className="font-medium text-gray-900">
-              {formatDateTime((cita.fecha_confirmada || cita.fecha_propuesta) as string)}
-            </p>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Reprogramar visita"
+      description={descripcion}
+      size="lg"
+      footer={
+        <>
+          <ErrorDialogo mensaje={error} />
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isSubmitting} className={botonModal('secondary')}>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              form="reprogramar-cita-form"
+              disabled={isSubmitting || !slot}
+              aria-busy={isSubmitting || undefined}
+              className={botonModal('primary')}
+            >
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              {isSubmitting ? 'Enviando…' : ctaLabel}
+            </button>
+          </ModalAcciones>
+        </>
+      }
+    >
+      <form
+        id="reprogramar-cita-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSubmit()
+        }}
+        className="space-y-4"
+      >
+        {horarioActual && (
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm">
+            <p className="text-xs text-gray-600">Horario actual</p>
+            <p className="font-medium text-gray-900">{formatDateTime(horarioActual)}</p>
           </div>
         )}
-
-        <p className="text-sm text-gray-600">{descripcion}</p>
 
         {inmuebleId ? (
           <>
             <SlotSelector
               inmuebleId={inmuebleId}
               value={slot}
-              onChange={setSlot}
+              onChange={(v) => {
+                setSlot(v)
+                setError(null)
+              }}
               refreshSignal={slotRefresh}
             />
             {/* El gestor (no solicitante) puede ajustar su disponibilidad. */}
@@ -989,51 +1092,34 @@ function ReprogramarCitaModal({
             )}
           </>
         ) : (
-          <div className="px-3 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-            No pudimos cargar la disponibilidad del propietario. Recargue la pagina e intente de nuevo.
-          </div>
+          <SinDisponibilidad />
         )}
 
         {slot && (
-          <div className="flex items-start gap-2 px-3 py-2 bg-primary-50 border border-primary-200 rounded">
-            <IconCheck size={16} className="text-primary-600 mt-0.5 shrink-0" />
-            <p className="text-sm text-primary-900">
+          <p role="status" className="flex items-start gap-2 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
+            <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-700" />
+            <span>
               Nuevo horario: <strong>{formatFechaCompleta(slot)}</strong> a las{' '}
               <strong>{formatSlotHora(slot)}</strong>
-            </p>
-          </div>
+            </span>
+          </p>
         )}
 
         <div>
-          <label htmlFor="citas-section-notas-opcional-2" className="block text-sm font-medium text-gray-700 mb-1">Notas (opcional)</label>
+          <label htmlFor="citas-section-notas-opcional-2" className="mb-1 block text-sm font-medium text-gray-700">
+            Notas <span className="font-normal text-gray-500">(opcional)</span>
+          </label>
           <textarea id="citas-section-notas-opcional-2"
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
             rows={2}
             maxLength={2000}
+            disabled={isSubmitting}
             placeholder={notasPlaceholder}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={CAMPO_TEXTO}
           />
         </div>
-
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            onClick={handleClose}
-            disabled={isSubmitting}
-            className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !slot}
-            className="px-4 py-2 text-sm font-medium text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSubmitting && <IconLoader size={14} className="animate-spin" />}
-            {ctaLabel}
-          </button>
-        </div>
-      </div>
+      </form>
     </Modal>
   )
 }
@@ -1053,52 +1139,85 @@ function CancelarCitaModal({
 }) {
   const [motivo, setMotivo] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleClose = () => {
+    if (isSubmitting) return
+    setError(null)
+    onClose()
+  }
 
   const handleSubmit = async () => {
-    if (!motivo.trim()) { toast.error('Ingrese un motivo'); return }
+    if (isSubmitting) return
+    if (!motivo.trim()) {
+      setError('Escriba el motivo de la cancelación.')
+      return
+    }
 
+    setError(null)
     setIsSubmitting(true)
     try {
       await citaService.cancelarCita(cita.id, { motivo_cancelacion: motivo })
       toast.success('Cita cancelada')
       onCancelled()
     } catch {
-      toast.error('Error al cancelar la cita')
+      setError('No se pudo cancelar la cita. Intente de nuevo.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Cancelar Cita">
-      <div className="space-y-4">
-        <p className="text-sm text-gray-500">Indique el motivo de la cancelación.</p>
-
-        <div>
-          <label htmlFor="citas-section-motivo" className="block text-sm font-medium text-gray-700 mb-1">Motivo</label>
-          <textarea id="citas-section-motivo"
-            value={motivo}
-            onChange={(e) => setMotivo(e.target.value)}
-            rows={3}
-            placeholder="Motivo de la cancelación..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
-
-        <div className="flex justify-end gap-3 pt-2">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">
-            Volver
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting || !motivo.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSubmitting && <IconLoader size={14} className="animate-spin" />}
-            Cancelar cita
-          </button>
-        </div>
-      </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Cancelar cita"
+      description="El motivo queda en el historial de la cita."
+      footer={
+        <>
+          <ErrorDialogo mensaje={error} />
+          <ModalAcciones>
+            <button type="button" onClick={handleClose} disabled={isSubmitting} className={botonModal('secondary')}>
+              Volver
+            </button>
+            <button
+              type="submit"
+              form="cancelar-cita-form"
+              disabled={isSubmitting || !motivo.trim()}
+              aria-busy={isSubmitting || undefined}
+              className={botonModal('danger')}
+            >
+              {isSubmitting && <IconLoader size={16} className="animate-spin" />}
+              {isSubmitting ? 'Cancelando…' : 'Cancelar cita'}
+            </button>
+          </ModalAcciones>
+        </>
+      }
+    >
+      <form
+        id="cancelar-cita-form"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSubmit()
+        }}
+      >
+        <label htmlFor="citas-section-motivo" className="mb-1 block text-sm font-medium text-gray-700">
+          Motivo <span className="text-red-600" aria-hidden="true">*</span>
+        </label>
+        <textarea id="citas-section-motivo"
+          value={motivo}
+          onChange={(e) => {
+            setMotivo(e.target.value)
+            setError(null)
+          }}
+          rows={3}
+          required
+          disabled={isSubmitting}
+          placeholder="Por qué se cancela la visita…"
+          className={CAMPO_TEXTO}
+        />
+      </form>
     </Modal>
   )
 }
