@@ -661,10 +661,11 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'precios',
     sub: 'Tarifa mensual de la fianza',
     unidad: 'pct',
-    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza si el estudio se aprueba solo (también con coarrendatario), salvo la excepción.',
+    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza si el estudio se aprueba solo (también con coarrendatario) y en otro caso.',
     excepciones: [
-      'Un analista lo aprueba sin condiciones y solo lo frenaron la capacidad de pago o la identidad → también se cobra esta tarifa (no si también lo frenó una mora vigente de bajo monto).',
+      'Un analista lo aprueba sin condiciones y solo lo frenaron la capacidad de pago o la identidad (no si también lo frenó una mora vigente de bajo monto) → también se cobra esta tarifa.',
     ],
+    etiquetaExcepciones: ['otro caso', 'otros casos'],
     ejemplo: (v) => tarifaEjemplo(v.TARIFA_VIA_AUTOMATICA, v.TARIFA_IVA),
     rige: 'siempre',
   },
