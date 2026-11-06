@@ -142,7 +142,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'aprobacion',
     sub: 'Puntaje del solicitante',
     unidad: 'puntos',
-    queHace: 'Por debajo de este puntaje el estudio se rechaza, salvo que solo lo baje el endeudamiento, que solo lo baje el canon sin ingreso comprobado (decide un analista, que pide soporte de ingreso) o que la central exija un analista. De aquí hasta el de aprobar solo, se pide coarrendatario («Está cerca»).',
+    queHace: 'Por debajo de este puntaje el estudio se rechaza, salvo que la central exija un analista o, con la Adenda 4, que lo baje solo el canon sin ingreso comprobado (decide un analista, que pide soporte de ingreso) o, en estudios de inmobiliaria y desde el piso, solo el endeudamiento, o el endeudamiento y el canon, sin ingreso comprobado (se exige coarrendatario). De aquí hasta el de aprobar solo, se pide coarrendatario («Está cerca»).',
     ejemplo: (v) =>
       `Con ${v.UMBRAL_ZONA_GRIS}: ${Math.min(v.UMBRAL_ZONA_GRIS + 5, v.UMBRAL_APROBACION_AUTOMATICA - 1)} puntos queda pendiente de un coarrendatario (sin inmobiliaria, decide un analista); ${v.UMBRAL_ZONA_GRIS - 5} se rechaza.`,
     rige: 'siempre',
@@ -153,7 +153,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'aprobacion',
     sub: 'Segunda central',
     unidad: 'puntos',
-    queHace: 'Para ahorrar consultas: si con la primera central (casi siempre DataCrédito) el puntaje del solicitante (0 a 100) sale por debajo de este valor, el caso ya es claramente malo y se rechaza sin pagar la segunda consulta. Excepciones: si el puntaje que reporta la central cae en la franja que exige un analista, o si solo lo baja el canon frente a un ingreso no comprobado, se consulta la segunda central.',
+    queHace: 'Para ahorrar consultas: si con la primera central (casi siempre DataCrédito) el puntaje del solicitante (0 a 100) sale por debajo de este valor, el caso ya es claramente malo y se rechaza sin pagar la segunda consulta. Excepciones: si el puntaje que reporta la central cae en la franja que exige un analista, o, con la Adenda 4, si solo lo baja el canon frente a un ingreso no comprobado, se consulta la segunda central.',
     ejemplo: (v) =>
       `Con ${v.UMBRAL_CASCADA_RECHAZO}: ${Math.max(0, v.UMBRAL_CASCADA_RECHAZO - 5)} puntos se rechaza solo con la primera central; ${v.UMBRAL_CASCADA_RECHAZO + 15} puntos consulta también la segunda.`,
     rige: 'siempre',

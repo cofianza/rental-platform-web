@@ -108,7 +108,7 @@ function tramosCentrales(v: Valores): Tramo[] {
       hasta: v.UMBRAL_CASCADA_RECHAZO,
       titulo: 'Basta una central',
       detalle:
-        'Se rechaza sin consultar la segunda, salvo que la central dé un puntaje de la franja del analista o que solo lo baje el canon frente a un ingreso no comprobado.',
+        'Se rechaza sin consultar la segunda, salvo que la central dé un puntaje de la franja del analista o, con la Adenda 4, que solo lo baje el canon frente a un ingreso no comprobado.',
       tono: 'rojo',
     },
     {

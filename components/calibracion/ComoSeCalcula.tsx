@@ -27,10 +27,10 @@ function factores(v: Valores): Factor[] {
   const como: Record<string, string> = {
     'Deudas frente al ingreso': a4
       ? `${DEUDAS}. Más de 65 %: con ingreso verificado se rechaza; sin él no rechaza: vale 0, o los puntos por comportamiento si paga al día, y como máximo decide un analista. Se suman las cuotas que reporta la central y la cuota de la fianza.`
-      : `${DEUDAS} · más de 65 %: se rechaza. Se suman las cuotas que reporta la central y la cuota de la fianza.`,
+      : `${DEUDAS} · más de 65 %: se rechaza (en estudios de inmobiliaria se compensa con un coarrendatario). Se suman las cuotas que reporta la central y la cuota de la fianza.`,
     'Canon frente al ingreso': a4
-      ? `${CANON} y lo revisa un analista. Más de 40 %: con ingreso verificado se rechaza; sin él vale 0 y decide un analista, que pide soporte de ingreso.`
-      : `${CANON} · más de 40 %: se rechaza.`,
+      ? `${CANON}. Más de 40 %: con ingreso verificado se rechaza; sin él vale 0 y no rechaza por sí solo: decide un analista, que pide soporte de ingreso (si el puntaje no alcanza el mínimo por otras causas, se rechaza).`
+      : `${CANON} · más de 40 %: se rechaza (en estudios de inmobiliaria se compensa con un coarrendatario).`,
     'Comportamiento de pago':
       v.ADENDA5 === 1
         ? `${COMPORTAMIENTO} Una mora vigente de sector no financiero de bajo monto frente al canon puede no rechazar: resta 15 puntos y no cuenta como «sin moras» (ver «Mora vigente y reciente»). Cualquier otra mora vigente, y la de los últimos 6 meses, rechaza.`
@@ -59,7 +59,7 @@ const FACTORES: Factor[] = [
   // Deudas y canon dependen de las reglas encendidas: los arma factores().
   { nombre: 'Deudas frente al ingreso', max: 15, como: DEUDAS },
   { nombre: 'Canon frente al ingreso', max: 10, como: CANON },
-  { nombre: 'Seguridad social', max: 8, como: 'Hoy no se cuenta: la consulta de antecedentes (Auco) no es fuente de este factor y ninguna central lo reporta (Adenda 1 §1.2).' },
+  { nombre: 'Seguridad social', max: 8, como: 'Hoy no se cuenta: la consulta de antecedentes (Auco) no es fuente de este factor y ninguna central lo reporta.' },
   { nombre: 'Experiencia con créditos', max: 6, como: 'Con bancos o financieras: 6 · solo con comercio o cooperativas: 4.' },
   // El texto de la mora depende de las reglas encendidas: lo arma factores().
   { nombre: 'Comportamiento de pago', max: 10, como: COMPORTAMIENTO },
@@ -124,7 +124,7 @@ export function ComoSeCalcula({ valores }: { valores: Valores }) {
         puntaje de la central por debajo de {minCentral}
         {valores.ADENDA4 === 1
           ? ' y, con ingreso verificado, endeudamiento o canon por encima del máximo'
-          : ' y endeudamiento o canon por encima del máximo'}
+          : ' y endeudamiento o canon por encima del máximo (en estudios de inmobiliaria se compensan con un coarrendatario)'}
         . Las tablas de puntos de cada factor salen de la Política y no se cambian desde
         este panel; los cortes de decisión sí.
       </p>
