@@ -6,6 +6,7 @@
  * qué pasa en cada tramo. Los textos dependen de las reglas encendidas.
  */
 
+import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { fmt, metaDe, type Valores } from './parametros'
 
@@ -47,19 +48,23 @@ function tramosPuntaje(v: Valores): Tramo[] {
   const auto = v.UMBRAL_APROBACION_AUTOMATICA
   const piso = v.ADENDA4 === 1 ? v.PUNTAJE_PISO_COARRENDATARIO : null
   const t: Tramo[] = []
+  // Adenda 4: el canon solo, sin ingreso comprobado, no rechaza (decide un analista).
+  const rojoPuntaje =
+    v.ADENDA4 === 1 ? 'No alcanza el mínimo (salvo que solo lo baje el canon sin ingreso comprobado: decide un analista).' : 'No alcanza el mínimo.'
   if (piso !== null && piso < gris) {
     // En 0, todo el que quede bajo la zona gris solo por el endeudamiento puede presentar coarrendatario.
-    if (piso > 0) t.push({ desde: 0, hasta: piso, titulo: 'Se rechaza', detalle: 'No alcanza el mínimo.', tono: 'rojo' })
+    if (piso > 0) t.push({ desde: 0, hasta: piso, titulo: 'Se rechaza', detalle: rojoPuntaje, tono: 'rojo' })
     t.push({
       desde: piso,
       hasta: gris,
       clave: 'PUNTAJE_PISO_COARRENDATARIO',
-      titulo: 'Se rechaza, salvo un caso',
-      detalle: 'Con inmobiliaria, si solo lo baja el endeudamiento, o el endeudamiento y el canon, sin ingreso comprobado, se le exige un coarrendatario y decide un analista.',
+      titulo: 'Se rechaza, salvo dos casos',
+      detalle:
+        'Si solo lo baja el canon sin ingreso comprobado, decide un analista (pide soporte de ingreso); con inmobiliaria, si solo lo baja el endeudamiento, o el endeudamiento y el canon, sin ingreso comprobado, se le exige un coarrendatario y decide un analista.',
       tono: 'naranja',
     })
   } else {
-    t.push({ desde: 0, hasta: gris, titulo: 'Se rechaza', detalle: 'No alcanza el mínimo.', tono: 'rojo' })
+    t.push({ desde: 0, hasta: gris, titulo: 'Se rechaza', detalle: rojoPuntaje, tono: 'rojo' })
   }
   // Entre la zona gris y el mínimo para ofrecer coarrendatario: con los valores
   // iniciales (70 y 70) este tramo no existe; aparece si Gerencia sube el segundo.
@@ -102,7 +107,8 @@ function tramosCentrales(v: Valores): Tramo[] {
       desde: 0,
       hasta: v.UMBRAL_CASCADA_RECHAZO,
       titulo: 'Basta una central',
-      detalle: 'Se rechaza sin consultar la segunda, salvo que la central dé un puntaje de la franja del analista.',
+      detalle:
+        'Se rechaza sin consultar la segunda, salvo que la central dé un puntaje de la franja del analista o, con la Adenda 4, que solo lo baje el canon frente a un ingreso no comprobado.',
       tono: 'rojo',
     },
     {
@@ -182,66 +188,99 @@ interface BarraProps {
   decimales?: boolean
 }
 
+/** Ancho del contenedor en píxeles: decide cuándo dos números del corte se tapan. */
+function useAncho<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [ancho, setAncho] = useState(0)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(([e]) => setAncho(e.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  return [ref, ancho] as const
+}
+
 function Barra({ titulo, tramos, min, max, resaltar, onAbrir, decimales }: BarraProps) {
+  const [ref, anchoPx] = useAncho<HTMLDivElement>()
   const total = max + 1 - min
   const ancho = (t: Tramo) => `${(Math.max(0, Math.min(t.hasta, max + 1) - Math.max(t.desde, min)) / total) * 100}%`
   const pos = (n: number) => ((n - min) / total) * 100
   const texto = (t: Tramo) =>
     t.hasta > max ? `${t.desde} o más` : t.desde <= min ? `Menos de ${t.hasta}` : `${t.desde} a ${decimales ? fmt(t.hasta - 0.1) : t.hasta - 1}`
   // Dos cortes muy juntos (p. ej. 65 y 70) se tapaban: el segundo baja a otra fila.
+  // «Juntos» se mide en píxeles (cada número es un botón de 44 px) y contra el
+  // último corte de la MISMA fila; si no cabe en ninguna, va a la de abajo.
+  const separacion = anchoPx > 0 ? (48 / anchoPx) * 100 : 7
   const cortes = tramos.filter((t) => t.clave && t.desde > min)
-  const filas = cortes.reduce<number[]>((acc, t, i) => {
-    const cerca = i > 0 && pos(t.desde) - pos(cortes[i - 1].desde) < 7 && acc[i - 1] === 0
-    return [...acc, cerca ? 1 : 0]
-  }, [])
+  const ultimoEn: (number | null)[] = [null, null]
+  const filas = cortes.map((t) => {
+    const x = pos(t.desde)
+    const fila = ultimoEn[0] === null || x - ultimoEn[0] >= separacion ? 0 : 1
+    ultimoEn[fila] = x
+    return fila
+  })
+  // El número no se sale de la barra en los extremos (22 px = medio botón).
+  const izquierda = (x: number) => (anchoPx > 0 ? `${Math.min(Math.max((x / 100) * anchoPx, 22), anchoPx - 22)}px` : `${x}%`)
+  const tocables = !!onAbrir
 
   return (
     <div>
-      <p className="mb-2 text-sm font-semibold text-gray-800">{titulo}</p>
-      <div className="flex h-3 overflow-hidden rounded-full" aria-hidden>
+      <p className="mb-2 text-sm font-semibold text-gray-900">{titulo}</p>
+      <div ref={ref} className="flex h-3 overflow-hidden rounded-full" aria-hidden>
         {tramos.map((t, i) => (
-          <div key={i} className={COLOR[t.tono].barra} style={{ width: ancho(t) }} />
+          <div key={i} className={cn(COLOR[t.tono].barra, i > 0 && 'border-l-2 border-white')} style={{ width: ancho(t) }} />
         ))}
       </div>
       {/* Los umbrales, debajo de cada corte. */}
-      <div className={cn('relative mt-1', filas.includes(1) ? 'h-14' : 'h-7')}>
+      <div className={cn('relative', tocables ? (filas.includes(1) ? 'h-[5.5rem]' : 'h-11') : filas.includes(1) ? 'h-14' : 'h-8')}>
         {cortes.map((t, i) => {
-            const meta = metaDe(t.clave!)
-            const contenido = <span className="font-mono">{t.marca ?? t.desde}</span>
-            return (
-              <span key={t.clave} className="absolute -translate-x-1/2" style={{ left: `${pos(t.desde)}%`, top: filas[i] ? '1.75rem' : 0 }}>
-                {onAbrir ? (
-                  <button
-                    type="button"
-                    onClick={() => onAbrir(t.clave!)}
-                    aria-label={`Cambiar: ${meta.nombre} (${t.marca ?? t.desde})`}
-                    className="rounded-md border border-gray-300 bg-white px-1.5 py-0.5 text-xs font-bold text-gray-800 shadow-sm hover:border-primary-400 hover:text-primary-800"
-                  >
-                    {contenido}
-                  </button>
-                ) : (
+          const meta = metaDe(t.clave!)
+          const numero = t.marca ?? t.desde
+          return (
+            <span
+              key={t.clave}
+              className="absolute -translate-x-1/2"
+              style={{ left: izquierda(pos(t.desde)), top: filas[i] ? (tocables ? '2.75rem' : '1.75rem') : 0 }}
+            >
+              {tocables ? (
+                // El área tocable mide 44 px; el número se ve como una ficha unida a su corte.
+                <button
+                  type="button"
+                  onClick={() => onAbrir!(t.clave!)}
+                  aria-label={`Cambiar: ${meta.nombre} (${numero})`}
+                  className="group flex h-11 min-w-11 flex-col items-center justify-start rounded-md"
+                >
+                  <span aria-hidden className="h-1.5 w-px bg-gray-400" />
+                  <span className="rounded-md border border-gray-300 bg-white px-2 py-0.5 text-sm font-bold tabular-nums text-gray-900 shadow-[0_1px_2px_rgb(0_0_0/0.06)] group-hover:border-primary-500 group-hover:bg-primary-50 group-hover:text-primary-800">
+                    {numero}
+                  </span>
+                </button>
+              ) : (
+                <span className="flex flex-col items-center">
+                  <span aria-hidden className="h-1.5 w-px bg-gray-400" />
                   <span
                     className={cn(
-                      'rounded-md px-1.5 py-0.5 text-xs font-bold',
+                      'rounded-md px-1.5 py-0.5 text-xs font-bold tabular-nums',
                       resaltar === t.clave ? 'bg-primary-700 text-white' : 'text-gray-700',
                     )}
                   >
-                    {contenido}
+                    {numero}
                   </span>
-                )}
-              </span>
-            )
-          })}
+                </span>
+              )}
+            </span>
+          )
+        })}
       </div>
-      <ul className="mt-1 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      <ul className="mt-2 space-y-2">
         {tramos.map((t, i) => (
-          <li key={i} className="flex items-start gap-2 text-xs">
-            <span className={cn('mt-1 h-2.5 w-2.5 shrink-0 rounded-full', COLOR[t.tono].punto)} />
-            <span>
-              <span className="font-semibold text-gray-900">
-                {texto(t)}: {t.titulo}.
-              </span>{' '}
-              <span className="text-gray-600">{t.detalle}</span>
+          <li key={i} className="grid grid-cols-[0.625rem_minmax(0,1fr)] gap-x-2.5 text-sm sm:grid-cols-[0.625rem_7rem_minmax(0,1fr)]">
+            <span className={cn('mt-1.5 h-2.5 w-2.5 rounded-full', COLOR[t.tono].punto)} />
+            <span className="font-semibold tabular-nums text-gray-900">{texto(t)}:</span>
+            <span className="col-start-2 sm:col-start-3">
+              <span className="font-semibold text-gray-900">{t.titulo}.</span> <span className="text-gray-600">{t.detalle}</span>
             </span>
           </li>
         ))}
@@ -261,10 +300,10 @@ export function EscalaPuntaje({ valores, resaltar }: { valores: Valores; resalta
 
 export function EscalaDecision({ valores, onAbrir }: { valores: Valores; onAbrir: (clave: string) => void }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <Barra titulo="1. Puntaje del solicitante (0 a 100)" tramos={tramosPuntaje(valores)} min={0} max={100} onAbrir={onAbrir} decimales />
-        <p className="mt-2 text-xs text-gray-500">
+        <p className="mt-3 max-w-prose text-xs text-gray-600">
           Antes que este puntaje mandan las reglas que rechazan siempre (por ejemplo, una mora actual) y el puntaje que reporta la
           central (barra 3).
         </p>

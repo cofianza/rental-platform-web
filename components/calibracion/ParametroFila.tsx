@@ -22,7 +22,7 @@ export function ParametroFila({ p, valores, ultimo, onAbrir }: Props) {
   const fecha = ultimo?.created_at ?? p.actualizado_en
 
   return (
-    <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:px-5">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-sm font-bold text-gray-900">{meta.nombre}</h3>
@@ -33,22 +33,22 @@ export function ParametroFila({ p, valores, ultimo, onAbrir }: Props) {
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-sm text-gray-600">{meta.queHace || humanizar(p.descripcion)}</p>
-        {ejemplo && <p className="mt-1 text-xs text-gray-500">{ejemplo}</p>}
-        {meta.nota && <p className="mt-1 text-xs text-gray-500">{meta.nota}</p>}
+        <p className="mt-0.5 max-w-prose text-sm text-gray-600">{meta.queHace || humanizar(p.descripcion)}</p>
+        {ejemplo && <p className="mt-1 max-w-prose text-xs text-gray-600">{ejemplo}</p>}
+        {meta.nota && <p className="mt-1 max-w-prose text-xs text-gray-600">{meta.nota}</p>}
         {meta.notaRige && (
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 max-w-prose text-xs text-gray-600">
             <span className="font-semibold">Cuándo aplica:</span> {meta.notaRige}.
           </p>
         )}
         {p.advertencia && (
-          <p className="mt-1.5 flex items-start gap-1.5 text-xs text-amber-800">
+          <p className="mt-1.5 flex max-w-prose items-start gap-1.5 text-xs text-amber-800">
             <IconAlertTriangle size={13} className="mt-0.5 shrink-0" />
             <span>{humanizar(p.advertencia)}</span>
           </p>
         )}
         {(fecha || p.valor !== p.valorDefault) && (
-          <p className="mt-1.5 text-xs text-gray-400">
+          <p className="mt-1.5 text-xs text-gray-500">
             {fecha && `Último cambio: ${formatDate(fecha)}${ultimo?.usuario_nombre ? ` por ${ultimo.usuario_nombre}` : ''}`}
             {fecha && p.valor !== p.valorDefault && ' · '}
             {p.valor !== p.valorDefault && `Valor inicial: ${conUnidad(p.valorDefault, p)}`}
@@ -68,13 +68,13 @@ export function ParametroFila({ p, valores, ultimo, onAbrir }: Props) {
             {conUnidad(p.valor, p)}
           </span>
         ) : (
-          <span className="text-xl font-bold text-gray-900">{conUnidad(p.valor, p)}</span>
+          <span className="text-xl font-bold tabular-nums text-gray-900">{conUnidad(p.valor, p)}</span>
         )}
         <button
           type="button"
           onClick={() => onAbrir(p.clave)}
           aria-label={`${fijo || p.editable === false ? 'Ver' : 'Cambiar'}: ${meta.nombre}`}
-          className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          className="inline-flex min-h-10 min-w-[5.5rem] items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 hover:border-gray-400 hover:bg-gray-50"
         >
           {fijo || p.editable === false ? 'Ver' : onoff ? (p.valor === 1 ? 'Apagar' : 'Encender') : 'Cambiar'}
         </button>
