@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ApiClientError } from '@/lib/api'
 import { inmuebleService } from '@/services/inmuebleService'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 
 /**
  * ¿El usuario puede abrir la ficha del inmueble? Con «cada miembro ve solo lo
@@ -14,7 +14,7 @@ import { useAuthStore } from '@/stores/auth.store'
  * null mientras se consulta: así el enlace no aparece y desaparece.
  */
 export function useAccesoInmueble(inmuebleId: string | undefined): boolean | null {
-  const user = useAuthStore((s) => s.user)
+  const user = useUsuarioVista()
   const consultar = user?.rol === 'inmobiliaria' && user.rol_miembro !== 'owner'
   const [respuesta, setRespuesta] = useState<{ id: string; acceso: boolean } | null>(null)
 

@@ -17,7 +17,7 @@ import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconLoader } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { estudioService } from '@/services/estudioService'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type { IEstudio, ITarifaEstudio, ITarifaOverrideInput, ViaAprobacion } from '@/types/estudio'
 
@@ -49,7 +49,7 @@ export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
   const [editando, setEditando] = useState(false)
   const [confirmarQuitar, setConfirmarQuitar] = useState(false)
   const [quitando, setQuitando] = useState(false)
-  const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
+  const esGerencia = useUsuarioVista()?.es_gerencia_general === true
 
   const cargar = useCallback(async () => {
     if (!aplica) return

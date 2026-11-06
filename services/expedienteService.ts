@@ -200,6 +200,16 @@ class ExpedienteService {
   // ============================================
 
   /**
+   * Activa el modo «ver como» (solo administrador): la API deja la traza en la
+   * bitácora y responde a quién se simula según el dueño real del estudio.
+   * Va SIN la cabecera X-Ver-Como (con ella la API rechaza toda escritura).
+   */
+  async activarVerComo(id: string, rol: 'inmobiliaria' | 'propietario'): Promise<{ rol: 'inmobiliaria' | 'propietario'; nombre: string }> {
+    const response = await apiClient.post<{ rol: 'inmobiliaria' | 'propietario'; nombre: string }>(`/expedientes/${id}/ver-como`, { rol })
+    return response.data
+  }
+
+  /**
    * Obtiene el detalle completo de un expediente
    */
   async getExpedienteDetalle(id: string): Promise<IExpedienteDetalle> {

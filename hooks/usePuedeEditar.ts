@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 
 /**
@@ -10,7 +10,7 @@ import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPerso
  * para completarlo sale en OficinaVirtualShell.
  */
 export function usePuedeEditar(): boolean {
-  const user = useAuthStore((s) => s.user)
+  const user = useUsuarioVista()
   if (!user || user.rol === 'gerencia_consulta') return false
   if (miembroDebeCompletarPerfil(user)) return false
   return !(user.rol === 'inmobiliaria' && user.rol_miembro === 'solo_lectura')

@@ -100,7 +100,7 @@ export function DashboardShell({ children }: Props) {
       <Sidebar />
       <DashboardLayoutWrapper>
         <Header />
-        <main id="contenido" tabIndex={-1} className="p-4 lg:p-6 overflow-x-hidden focus:outline-none">
+        <main id="contenido" tabIndex={-1} className="p-4 lg:p-6 overflow-x-clip focus:outline-none">
           {/* BLQ §2.1: Cofianza también envía enlaces y corrige documentos. */}
           {/* Dentro de un estudio distrae del caso: ya lo dicen el menú y el aviso de la sesión. */}
           {rol === 'administrador' && muestraAvisoDatosEmpresa(pathname) && <DatosEmpresaPendientesBanner />}

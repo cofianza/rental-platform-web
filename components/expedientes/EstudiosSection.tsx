@@ -17,7 +17,7 @@ import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList, 
 import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { SolicitarEstudioModal } from './SolicitarEstudioModal'
 import { EstudioDetailModal } from './EstudioDetailModal'
@@ -158,7 +158,7 @@ export function EstudiosSection({
 }: EstudiosSectionProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
-  const user = useAuthStore((s) => s.user)
+  const user = useUsuarioVista()
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   // Propietario/inmobiliaria pueden ver el detalle completo del estudio
   // (TransUnion report) cuando ya esta completado — pagan por el reporte

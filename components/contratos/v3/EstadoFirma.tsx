@@ -32,7 +32,7 @@ import { VerificacionIdentidadFirma } from '@/components/expedientes/Verificacio
 import { CobroTarifaContrato } from '@/components/contratos/CobroTarifaContrato'
 import { contratoService } from '@/services/contratoService'
 import { firmaService } from '@/services/firmaService'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import type { useContratoV3 } from '@/hooks/useContratoV3'
 import type { EnvioV3, EstadoFirmanteV3, EstadoSobreV3 } from '@/types/contratoV3'
 import type { IVerificacionIdentidad } from '@/types/firma'
@@ -118,7 +118,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const ocupado = accion !== null
   // Adenda 1 contratos (respuesta 21): el acta la carga la inmobiliaria; Cofianza no la carga en su nombre.
   // Si un administrador cerró el estudio sin acta, ya no se pide.
-  const rol = useAuthStore((st) => st.user?.rol)
+  const rol = useUsuarioVista()?.rol
   const sinActa = e.acta?.cierreSinActa ?? null
   const cargaActa = editable && rol === 'inmobiliaria' && !sinActa
 

@@ -13,9 +13,9 @@ import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { ExcepcionTopeBlock } from '@/components/expedientes/ExcepcionTopeBlock'
 import { ApiClientError } from '@/lib/api'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense, type ReactNode } from 'react'
 import { ExpedienteRefrescoContext } from '@/components/expedientes/ExpedienteRefresco'
-import { useParams } from 'next/navigation'
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Tabs, Badge, Avatar } from '@/components/ui'
@@ -35,6 +35,7 @@ import {
   IconArrowRight,
   IconClock,
   IconBuilding2,
+  IconEye,
 } from '@/components/icons'
 import {
   ExpedienteProgressBar,
@@ -85,11 +86,26 @@ import type {
 import { formatNumeroEstudio } from '@/lib/utils'
 import { documento } from '@/components/contratos/v3/campos'
 import { textoVisible, esRolInterno, fechaCondicion } from '@/components/expedientes/textoVisible'
+import {
+  VerComoBanner,
+  VerComoContext,
+  parsearVerComo,
+  useUsuarioVista,
+  useVerComo,
+  usuarioSimulado,
+  type IVerComo,
+  type RolVista,
+} from '@/components/expedientes/VerComo'
+import { setVerComoApi } from '@/lib/api'
 
-export default function ExpedienteDetallePage() {
+function ExpedienteDetalleContenido() {
   const params = useParams()
   const id = params.id as string
-  const user = useAuthStore((s) => s.user)
+  // En modo «ver como» (solo administrador) es el titular de la inmobiliaria o
+  // el propietario simulado: todo lo que sigue decide con ese rol.
+  const user = useUsuarioVista()
+  const usuarioReal = useAuthStore((s) => s.user)
+  const verComo = useVerComo()
   // El arrendatario vuelve a SU lista (el dashboard); /expedientes es la
   // bandeja operativa del equipo.
   const rutaListado = user?.rol === 'solicitante' ? '/dashboard' : '/expedientes'
@@ -643,6 +659,18 @@ export default function ExpedienteDetallePage() {
               con perfil incompleto tampoco hasta completar sus datos. */}
           {user?.rol !== 'solicitante' && !bloqueadoPorPerfil && (
             <div className="flex flex-wrap gap-3 pl-12 sm:pl-0">
+              {/* Solo el administrador: revisar el estudio tal como lo ve su dueño (solo lectura). */}
+              {/* De la inmobiliaria si tiene inmobiliaria_id; si no, del propietario del inmueble.
+                  Sin ninguno de los dos (estudio sin inmueble ni inmobiliaria) no hay a quién simular. */}
+              {usuarioReal?.rol === 'administrador' && !verComo && (expediente.inmobiliaria_id || expediente.inmueble) && (
+                <Link
+                  href={`/expedientes/${id}?verComo=${expediente.inmobiliaria_id ? 'inmobiliaria' : 'propietario'}`}
+                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                >
+                  <IconEye size={16} />
+                  {expediente.inmobiliaria_id ? 'Ver como la inmobiliaria' : 'Ver como el propietario'}
+                </Link>
+              )}
               {transiciones === null ? (
                 <Button variante="secondary" className="min-h-10" onClick={() => fetchExpediente()}>
                   <IconRefresh size={16} />
@@ -1591,5 +1619,87 @@ function Dato({ etiqueta, ancho, children }: { etiqueta: ReactNode; ancho?: bool
       <dt className="text-xs font-medium text-gray-500">{etiqueta}</dt>
       <dd className="mt-0.5 break-words text-sm font-medium text-gray-900">{children}</dd>
     </div>
+  )
+}
+
+/**
+ * Modo «ver como la inmobiliaria / el propietario» (solo administrador): con
+ * `?verComo=inmobiliaria|propietario` en la URL, la API registra la activación
+ * en la bitácora y dice a quién se simula; desde ahí cada lectura lleva
+ * `X-Ver-Como` y la página decide con el rol simulado. Para cualquier otro rol
+ * el parámetro se ignora. El estado vive solo en la URL y en esta página: al
+ * salir (o al navegar a otra) se apaga.
+ */
+function ExpedienteDetalleConVista() {
+  const params = useParams()
+  const id = params.id as string
+  const router = useRouter()
+  const pathname = usePathname()
+  const pedido = parsearVerComo(useSearchParams().get('verComo'))
+  const usuarioReal = useAuthStore((s) => s.user)
+  const esAdmin = usuarioReal?.rol === 'administrador'
+  const [vista, setVista] = useState<{ clave: string; rol: RolVista; nombre: string } | null>(null)
+  const clave = pedido && esAdmin ? `${id}|${pedido}` : null
+  // Una activación (y una fila de bitácora) por clave: el doble efecto de
+  // desarrollo y los re-renders reutilizan la misma petición.
+  const activacionRef = useRef<{ clave: string; promesa: Promise<{ rol: RolVista; nombre: string }> } | null>(null)
+
+  useEffect(() => {
+    if (!clave || !pedido) {
+      // Fuera del modo: la próxima activación es nueva (y deja su fila en la bitácora).
+      activacionRef.current = null
+      return
+    }
+    let cancel = false
+    if (activacionRef.current?.clave !== clave) {
+      activacionRef.current = { clave, promesa: expedienteService.activarVerComo(id, pedido) }
+    }
+    activacionRef.current.promesa
+      .then((r) => {
+        if (cancel) return
+        // La cabecera se pone ANTES de montar el contenido: su primera lectura ya va redactada.
+        setVerComoApi(r.rol)
+        setVista({ clave, rol: r.rol, nombre: r.nombre })
+      })
+      .catch((err) => {
+        if (cancel) return
+        activacionRef.current = null
+        toast.error(err instanceof Error ? err.message : 'No se pudo activar la vista')
+        router.replace(pathname)
+      })
+    return () => {
+      cancel = true
+      setVerComoApi(null)
+    }
+  }, [clave, pedido, id, pathname, router])
+
+  // Sin modo (o no administrador): la página de siempre.
+  if (!pedido || (usuarioReal && !esAdmin)) return <ExpedienteDetalleContenido key="normal" />
+  // Aún no se sabe quién es, o la activación no ha respondido: nada se lee sin la cabecera.
+  if (!usuarioReal || !vista || vista.clave !== clave) return <ExpedienteDetalleSkeleton />
+
+  const salir = () => {
+    setVerComoApi(null)
+    router.replace(pathname)
+  }
+  const contexto: IVerComo = {
+    rol: vista.rol,
+    nombre: vista.nombre,
+    usuario: usuarioSimulado(usuarioReal, vista.rol),
+    salir,
+  }
+  return (
+    <VerComoContext.Provider value={contexto}>
+      <VerComoBanner vista={contexto} />
+      <ExpedienteDetalleContenido key={`vista-${vista.rol}`} />
+    </VerComoContext.Provider>
+  )
+}
+
+export default function ExpedienteDetallePage() {
+  return (
+    <Suspense fallback={<ExpedienteDetalleSkeleton />}>
+      <ExpedienteDetalleConVista />
+    </Suspense>
   )
 }

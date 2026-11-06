@@ -5,11 +5,18 @@
 
 import { useCallback } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import type { Resource, Action } from '@/types/permissions'
 import type { UserRole } from '@/types/auth'
 
 export function usePermissions() {
-  const user = useAuthStore((state) => state.user)
+  // Modo «ver como» (detalle del estudio, solo administrador): userRole,
+  // hasRole e isAdmin responden con el rol SIMULADO; `permissions`,
+  // canAccess, canAccessResource y getActions siguen con el mapa REAL del
+  // administrador (la API no expone el de otro rol). En el detalle solo se usa
+  // canAccess('documentos', 'create'), que la inmobiliaria y el propietario
+  // también tienen. No decida con canAccess algo que deba verse distinto en ese modo.
+  const user = useUsuarioVista()
   const permissions = useAuthStore((state) => state.permissions)
 
   const userRole = user?.rol ?? null

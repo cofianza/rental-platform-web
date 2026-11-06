@@ -28,7 +28,7 @@ import { contratoV3Service } from '@/services/contratoV3Service'
 import { BloqueosContrato, DEL_CRC, SOLO_NUEVA_EVALUACION } from '@/components/contratos/v3/BloqueosContrato'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import type { Bloqueo } from '@/types/contratoV3'
 import { Button, buttonClasses } from '@/components/ui/Button'
 import { TarjetaSiguientePaso } from './TarjetaSiguientePaso'
@@ -75,7 +75,7 @@ export function AccionContratoPendienteCard({
   const [reasignar, setReasignar] = useState(false)
   // Flujo anterior: el API rechazó generar porque la evaluación ya no sirve.
   const [vencidaAlGenerar, setVencidaAlGenerar] = useState<Bloqueo | null>(null)
-  const user = useAuthStore((s) => s.user)
+  const user = useUsuarioVista()
   const puedeEditar = usePuedeEditar() && !miembroDebeCompletarPerfil(user)
 
   // V3: el asistente es de admin/operador/inmobiliaria (el API no deja entrar

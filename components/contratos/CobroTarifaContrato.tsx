@@ -13,7 +13,7 @@ import { TerminacionEfectivaTarifa } from '@/components/contratos/TerminacionEfe
 import { useCobroDeContrato } from '@/hooks/useTarifaCobro'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { aniversarioPorConfirmar } from '@/lib/tarifaCobro'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 
 export function CobroTarifaContrato({
   contratoId,
@@ -31,7 +31,7 @@ export function CobroTarifaContrato({
   /** false para solo lectura (y perfil incompleto en el asistente). */
   editable: boolean
 }) {
-  const rol = useAuthStore((s) => s.user?.rol)
+  const rol = useUsuarioVista()?.rol
   const cofianza = rol === 'administrador' || rol === 'operador_analista'
   const pide =
     editable && causaTarifa && ['vigente', 'finalizado', 'cancelado'].includes(estado) && (cofianza || rol === 'inmobiliaria')

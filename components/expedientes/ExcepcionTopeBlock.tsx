@@ -13,7 +13,7 @@ import { toast } from 'sonner'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { IconAlertTriangle, IconShieldCheck } from '@/components/icons'
 import { expedienteService } from '@/services/expedienteService'
-import { useAuthStore } from '@/stores/auth.store'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import type { ITopeCanonDetalle } from '@/types/expediente'
 
@@ -29,7 +29,7 @@ export function ExcepcionTopeBlock({
   tope: ITopeCanonDetalle
   onAutorizada: () => void
 }) {
-  const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
+  const esGerencia = useUsuarioVista()?.es_gerencia_general === true
   const [abierto, setAbierto] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [canon, setCanon] = useState(String(tope.canon_cop ?? ''))
