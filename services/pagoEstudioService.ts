@@ -88,8 +88,13 @@ class PagoEstudioService {
    *  autorización al arrendatario y responde `{ estado: 'esperando_autorizacion' }`
    *  sin crear el pago. El cobro nace cuando el arrendatario firma. Nadie
    *  consume la respuesta (se refresca el estado), de ahí la unión laxa. */
-  async enviarLink(expedienteId: string, input: IEnviarLinkInput): Promise<IPago | { estado: 'esperando_autorizacion' }> {
-    const response = await apiClient.post<IPago | { estado: 'esperando_autorizacion' }>(`/expedientes/${expedienteId}/pago-estudio/enviar-link`, input)
+  /** `ficha_no_actualizada`: la autorización salió al contacto corregido pero
+   *  la ficha no se pudo escribir (el cobro posterior iría al anterior). */
+  async enviarLink(
+    expedienteId: string,
+    input: IEnviarLinkInput,
+  ): Promise<IPago | { estado: 'esperando_autorizacion'; ficha_no_actualizada?: true }> {
+    const response = await apiClient.post<IPago | { estado: 'esperando_autorizacion'; ficha_no_actualizada?: true }>(`/expedientes/${expedienteId}/pago-estudio/enviar-link`, input)
     return response.data
   }
 
