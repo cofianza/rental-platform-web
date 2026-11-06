@@ -45,7 +45,8 @@ import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos, IPazYSalvo, TramoAdenda5 } from '@/types/estudio'
-import { fechaCondicion, seCierraSiVence, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
+import { esRolInterno, fechaCondicion, partirObservaciones, seCierraSiVence, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
+import { MotivosRevision } from './MotivosRevision'
 import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
 import { CargandoMotivos, SelectorMotivos, errorMotivos, errorMotivosAprobacion, motivosParaEnviar } from './SelectorMotivos'
@@ -70,6 +71,11 @@ interface AprobarCondicionadoCardProps {
   condicion?: ICondicionCoarrendatario | null
   /** Observaciones del motor en la evaluación del titular: por qué llegó a revisión. */
   motivoRevision?: string | null
+  /**
+   * Observaciones de la evaluación del coarrendatario si también está en
+   * revisión: sus motivos van agrupados en «Por qué no se aprobó automáticamente».
+   */
+  motivoRevisionCoarrendatario?: string | null
   /** Estudio sin propiedad: al aprobar no hay dueño a quien avisar y el contrato espera el inmueble. */
   sinInmueble?: boolean
   /** Adenda 5 §7: aprobado sujeto a paz y salvo (el del estudio del titular; sin detalle para externos). */
@@ -93,6 +99,7 @@ export function AprobarCondicionadoCard({
   canalPropietario,
   condicion,
   motivoRevision,
+  motivoRevisionCoarrendatario,
   sinInmueble,
   pazYSalvo,
   adenda5Tramo,
@@ -174,6 +181,13 @@ export function AprobarCondicionadoCard({
   const etiquetaAprobar = sujeto ? 'Aprobar sujeto a paz y salvo' : 'Aprobar estudio'
   // Por qué llegó a revisión, arriba del formulario: los motivos que elija deben responder a esto.
   const revision = motivoRevision ? partirObservaciones(textoVisible(motivoRevision)) : null
+  // Los motivos arriba de la decisión, solo para Cofianza: a la inmobiliaria y al
+  // propietario esta tarjeta no les agrega nada que no vean en «Evaluación crediticia».
+  const motivosCoa = esRolInterno(userRol) && motivoRevisionCoarrendatario
+    ? partirObservaciones(textoVisible(motivoRevisionCoarrendatario)).motivos
+    : []
+  const motivosTitular = esRolInterno(userRol) ? (revision?.motivos ?? []) : []
+  const verMotivosArriba = motivosTitular.length > 0 || motivosCoa.length > 0
   // Lo que falta para que se active «Aprobar estudio», dicho junto al botón:
   // los campos obligatorios quedan abajo del modal y no se veían.
   const faltantes: string[] = []
@@ -392,8 +406,19 @@ export function AprobarCondicionadoCard({
               ? 'Ninguna central de riesgo respondió cuando se consultó. No es un rechazo: falta la respuesta de las centrales.'
               : sinInfoBuro
                 ? 'Las centrales de riesgo no tienen historial de esta persona. No es un rechazo: falta información para medir el riesgo.'
-                : 'La central sí evaluó a esta persona; el motivo de la revisión está en «Evaluación crediticia», aquí abajo. No es un rechazo.'}
+                : verMotivosArriba
+                  ? 'La central sí evaluó a esta persona. No es un rechazo.'
+                  : 'La central sí evaluó a esta persona; el motivo de la revisión está en «Evaluación crediticia», aquí abajo. No es un rechazo.'}
           </p>
+          {verMotivosArriba && (
+            <div className="mt-2">
+              <MotivosRevision
+                titulo="Por qué no se aprobó automáticamente:"
+                motivos={motivosTitular}
+                grupos={[{ etiqueta: 'Coarrendatario', motivos: motivosCoa }]}
+              />
+            </div>
+          )}
           {estudioSinCentrales && esCofianza && (
             <Button
               variante="secondary"
@@ -879,21 +904,4 @@ function PasoModal({ n, titulo, ayuda, listo }: { n: number; titulo: string; ayu
     {ayuda && <p className="mt-0.5 pl-8 text-xs text-gray-500">{ayuda}</p>}
     </div>
   )
-}
-
-/**
- * Separa las observaciones del motor en los datos de la central y los motivos de
- * la revisión, que van después de «El caso pasa a revisión…». Si el texto no
- * trae ese corte, todas las frases van como motivos.
- */
-function partirObservaciones(texto: string): { datos: string; motivos: string[] } {
-  const partes = texto.split(/\.\s+(?=[A-ZÁÉÍÓÚÑ¿«])/)
-  const frases = partes
-    .map((f, i) => (i < partes.length - 1 ? `${f}.` : f).trim())
-    // La API no reescribe las observaciones cuando la condición de coarrendatario
-    // vence o no se cumple: aquí ya no está vigente (el modal no sale con condición).
-    .filter((f) => f && !/^Condici[oó]n pendiente:/i.test(f))
-  const corte = frases.findIndex((f) => /pasa a revisi[oó]n/i.test(f))
-  if (corte < 0) return { datos: '', motivos: frases }
-  return { datos: frases.slice(0, corte).join(' '), motivos: frases.slice(corte + 1) }
 }

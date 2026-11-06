@@ -197,6 +197,9 @@ export default function ExpedienteDetallePage() {
   // También da el "Reasignado desde …" del Flujo §11 (lo trae el listado de
   // estudios, que la tarjeta del estudio ya pide: la petición se comparte).
   const [titular, setTitular] = useState<(IEstudio & { reasignado_desde?: string | null }) | null>(null)
+  // Observaciones del coarrendatario en revisión (como «En revisión» de rotuloEvaluacion):
+  // sus motivos van agrupados en la tarjeta de la decisión.
+  const [obsCoaRevision, setObsCoaRevision] = useState<string | null>(null)
   // La evaluación del titular cuya apelación muestra el banner: la última
   // decidida o una reevaluación (hija). Una evaluación nueva sin correr no es
   // de esa cadena. Si la lista no se pudo leer, el banner ofrece la apelación genérica.
@@ -229,6 +232,10 @@ export default function ExpedienteDetallePage() {
         if (cancel) return
         titularLeidoRef.current = clave
         setTitular(vigente ?? null)
+        const coa = filas
+          .filter((e) => e.estado !== 'cancelado' && e.tipo === 'con_coarrendatario')
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+        setObsCoaRevision(coa?.estado === 'completado' && coa.resultado === 'condicionado' ? (coa.observaciones ?? null) : null)
         setApelableId(apelable?.id ?? null)
         setListaFallo(false)
         setReasignadoDesde(filas.find((e) => e.reasignado_desde)?.reasignado_desde ?? null)
@@ -238,6 +245,7 @@ export default function ExpedienteDetallePage() {
         // Relectura por recarga (mismo id, estado y updated_at): main no la hacía; se conserva lo último.
         if (titularLeidoRef.current === clave) return
         setTitular(null)
+        setObsCoaRevision(null)
         setApelableId(null)
         setListaFallo(true)
       })
@@ -1051,6 +1059,7 @@ export default function ExpedienteDetallePage() {
                         condicion={condicionCoa}
                         canalPropietario={!expediente.inmueble?.inmobiliaria_id}
                         motivoRevision={titularCondicionado?.observaciones ?? null}
+                        motivoRevisionCoarrendatario={titularCondicionado ? obsCoaRevision : null}
                         sinInmueble={!expediente.inmueble}
                         pazYSalvo={pazYSalvo}
                         adenda5Tramo={titularCondicionado?.adenda5_tramo ?? null}
