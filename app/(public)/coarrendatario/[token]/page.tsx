@@ -250,7 +250,7 @@ export default function CoarrendatarioPublicPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
         <h1 className="text-xl font-bold text-gray-900 mb-2">Gracias por avisarnos</h1>
         <p className="text-sm text-gray-600 mb-4">
-          Le pedimos a quien tramita el arriendo que corrija su número de documento. Cuando lo haga, le llegará una
+          Le pedimos a quien tramita el arriendo que corrija su número de documento. Cuando lo corrija, le llegará una
           invitación nueva y este enlace dejará de funcionar.
         </p>
         <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
@@ -572,7 +572,7 @@ export default function CoarrendatarioPublicPage() {
             <>
               <p>
                 Si los últimos dígitos del número que mostramos no son los de su documento, le avisaremos a quien tramita el
-                arriendo para que lo corrija y le envíe una invitación nueva; este enlace dejará de funcionar cuando la reenvíen.
+                arriendo para que lo corrija y le envíe una invitación nueva; cuando corrija el número, este enlace dejará de funcionar.
               </p>
               <p className="mt-2">Si los dígitos sí coinciden, no avise: pulse «Volver» y continúe con la autorización.</p>
             </>

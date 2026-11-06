@@ -43,6 +43,8 @@ export interface ICoarrendatario {
    * el documento enmascarado, sin correo ni teléfono (email '', telefono null).
    */
   datos_protegidos?: boolean
+  /** Solo en la respuesta de reenviar: true si se emitió un enlace nuevo (cambió la persona o el destino). */
+  enlace_renovado?: boolean
   /** Estudio TransUnion del coarrendatario (embebido por el backend). */
   estudio?: ICoarrendatarioEstudio | null
 }

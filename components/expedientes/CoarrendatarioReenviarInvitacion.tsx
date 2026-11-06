@@ -5,9 +5,10 @@
  * o una cédula mal escritos eran un callejón sin salida.
  *
  * Solo se muestra con la invitación en 'pendiente_aceptacion': después de la
- * evaluación el coarrendatario ya no se reemplaza (uno por estudio). El
- * backend regenera el token al reenviar y al cancelar, así que el enlace
- * anterior queda invalidado.
+ * evaluación el coarrendatario ya no se reemplaza (uno por estudio). Al
+ * cancelar, el backend regenera el token. Al reenviar, solo si cambió la
+ * persona (nombre o documento) o el destino (correo o teléfono): sin cambios
+ * llega el mismo enlace, que sigue sirviendo (`enlace_renovado` lo dice).
  */
 
 'use client'
@@ -95,7 +96,7 @@ export function CoarrendatarioReenviarInvitacion({
       // El teléfono va solo si tiene dígitos reales (PhoneInput deja '+57 '
       // cuando se borra el número).
       const telDigits = telefono.replace(/\D/g, '').replace(/^57/, '')
-      await coarrendatarioService.reenviar(expedienteId, {
+      const r = await coarrendatarioService.reenviar(expedienteId, {
         ...(emailNorm !== coa.email.toLowerCase() ? { email: emailNorm } : {}),
         ...(telDigits.length >= 7 && telefono !== (coa.telefono ?? '') ? { telefono } : {}),
         ...(nombre.trim() !== coa.nombre ? { nombre: nombre.trim() } : {}),
@@ -103,7 +104,11 @@ export function CoarrendatarioReenviarInvitacion({
         ...(tipoDoc !== coa.tipo_documento ? { tipo_documento: tipoDoc } : {}),
         ...(numDoc.trim() !== coa.numero_documento ? { numero_documento: numDoc.trim() } : {}),
       })
-      toast.success(`Invitación reenviada a ${emailNorm}`)
+      toast.success(
+        r.enlace_renovado
+          ? `Invitación reenviada a ${emailNorm} con un enlace nuevo: el anterior ya no sirve.`
+          : `Invitación reenviada a ${emailNorm} con el mismo enlace.`,
+      )
       onCambio?.()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo reenviar la invitación')
@@ -195,7 +200,9 @@ export function CoarrendatarioReenviarInvitacion({
       </div>
       )}
       <p className="text-[11px] text-gray-500 mb-2">
-        Al reenviar o cancelar, el enlace anterior deja de funcionar. Reenviada, vale 7 días.
+        {protegidos
+          ? 'Si la cancela, el enlace que recibió deja de funcionar.'
+          : 'Si solo la reenvía, le llega el mismo enlace. Si corrige el nombre, el documento, el correo o el teléfono, le llega uno nuevo y el anterior deja de funcionar; al cancelarla, también. Reenviada, vale 7 días o hasta que venza el plazo para presentar el coarrendatario, lo que ocurra primero.'}
       </p>
       <div className="flex items-center justify-end gap-2 flex-wrap">
         <button
