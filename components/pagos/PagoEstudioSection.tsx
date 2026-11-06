@@ -540,7 +540,11 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-gray-900">Enviar enlace al arrendatario</span>
                 <span className="mt-0.5 block text-xs text-gray-600">Él paga con tarjeta o PSE</span>
-                <span className="mt-1 block text-xs leading-snug text-gray-600">Primero le pedimos la autorización; el cobro le llega apenas la firme.</span>
+                <span className="mt-1 block text-xs leading-snug text-gray-600">
+                  {estado.autorizado
+                    ? 'Ya autorizó la consulta: le enviamos el cobro.'
+                    : 'Primero le pedimos la autorización; el cobro le llega apenas la firme.'}
+                </span>
               </span>
             </button>
           </div>
@@ -813,6 +817,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         defaultNombre={solicitanteNombre}
         defaultEmail={solicitanteEmail}
         defaultTelefono={solicitanteTelefono}
+        autorizado={!!estado.autorizado}
         onSuccess={async () => {
           // Se espera la recarga antes de cerrar: el botón no se suelta con el estado viejo.
           await fetchEstado()
@@ -835,6 +840,7 @@ function EnviarLinkModal({
   defaultNombre,
   defaultEmail,
   defaultTelefono,
+  autorizado,
   onSuccess,
 }: {
   isOpen: boolean
@@ -844,6 +850,8 @@ function EnviarLinkModal({
   defaultNombre?: string
   defaultEmail?: string
   defaultTelefono?: string | null
+  /** El titular ya autorizó: solo se envía el cobro y los datos no tocan la ficha. */
+  autorizado: boolean
   onSuccess: () => void | Promise<void>
 }) {
   const [email, setEmail] = useState('')
@@ -882,18 +890,23 @@ function EnviarLinkModal({
     if (isSubmitting) return
     setError(null)
 
-    if (!nombre.trim() || !email.trim()) {
-      setError('Escriba el nombre y el correo del arrendatario.')
+    // Antes de autorizar el nombre no se usa (sale el de la ficha): no se exige.
+    if ((autorizado && !nombre.trim()) || !email.trim()) {
+      setError(autorizado ? 'Escriba el nombre y el correo del arrendatario.' : 'Escriba el correo del arrendatario.')
       return
     }
 
     setIsSubmitting(true)
     try {
-      await pagoEstudioService.enviarLink(expedienteId, {
+      const r = await pagoEstudioService.enviarLink(expedienteId, {
         email_pagador: email,
-        nombre_pagador: nombre,
+        // La API lo exige aunque antes de autorizar no lo use.
+        nombre_pagador: nombre.trim() || email,
         telefono: telefono || undefined,
       })
+      if ('ficha_no_actualizada' in r && r.ficha_no_actualizada) {
+        toast.warning('No pudimos actualizar la ficha; el cobro posterior podría ir al contacto anterior.')
+      }
       await onSuccess()
       resetForm()
     } catch (err) {
@@ -908,7 +921,11 @@ function EnviarLinkModal({
       isOpen={isOpen}
       onClose={handleClose}
       title="Enviar al arrendatario"
-      description="Primero recibe el enlace para autorizar la consulta en centrales; apenas lo firme, le llega el cobro."
+      description={
+        autorizado
+          ? 'Ya autorizó la consulta en centrales: le enviamos el cobro.'
+          : 'Primero recibe el enlace para autorizar la consulta en centrales; apenas lo firme, le llega el cobro.'
+      }
       size="md"
       footer={
         <div className="space-y-2">
@@ -943,14 +960,14 @@ function EnviarLinkModal({
           </div>
         </dl>
         <p className="text-sm text-gray-600">
-          La autorización y el cobro llegan al correo y al WhatsApp registrados del arrendatario. Para cambiarlos,
-          corrija la ficha del arrendatario. Los datos de abajo solo se usan para el cobro si el arrendatario ya
-          autorizó la consulta.
+          {autorizado
+            ? 'Enviaremos el cobro a este correo y WhatsApp. Ya autorizó la consulta: estos datos se usan solo para este cobro y no cambian su ficha.'
+            : 'Enviaremos la autorización y el cobro a este correo y WhatsApp. Si los corrige aquí, también se actualiza la ficha del arrendatario.'}
         </p>
 
         <div>
           <label htmlFor="pago-nombre" className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre del arrendatario <span className="text-red-600" aria-hidden="true">*</span>
+            Nombre del arrendatario {autorizado && <span className="text-red-600" aria-hidden="true">*</span>}
           </label>
           <input id="pago-nombre"
             type="text"
@@ -958,9 +975,20 @@ function EnviarLinkModal({
             onChange={(e) => setNombre(e.target.value)}
             placeholder="Nombre completo"
             autoComplete="off"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+            readOnly={!autorizado}
+            aria-describedby={autorizado ? undefined : 'pago-nombre-ayuda'}
+            className={cn(
+              'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500',
+              !autorizado && 'bg-gray-50 text-gray-700',
+            )}
             disabled={isSubmitting}
           />
+          {!autorizado && (
+            <p id="pago-nombre-ayuda" className="mt-1 text-xs text-gray-600">
+              El nombre no cambia la ficha: si está mal escrito, corríjalo después del envío con «Corregir datos» en la
+              sección de autorización del estudio, antes de que la persona autorice.
+            </p>
+          )}
         </div>
 
         <div>
@@ -978,13 +1006,16 @@ function EnviarLinkModal({
           />
         </div>
 
-        <PhoneInput
-          label="Teléfono (opcional)"
-          value={telefono}
-          onChange={setTelefono}
-          placeholder="300 123 4567"
-          disabled={isSubmitting}
-        />
+        <div>
+          <PhoneInput
+            label="WhatsApp (opcional)"
+            value={telefono}
+            onChange={setTelefono}
+            placeholder="300 123 4567"
+            disabled={isSubmitting}
+          />
+          <p className="mt-1 text-xs text-gray-600">Si lo deja vacío, usamos el WhatsApp registrado en la ficha.</p>
+        </div>
       </form>
     </Modal>
   )
