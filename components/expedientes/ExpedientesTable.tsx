@@ -51,7 +51,7 @@ export function SortableHeader({
       type="button"
       onClick={() => onSort(column)}
       // U7: el botón no hereda el uppercase del encabezado.
-      className="flex items-center gap-1 group text-left uppercase tracking-wider"
+      className="-my-1 flex min-h-6 items-center gap-1 group rounded text-left uppercase tracking-wider focus-visible:outline-2 focus-visible:outline-primary-600"
     >
       <span>{label}</span>
       <span className={cn('transition-opacity', isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-50')}>
@@ -87,7 +87,7 @@ export function ActividadHeader({
       type="button"
       onClick={() => onOrdenar(siguiente.sortBy, siguiente.sortOrder)}
       title="Clic para ordenar por la última actividad o por la fecha de creación"
-      className="flex items-center gap-1 group text-left uppercase tracking-wider"
+      className="-my-1 flex min-h-6 items-center gap-1 group rounded text-left uppercase tracking-wider focus-visible:outline-2 focus-visible:outline-primary-600"
     >
       <span>{porCreacion ? 'Creado' : 'Actividad'}</span>
       <span className={cn('transition-opacity', activo ? 'opacity-100' : 'opacity-0 group-hover:opacity-50')}>
@@ -127,21 +127,38 @@ export function Actividad({ expediente }: { expediente: IExpediente }) {
   return (
     <div>
       <p
-        title={formatDate(expediente.updated_at)}
+        title={`Última actividad: ${formatDate(expediente.updated_at)}`}
         className={cn(
-          'text-sm',
+          'whitespace-nowrap text-sm',
+          // -700: el -600 sobre el fondo coral de «Su turno» no llegaba a 4,5:1.
           !cerrado && d >= 7
-            ? 'text-red-600 font-medium'
+            ? 'text-red-700 font-medium'
             : !cerrado && d >= 3
-              ? 'text-amber-600'
+              ? 'text-amber-700'
               : 'text-gray-700'
         )}
       >
-        {d === 0 ? 'Hoy' : `hace ${d} d`}
+        {d <= 0 ? 'Hoy' : d === 1 ? 'Ayer' : `Hace ${d} días`}
       </p>
-      <p className="text-xs text-gray-500">Creado {formatDate(expediente.created_at)}</p>
+      {/* Una línea, no tres («Creado» / fecha partida): la fecha completa queda en el title. */}
+      <p title={`Creado el ${formatDate(expediente.created_at)}`} className="whitespace-nowrap text-xs text-gray-500">
+        Creado {fechaCorta(expediente.created_at)}
+      </p>
     </div>
   )
+}
+
+/** «30 oct.» en el año en curso; «30 oct. 2025» en otro (hora de Colombia). */
+function fechaCorta(iso: string): string {
+  const f = new Date(iso)
+  if (Number.isNaN(f.getTime())) return '—'
+  const anio = (x: Date) => x.toLocaleDateString('en-CA', { year: 'numeric', timeZone: 'America/Bogota' })
+  return f.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'short',
+    ...(anio(f) === anio(new Date()) ? {} : { year: 'numeric' }),
+    timeZone: 'America/Bogota',
+  })
 }
 
 const M = EXPEDIENTE_UI_MESSAGES
@@ -451,13 +468,13 @@ export function EstadoVacio({
       ) : (
         <IconFolderOpen size={48} className="mx-auto text-gray-300 mb-4" />
       )}
-      <h3 className="text-lg font-medium text-gray-900 mb-1">{titulo}</h3>
+      <h2 className="text-lg font-medium text-gray-900 mb-1">{titulo}</h2>
       {texto && <p className="mx-auto max-w-md text-sm text-gray-500 mb-4">{texto}</p>}
       {vacio === 'filtros' && onClearFilters && (
         <button
           type="button"
           onClick={onClearFilters}
-          className="inline-flex items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          className="inline-flex min-h-10 items-center gap-2 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
         >
           <IconX size={16} />
           {M.CLEAR_FILTERS}
@@ -466,7 +483,7 @@ export function EstadoVacio({
       {vacio === 'nada' && puedeCrear && (
         <Link
           href="/expedientes/nuevo"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
+          className="inline-flex min-h-10 items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
         >
           <IconPlus size={18} />
           {M.NEW_EXPEDIENTE}
@@ -494,13 +511,13 @@ export function Paginacion({
       {/* Info y selector de items */}
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-gray-600">
         <span>
-          Mostrando {(meta.page - 1) * meta.limit + 1} -{' '}
-          {Math.min(meta.page * meta.limit, meta.total)} de {meta.total}
+          Mostrando {(meta.page - 1) * meta.limit + 1}–{Math.min(meta.page * meta.limit, meta.total)} de {meta.total}
         </span>
         <select
+          aria-label="Estudios por página"
           value={limit}
           onChange={(e) => onLimitChange(Number(e.target.value))}
-          className="px-2 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="h-10 px-2 border border-gray-200 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           {ITEMS_PER_PAGE_OPTIONS.map((option) => (
             <option key={option} value={option}>
@@ -517,7 +534,7 @@ export function Paginacion({
           aria-label="Página anterior"
           onClick={() => onPageChange(meta.page - 1)}
           disabled={meta.page <= 1}
-          className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <IconChevronLeft size={18} />
         </button>
@@ -542,8 +559,10 @@ export function Paginacion({
                 key={pageNum}
                 type="button"
                 onClick={() => onPageChange(pageNum)}
+                aria-label={`Página ${pageNum}`}
+                aria-current={pageNum === meta.page ? 'page' : undefined}
                 className={cn(
-                  'min-h-10 min-w-10 rounded text-sm font-medium transition-colors',
+                  'min-h-10 min-w-10 rounded-lg text-sm font-medium tabular-nums transition-colors',
                   pageNum === meta.page
                     ? 'bg-primary-700 text-white'
                     : 'hover:bg-gray-100 text-gray-600'
@@ -560,7 +579,7 @@ export function Paginacion({
           aria-label="Página siguiente"
           onClick={() => onPageChange(meta.page + 1)}
           disabled={meta.page >= meta.totalPages}
-          className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <IconChevronRight size={18} />
         </button>

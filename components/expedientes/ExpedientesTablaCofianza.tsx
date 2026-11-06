@@ -9,6 +9,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { Avatar } from '@/components/ui/Avatar'
@@ -16,7 +17,7 @@ import { IconArrowRight, IconClock, IconLoader, IconUserCheck } from '@/componen
 import { tomarDisponible } from '@/lib/etapaFila'
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
-import type { VistaTurno } from '@/lib/etapaEstudio'
+import type { EtapaEstudio, VistaTurno } from '@/lib/etapaEstudio'
 import type { IExpediente } from '@/types/expediente'
 import { AYUDA_PUNTAJE, PastillaEtapa, PrioridadBaja, datosEstadoFila, type DatosEstadoFila } from './EstadoFila'
 import { textoTurno, turnoPropio } from './PastillaTurno'
@@ -38,7 +39,12 @@ interface Fila {
   datos: DatosEstadoFila
   /** «Su turno…»: le toca actuar a quien mira. */
   propio: boolean
+  /** La revisión ya la tomó otro analista: no es «Su turno», es el de esa persona. */
+  deOtro: string | null
 }
+
+/** Etapas sin nada por hacer: «Qué sigue» lo dice en vez de dejar un guion. */
+const TERMINADAS: EtapaEstudio[] = ['no_aprobado', 'cancelado', 'finalizado']
 
 /** Ciudad e inmobiliaria en una línea: la inmobiliaria ya no tiene columna propia que la recorte. */
 function lugar(e: IExpediente): string {
@@ -46,20 +52,37 @@ function lugar(e: IExpediente): string {
   return partes.join(' · ')
 }
 
+/**
+ * Las direcciones llegan como se digitaron: «CALLE 45 # 12-30 APTO 301» junto a
+ * «Calle 10 Sur # 43-21». Solo las escritas todo en mayúsculas se pasan a
+ * mayúscula inicial; las palabras con números («40A», «12-30») quedan igual.
+ */
+export function direccionLegible(texto: string): string {
+  if (/\p{Ll}/u.test(texto)) return texto
+  return texto
+    .split(' ')
+    .map((w) => (/\d/.test(w) ? w : w.charAt(0) + w.slice(1).toLocaleLowerCase('es-CO')))
+    .join(' ')
+}
+
 function Inmueble({ expediente }: { expediente: IExpediente }) {
   const direccion = expediente.inmueble ? expediente.inmueble.titulo || expediente.inmueble.direccion : null
+  const donde = lugar(expediente)
   return (
     <div className="min-w-0">
       {direccion ? (
         <p title={direccion} className="line-clamp-2 break-words text-sm text-gray-900">
-          {direccion}
+          {direccionLegible(direccion)}
         </p>
       ) : (
         <p className="text-sm text-gray-500">Inmueble por definir</p>
       )}
-      <p title={lugar(expediente)} className="mt-0.5 line-clamp-2 break-words text-xs text-gray-500">
-        {lugar(expediente)}
-      </p>
+      {donde && (
+        // Una sola línea: la inmobiliaria se repite fila tras fila y no debe pesar más que la dirección.
+        <p title={donde} className="mt-0.5 truncate text-xs text-gray-500">
+          {donde}
+        </p>
+      )}
     </div>
   )
 }
@@ -79,10 +102,12 @@ function Etapa({ datos }: { datos: DatosEstadoFila }) {
 
 /** De quién es el turno y qué hay que hacer; lo propio resalta, lo ajeno queda en segundo plano. */
 function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
-  const { datos, propio } = fila
+  const { datos, propio, deOtro } = fila
   return (
     <div className="flex flex-col items-start gap-1">
-      {datos.turno ? (
+      {deOtro ? (
+        <span className="text-sm text-gray-600">En revisión de {deOtro}</span>
+      ) : datos.turno ? (
         propio ? (
           <span className="inline-flex items-start gap-1.5 text-sm font-semibold text-coral-700">
             <IconArrowRight size={16} className="mt-0.5 shrink-0" />
@@ -91,8 +116,10 @@ function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
         ) : (
           <span className="text-sm text-gray-600">{textoTurno(datos.turno.turno, vista, datos.turno)}</span>
         )
+      ) : TERMINADAS.includes(datos.etapa) ? (
+        <span className="text-sm text-gray-500">Nada pendiente</span>
       ) : (
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-gray-400">
           <span aria-hidden="true">—</span>
           <span className="sr-only">Sin turno</span>
         </span>
@@ -128,6 +155,7 @@ export function ExpedientesTablaCofianza({
 }: Props) {
   const router = useRouter()
   const rol = useAuthStore((st) => st.user?.rol)
+  const yo = useAuthStore((st) => st.user?.id)
   const analista = rol === 'administrador' || rol === 'operador_analista'
   const vista: VistaTurno = 'cofianza'
   // Hora fijada al montar: Date.now() en render es impuro.
@@ -140,22 +168,41 @@ export function ExpedientesTablaCofianza({
 
   const filas: Fila[] = expedientes.map((expediente) => {
     const datos = datosEstadoFila(expediente, { interno: true, vista, analista, ahora })
+    const turnoMio = !!datos.turno && turnoPropio(datos.turno.turno, vista, datos.turno)
+    // Si ya lo tomó otro analista, el coral se lo marcaba a todos igual.
+    const tomadoPorOtro = turnoMio && !!expediente.analista_id && expediente.analista_id !== yo
     return {
       expediente,
       datos,
-      propio: !!datos.turno && turnoPropio(datos.turno.turno, vista, datos.turno),
+      propio: turnoMio && !tomadoPorOtro,
+      deOtro: tomadoPorOtro ? (expediente.analista?.nombre ?? 'otro analista') : null,
     }
   })
   const conPuntaje = filas.some((f) => f.datos.score > 0)
 
+  // Con el ratón, toda la fila abre el estudio. Con teclado y lector de pantalla
+  // se usa el enlace del nombre: una fila role="button" con «Tomar» adentro
+  // anidaba un botón en otro y le quitaba a la tabla su semántica.
   const abrir = (id: string) => router.push(`/expedientes/${id}`)
-  const teclaFila = (e: React.KeyboardEvent<HTMLElement>) => {
-    // Solo la fila: Enter sobre «Tomar» hace lo suyo, no abre el estudio.
-    if (e.target !== e.currentTarget) return
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      e.currentTarget.click()
-    }
+  const enlace = (expediente: IExpediente, className: string) => (
+    <Link
+      href={`/expedientes/${expediente.id}`}
+      onClick={(e) => e.stopPropagation()}
+      aria-label={`Abrir el estudio ${formatNumeroEstudio(expediente.numero_expediente)}${expediente.solicitante ? ` de ${expediente.solicitante.nombre}` : ''}`}
+      className={cn('rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600', className)}
+    >
+      {expediente.solicitante?.nombre ?? 'Sin solicitante'}
+    </Link>
+  )
+  const identificacion = (expediente: IExpediente) => {
+    const documento = expediente.solicitante?.documento?.trim()
+    return (
+      <p className="text-xs tabular-nums text-gray-500">
+        <span className="whitespace-nowrap font-medium text-gray-700">{formatNumeroEstudio(expediente.numero_expediente)}</span>
+        {/* El separador va pegado al documento: sin documento, o si este baja de línea, no queda un «·» colgando. */}
+        {documento && <span className="whitespace-nowrap"> · {documento}</span>}
+      </p>
+    )
   }
 
   const responsable = ({ expediente }: Fila) => {
@@ -178,7 +225,7 @@ export function ExpedientesTablaCofianza({
     // U9: «Tomar» solo cuando el turno es de Cofianza; si no, no hay nada que tomar.
     if (!tomarDisponible(expediente)) {
       return (
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-gray-400">
           <span aria-hidden="true">—</span>
           <span className="sr-only">Sin analista</span>
         </span>
@@ -194,7 +241,8 @@ export function ExpedientesTablaCofianza({
         }}
         disabled={tomando}
         aria-label={`Tomar el estudio ${formatNumeroEstudio(expediente.numero_expediente)}`}
-        className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-primary-600 bg-white px-3 text-sm font-semibold text-primary-700 shadow-sm transition-colors hover:bg-primary-50 active:bg-primary-100 disabled:cursor-wait disabled:opacity-60"
+        // Discreto: 40 px de alto para el dedo, pero sin borde ni sombra que compitan con «Qué sigue».
+        className="-ml-2.5 -my-2 inline-flex h-10 items-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold text-primary-700 transition-colors hover:bg-primary-50 active:bg-primary-100 focus-visible:outline-2 focus-visible:outline-primary-600 disabled:cursor-wait disabled:opacity-60"
       >
         {tomando ? <IconLoader size={14} className="animate-spin" /> : <IconUserCheck size={14} />}
         {tomando ? 'Tomando…' : 'Tomar'}
@@ -215,15 +263,19 @@ export function ExpedientesTablaCofianza({
             <colgroup>
               <col />
               <col />
-              <col className="w-[12.5rem]" />
+              <col className="w-[12rem]" />
               <col className="w-[13rem]" />
-              <col className="w-[9rem]" />
-              <col className="w-[8rem]" />
+              <col className="w-[8.5rem]" />
+              <col className="w-[7.5rem]" />
             </colgroup>
             <thead>
               <tr className="border-b border-gray-200">
                 {/* El número va bajo el nombre: una columna menos y sin cortes en «N.º 2026-…». */}
-                <th scope="col" className={th}>
+                <th
+                  scope="col"
+                  className={th}
+                  aria-sort={filters.sortBy === 'numero' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : undefined}
+                >
                   <span className="flex items-center gap-2">
                     Solicitante
                     <span aria-hidden="true" className="text-gray-300">·</span>
@@ -241,7 +293,17 @@ export function ExpedientesTablaCofianza({
                 <th scope="col" className={th}>Etapa</th>
                 <th scope="col" className={th}>Qué sigue</th>
                 <th scope="col" className={th}>Analista</th>
-                <th scope="col" className={th}>
+                <th
+                  scope="col"
+                  className={th}
+                  aria-sort={
+                    filters.sortBy === 'updated_at' || filters.sortBy === 'created_at'
+                      ? filters.sortOrder === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : undefined
+                  }
+                >
                   <ActividadHeader currentSortBy={filters.sortBy} currentSortOrder={filters.sortOrder} onOrdenar={onOrdenar} />
                 </th>
               </tr>
@@ -253,25 +315,14 @@ export function ExpedientesTablaCofianza({
                   <tr
                     key={expediente.id}
                     onClick={() => abrir(expediente.id)}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={teclaFila}
-                    aria-label={`Abrir el estudio ${formatNumeroEstudio(expediente.numero_expediente)}`}
                     className={cn(
-                      'cursor-pointer align-top transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-600',
+                      'cursor-pointer align-top transition-colors',
                       fila.propio ? 'bg-coral-50/60 hover:bg-coral-50' : 'hover:bg-gray-50',
                     )}
                   >
                     <td className="px-3 py-3">
-                      <p className="break-words text-sm font-medium text-gray-900">
-                        {expediente.solicitante?.nombre ?? 'Sin solicitante'}
-                      </p>
-                      <p className="text-xs tabular-nums text-gray-500">
-                        <span className="whitespace-nowrap font-medium text-gray-700">
-                          {formatNumeroEstudio(expediente.numero_expediente)}
-                        </span>
-                        {expediente.solicitante && <> · <span className="whitespace-nowrap">{expediente.solicitante.documento}</span></>}
-                      </p>
+                      {enlace(expediente, 'block break-words text-sm font-medium text-gray-900')}
+                      {identificacion(expediente)}
                     </td>
                     <td className="px-3 py-3">
                       <Inmueble expediente={expediente} />
@@ -282,7 +333,7 @@ export function ExpedientesTablaCofianza({
                     <td className="px-3 py-3">
                       <QueSigue fila={fila} vista={vista} />
                     </td>
-                    <td className="px-3 py-2.5">{responsable(fila)}</td>
+                    <td className="px-3 py-3">{responsable(fila)}</td>
                     <td className="px-3 py-3">
                       <Actividad expediente={expediente} />
                     </td>
@@ -293,42 +344,36 @@ export function ExpedientesTablaCofianza({
           </table>
         </div>
 
-        {/* Angosta y media: tarjetas, con «Qué sigue» antes que el inmueble. */}
-        <ul className="grid gap-3 @xl:grid-cols-2 @5xl:hidden">
+        {/* Angosta y media: filas apiladas, con «Qué sigue» antes que el inmueble. Sin
+            borde propio: ya están dentro de la superficie de la lista (tarjeta en tarjeta). */}
+        <ul className="-my-1 divide-y divide-gray-100 @5xl:hidden">
           {filas.map((fila) => {
             const { expediente } = fila
             return (
-              <li key={expediente.id}>
+              <li key={expediente.id} className="py-1">
                 <div
                   onClick={() => abrir(expediente.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={teclaFila}
-                  aria-label={`Abrir el estudio ${formatNumeroEstudio(expediente.numero_expediente)}`}
                   className={cn(
-                    'flex h-full cursor-pointer flex-col gap-3 rounded-lg border p-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600',
-                    fila.propio
-                      ? 'border-coral-200 bg-coral-50/60 hover:border-coral-300'
-                      : 'border-gray-200 bg-white hover:border-gray-300',
+                    '-mx-2 grid cursor-pointer gap-x-6 gap-y-2.5 rounded-lg px-2 py-3 transition-colors @xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]',
+                    fila.propio ? 'bg-coral-50/60 hover:bg-coral-50' : 'hover:bg-gray-50',
                   )}
                 >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className="min-w-0 break-words text-sm font-semibold text-gray-900">
-                      {expediente.solicitante?.nombre ?? 'Sin solicitante'}
-                    </p>
-                    <span className="shrink-0 text-xs font-medium tabular-nums text-gray-500">
-                      {formatNumeroEstudio(expediente.numero_expediente)}
-                    </span>
+                  <div className="flex min-w-0 flex-col gap-2">
+                    <div>
+                      {enlace(expediente, 'break-words text-sm font-semibold text-gray-900')}
+                      {identificacion(expediente)}
+                    </div>
+                    <QueSigue fila={fila} vista={vista} />
+                    <Etapa datos={fila.datos} />
                   </div>
 
-                  <QueSigue fila={fila} vista={vista} />
-                  <Etapa datos={fila.datos} />
-                  <Inmueble expediente={expediente} />
-
-                  <div className="mt-auto flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
-                    {responsable(fila)}
-                    <div className="text-right">
-                      <Actividad expediente={expediente} />
+                  <div className="flex min-w-0 flex-col gap-2.5">
+                    <Inmueble expediente={expediente} />
+                    <div className="mt-auto flex min-h-10 items-center justify-between gap-3">
+                      {responsable(fila)}
+                      <div className="text-right">
+                        <Actividad expediente={expediente} />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -363,19 +408,19 @@ export function ExpedientesTablaCofianzaSkeleton({ count = 5 }: { count?: number
           {barra('h-3 w-20')}
         </div>
         {Array.from({ length: count }).map((_, i) => (
-          <div key={i} className="grid grid-cols-[1fr_1fr_12.5rem_13rem_9rem_8rem] gap-0 py-3.5">
+          <div key={i} className="grid grid-cols-[1fr_1fr_12rem_13rem_8.5rem_7.5rem] gap-0 py-3.5">
             <div className="space-y-1.5 px-3">{barra('h-4 w-28')}{barra('h-3 w-32')}</div>
             <div className="space-y-1.5 px-3">{barra('h-4 w-40')}{barra('h-3 w-24')}</div>
             <div className="px-3">{barra('h-5 w-28 rounded-full')}</div>
             <div className="px-3">{barra('h-4 w-36')}</div>
-            <div className="px-3">{barra('h-8 w-20 rounded-lg')}</div>
+            <div className="px-3">{barra('h-4 w-16')}</div>
             <div className="space-y-1.5 px-3">{barra('h-4 w-12')}{barra('h-3 w-20')}</div>
           </div>
         ))}
       </div>
-      <div className="grid gap-3 @xl:grid-cols-2 @5xl:hidden">
+      <div className="divide-y divide-gray-100 @5xl:hidden">
         {Array.from({ length: Math.min(count, 6) }).map((_, i) => (
-          <div key={i} className="space-y-3 rounded-lg border border-gray-200 p-4">
+          <div key={i} className="space-y-3 py-4">
             <div className="flex justify-between">{barra('h-4 w-32')}{barra('h-3 w-16')}</div>
             {barra('h-4 w-44')}
             {barra('h-5 w-28 rounded-full')}

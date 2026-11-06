@@ -21,9 +21,9 @@ export type Tono = 'verde' | 'rojo' | 'ambar' | 'azul' | 'gris'
 
 const TONO: Record<Tono, { wrap: string; dot: string }> = {
   verde: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600' },
-  rojo: { wrap: 'bg-red-50 text-red-600', dot: 'bg-red-500' },
+  rojo: { wrap: 'bg-red-50 text-red-700', dot: 'bg-red-500' },
   ambar: { wrap: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' },
-  azul: { wrap: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600 animate-pulse' },
+  azul: { wrap: 'bg-blue-50 text-blue-700', dot: 'bg-blue-600 motion-safe:animate-pulse' },
   gris: { wrap: 'bg-gray-50 text-gray-600 border border-gray-200', dot: 'bg-gray-400' },
 }
 
