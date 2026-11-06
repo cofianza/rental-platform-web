@@ -20,6 +20,9 @@ import { cn } from '@/lib/utils'
 import { contratoService } from '@/services/contratoService'
 import { etiquetaContrato, formatDate } from '@/lib/constants'
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
+import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import type { IContrato } from '@/types/contrato'
 import type { ICierreSinActa } from '@/types/expediente'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -50,7 +53,14 @@ const PRIORIDAD: Record<string, number> = {
 export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa }: ContratoEstadoCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
-  const rol = useUsuarioVista()?.rol
+  const usuario = useUsuarioVista()
+  const rol = usuario?.rol
+  // Cofianza conserva los botones de antes; los textos nuevos son para la agencia y el propietario.
+  const interno = esRolInterno(rol)
+  const perfilIncompleto = miembroDebeCompletarPerfil(usuario)
+  // Solo lectura (y Gerencia) ven el contrato, pero no cargan el acta ni reenvían la firma.
+  const puedeEditar = usePuedeEditar()
+  const cargaActa = rol === 'inmobiliaria' && puedeEditar
   const [contrato, setContrato] = useState<IContrato | null>(null)
   // V3 §12.1: fianza activa o terminada sin acta de entrega e inventario cargada.
   const [actaPendiente, setActaPendiente] = useState(false)
@@ -119,14 +129,31 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
   const tono: TonoPaso = isFinal ? 'accion' : isInactivo ? 'neutro' : isIncompleta ? 'alerta' : 'revision'
   const icono = isIncompleta ? <IconAlertTriangle size={18} /> : isInactivo ? <IconHistory size={18} /> : isFinal ? <IconCheck size={18} /> : <IconClock size={18} />
 
+  // Firma incompleta: resolverla es lo que toca a quien gestiona (botón principal). En firma,
+  // el botón dice a qué se entra: el estado de cada firmante está en el contrato.
+  const claseAccion = isIncompleta && puedeEditar && !interno ? BOTON_PRINCIPAL : BOTON
+  const textoAccion =
+    contrato.estado === 'borrador'
+      ? 'Continuar el contrato'
+      : interno
+        ? esV3
+          ? 'Ver el contrato'
+          : 'Ver detalle del contrato'
+        : isIncompleta && puedeEditar
+        ? 'Abrir el contrato para resolverlo'
+        : contrato.estado === 'pendiente_firma'
+          ? 'Ver quién falta por firmar'
+          : esV3
+            ? 'Ver el contrato'
+            : 'Ver detalle del contrato'
   const accion = esV3 ? (
-    <Link href={`/expedientes/${expedienteId}/contrato`} className={BOTON}>
-      {contrato.estado === 'borrador' ? 'Continuar el contrato' : 'Ver el contrato'}
+    <Link href={`/expedientes/${expedienteId}/contrato`} className={claseAccion}>
+      {textoAccion}
       <IconArrowRight size={16} />
     </Link>
   ) : onVerContratos ? (
-    <button type="button" onClick={onVerContratos} className={BOTON}>
-      Ver detalle del contrato
+    <button type="button" onClick={onVerContratos} className={claseAccion}>
+      {textoAccion}
       <IconArrowRight size={16} />
     </button>
   ) : null
@@ -179,10 +206,10 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
           // Adenda 1 contratos (respuesta 21): el acta la carga la inmobiliaria, nunca Cofianza.
           <SeccionPaso
             titulo="Falta el acta de entrega e inventario"
-            propio={rol === 'inmobiliaria'}
-            icono={rol === 'inmobiliaria' ? <IconArrowRight size={16} /> : <IconAlertTriangle size={16} className="text-amber-700" />}
+            propio={cargaActa}
+            icono={cargaActa ? <IconArrowRight size={16} /> : <IconAlertTriangle size={16} className="text-amber-700" />}
           >
-            {rol === 'inmobiliaria' ? (
+            {cargaActa ? (
               <>
                 <p>Sin ella no se puede cerrar el estudio.</p>
                 <Link href={`/expedientes/${expedienteId}/contrato`} className={BOTON}>
@@ -192,7 +219,11 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
               </>
             ) : (
               <p>
-                La carga la inmobiliaria.
+                {rol !== 'inmobiliaria'
+                  ? 'La carga la inmobiliaria.'
+                  : perfilIncompleto
+                    ? 'Complete su perfil para poder cargarla.'
+                    : 'La carga alguien de su equipo con permiso de edición.'}
                 {rol === 'administrador'
                   ? ' Si no la va a cargar, puede cerrar el estudio sin acta desde «Cambiar estado».'
                   : ' Sin ella no se puede cerrar el estudio.'}
@@ -207,6 +238,9 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
 
 const BOTON =
   'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1'
+
+const BOTON_PRINCIPAL =
+  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-primary-700 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1'
 
 function Dato({ etiqueta, children, className }: { etiqueta: string; children: ReactNode; className?: string }) {
   return (

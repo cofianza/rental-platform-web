@@ -49,11 +49,12 @@ export function useEtapaEstudio(
   expediente: ExpedienteEtapa | null,
   conPago: boolean,
   version: number,
-): { etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean } {
-  const [leida, setLeida] = useState<{ etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean }>({
+): { etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean; citaActiva: boolean } {
+  const [leida, setLeida] = useState<{ etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean; citaActiva: boolean }>({
     etapa: null,
     esperaHasta: null,
     coaFallido: false,
+    citaActiva: false,
   })
   const id = expediente?.id
   const estado = expediente?.estado
@@ -103,7 +104,13 @@ export function useEtapaEstudio(
         esperaHasta,
         contratosEstados: (contratos?.data ?? []).map((c) => c.estado),
       })
-      setLeida({ etapa, esperaHasta, coaFallido: ultimaCoa?.estado === 'fallido' })
+      setLeida({
+        etapa,
+        esperaHasta,
+        coaFallido: ultimaCoa?.estado === 'fallido',
+        // De la misma lectura de citas: en la visita, «agende» o «márquela como realizada».
+        citaActiva: citas.some((c) => c.estado === 'solicitada' || c.estado === 'confirmada'),
+      })
     })
     return () => {
       cancel = true

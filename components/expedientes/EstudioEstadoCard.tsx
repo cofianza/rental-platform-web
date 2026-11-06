@@ -264,6 +264,13 @@ function getSiguientePaso(
       // Adenda 3 §6: aprobado con condición. No está en revisión del analista.
       // Con la obligatoria, si el coarrendatario califica decide un analista (Adenda 4 V3 §8).
       if (estudio.condicion_coarrendatario) {
+        // Quien gestiona tiene arriba la tarjeta «qué sigue» con este mismo texto, el plazo y los pasos:
+        // aquí se repetía palabra por palabra. Solo lectura no la ve: a ella se le deja el texto completo.
+        if (!esCofianza && puedeGestionar && !esCoarrendatario && !estudio.condicion_coarrendatario.vencida) {
+          return estudio.condicion_coarrendatario.obligatoria
+            ? 'Requiere un coarrendatario para seguir. El plazo y qué pasa después están en «qué sigue», arriba.'
+            : 'Aprobado con la condición de sumar un coarrendatario. El plazo y qué pasa después están en «qué sigue», arriba.'
+        }
         const texto = textoCondicionCoarrendatario(estudio.condicion_coarrendatario)
         return esCofianza && !estudio.condicion_coarrendatario.vencida && !estudio.condicion_coarrendatario.obligatoria
           ? `${texto} No requiere decisión del analista mientras la condición esté vigente.`

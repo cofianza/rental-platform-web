@@ -12,6 +12,8 @@
  *   contrato (el contrato nunca espera a esta revisión).
  */
 
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
@@ -56,6 +58,8 @@ export function VerificacionIdentidadFirma({
   const { user } = useAuth()
   const esAnalista = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   const esCofianza = esAnalista || user?.rol === 'gerencia_consulta'
+  // Con «ver como», el rol simulado decide si se nombra al proveedor de firma.
+  const esCofianzaVista = esRolInterno(useUsuarioVista()?.rol)
 
   const [enviando, setEnviando] = useState(false)
   const [revision, setRevision] = useState<{ v: IVerificacionIdentidad; resultado: 'confirmada' | 'suplantacion' } | null>(null)
@@ -141,7 +145,7 @@ export function VerificacionIdentidadFirma({
               )}
               {!hayFirmantes && v.estado !== 'pendiente' && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-amber-700">
-                  <IconAlertTriangle size={11} /> El contrato no salió a firma en Auco. Vuelva a enviarlo.
+                  <IconAlertTriangle size={11} /> El contrato no salió a firma{esCofianzaVista ? ' en Auco' : ' electrónica'}. Vuelva a enviarlo.
                 </p>
               )}
               {esAnalista && v.requiere_analista && !v.revision && (

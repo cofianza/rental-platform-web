@@ -52,6 +52,8 @@ interface CoarrendatarioPropietarioCardProps {
    * dice sin nombrarlo (§10): un coarrendatario no reemplaza ese requisito.
    */
   requisitoPendiente?: boolean
+  /** Aprobado con la condición de sumar un coarrendatario: invitarlo es lo que falta (botón principal). */
+  conCondicion?: boolean
 }
 
 /** Antes de que se decida al titular (Adenda 3 V2 §6.1). */
@@ -73,6 +75,7 @@ export function CoarrendatarioPropietarioCard({
   userRol,
   onEstudioCompletado,
   requisitoPendiente = false,
+  conCondicion = false,
 }: CoarrendatarioPropietarioCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -195,6 +198,7 @@ export function CoarrendatarioPropietarioCard({
         aprobado={expedienteEstado === 'aprobado'}
         antesDeLaDecision={antesDeLaDecision}
         pazYSalvoPendiente={requisitoPendiente}
+        condicionGestor={conCondicion}
         onInvited={() => { fetchCoa(); fetchVentana() }}
       />
     )

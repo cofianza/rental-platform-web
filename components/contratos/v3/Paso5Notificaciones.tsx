@@ -8,6 +8,8 @@
 
 'use client'
 
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { useCallback, useId, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
@@ -181,6 +183,8 @@ export function VistaPreviaContrato({
 }: VistaPreviaProps) {
   const { documento, propio } = contrato
   const visor = useVisor()
+  // Cofianza lee el nombre del proveedor de firma; la inmobiliaria y el propietario, «firma electrónica».
+  const interno = esRolInterno(useUsuarioVista()?.rol)
   const archivoRef = useRef<HTMLInputElement>(null)
   const [arrastrando, setArrastrando] = useState(false)
   // Rechazo del PDF aquí mismo (tipo o peso); el del API llega en v3.errorPropio. Los dos quedan a la vista.
@@ -295,7 +299,9 @@ export function VistaPreviaContrato({
 
       {v3.fallasEnvio.length > 0 && (
         <Aviso tono="error">
-          <p className="font-medium">Auco no acepta estos datos de firma. Corríjalos y vuelva a intentarlo:</p>
+          <p className="font-medium">
+            {interno ? 'Auco no acepta' : 'La plataforma de firma electrónica no acepta'} estos datos de firma. Corríjalos y vuelva a intentarlo:
+          </p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
             {v3.fallasEnvio.map((f, i) => (
               <li key={i}>

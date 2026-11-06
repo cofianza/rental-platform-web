@@ -16,13 +16,14 @@
 
 'use client'
 
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { formatCurrency } from '@/lib/constants'
 import { IconUsers, IconArrowRight, IconCalendar, IconDollarSign, IconAlertTriangle } from '@/components/icons'
 import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
-import { ADVERTENCIA_INGRESO_ADICIONAL, fechaCondicion, mensajeCondicionCoarrendatario, seCierraSiVence } from './textoVisible'
+import { ADVERTENCIA_INGRESO_ADICIONAL, esRolInterno, fechaCondicion, mensajeCondicionCoarrendatario, seCierraSiVence } from './textoVisible'
 
 // Sin tarjeta de identidad (el servicio es solo para mayores de edad), ni
 // pasaporte (los burós colombianos no lo consultan: la evaluación fallaría), ni
@@ -77,6 +78,12 @@ interface CoarrendatarioInviteFormProps {
    * Al gestor se le dice sin nombrar el documento (§10: «un requisito a cargo del candidato»).
    */
   pazYSalvoPendiente?: boolean
+  /**
+   * Para quien gestiona: el estudio está aprobado con la condición de sumar un
+   * coarrendatario (Adenda 3 §6). Invitarlo es lo que falta, así que el botón es el
+   * principal; sin la condición (en revisión, aprobado, con el requisito) es opcional.
+   */
+  condicionGestor?: boolean
 }
 
 type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email' | 'telefono'
@@ -98,8 +105,13 @@ export function CoarrendatarioInviteForm({
   condicion = null,
   antesDeLaDecision = false,
   pazYSalvoPendiente = false,
+  condicionGestor = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
+  // Cofianza (también con «ver como» apagado) conserva su texto y su botón de siempre.
+  const interno = esRolInterno(useUsuarioVista()?.rol)
+  // Opcional para quien gestiona salvo con la condición: no compite con lo que sí le toca.
+  const botonPrincipal = !esGestor || condicionGestor || interno
   const conCondicion = !esGestor && !!condicion
   const fechaLimite = condicion?.vence_en && !condicion.vencida ? fechaCondicion(condicion.vence_en) : null
   const cifra = condicion?.ingreso_adicional_requerido && condicion.ingreso_adicional_requerido > 0 ? condicion.ingreso_adicional_requerido : null
@@ -216,9 +228,22 @@ export function CoarrendatarioInviteForm({
                 la persona con quien vivirá el solicitante como <strong>coarrendatario</strong>, se evalúa a ambos y los
                 respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
-            ) : esGestor ? (
+            ) : esGestor && condicionGestor && !interno ? (
+              <>
+                Para seguir con el estudio en el plazo falta un <strong>coarrendatario</strong>. La persona puede agregarlo desde su
+                enlace, o usted puede invitar aquí a quien vivirá con el solicitante: se evalúa a ambos y los respaldamos
+                juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
+            ) : esGestor && interno ? (
               <>
                 El estudio quedó condicionado. Puede invitar a la persona con quien vivirá el
+                solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
+                respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
+            ) : esGestor ? (
+              <>
+                El estudio está en revisión de Cofianza y no tiene que hacer nada para que avance. Si quiere reforzar el
+                caso, puede invitar a la persona con quien vivirá el
                 solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
                 respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
@@ -273,11 +298,16 @@ export function CoarrendatarioInviteForm({
 
       {!showForm ? (
         <button
+          type="button"
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm"
+          className={
+            botonPrincipal
+              ? 'inline-flex min-h-10 items-center gap-2 px-4 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1'
+              : 'inline-flex min-h-10 items-center gap-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
+          }
         >
-          Agregar coarrendatario
-          <IconArrowRight size={16} />
+          {botonPrincipal ? 'Agregar coarrendatario' : 'Invitar a un coarrendatario'}
+          <IconArrowRight size={16} aria-hidden="true" />
         </button>
       ) : (
         <div className="bg-white border border-amber-200 rounded-lg p-4 space-y-3">

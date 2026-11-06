@@ -1,5 +1,7 @@
 'use client'
 
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
@@ -95,6 +97,8 @@ export function ContratosSection({
   conComision,
 }: ContratosSectionProps) {
   const { user } = useAuth()
+  // Con «ver como», el rol simulado: el proveedor de firma y su costo son de Cofianza.
+  const interno = esRolInterno(useUsuarioVista()?.rol)
 
   const [contratos, setContratos] = useState<IContrato[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -651,7 +655,12 @@ export function ContratosSection({
           if (c) await handleConfirmarFirma(c)
         }}
         title="Enviar el contrato a firma"
-        message="Se crea el sobre en Auco y al arrendatario le llega el enlace de firma por WhatsApp. Cada envío consume créditos de firma."
+        // A la inmobiliaria y al propietario, sin el nombre del proveedor ni su costo.
+        message={
+          interno
+            ? 'Se crea el sobre en Auco y al arrendatario le llega el enlace de firma por WhatsApp. Cada envío consume créditos de firma.'
+            : 'Se crea el proceso de firma electrónica y al arrendatario le llega el enlace de firma por WhatsApp.'
+        }
         confirmLabel="Enviar a firma"
       />
       <EnviarFirmaPreviewModal

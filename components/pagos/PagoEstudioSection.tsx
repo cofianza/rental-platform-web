@@ -344,10 +344,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         nombre_pagador: solicitanteNombre,
         telefono: solicitanteTelefono || undefined,
       })
-      toast.success('Listo: el cobro del estudio de arrendamiento pasa al arrendatario.')
+      toast.success('Listo: el cobro del estudio de arrendamiento pasa al prospecto.')
       await fetchEstado()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo pasar el cobro al arrendatario')
+      setError(err instanceof Error ? err.message : 'No se pudo pasar el cobro al prospecto')
     } finally {
       setIsSubmitting(false)
     }
@@ -478,7 +478,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           titulo={
             <>
               Acción requerida: defina quién paga el estudio
-              <InfoTip texto={AYUDA.pago} className="ml-1" />
+              <InfoTip texto={userRole === 'propietario' ? AYUDA.pagoPropietario : AYUDA.pago} className="ml-1" />
             </>
           }
           descripcion={
@@ -538,8 +538,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             <button type="button" onClick={() => setShowLinkModal(true)} disabled={isSubmitting} className={cn(OPCION, 'hover:border-primary-500 hover:bg-primary-50/50')}>
               <IconMail size={22} className="shrink-0 text-primary-700" aria-hidden="true" />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-gray-900">Enviar enlace al arrendatario</span>
-                <span className="mt-0.5 block text-xs text-gray-600">Él paga con tarjeta o PSE</span>
+                <span className="block text-sm font-semibold text-gray-900">Enviar el cobro al prospecto</span>
+                <span className="mt-0.5 block text-xs text-gray-600">Paga con tarjeta o PSE</span>
                 <span className="mt-1 block text-xs leading-snug text-gray-600">
                   {estado.autorizado
                     ? 'Ya autorizó la consulta: le enviamos el cobro.'
@@ -594,7 +594,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             titulo={
               <span className="inline-flex items-center gap-1">
                 {titulo}
-                <InfoTip texto={/cupo/i.test(titulo) ? AYUDA.cupo : AYUDA.pago} lado="derecha" />
+                <InfoTip
+                  texto={/cupo/i.test(titulo) ? AYUDA.cupo : userRole === 'propietario' ? AYUDA.pagoPropietario : AYUDA.pago}
+                  lado="derecha"
+                />
               </span>
             }
             descripcion={texto}
@@ -647,7 +650,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
         <TarjetaSiguientePaso
           tono="revision"
           icono={<IconClock size={18} />}
-          titulo={estado.autorizado ? 'Ya autorizó: esperando su pago' : 'Esperando el pago del arrendatario'}
+          titulo={estado.autorizado ? 'Ya autorizó: esperando su pago' : 'Esperando el pago del prospecto'}
           descripcion={
             montoCOP || emailEnlace ? (
               <>
@@ -661,7 +664,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                 .
               </>
             ) : (
-              'El enlace de pago ya se envió al arrendatario.'
+              'El enlace de pago ya se envió al prospecto.'
             )
           }
         >
@@ -760,16 +763,16 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   </button>
                 )}
                 <button type="button" onClick={() => setConfirmPasarArrendatario(true)} disabled={isSubmitting} className={cn(BOTON, BOTON_SECUNDARIO)}>
-                  Mejor que pague el arrendatario
+                  Mejor que pague el prospecto
                 </button>
                 <ConfirmDialog
                   isOpen={confirmPasarArrendatario}
                   onClose={() => setConfirmPasarArrendatario(false)}
                   onConfirm={handlePasarAlArrendatario}
                   isLoading={isSubmitting}
-                  title="¿Pasarle el cobro al arrendatario?"
-                  message={`Se cierra su pago fallido y le enviamos al arrendatario${solicitanteEmail ? ` (${solicitanteEmail})` : ''} la autorización de la consulta. Apenas la firme le llega el cobro${montoCOP ? ` de ${montoCOP}` : ''}, y la evaluación corre cuando lo pague.`}
-                  confirmLabel="Sí, que pague el arrendatario"
+                  title="¿Pasarle el cobro al prospecto?"
+                  message={`Se cierra su pago fallido y le enviamos al prospecto${solicitanteEmail ? ` (${solicitanteEmail})` : ''} la autorización de la consulta. Apenas la firme le llega el cobro${montoCOP ? ` de ${montoCOP}` : ''}, y la evaluación corre cuando lo pague.`}
+                  confirmLabel="Sí, que pague el prospecto"
                   cancelLabel="Volver"
                 />
               </>
@@ -892,7 +895,7 @@ function EnviarLinkModal({
 
     // Antes de autorizar el nombre no se usa (sale el de la ficha): no se exige.
     if ((autorizado && !nombre.trim()) || !email.trim()) {
-      setError(autorizado ? 'Escriba el nombre y el correo del arrendatario.' : 'Escriba el correo del arrendatario.')
+      setError(autorizado ? 'Escriba el nombre y el correo del prospecto.' : 'Escriba el correo del prospecto.')
       return
     }
 
@@ -920,7 +923,7 @@ function EnviarLinkModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Enviar al arrendatario"
+      title="Enviar al prospecto"
       description={
         autorizado
           ? 'Ya autorizó la consulta en centrales: le enviamos el cobro.'
@@ -940,7 +943,7 @@ function EnviarLinkModal({
             </button>
             <button type="submit" form="enviar-enlace-arrendatario-form" disabled={isSubmitting} aria-busy={isSubmitting || undefined} className={botonModal('primary')}>
               {isSubmitting && <IconLoader size={16} className="animate-spin" />}
-              {isSubmitting ? 'Enviando…' : 'Enviar al arrendatario'}
+              {isSubmitting ? 'Enviando…' : 'Enviar al prospecto'}
             </button>
           </ModalAcciones>
         </div>
@@ -962,12 +965,12 @@ function EnviarLinkModal({
         <p className="text-sm text-gray-600">
           {autorizado
             ? 'Enviaremos el cobro a este correo y WhatsApp. Ya autorizó la consulta: estos datos se usan solo para este cobro y no cambian su ficha.'
-            : 'Enviaremos la autorización y el cobro a este correo y WhatsApp. Si los corrige aquí, también se actualiza la ficha del arrendatario.'}
+            : 'Enviaremos la autorización y el cobro a este correo y WhatsApp. Si los corrige aquí, también se actualiza la ficha del prospecto.'}
         </p>
 
         <div>
           <label htmlFor="pago-nombre" className="block text-sm font-medium text-gray-700 mb-1">
-            Nombre del arrendatario {autorizado && <span className="text-red-600" aria-hidden="true">*</span>}
+            Nombre del prospecto {autorizado && <span className="text-red-600" aria-hidden="true">*</span>}
           </label>
           <input id="pago-nombre"
             type="text"
@@ -993,7 +996,7 @@ function EnviarLinkModal({
 
         <div>
           <label htmlFor="pago-email" className="block text-sm font-medium text-gray-700 mb-1">
-            Correo del arrendatario <span className="text-red-600" aria-hidden="true">*</span>
+            Correo del prospecto <span className="text-red-600" aria-hidden="true">*</span>
           </label>
           <input id="pago-email"
             type="email"

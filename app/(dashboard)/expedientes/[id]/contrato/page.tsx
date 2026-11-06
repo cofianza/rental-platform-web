@@ -12,6 +12,7 @@
 
 'use client'
 
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -284,6 +285,9 @@ function Asistente({
   const { accion, guardarPaso, limpiarErrorPaso } = v3
   const ocupado = accion !== null
   const rol = useAuthStore((s) => s.user?.rol)
+  // Cofianza lee el proveedor de firma y su costo; la inmobiliaria y el propietario, «firma electrónica».
+  const interno = esRolInterno(rol)
+  const porFirma = interno ? 'por Auco (WhatsApp)' : 'por WhatsApp para la firma electrónica'
   const bloqueadoPorPerfil = miembroDebeCompletarPerfil(useAuthStore((s) => s.user))
   // Adenda 1 de contratos, resp. 14: el exceso de cláusulas lo autoriza solo la Gerencia General.
   const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
@@ -740,8 +744,8 @@ function Asistente({
           <div className="space-y-3">
             <p>
               {contrato.biometriaFirma
-                ? 'Primero les llega por correo un enlace para verificar su identidad al arrendatario y, si hay, al coarrendatario. Cuando todos terminen, sale por Auco (WhatsApp) para firmar en este orden, una parte a la vez:'
-                : 'Se enviará por Auco (WhatsApp) para firmar en este orden, una parte a la vez:'}
+                ? `Primero les llega por correo un enlace para verificar su identidad al arrendatario y, si hay, al coarrendatario. Cuando todos terminen, sale ${porFirma} para firmar en este orden, una parte a la vez:`
+                : `Se enviará ${porFirma} para firmar en este orden, una parte a la vez:`}
             </p>
             <ol className="list-decimal space-y-1 pl-5">
               {ordenFirma.map((f, i) => (
@@ -757,7 +761,7 @@ function Asistente({
                 ' El PDF de la inmobiliaria va sin modificaciones, seguido de una página divisoria y del Anexo de condiciones. Cada parte firma donde usted ubicó su firma en el contrato de la inmobiliaria y sobre su línea en el Anexo.'}
             </p>
             <p className="font-medium text-gray-900">
-              Después de enviarlo, el contrato no se puede editar. Cada envío consume un crédito de firma.
+              Después de enviarlo, el contrato no se puede editar.{interno ? ' Cada envío consume un crédito de firma.' : ''}
             </p>
           </div>
         }
