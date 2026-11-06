@@ -21,6 +21,7 @@ import {
   IconX,
   IconAlertTriangle,
   IconArrowRight,
+  IconCheckCircle,
 } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
 import { expedienteService } from '@/services/expedienteService'
@@ -117,6 +118,29 @@ function esResultadoRepetido(evento: ITimelineEvento, eventos: ITimelineEvento[]
     (o) => o.id !== evento.id && o.tipo === 'estudio' && !o.descripcion.startsWith('Resultado de estudio registrado') &&
       Math.abs(new Date(o.created_at).getTime() - t) < 10_000,
   )
+}
+
+/**
+ * «X indicó que el número de documento de su invitación está mal… corrija el
+ * documento y reenvíela» pide una acción. Si después autorizó (con el mismo
+ * documento o con el corregido tras el reenvío), la API deja un evento de resolución (más nuevo, así que llega en
+ * la misma página o antes): el aviso se pinta como resuelto.
+ */
+function reportesDocumentoResueltos(eventos: ITimelineEvento[]): Set<string> {
+  const resueltos = new Set<string>()
+  const resoluciones = eventos.filter((e) => e.detalle?.origen === 'coarrendatario_documento_resuelto')
+  if (resoluciones.length === 0) return resueltos
+  for (const ev of eventos) {
+    if (ev.detalle?.origen !== 'coarrendatario_documento_incorrecto') continue
+    const t = new Date(ev.created_at).getTime()
+    const resuelto = resoluciones.some(
+      (r) =>
+        r.detalle?.reporte_evento_id === ev.id ||
+        (r.detalle?.coarrendatario_id === ev.detalle?.coarrendatario_id && new Date(r.created_at).getTime() >= t),
+    )
+    if (resuelto) resueltos.add(ev.id)
+  }
+  return resueltos
 }
 
 const FILTROS: { value: TipoEvento | 'todos'; label: string }[] = [
@@ -349,6 +373,7 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
 
   const visibles = eventos.filter((e) => !esResultadoRepetido(e, eventos))
   const grupos = agruparPorDia(visibles)
+  const reportesResueltos = reportesDocumentoResueltos(eventos)
   const ultimoId = visibles[visibles.length - 1]?.id
 
   return (
@@ -389,6 +414,12 @@ export function TimelineSection({ expedienteId }: TimelineSectionProps) {
                       <p className="break-words text-sm font-medium text-gray-900">
                         {descripcionEvento(evento.descripcion)}
                       </p>
+                      {reportesResueltos.has(evento.id) && (
+                        <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-800">
+                          <IconCheckCircle size={14} className="text-primary-700" />
+                          Resuelto: después autorizó
+                        </p>
+                      )}
                       <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-600">
                         <span>{TIPO_LABEL[evento.tipo] ?? 'Evento'}</span>
                         <span aria-hidden="true">·</span>

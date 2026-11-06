@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { IconCheck, IconRefresh } from '@/components/icons'
+import { IconCheck, IconCheckCircle, IconRefresh } from '@/components/icons'
 import {
   coarrendatarioService,
   type ICoarrendatarioPublicView,
@@ -20,6 +20,32 @@ import {
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
+
+/** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
+const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
+  CC: 'Cédula de ciudadanía',
+  CE: 'Cédula de extranjería',
+  PPT: 'Permiso por protección temporal',
+  PEP: 'Permiso especial de permanencia',
+  TI: 'Tarjeta de identidad',
+  PASAPORTE: 'Pasaporte',
+  NIT: 'NIT',
+}
+
+function documentoLegible(documento: string): { tipo: string; ultimos: string | null } {
+  const m = /^(.+?)\s*[•*]+\s*(\S+)$/.exec(documento.trim())
+  if (!m) return { tipo: documento, ultimos: null }
+  return { tipo: TIPO_DOCUMENTO_LARGO[m[1].toUpperCase()] ?? m[1], ultimos: m[2] }
+}
+
+/** Se reenvió la invitación (p. ej. con el documento corregido): el token viejo ya no existe. */
+const ENLACE_REEMPLAZADO =
+  'Este enlace ya no sirve: le enviaron una invitación nueva. Ábrala desde el correo o el WhatsApp más reciente.'
+
+function esEnlaceReemplazado(err: unknown): boolean {
+  const e = err as { statusCode?: number; code?: string } | null
+  return e?.statusCode === 404 && e?.code === 'COARRENDATARIO_NOT_FOUND'
+}
 
 type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'error'
 
@@ -34,6 +60,18 @@ export default function CoarrendatarioPublicPage() {
   const [reintentable, setReintentable] = useState(false)
   const [confirmandoRechazo, setConfirmandoRechazo] = useState(false)
   const [confirmandoNoSoyYo, setConfirmandoNoSoyYo] = useState(false)
+  // Reportar el documento es deliberado: pasa por un diálogo que dice qué pasa.
+  const [confirmandoDocumento, setConfirmandoDocumento] = useState(false)
+  // «Sí, es mi documento»: el camino principal; sin él no se autoriza.
+  const [documentoConfirmado, setDocumentoConfirmado] = useState(false)
+  // Intentó autorizar sin confirmar: el error trae «Ir a confirmar mi documento».
+  const [faltaConfirmarDocumento, setFaltaConfirmarDocumento] = useState(false)
+  // Errores del reporte y de «No soy…»: se pintan debajo de esos enlaces, no al fondo.
+  const [docErrorMsg, setDocErrorMsg] = useState<string | null>(null)
+  // Volvió con «Me equivoqué»: el aviso ya salió.
+  const [yaReportado, setYaReportado] = useState(false)
+  const documentoRef = useRef<HTMLElement>(null)
+  const confirmarDocumentoRef = useRef<HTMLButtonElement>(null)
   const errorRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (errorMsg) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -82,6 +120,13 @@ export default function CoarrendatarioPublicPage() {
 
   const handleAceptar = async () => {
     if (!token) return
+    // No va en `disabled`: con el botón apagado no sabría qué le falta.
+    if (view?.documento && !documentoConfirmado) {
+      setErrorMsg('Antes de autorizar, confirme arriba que el documento es el suyo («Sí, es mi documento»).')
+      setFaltaConfirmarDocumento(true)
+      return
+    }
+    setFaltaConfirmarDocumento(false)
     if (direccion.trim().length < 5 || municipio.trim().length < 2) {
       setErrorMsg('Escriba su dirección de residencia y su municipio.')
       return
@@ -97,7 +142,7 @@ export default function CoarrendatarioPublicPage() {
       setResultMsg(r.mensaje)
       setPhase('aceptado')
     } catch (err) {
-      setErrorMsg(mensajeParaProspecto(err, 'No se pudo registrar su aceptación.'))
+      setErrorMsg(esEnlaceReemplazado(err) ? ENLACE_REEMPLAZADO : mensajeParaProspecto(err, 'No se pudo registrar su aceptación.'))
       setPhase('lista')
     }
   }
@@ -118,18 +163,15 @@ export default function CoarrendatarioPublicPage() {
   // «Mi documento está mal»: no cierra la invitación, avisa para que la corrijan y reenvíen.
   const handleDocumentoIncorrecto = async () => {
     if (!token) return
-    setErrorMsg(null)
+    setConfirmandoDocumento(false)
+    setDocErrorMsg(null)
     setPhase('reportando')
     try {
       await coarrendatarioService.reportarDocumentoIncorrecto(token)
       setPhase('reportado')
     } catch (err) {
-      // 404: la API todavía no tiene este aviso; la salida de antes.
-      setErrorMsg(
-        (err as { statusCode?: number })?.statusCode === 404
-          ? `No pudimos enviar su aviso. Decline la invitación y avísele a ${view?.expediente.titular_nombre || 'quien lo invitó'} para que lo invite de nuevo con el documento correcto.`
-          : mensajeParaProspecto(err, 'No pudimos enviar su aviso. Intente de nuevo.'),
-      )
+      // 404 = el enlace ya se reemplazó (declinar también daría 404): que use el nuevo.
+      setDocErrorMsg(esEnlaceReemplazado(err) ? ENLACE_REEMPLAZADO : mensajeParaProspecto(err, 'No pudimos enviar su aviso. Intente de nuevo.'))
       setPhase('lista')
     }
   }
@@ -138,13 +180,13 @@ export default function CoarrendatarioPublicPage() {
   const handleNoSoyYo = async () => {
     if (!token) return
     setConfirmandoNoSoyYo(false)
-    setErrorMsg(null)
+    setDocErrorMsg(null)
     setPhase('reportando')
     try {
       await coarrendatarioService.reportarNoSoyEsaPersona(token)
       setPhase('no_soy_yo')
     } catch (err) {
-      setErrorMsg(mensajeParaProspecto(err, 'No pudimos registrar su respuesta. Intente de nuevo.'))
+      setDocErrorMsg(esEnlaceReemplazado(err) ? ENLACE_REEMPLAZADO : mensajeParaProspecto(err, 'No pudimos registrar su respuesta. Intente de nuevo.'))
       setPhase('lista')
     }
   }
@@ -212,6 +254,14 @@ export default function CoarrendatarioPublicPage() {
           invitación nueva y este enlace dejará de funcionar.
         </p>
         <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
+        {/* Se equivocó: la invitación sigue abierta y puede aceptar con este enlace. */}
+        <button
+          type="button"
+          onClick={() => { setYaReportado(true); setPhase('lista') }}
+          className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-primary-700 underline underline-offset-2 hover:text-primary-800"
+        >
+          Me equivoqué: el documento sí es el mío
+        </button>
         <ContactoCofianza />
       </div>
     )
@@ -269,6 +319,91 @@ export default function CoarrendatarioPublicPage() {
               {titular} lo invita a ser su coarrendatario: a tomar el arriendo juntos, con el respaldo de Cofianza.
             </p>
           </div>
+
+          {/* P4: que no autorice una consulta con un documento ajeno.
+              Arriba y como pregunta: el invitado confirma su documento antes de
+              leer lo demás. Confirmar es el camino principal; reportar que está
+              mal es un enlace secundario con diálogo (dos de dos lo pulsaban por
+              error cuando era un botón de ancho completo junto a las casillas, con
+              el número a medias y sin confirmación). */}
+          {view?.documento && (() => {
+            const doc = documentoLegible(view.documento)
+            return (
+              <section
+                ref={documentoRef}
+                tabIndex={-1}
+                aria-labelledby="coa-documento"
+                className="rounded-lg border border-gray-200 bg-gray-50 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+              >
+                <h3 id="coa-documento" className="text-sm font-semibold text-gray-900">¿Este es su documento?</h3>
+                <p className="mt-2 text-sm text-gray-700">{doc.tipo}</p>
+                {doc.ultimos ? (
+                  <p className="text-lg font-semibold text-gray-900 tabular-nums">
+                    Número terminado en <span className="tracking-wider">{doc.ultimos}</span>
+                  </p>
+                ) : (
+                  <p className="text-lg font-semibold text-gray-900">{view.documento}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-700">
+                  A nombre de <span className="font-medium">{view.nombre} {view.apellido}</span>. Por seguridad solo mostramos
+                  los últimos dígitos.
+                </p>
+
+                {yaReportado && (
+                  <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+                    Ya avisamos que el número estaba mal. Si es el suyo, autorice ahora: el aviso quedará resuelto. Si le
+                    reenvían la invitación, use el enlace nuevo.
+                  </p>
+                )}
+
+                {documentoConfirmado ? (
+                  <p role="status" className="mt-3 flex items-center gap-2 text-sm font-medium text-primary-800">
+                    <IconCheckCircle size={18} className="shrink-0 text-primary-700" />
+                    Confirmó que es su documento.
+                  </p>
+                ) : (
+                  <button
+                    ref={confirmarDocumentoRef}
+                    type="button"
+                    onClick={() => {
+                      setDocumentoConfirmado(true)
+                      if (faltaConfirmarDocumento) { setErrorMsg(null); setFaltaConfirmarDocumento(false) }
+                    }}
+                    disabled={procesando}
+                    className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary-600 bg-white px-5 py-2.5 text-sm font-semibold text-primary-700 hover:bg-primary-50 disabled:opacity-50 sm:w-auto"
+                  >
+                    <IconCheck size={16} /> Sí, es mi documento
+                  </button>
+                )}
+
+                <div className="mt-3 flex flex-col items-start gap-1 text-xs text-gray-600 sm:flex-row sm:flex-wrap sm:gap-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setConfirmandoDocumento(true)}
+                    disabled={procesando}
+                    className="min-h-11 text-left underline underline-offset-2 hover:text-gray-900 disabled:opacity-50 sm:min-h-0"
+                  >
+                    {phase === 'reportando' ? 'Enviando…' : 'Esos dígitos no son los de mi documento'}
+                  </button>
+                  {view.permite_no_soy_yo && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmandoNoSoyYo(true)}
+                      disabled={procesando}
+                      className="min-h-11 text-left underline underline-offset-2 hover:text-gray-900 disabled:opacity-50 sm:min-h-0"
+                    >
+                      No soy {view.nombre}
+                    </button>
+                  )}
+                </div>
+                {docErrorMsg && (
+                  <div role="alert" className="mt-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {docErrorMsg}
+                  </div>
+                )}
+              </section>
+            )
+          })()}
 
           <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 text-sm text-primary-900 leading-relaxed">
             <p className="font-semibold mb-1">Qué significa aceptar</p>
@@ -351,37 +486,6 @@ export default function CoarrendatarioPublicPage() {
             </p>
           </div>
 
-          {/* P4: si el documento no es el suyo, que no autorice una consulta ajena.
-              UX #10: avisa sin declinar; la invitación sigue abierta hasta que la corrijan.
-              Va justo antes de las casillas: es lo último que revisa antes de autorizar. */}
-          {view?.documento && (
-            <div className="text-xs text-gray-500">
-              <p className="mb-1 text-sm font-semibold text-gray-900">¿Es usted {view.nombre} {view.apellido}?</p>
-              <p>
-                Documento registrado: <strong className="text-gray-700">{view.documento}</strong>. Si el número no es el
-                suyo, no acepte todavía: avísenos y quien tramita el arriendo lo corregirá y le enviará la invitación de nuevo.
-              </p>
-              <button
-                type="button"
-                onClick={handleDocumentoIncorrecto}
-                disabled={procesando}
-                className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border sm:w-auto border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-              >
-                {phase === 'reportando' ? 'Enviando…' : 'Mi documento está mal'}
-              </button>
-              {view.permite_no_soy_yo && (
-                <button
-                  type="button"
-                  onClick={() => setConfirmandoNoSoyYo(true)}
-                  disabled={procesando}
-                  className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg border sm:ml-2 sm:w-auto border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  No soy {view.nombre}
-                </button>
-              )}
-            </div>
-          )}
-
           <div className="space-y-3">
             <label className="flex items-start gap-3 rounded-lg py-1.5 text-sm text-gray-700 cursor-pointer">
               <input
@@ -415,6 +519,19 @@ export default function CoarrendatarioPublicPage() {
           {errorMsg && (
             <div ref={errorRef} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3" role="alert">
               {errorMsg}
+              {faltaConfirmarDocumento && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const destino = confirmarDocumentoRef.current ?? documentoRef.current
+                    documentoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    destino?.focus({ preventScroll: true })
+                  }}
+                  className="mt-2 block min-h-11 font-semibold text-red-800 underline underline-offset-2 hover:text-red-900"
+                >
+                  Ir a confirmar mi documento
+                </button>
+              )}
             </div>
           )}
 
@@ -444,6 +561,24 @@ export default function CoarrendatarioPublicPage() {
           title={`¿No es ${view?.nombre ?? 'esa persona'}?`}
           message="Cerraremos esta invitación sin consultar ninguna central de riesgo, y le avisaremos a quien tramita el arriendo para que invite a la persona correcta."
           confirmLabel="Sí, no soy esa persona"
+          isLoading={phase === 'reportando'}
+        />
+        <ConfirmDialog
+          isOpen={confirmandoDocumento}
+          onClose={() => setConfirmandoDocumento(false)}
+          onConfirm={handleDocumentoIncorrecto}
+          title="¿Los dígitos no son los de su documento?"
+          message={
+            <>
+              <p>
+                Si los últimos dígitos del número que mostramos no son los de su documento, le avisaremos a quien tramita el
+                arriendo para que lo corrija y le envíe una invitación nueva; este enlace dejará de funcionar cuando la reenvíen.
+              </p>
+              <p className="mt-2">Si los dígitos sí coinciden, no avise: pulse «Volver» y continúe con la autorización.</p>
+            </>
+          }
+          confirmLabel="Sí, avisar que está mal"
+          cancelLabel="Volver"
           isLoading={phase === 'reportando'}
         />
         <ConfirmDialog
