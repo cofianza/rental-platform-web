@@ -108,7 +108,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
       size="md"
       footer={
         <ModalAcciones>
-          <button type="button" onClick={handleClose} disabled={submitting} className={botonModal('secondary')}>
+          <button type="button" onClick={handleClose} disabled={submitting || !!savingRol} className={botonModal('secondary')}>
             Cancelar
           </button>
           <button

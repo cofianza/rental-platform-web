@@ -356,12 +356,60 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
 // Timeline Item Component
 // ============================================
 
+// Detalles del evento: solo las claves con etiqueta en español. Las técnicas
+// (ids de usuario, de pasarela, de lote, marcas de simulación) no se muestran.
+const DETALLE_LABELS: Record<string, string> = {
+  estado_anterior: 'Estado anterior',
+  estado_nuevo: 'Estado nuevo',
+  motivo: 'Motivo',
+  metodo: 'Método',
+  email: 'Correo',
+  email_anterior: 'Correo anterior',
+  provider: 'Pasarela',
+  gateway: 'Pasarela',
+  transaction_ref: 'Referencia de la transacción',
+  saldo_restante: 'Cupos restantes',
+  devolucion: 'Devolución',
+  cancelado_por: 'Cancelado por',
+}
+
+const VALOR_LABELS: Record<string, string> = {
+  sistema: 'El sistema',
+  mercadopago: 'Mercado Pago',
+  stripe: 'Stripe',
+  credito: 'Cupo del paquete',
+  credito_inmobiliaria: 'Cupo de la inmobiliaria',
+  reemplazado_por_nuevo_cobro: 'Reemplazado por un cobro nuevo',
+  gestor_paga_por_pasarela: 'El gestor paga por la pasarela',
+  inmobiliaria_libera_credito: 'La inmobiliaria liberó el cupo',
+}
+
+const PARECE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function detallesLegibles(detalles: IPagoEvento['detalles']): [string, string][] {
+  if (!detalles || typeof detalles !== 'object') return []
+  const filas: [string, string][] = []
+  for (const [clave, valor] of Object.entries(detalles as Record<string, unknown>)) {
+    const etiqueta = DETALLE_LABELS[clave]
+    if (!etiqueta || valor === null || valor === undefined || valor === '' || typeof valor === 'object') continue
+    const texto = String(valor)
+    if (PARECE_ID.test(texto)) continue
+    const legible =
+      clave === 'estado_anterior' || clave === 'estado_nuevo'
+        ? ESTADOS_CONFIG[texto]?.label ?? texto
+        : VALOR_LABELS[texto] ?? texto
+    filas.push([etiqueta, legible])
+  }
+  return filas
+}
+
 interface EventoTimelineItemProps {
   evento: IPagoEvento
   isLast: boolean
 }
 
 function EventoTimelineItem({ evento, isLast }: EventoTimelineItemProps) {
+  const detallesVisibles = detallesLegibles(evento.detalles)
   const config = EVENTO_ICONS[evento.tipo] || { icon: IconClock, color: 'text-gray-500' }
   const Icon = config.icon
   const label = EVENTO_LABELS[evento.tipo] || evento.tipo
@@ -385,14 +433,15 @@ function EventoTimelineItem({ evento, isLast }: EventoTimelineItemProps) {
             <span className="ml-2 text-gray-500">({evento.origen})</span>
           )}
         </p>
-        {evento.detalles && Object.keys(evento.detalles).length > 0 && (
-          <div className="mt-2 break-words rounded bg-gray-50 p-2 text-xs text-gray-600">
-            {Object.entries(evento.detalles).map(([key, value]) => (
-              <div key={key}>
-                <span className="font-medium">{key}:</span> {String(value)}
+        {detallesVisibles.length > 0 && (
+          <dl className="mt-2 break-words rounded bg-gray-50 p-2 text-xs text-gray-600">
+            {detallesVisibles.map(([etiqueta, valor]) => (
+              <div key={etiqueta} className="flex flex-wrap gap-x-1">
+                <dt className="font-medium">{etiqueta}:</dt>
+                <dd>{valor}</dd>
               </div>
             ))}
-          </div>
+          </dl>
         )}
       </div>
     </li>

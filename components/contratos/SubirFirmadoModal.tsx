@@ -97,7 +97,7 @@ export function SubirFirmadoModal({ isOpen, onClose, contratoId, onSuccess }: Su
       isOpen
       onClose={handleClose}
       title="Subir contrato firmado"
-      description="Adjunte el PDF del contrato ya firmado por todas las partes. Queda como la versión firmada del contrato."
+      description="Adjunte el PDF del contrato ya firmado por todas las partes. Queda como la versión firmada del contrato. No se puede reemplazar después."
       size="md"
       footer={
         <ModalAcciones>

@@ -112,7 +112,7 @@ export function EditorClausula({ isOpen, onClose, ...resto }: EditorProps) {
         isOpen={isOpen}
         onClose={cerrar}
         title={resto.clausula ? 'Editar cláusula' : 'Nueva cláusula'}
-        description="Al guardarla, el texto pasa por una revisión automática."
+        description="Al guardarla, una validación automática busca algunos contenidos prohibidos. No es una revisión jurídica."
         size="lg"
         closeOnBackdrop={false}
         footer={

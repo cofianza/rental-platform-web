@@ -145,8 +145,9 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
         file,
       )
 
-      // Se espera la recarga del padre antes de soltar el botón: sin esto,
-      // un segundo clic registraba el mismo pago dos veces.
+      // onSuccess puede devolver una promesa (PagosSection recarga la lista):
+      // se espera antes de soltar el botón, así un segundo clic no registra
+      // el mismo pago dos veces.
       await onSuccess()
       resetForm()
       onClose()

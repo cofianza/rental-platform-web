@@ -353,7 +353,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
               className={botonModal('primary')}
             >
               {isLoading && <IconLoader size={16} className="animate-spin" />}
-              {isLoading ? 'Guardando…' : confirmMode === 'reprogramar' ? 'Enviar nueva propuesta' : 'Confirmar cita'}
+              {isLoading ? 'Guardando…' : confirmMode === 'reprogramar' ? 'Guardar nuevo horario' : 'Confirmar cita'}
             </button>
           </ModalAcciones>
         }
@@ -445,7 +445,7 @@ export function CitaCard({ cita, onAction, pagoEstudioEstado }: CitaCardProps) {
         isOpen={action === 'cancelar'}
         onClose={cerrarSiLibre}
         title="Cancelar cita"
-        description="El prospecto recibe el motivo que escriba aquí."
+        description="El motivo se le envía a la otra parte y queda en el historial del estudio."
         size="sm"
         footer={
           <ModalAcciones>

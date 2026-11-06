@@ -943,7 +943,9 @@ function EnviarLinkModal({
           </div>
         </dl>
         <p className="text-sm text-gray-600">
-          El cobro llega al mismo correo y WhatsApp que escriba abajo. Puede corregir los datos antes de enviar.
+          La autorización y el cobro llegan al correo y al WhatsApp registrados del arrendatario. Para cambiarlos,
+          corrija la ficha del arrendatario. Los datos de abajo solo se usan para el cobro si el arrendatario ya
+          autorizó la consulta.
         </p>
 
         <div>
@@ -977,7 +979,7 @@ function EnviarLinkModal({
         </div>
 
         <PhoneInput
-          label="WhatsApp (opcional)"
+          label="Teléfono (opcional)"
           value={telefono}
           onChange={setTelefono}
           placeholder="300 123 4567"

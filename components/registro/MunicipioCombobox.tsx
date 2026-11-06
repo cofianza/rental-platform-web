@@ -114,6 +114,13 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
             setOpen(true)
           }}
           onFocus={() => setOpen(true)}
+          // Enter no envía el formulario que lo contiene (p. ej. datos de la
+          // factura): si la lista está abierta, elige el primer resultado.
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return
+            e.preventDefault()
+            if (open && !loading && results.length > 0 && !value) handleSelect(results[0])
+          }}
           placeholder="Empiece a escribir su municipio (ej. Medellín)"
           className={`w-full min-h-11 rounded-lg border pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
             error ? 'border-red-300 bg-red-50' : 'border-gray-300'

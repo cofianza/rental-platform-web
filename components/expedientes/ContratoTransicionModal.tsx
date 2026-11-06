@@ -180,7 +180,9 @@ export function ContratoTransicionModal({
                     disabled={isLoading}
                     className={`flex min-h-12 items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 ${
                       isSelected
-                        ? `${config?.borderColor || 'border-gray-400'} ${config?.bgColor || 'bg-gray-100'} ring-1 ring-inset ring-current`
+                        ? `${config?.borderColor || 'border-gray-400'} ${config?.bgColor || 'bg-gray-100'} ${config?.textColor || 'text-gray-700'} ring-1 ring-inset ring-current`
+                        // ring-current toma el color del estado: textColor viene escrito
+                        // completo en ESTADOS_CONTRATO (lib/constants.ts), así Tailwind lo genera.
                         : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >

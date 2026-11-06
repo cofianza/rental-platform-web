@@ -155,7 +155,8 @@ export function GenerarLinkPagoModal({
         enviar_email: enviarEmail,
       })
 
-      // Se espera la recarga del padre antes de soltar el botón (sin doble envío).
+      // onSuccess puede devolver una promesa (PagosSection recarga la lista):
+      // se espera antes de soltar el botón, así no hay doble envío.
       await onSuccess()
       resetForm()
       onClose()
@@ -178,7 +179,7 @@ export function GenerarLinkPagoModal({
       isOpen={isOpen}
       onClose={handleClose}
       title="Generar enlace de pago"
-      description="Quien paga recibe un enlace seguro para pagar con tarjeta de crédito, débito o PSE."
+      description="Se genera un enlace seguro para pagar con tarjeta de crédito, débito o PSE."
       size="md"
       footer={
         <div className="space-y-2">

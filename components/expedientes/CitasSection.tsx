@@ -1172,7 +1172,7 @@ function CancelarCitaModal({
       isOpen={isOpen}
       onClose={handleClose}
       title="Cancelar cita"
-      description="El motivo queda en el historial de la cita."
+      description="El motivo se le envía a la otra parte y queda en el historial del estudio."
       footer={
         <>
           <ErrorDialogo mensaje={error} />
