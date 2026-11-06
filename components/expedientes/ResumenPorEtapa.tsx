@@ -34,7 +34,8 @@ interface Orden {
 const DESPUES_DEL_RESULTADO: Pick<Orden, 'historial'> = { historial: ['coarrendatario', 'autorizacion', 'visita'] }
 
 const ORDEN: Record<EtapaEstudio, Orden> = {
-  visita: { ahora: ['habilitar', 'visita'], detalle: ['coarrendatario'], historial: [] },
+  // Primero agendar la visita (la acción principal); debajo, marcarla como hecha si fue por fuera.
+  visita: { ahora: ['visita', 'habilitar'], detalle: ['coarrendatario'], historial: [] },
   habilitar: { ahora: ['habilitar'], detalle: ['coarrendatario'], historial: ['visita'] },
   no_habilitada: { ahora: [], detalle: ['coarrendatario'], historial: ['visita'] },
   autorizacion: { ahora: ['autorizacion', 'pago'], detalle: ['evaluacion', 'coarrendatario'], historial: ['visita'] },
@@ -56,13 +57,27 @@ const ORDEN: Record<EtapaEstudio, Orden> = {
 }
 
 interface Props {
-  /** null = la etapa se está leyendo: no se pinta nada (sin saltos ni barras grises). */
+  /** null = la etapa se está leyendo: un esqueleto del alto de una tarjeta (sin dejar la pestaña en blanco). */
   etapa: EtapaEstudio | null
   bloques: Record<BloqueResumen, ReactNode>
 }
 
 export function ResumenPorEtapa({ etapa, bloques }: Props) {
-  if (!etapa) return null
+  if (!etapa) {
+    return (
+      <div role="status" className="animate-pulse rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
+        <span className="sr-only">Cargando el siguiente paso del estudio…</span>
+        <div className="flex items-start gap-3">
+          <div className="hidden h-9 w-9 shrink-0 rounded-full bg-gray-200 sm:block" />
+          <div className="min-w-0 flex-1 space-y-2.5">
+            <div className="h-4 w-56 max-w-full rounded bg-gray-200" />
+            <div className="h-3 w-full max-w-lg rounded bg-gray-100" />
+            <div className="h-3 w-4/5 max-w-md rounded bg-gray-100" />
+          </div>
+        </div>
+      </div>
+    )
+  }
   const { ahora, detalle, historial } = ORDEN[etapa]
   const pintar = (lista: BloqueResumen[]) =>
     lista.filter((b) => bloques[b]).map((b) => <Fragment key={b}>{bloques[b]}</Fragment>)

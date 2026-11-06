@@ -235,16 +235,24 @@ export function AprobarCondicionadoCard({
         }
         descripcion={textoCondicionCoarrendatario(condicion)}
         pie={
-          <>
-            Mientras la condición esté vigente no se puede aprobar el estudio a mano, pedir soportes al solicitante ni
-            reasignarlo a otra propiedad: lo que falta es el coarrendatario.
-            {esCofianza && ' Para no aprobarlo, use «Cambiar estado», arriba.'}
-          </>
+          esCofianza ? (
+            <>
+              Mientras la condición esté vigente no se puede aprobar el estudio a mano, pedir soportes al solicitante ni
+              reasignarlo a otra propiedad: lo que falta es el coarrendatario. Para no aprobarlo, use «Cambiar estado», arriba.
+            </>
+          ) : (
+            // La agencia nunca aprueba: «a mano» le hablaba de algo que no puede hacer.
+            'Mientras la condición esté vigente, lo único que falta es el coarrendatario: no se piden más soportes ni se puede reasignar el estudio a otra propiedad.'
+          )
         }
       >
         {!condicion.vencida && (
           <ol className="space-y-4 px-4 py-4 sm:px-5">
-            <Paso n={1} propio={false} titulo={esCofianza ? 'La inmobiliaria o el prospecto invitan al coarrendatario' : 'Invite al coarrendatario (en el recuadro de abajo)'}>
+            <Paso
+              n={1}
+              propio={false}
+              titulo={esCofianza ? 'La inmobiliaria o el prospecto invitan al coarrendatario' : 'La persona lo agrega desde su enlace, o usted lo invita (en el recuadro de abajo)'}
+            >
               <p>
                 Es la persona con quien vivirá el solicitante. No necesita finca raíz: basta con que tenga ingresos
                 propios. Se le hace su propia evaluación, y el enlace de su invitación vence con la condición.
@@ -393,7 +401,8 @@ export function AprobarCondicionadoCard({
       icono={<IconShieldCheck size={18} />}
       titulo={
         <span className="inline-flex items-center gap-1">
-          Estudio condicionado: qué sigue
+          {/* A la agencia, el mismo nombre del chip y de la franja; «condicionado» es el estado interno. */}
+          {esCofianza ? 'Estudio condicionado: qué sigue' : 'En revisión de Cofianza: qué sigue'}
           <InfoTip texto={AYUDA.condicionado} lado="derecha" />
         </span>
       }
@@ -513,8 +522,8 @@ export function AprobarCondicionadoCard({
           </>
         ) : (
           <p>
-            Revisa el caso y lo aprueba o no. No tiene que hacer nada para que avance: le avisamos por
-            notificación y correo cuando decida.
+            Un analista revisa el caso y decide si lo aprueba. Usted no tiene que hacer nada para que avance: le
+            avisamos por notificación y correo cuando decida.
           </p>
         )}
       </SeccionPaso>

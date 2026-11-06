@@ -601,7 +601,10 @@ function ExpedienteDetalleContenido() {
             ? ETAPA_LABEL[etapa]
             : undefined
   // En la espera, la franja ya dice que falta el coarrendatario: «Esperando al prospecto» la contradecía.
-  const turno = etapaTurno && etapaTurno !== 'espera_coarrendatario' ? turnoDeEtapa(etapaTurno, esperaCandidato) : null
+  const turnoBase = etapaTurno && etapaTurno !== 'espera_coarrendatario' ? turnoDeEtapa(etapaTurno, esperaCandidato) : null
+  // La lista no le pone turno a la visita (como el RPC), pero a la inmobiliaria y al
+  // propietario sí les toca: agendarla o marcarla como hecha. Sin esto la franja no decía de quién era.
+  const turno = turnoBase ?? (!isInternalRole && etapaTurno === 'visita' ? 'gestor' : null)
   const vistaTurno = isInternalRole ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
   // Las mismas transiciones que ofrece el modal: con condición o con el paz y salvo
   // pendiente no se aprueba a mano (la API responde 409); no aprobarlo sí se ofrece.
@@ -782,6 +785,22 @@ function ExpedienteDetalleContenido() {
               </span>
             </Dato>
           )}
+
+          {/* Responsable del estudio (miembro de la inmobiliaria, Fase 3.1): un dato más de la
+              ficha, visible en cualquier pestaña. Antes era una tarjeta entre la barra y las
+              pestañas que empujaba lo que toca hacer. El analista interno va arriba (puedeAsignar). */}
+          {user?.rol === 'inmobiliaria' && (
+            <ResponsableMiembroCard
+              variante="dato"
+              titulo="Responsable del estudio"
+              ayuda="La persona de su equipo que sigue este estudio. Si en Equipo se desactivó «los miembros ven todo», el responsable lo ve aunque el inmueble no sea suyo."
+              miembroResponsableId={expediente.miembro_responsable_id}
+              onAssign={async (miembroId) => {
+                await expedienteService.asignarMiembroResponsable(id, miembroId)
+                setExpediente((prev) => (prev ? { ...prev, miembro_responsable_id: miembroId } : prev))
+              }}
+            />
+          )}
         </dl>
       </header>
 
@@ -827,6 +846,8 @@ function ExpedienteDetalleContenido() {
           const irADecision = (propio || !!opcionesTurno.tomadoPor) && etapaTurno === 'decision' && esCondicionado && puedeActuar
           return (
             <div
+              role="status"
+              aria-live="polite"
               className={`mt-5 flex flex-col gap-3 rounded-lg px-4 py-3 sm:flex-row sm:items-center sm:gap-4 ${
                 propio ? 'bg-coral-50 ring-1 ring-inset ring-coral-200' : 'bg-gray-50'
               }`}
@@ -837,7 +858,11 @@ function ExpedienteDetalleContenido() {
                     className={`flex items-start gap-1.5 text-sm font-semibold ${propio ? 'text-coral-800' : 'text-gray-800'}`}
                   >
                     {propio && <IconArrowRight size={16} className="mt-0.5 shrink-0" />}
-                    {textoTurno(turno, vistaTurno, opcionesTurno)}
+                    {/* Con la condición de coarrendatario lo que se espera es el coarrendatario (lo invita
+                        la persona o quien gestiona), no «al prospecto». */}
+                    {turno === 'prospecto' && condicionCoa && !isInternalRole
+                      ? 'Esperando al coarrendatario'
+                      : textoTurno(turno, vistaTurno, opcionesTurno)}
                   </p>
                 )}
                 <p className={`text-sm leading-relaxed text-gray-700 ${turno ? 'mt-0.5' : ''} ${propio ? 'pl-[22px]' : ''}`}>
@@ -889,20 +914,6 @@ function ExpedienteDetalleContenido() {
       {/* Adenda de precios §7: canon sobre el tope — aviso al analista y excepción de la Gerencia General. */}
       {isInternalRole && expediente.tope_canon && (
         <ExcepcionTopeBlock expedienteId={id} tope={expediente.tope_canon} onAutorizada={fetchExpediente} />
-      )}
-
-      {/* Responsable del expediente (miembro) — SIEMPRE visible (en cualquier
-          tab), solo inmobiliaria (Fase 3.1). El analista interno va en el header. */}
-      {user?.rol === 'inmobiliaria' && (
-        <ResponsableMiembroCard
-          titulo="Responsable del estudio"
-          ayuda='Si desactivó "los miembros ven todo", el responsable verá este estudio aunque el inmueble no sea suyo.'
-          miembroResponsableId={expediente.miembro_responsable_id}
-          onAssign={async (miembroId) => {
-            await expedienteService.asignarMiembroResponsable(id, miembroId)
-            setExpediente((prev) => (prev ? { ...prev, miembro_responsable_id: miembroId } : prev))
-          }}
-        />
       )}
 
       {/* Tabs */}
@@ -1176,6 +1187,7 @@ function ExpedienteDetalleContenido() {
                       // estudio del coarrendatario: se recarga.
                       onEstudioCompletado={fetchExpediente}
                       requisitoPendiente={!!pazYSalvo}
+                      conCondicion={!!condicionCoa}
                     />
                   ),
                   visita: expediente.inmueble ? (
@@ -1400,7 +1412,7 @@ function ExpedienteDetalleContenido() {
             {/* El pago y la autorizacion viven en Resumen (§6.3): aqui se repetian
                 las mismas tres tarjetas y la accion util quedaba enterrada. */}
             <p className="text-sm text-gray-500">
-              La autorización del prospecto y el pago de la evaluación se gestionan en{' '}
+              La autorización del prospecto y el pago de la evaluación están en{' '}
               <button type="button" onClick={() => setActiveTab('resumen')} className="font-medium text-primary-700 underline">
                 Resumen
               </button>
@@ -1425,6 +1437,7 @@ function ExpedienteDetalleContenido() {
                   userRol={user?.rol}
                   onEstudioCompletado={fetchExpediente}
                   requisitoPendiente={!!pazYSalvo}
+                  conCondicion={!!condicionCoa}
                 />
               </>
             )}

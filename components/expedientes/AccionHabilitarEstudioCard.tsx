@@ -199,37 +199,32 @@ export function AccionHabilitarEstudioCard({
   if (!puedeContinuar) {
     return (
       <>
-        <div className="border border-gray-200 bg-white rounded-lg p-5">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-              <IconCalendar size={20} className="text-gray-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-                Primero, la visita al inmueble
-              </h3>
-              <p className="text-sm text-gray-600 mb-3">
-                {userRol === 'operador_analista'
-                  ? 'La inmobiliaria o el propietario agendan la visita. Cuando se realice, aquí podrá habilitar la evaluación crediticia.'
-                  : 'Agende la visita desde la sección de citas de este estudio. Cuando se realice, aquí podrá habilitar la evaluación crediticia.'}
-              </p>
-              <p className="text-sm text-gray-500 mb-2">¿La visita ya se hizo por fuera (WhatsApp u otro medio)?</p>
-              <button
-                onClick={() => setShowOmitir(true)}
-                disabled={submitting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-primary-700 bg-primary-50 border border-primary-200 rounded-lg hover:bg-primary-100 disabled:opacity-50 transition-colors"
-              >
-                <IconCalendar size={14} />
-                La visita ya se hizo — omitir cita
-              </button>
-            </div>
+        {/* Va debajo de la visita (ResumenPorEtapa): agendarla es lo principal; esto es la
+            salida secundaria cuando ya se hizo por fuera. */}
+        <div className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900">¿La visita ya se hizo por fuera?</h3>
+            <p className="mt-0.5 text-sm text-gray-600">
+              {userRol === 'operador_analista'
+                ? 'La inmobiliaria o el propietario agendan la visita. Si se coordinó por WhatsApp u otro medio, márquela como hecha y la evaluación crediticia se podrá habilitar enseguida.'
+                : 'Si la coordinó por WhatsApp u otro medio, márquela como hecha y podrá habilitar la evaluación crediticia enseguida.'}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowOmitir(true)}
+            disabled={submitting}
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:opacity-50 sm:self-auto"
+          >
+            <IconCalendar size={16} aria-hidden="true" />
+            Marcar la visita como hecha
+          </button>
         </div>
 
         <Modal
           isOpen={showOmitir}
           onClose={() => !submitting && setShowOmitir(false)}
-          title="Omitir la cita de visita"
+          title="Marcar la visita como hecha"
           description="Confirme que la visita ya se coordinó por fuera. Podrá habilitar la evaluación enseguida."
           size="sm"
           footer={
@@ -245,7 +240,7 @@ export function AccionHabilitarEstudioCard({
                 className={botonModal('primary')}
               >
                 {submitting && <IconLoader size={16} className="animate-spin" />}
-                Omitir cita y continuar
+                Marcar como hecha
               </button>
             </ModalAcciones>
           }
@@ -273,14 +268,14 @@ export function AccionHabilitarEstudioCard({
 
   return (
     <>
-      <div className="border-2 border-primary-300 bg-primary-50/50 rounded-lg p-5">
-        <div className="flex items-start gap-4">
-          <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-            <IconShieldCheck size={22} className="text-primary-700" />
+      <div className="rounded-xl border border-primary-200 bg-primary-50/60 p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <div className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-primary-200 sm:flex" aria-hidden="true">
+            <IconShieldCheck size={18} className="text-primary-700" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-              Acción requerida: ¿habilitamos la evaluación crediticia?
+              Siguiente paso: ¿habilita la evaluación crediticia?
             </h3>
             <p className="text-sm text-gray-600 mb-4">
               {citaOmitida ? 'Marcó la visita como ya realizada.' : 'La cita de visita se realizó.'}{' '}
@@ -300,7 +295,7 @@ export function AccionHabilitarEstudioCard({
               <button
                 onClick={handleHabilitar}
                 disabled={submitting || !!noAfianzable}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm"
+                className="inline-flex min-h-10 items-center gap-2 px-4 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
               >
                 {submitting ? <IconLoader size={14} className="animate-spin" /> : <IconShieldCheck size={14} />}
                 Habilitar evaluación
@@ -308,7 +303,7 @@ export function AccionHabilitarEstudioCard({
               <button
                 onClick={() => setShowRechazar(true)}
                 disabled={submitting}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                className="inline-flex min-h-10 items-center gap-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
               >
                 No habilitar
               </button>

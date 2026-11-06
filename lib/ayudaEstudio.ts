@@ -23,6 +23,9 @@ export const AYUDA = {
     'Persona que vive con el titular y firma el contrato como arrendataria (no es fiador). Si califica, suma puntos e ingreso al titular y el estudio se decide con los dos. Un coarrendatario va incluido en el precio.',
   pago:
     'Quién cubre el estudio: un cupo del paquete de la inmobiliaria o el prospecto con el enlace de pago. Sin pago no se consulta a las centrales.',
+  // El propietario no tiene paquetes de cupos: paga él con Mercado Pago o le envía el cobro al prospecto.
+  pagoPropietario:
+    'Quién cubre el estudio: usted, con Mercado Pago (tarjeta o PSE), o el prospecto con el enlace de pago. Sin pago no se consulta a las centrales.',
   cupo:
     'El cupo queda reservado al habilitar el estudio y se descuenta solo cuando una consulta da resultado, la del titular o la del coarrendatario. Si no se llega a consultar, vuelve al saldo de la inmobiliaria, salvo que el paquete ya haya vencido.',
   visita:
@@ -81,6 +84,27 @@ export const AYUDA_ETAPA_TERCERO: Partial<Record<EtapaEstudio, string>> = {
   firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Falta que la inmobiliaria o el propietario la reenvíen o cancelen el contrato.',
 }
 
+/**
+ * Qué sigue para el miembro de solo lectura de la inmobiliaria (vista 'equipo'): lo que
+ * falta lo hace alguien de su propio equipo, no «la inmobiliaria o el propietario».
+ */
+export const AYUDA_ETAPA_EQUIPO: Partial<Record<EtapaEstudio, string>> = {
+  visita: 'Falta que alguien de su equipo con permiso de edición agende la visita o indique que ya se hizo por fuera.',
+  habilitar: 'Falta que alguien de su equipo con permiso de edición decida si habilita la evaluación crediticia.',
+  autorizacion:
+    'La persona debe abrir el enlace que le llegó por WhatsApp y correo y autorizar la consulta a las centrales de riesgo.',
+  enlace: 'El enlace de autorización venció o se detuvo. Alguien de su equipo con permiso de edición puede reenviarlo.',
+  pago: 'Falta que alguien de su equipo con permiso de edición defina o complete el pago del estudio. Sin el pago no se consulta a las centrales de riesgo.',
+  sin_ejecutar:
+    'La persona autorizó y el estudio está pagado, pero la consulta no arrancó sola. Alguien de su equipo con permiso de edición puede ejecutarla.',
+  fallida:
+    'La consulta a las centrales no se completó (no es un rechazo de crédito). Alguien de su equipo con permiso de edición puede corregir los datos y reintentarla.',
+  decision: 'Lo decide un analista de Cofianza; le avisamos a su equipo cuando decida.',
+  contrato: 'El estudio está aprobado. Falta que alguien de su equipo con permiso de edición cree el contrato.',
+  firma_incompleta:
+    'La firma quedó incompleta y la fianza no opera. Falta que alguien de su equipo con permiso de edición la reenvíe o cancele el contrato.',
+}
+
 function textoEspera(plazo: string, gestor: boolean): string {
   const base = `Ya se consultaron las centrales de riesgo. La decisión espera ${plazo} a que el coarrendatario autorice; después se decide con quienes hayan autorizado.`
   return gestor ? `${base} Si no lo va a hacer, reenvíele la invitación o cancélela aquí abajo.` : base
@@ -137,12 +161,15 @@ export function queSigue(
   if (etapa === 'decision' && o.fechaCondicion) {
     return gestor
       ? `Falta un coarrendatario antes del ${o.fechaCondicion}. La persona puede agregarlo desde su enlace, o usted puede invitarlo aquí abajo.`
-      : `Falta que la persona sume un coarrendatario antes del ${o.fechaCondicion}.`
+      : o.vista === 'equipo'
+        ? `Falta un coarrendatario antes del ${o.fechaCondicion}. La persona puede agregarlo desde su enlace, o alguien de su equipo con permiso de edición puede invitarlo.`
+        : `Falta que la persona sume un coarrendatario antes del ${o.fechaCondicion}.`
   }
   if (etapa === 'decision' && !gestor && o.analista) return 'Revise el caso y decida si lo aprueba.'
   // U2: el analista también puede ejecutar la consulta que no arrancó.
   if (etapa === 'sin_ejecutar' && !gestor && o.analista) {
     return 'La persona autorizó y el estudio está pagado, pero la consulta no arrancó sola. Ejecútela en «Evaluación crediticia», en el detalle; quien tramita el arriendo también puede hacerlo.'
   }
+  if (o.vista === 'equipo' && AYUDA_ETAPA_EQUIPO[etapa]) return AYUDA_ETAPA_EQUIPO[etapa]
   return (!gestor && AYUDA_ETAPA_TERCERO[etapa]) || AYUDA_ETAPA[etapa]
 }

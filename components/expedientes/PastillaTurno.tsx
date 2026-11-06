@@ -35,7 +35,8 @@ export function analistaAjeno(
 
 /** ¿Le toca actuar a quien mira? Coral, como «Su turno». */
 export function turnoPropio(turno: Turno, vista: VistaTurno, o: OpcionesTurno = {}): boolean {
-  if (turno === 'gestor') return vista !== 'cofianza' || (!!o.analista && !!o.sinEjecutar)
+  // Solo lectura («equipo») ve el turno de su equipo, pero no puede actuar: sin coral.
+  if (turno === 'gestor') return vista === 'gestor' || (vista === 'cofianza' && !!o.analista && !!o.sinEjecutar)
   return turno === 'cofianza' && vista === 'cofianza' && !!o.analista && !!o.revision && !o.tomadoPor
 }
 

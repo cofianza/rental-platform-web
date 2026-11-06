@@ -254,7 +254,7 @@ export function FirmantesContratoSection({
             onClick={() => { void actualizarDesdeAuco() }}
             disabled={refreshing || consultandoAuco || isLoading}
             className={`${BOTON} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50`}
-            title="Consultar en Auco el estado de cada firma"
+            title="Consultar el estado de cada firma en la plataforma de firma electrónica"
           >
             <IconRefresh size={16} className={refreshing || consultandoAuco ? 'animate-spin' : ''} />
             Actualizar
@@ -265,7 +265,7 @@ export function FirmantesContratoSection({
               onClick={handleRecordatorio}
               disabled={enviandoRecordatorio || recordatoriosAgotados}
               className={`${BOTON} bg-primary-700 text-white hover:bg-primary-800`}
-              title={recordatoriosAgotados ? 'Alcanzó el máximo de recordatorios' : 'Recordar a las partes pendientes (sin costo de Auco)'}
+              title={recordatoriosAgotados ? 'Alcanzó el máximo de recordatorios' : 'Recordar a las partes pendientes'}
             >
               {enviandoRecordatorio ? <IconLoader size={16} className="animate-spin" /> : <IconMail size={16} />}
               Enviar recordatorio
@@ -300,7 +300,7 @@ export function FirmantesContratoSection({
           <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
           <span>
             Un firmante quedó bloqueado tras varios intentos fallidos del código de firma. Cofianza lo
-            desbloquea en Auco; el proceso sigue abierto y después podrá firmar.
+            desbloquea; el proceso sigue abierto y después podrá firmar.
           </span>
         </div>
       )}

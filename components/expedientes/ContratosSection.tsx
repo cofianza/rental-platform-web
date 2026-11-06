@@ -651,7 +651,8 @@ export function ContratosSection({
           if (c) await handleConfirmarFirma(c)
         }}
         title="Enviar el contrato a firma"
-        message="Se crea el sobre en Auco y al arrendatario le llega el enlace de firma por WhatsApp. Cada envío consume créditos de firma."
+        // Sin el nombre del proveedor ni su costo: también lo leen la inmobiliaria y el propietario.
+        message="Se crea el proceso de firma electrónica y al arrendatario le llega el enlace de firma por WhatsApp."
         confirmLabel="Enviar a firma"
       />
       <EnviarFirmaPreviewModal

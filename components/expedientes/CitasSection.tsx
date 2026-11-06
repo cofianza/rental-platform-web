@@ -269,14 +269,11 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
       )}
 
       {hasNoActiveCita && !citaOmitida && (canManageCitas || esSolicitante) && (
-        <div className="relative overflow-hidden bg-gradient-to-br from-primary-50 via-primary-100/50 to-cyan-50 border-2 border-primary-200 rounded-xl p-6">
-          {/* Decoración de fondo */}
-          <div className="absolute -top-6 -right-6 w-24 h-24 bg-primary-200/40 rounded-full blur-2xl pointer-events-none" />
-          <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-cyan-200/30 rounded-full blur-2xl pointer-events-none" />
-
-          <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-white shadow-md border border-primary-200 flex items-center justify-center shrink-0">
-              <IconCalendar size={28} className="text-primary-600" />
+        // Mismo lenguaje que las demás tarjetas del Resumen (sin degradado ni manchas decorativas).
+        <div className="rounded-xl border border-primary-200 bg-primary-50/60 p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-primary-200 sm:flex" aria-hidden="true">
+              <IconCalendar size={20} className="text-primary-700" />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -285,16 +282,17 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
               </h4>
               <p className="text-sm text-gray-600">
                 {canManageCitas
-                  ? 'Programe una visita confirmada con el prospecto. Recibirá una notificación por correo y WhatsApp.'
+                  ? 'Programe la visita con el prospecto: le llega la confirmación por correo y WhatsApp.'
                   : 'Antes de continuar con la evaluación crediticia, necesita conocer el inmueble. Solicite una cita y el propietario la confirmará.'}
               </p>
             </div>
 
             <button
               onClick={() => setShowCrearModal(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 shadow-md hover:shadow-lg transition-all shrink-0"
+              type="button"
+              className="w-full sm:w-auto flex min-h-11 items-center justify-center gap-2 px-5 text-sm font-semibold text-white bg-primary-700 rounded-lg hover:bg-primary-800 shadow-sm transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-1"
             >
-              <IconCalendar size={16} />
+              <IconCalendar size={16} aria-hidden="true" />
               {canManageCitas ? 'Agendar visita' : 'Solicitar visita'}
             </button>
           </div>

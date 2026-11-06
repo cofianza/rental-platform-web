@@ -478,7 +478,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           titulo={
             <>
               Acción requerida: defina quién paga el estudio
-              <InfoTip texto={AYUDA.pago} className="ml-1" />
+              <InfoTip texto={userRole === 'propietario' ? AYUDA.pagoPropietario : AYUDA.pago} className="ml-1" />
             </>
           }
           descripcion={
@@ -538,8 +538,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             <button type="button" onClick={() => setShowLinkModal(true)} disabled={isSubmitting} className={cn(OPCION, 'hover:border-primary-500 hover:bg-primary-50/50')}>
               <IconMail size={22} className="shrink-0 text-primary-700" aria-hidden="true" />
               <span className="min-w-0">
-                <span className="block text-sm font-semibold text-gray-900">Enviar enlace al arrendatario</span>
-                <span className="mt-0.5 block text-xs text-gray-600">Él paga con tarjeta o PSE</span>
+                <span className="block text-sm font-semibold text-gray-900">Enviar el cobro al prospecto</span>
+                <span className="mt-0.5 block text-xs text-gray-600">Paga con tarjeta o PSE</span>
                 <span className="mt-1 block text-xs leading-snug text-gray-600">
                   {estado.autorizado
                     ? 'Ya autorizó la consulta: le enviamos el cobro.'
@@ -594,7 +594,10 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
             titulo={
               <span className="inline-flex items-center gap-1">
                 {titulo}
-                <InfoTip texto={/cupo/i.test(titulo) ? AYUDA.cupo : AYUDA.pago} lado="derecha" />
+                <InfoTip
+                  texto={/cupo/i.test(titulo) ? AYUDA.cupo : userRole === 'propietario' ? AYUDA.pagoPropietario : AYUDA.pago}
+                  lado="derecha"
+                />
               </span>
             }
             descripcion={texto}

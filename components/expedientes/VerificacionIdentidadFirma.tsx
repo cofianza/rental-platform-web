@@ -141,7 +141,7 @@ export function VerificacionIdentidadFirma({
               )}
               {!hayFirmantes && v.estado !== 'pendiente' && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-amber-700">
-                  <IconAlertTriangle size={11} /> El contrato no salió a firma en Auco. Vuelva a enviarlo.
+                  <IconAlertTriangle size={11} /> El contrato no salió a firma electrónica. Vuelva a enviarlo.
                 </p>
               )}
               {esAnalista && v.requiere_analista && !v.revision && (
