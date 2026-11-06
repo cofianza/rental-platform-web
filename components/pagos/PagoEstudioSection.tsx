@@ -943,9 +943,9 @@ function EnviarLinkModal({
           </div>
         </dl>
         <p className="text-sm text-gray-600">
-          La autorización y el cobro llegan al correo y al WhatsApp registrados del arrendatario. Para cambiarlos,
-          corrija la ficha del arrendatario. Los datos de abajo solo se usan para el cobro si el arrendatario ya
-          autorizó la consulta.
+          Enviaremos la autorización y el cobro a este correo y WhatsApp. Si los corrige aquí antes de que el
+          arrendatario autorice la consulta, también se actualiza su ficha. El nombre no cambia la ficha: para
+          corregirlo use «Corregir datos» en el estudio.
         </p>
 
         <div>
@@ -979,7 +979,7 @@ function EnviarLinkModal({
         </div>
 
         <PhoneInput
-          label="Teléfono (opcional)"
+          label="WhatsApp (opcional)"
           value={telefono}
           onChange={setTelefono}
           placeholder="300 123 4567"
