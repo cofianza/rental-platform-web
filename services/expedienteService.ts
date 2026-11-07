@@ -139,15 +139,19 @@ class ExpedienteService {
   /**
    * Conteo de la lista para cada chip de estudio, en una sola petición
    * (GET /expedientes/conteos, mismo alcance y criterio que la lista). Con una
-   * API anterior al endpoint (404) cuenta como antes: una petición por chip,
-   * sin «todos» (lo da el total de la lista).
+   * API anterior al endpoint cuenta como antes: una petición por chip, sin
+   * «todos» (lo da el total de la lista). La API vieja no responde 404: la ruta
+   * cae en GET /:id y su validación de uuid da 400 VALIDATION_ERROR.
    */
   async getConteos(): Promise<Partial<Record<EstudioFiltro, number>>> {
     try {
       const response = (await apiClient.get('/expedientes/conteos')) as { data?: Partial<Record<EstudioFiltro, number>> }
       return response.data ?? {}
     } catch (err) {
-      if (!(err instanceof ApiClientError) || err.statusCode !== 404) throw err
+      const sinEndpoint =
+        err instanceof ApiClientError &&
+        (err.statusCode === 404 || (err.statusCode === 400 && err.code === 'VALIDATION_ERROR'))
+      if (!sinEndpoint) throw err
     }
     const rs = await Promise.all(
       (['requiere_accion', 'sin_estudio', 'en_proceso', 'condicionado', 'aprobado', 'rechazado'] as const).map((f) =>
