@@ -123,7 +123,7 @@ function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
           {datos.demora.texto}
         </span>
       )}
-      {datos.prioridadBaja && <PrioridadBaja />}
+      {datos.prioridadBaja && <PrioridadBaja conAyuda />}
     </div>
   )
 }

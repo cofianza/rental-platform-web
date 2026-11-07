@@ -236,7 +236,7 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
                   </span>
                   {/* El motivo a la vista (antes solo en un title, que no se ve en táctil). */}
                   {completedCita.expediente?.motivo_estudio_rechazado && (
-                    <p className="w-full break-words text-xs text-green-800">
+                    <p className="w-full break-words text-xs text-gray-700">
                       Motivo: {completedCita.expediente.motivo_estudio_rechazado}
                     </p>
                   )}

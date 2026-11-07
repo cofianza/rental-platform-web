@@ -191,6 +191,23 @@ function describirAntecedentes(a: NonNullable<IEstudio['antecedentes']>, esCofia
 }
 
 /**
+ * El motivo técnico de una verificación en listas que no se completó (lo
+ * escribe la API en estudios/antecedentes.ts), en palabras y sin el nombre del
+ * proveedor. Lo que no se reconoce cae en una frase general.
+ */
+export function motivoAntecedentesLegible(motivo: string): string {
+  const m = motivo.toLowerCase()
+  if (m.includes('no entrego el resultado') || m.includes('no termino la validacion')) return 'No se recibió el resultado de la verificación a tiempo.'
+  if (m.includes('no respondio')) return 'El servicio de verificación no respondió a tiempo.'
+  if (m.includes('tipo de documento')) return 'Este tipo de documento no se puede verificar en listas.'
+  if (m.includes('sin numero de documento')) return 'Falta el número de documento: no se pudo verificar en listas.'
+  if (m.includes('no pudo consultar las listas')) return 'No se pudieron consultar las listas restrictivas.'
+  if (m.includes('no devolvio las listas')) return 'La verificación no devolvió el resultado de las listas.'
+  if (m.includes('ilegible') || m.includes('sin bloque')) return 'La respuesta de la verificación llegó incompleta.'
+  return 'No se pudo completar la verificación en listas.'
+}
+
+/**
  * Estados del titular antes de la consulta (esperan autorización o pago): lo
  * que hay que hacer ahí lo dicen la autorización y el pago, no esta tarjeta.
  */
@@ -717,9 +734,9 @@ function EstudioPanel({
           </Dato>
           {estudio.antecedentes && (
             <Dato etiqueta="Listas restrictivas" className="sm:col-span-2">
-              <span
+              <div
                 className={cn(
-                  'inline-flex items-start gap-1.5',
+                  'flex items-start gap-1.5',
                   estudio.antecedentes.reportado_en_listas
                     ? 'text-red-800'
                     : estudio.antecedentes.estado !== 'verificado' || estudio.antecedentes.flags_revision.length > 0
@@ -732,14 +749,23 @@ function EstudioPanel({
                   estudio.antecedentes.flags_revision.length > 0) && (
                   <IconAlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
                 )}
-                <span>
+                <div className="min-w-0">
                   {primeraMayuscula(describirAntecedentes(estudio.antecedentes, esCofianza))}
-                  {/* El motivo, solo para Cofianza, a la vista: en un title no se veía en táctil. */}
+                  {/* El motivo, solo para Cofianza, a la vista (en un title no se veía en táctil): en
+                      palabras, y el texto técnico del proveedor detrás de «Ver detalle técnico». */}
                   {esCofianza && estudio.antecedentes.motivo && (
-                    <span className="mt-0.5 block break-words text-xs text-gray-600">{estudio.antecedentes.motivo}</span>
+                    <div className="mt-0.5 text-xs text-gray-600">
+                      {motivoAntecedentesLegible(estudio.antecedentes.motivo)}
+                      <details className="mt-0.5">
+                        <summary className="inline-flex min-h-10 cursor-pointer items-center rounded text-gray-600 underline underline-offset-2 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-primary-600">
+                          Ver detalle técnico
+                        </summary>
+                        <span className="block break-words font-mono text-[11px] text-gray-600">{estudio.antecedentes.motivo}</span>
+                      </details>
+                    </div>
                   )}
-                </span>
-              </span>
+                </div>
+              </div>
             </Dato>
           )}
           {visible(estudio.motivo_rechazo) && (

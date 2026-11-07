@@ -344,7 +344,8 @@ export function ExpedientesTable({
   const conPuntaje = filas.some((f) => f.datos.score > 0)
 
   // Solo el miembro asignado: caer al analista le mostraba a alguien de Cofianza.
-  const responsable = (e: IExpediente) => {
+  // `apilada`: la vista móvil no tiene el encabezado con la burbuja; la lleva junto a «Sin responsable».
+  const responsable = (e: IExpediente, apilada = false) => {
     const nombre = e.miembro_responsable_id ? (miembrosResponsablesById?.[e.miembro_responsable_id] ?? null) : null
     if (nombre) {
       return (
@@ -355,7 +356,14 @@ export function ExpedientesTable({
       )
     }
     // «Sin responsable» se entiende sin el encabezado de la columna (la vista apilada no lo tiene).
-    return <span className="text-sm text-gray-500">Sin responsable</span>
+    if (!apilada) return <span className="text-sm text-gray-500">Sin responsable</span>
+    // Anclada al inicio del texto y abierta a la derecha: va al inicio de su columna.
+    return (
+      <span className="relative inline-flex items-center gap-0.5 text-sm text-gray-500">
+        Sin responsable
+        <InfoTip texto={AYUDA.responsable} etiqueta="Qué es el responsable" lado="derecha" anclada />
+      </span>
+    )
   }
 
   // Con el ratón, toda la fila abre el estudio; con teclado y lector de pantalla,
@@ -500,7 +508,7 @@ export function ExpedientesTable({
                   <div className="flex min-w-0 flex-col gap-2.5">
                     <Inmueble expediente={expediente} />
                     <div className="mt-auto flex min-h-10 items-center justify-between gap-3">
-                      {conResponsable ? responsable(expediente) : <span />}
+                      {conResponsable ? responsable(expediente, true) : <span />}
                       <div className="text-right">
                         <Actividad expediente={expediente} />
                       </div>

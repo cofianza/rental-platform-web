@@ -103,20 +103,24 @@ function pastillaEtapa(e: IExpediente, etapa: EtapaEstudio, interno: boolean): {
  * Adenda de precios §8.2: el caso R2 entra a la cola del analista con
  * prioridad baja. Discreto y solo para Cofianza: es orden interno de la cola.
  */
-export function PrioridadBaja() {
-  // La explicación va en la burbuja (el title no se ve en táctil ni lo lee el lector).
+const AYUDA_PRIORIDAD_BAJA = 'Puntaje de la central en la franja media: se revisa al final de la cola.'
+
+/** Con `conAyuda`, la explicación va en una burbuja (como PastillaEtapa); sin ella, en el title. */
+export function PrioridadBaja({ conAyuda = false }: { conAyuda?: boolean }) {
+  const pastilla = (
+    <span
+      title={conAyuda ? undefined : AYUDA_PRIORIDAD_BAJA}
+      className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-500"
+    >
+      Prioridad baja
+    </span>
+  )
+  if (!conAyuda) return pastilla
   // Anclada al inicio de la pastilla y abierta a la derecha: la pastilla va al inicio de su celda.
   return (
     <span className="relative inline-flex items-center gap-0.5">
-      <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-500">
-        Prioridad baja
-      </span>
-      <InfoTip
-        texto="Puntaje de la central en la franja media: se revisa al final de la cola."
-        etiqueta="Por qué tiene prioridad baja"
-        lado="derecha"
-        anclada
-      />
+      {pastilla}
+      <InfoTip texto={AYUDA_PRIORIDAD_BAJA} etiqueta="Por qué tiene prioridad baja" lado="derecha" anclada />
     </span>
   )
 }
@@ -199,6 +203,7 @@ export function datosEstadoFila(
       sinInmueble: !expediente.inmueble_id,
       fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo) : null,
       pazYSalvoCargado,
+      enLista: true,
     }),
     score,
     turno:

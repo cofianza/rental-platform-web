@@ -59,8 +59,19 @@ export function InfoTip({ texto, etiqueta = 'Más información', lado = 'centro'
     <span
       ref={ref}
       className={cn(!anclada && 'relative', 'inline-flex align-middle normal-case tracking-normal', className)}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      // Solo el mouse abre al pasar: en táctil el toque dispara también un mouseenter
+      // emulado y el segundo toque no cerraba (el «hover» seguía en true).
+      onPointerEnter={(e) => {
+        if (e.pointerType === 'mouse') setHover(true)
+      }}
+      onPointerLeave={(e) => {
+        if (e.pointerType === 'mouse') setHover(false)
+      }}
+      // Tocar la burbuja (o el espacio del ícono) no debe abrir la fila o la tarjeta clicable de afuera.
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      }}
     >
       <button
         type="button"
@@ -73,7 +84,8 @@ export function InfoTip({ texto, etiqueta = 'Más información', lado = 'centro'
           e.stopPropagation()
           setFijo((v) => !v)
         }}
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full text-gray-400 hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+        // El ícono mide 20 px; el before amplía el área táctil a 40 px sin agrandarlo.
+        className="relative inline-flex h-5 w-5 items-center justify-center rounded-full text-gray-400 before:absolute before:-inset-2.5 before:content-[''] hover:text-primary-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
       >
         <IconInfo size={14} />
       </button>

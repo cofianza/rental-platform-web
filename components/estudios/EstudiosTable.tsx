@@ -10,7 +10,6 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
-import { InfoTip } from '@/components/ui/InfoTip'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, PROVEEDOR_LABELS, ESTUDIO_UI_MESSAGES } from './constants'
 import { formatDate } from '@/lib/constants'
 import {
@@ -29,7 +28,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import type { IEstudio } from '@/types/estudio'
 
 const AYUDA_SCORE =
-  'El puntaje de la central es una entrada más: por debajo del mínimo se rechaza y en la franja media va a revisión.'
+  'Puntaje: el de la central de riesgo (0 a 999), no el de Cofianza. Es una entrada más: por debajo del mínimo se rechaza y en la franja media va a revisión.'
 
 // ============================================
 // Score Bar component
@@ -42,7 +41,8 @@ function ScoreBar({ score }: { score?: number | null }) {
 
   // Neutro: el puntaje de la central no es el veredicto. Sin cortes escritos
   // a mano (U15): son calibrables y la Política los reserva.
-  // Qué es el puntaje: burbuja en el encabezado de la columna y texto visible en la tarjeta (antes, solo un title).
+  // Qué es el puntaje: nota visible al pie de la lista (antes, solo un title). Una burbuja en el
+  // encabezado quedaba dentro del overflow-x-auto de la tabla y se recortaba.
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-15">
@@ -209,17 +209,13 @@ export function EstudiosTable({
                 />
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-32">
-                <span className="inline-flex items-center gap-0.5">
-                  <SortableHeader
-                    column="score"
-                    label={SORTABLE_COLUMNS.score.label}
-                    currentSortBy={filters.sortBy}
-                    currentSortOrder={filters.sortOrder}
-                    onSort={onSort}
-                  />
-                  {/* Abre a la izquierda: la columna va en la mitad derecha de la tabla. */}
-                  <InfoTip texto={AYUDA_SCORE} etiqueta="Qué es el puntaje de la central" lado="izquierda" />
-                </span>
+                <SortableHeader
+                  column="score"
+                  label={SORTABLE_COLUMNS.score.label}
+                  currentSortBy={filters.sortBy}
+                  currentSortOrder={filters.sortOrder}
+                  onSort={onSort}
+                />
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 <SortableHeader
@@ -363,7 +359,7 @@ export function EstudiosTable({
             {/* Sin burbuja: la tarjeta entera es un botón y no admite otro adentro. */}
             {estudio.score != null && (
               <div className="mb-3">
-                <p className="mb-1 text-xs text-gray-500">Puntaje de la central (no es el de Cofianza)</p>
+                <p className="mb-1 text-xs text-gray-500">Puntaje de la central</p>
                 <ScoreBar score={estudio.score} />
               </div>
             )}
@@ -378,6 +374,9 @@ export function EstudiosTable({
           </div>
         ))}
       </div>
+
+      {/* Qué es el puntaje, a la vista y una sola vez (fuera del overflow de la tabla). */}
+      {estudios.some((e) => e.score != null) && <p className="pt-3 text-xs text-gray-500">{AYUDA_SCORE}</p>}
 
       {/* Pagination */}
       {meta && meta.totalPages > 1 && (
