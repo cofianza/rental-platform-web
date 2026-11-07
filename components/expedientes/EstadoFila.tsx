@@ -12,6 +12,7 @@ import { ETAPA_LABEL, type EtapaEstudio, type Turno, type VistaTurno } from '@/l
 import { queSigue } from '@/lib/ayudaEstudio'
 import { etapaDeFila, accionDeFila, revisionDemorada } from '@/lib/etapaFila'
 import { cn } from '@/lib/utils'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { PastillaTurno, analistaAjeno, type OpcionesTurno } from './PastillaTurno'
 import { fechaCondicion } from './textoVisible'
 
@@ -103,12 +104,19 @@ function pastillaEtapa(e: IExpediente, etapa: EtapaEstudio, interno: boolean): {
  * prioridad baja. Discreto y solo para Cofianza: es orden interno de la cola.
  */
 export function PrioridadBaja() {
+  // La explicación va en la burbuja (el title no se ve en táctil ni lo lee el lector).
+  // Anclada al inicio de la pastilla y abierta a la derecha: la pastilla va al inicio de su celda.
   return (
-    <span
-      title="Puntaje de la central en la franja media: se revisa al final de la cola"
-      className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-500"
-    >
-      Prioridad baja
+    <span className="relative inline-flex items-center gap-0.5">
+      <span className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-[11px] font-medium text-gray-500">
+        Prioridad baja
+      </span>
+      <InfoTip
+        texto="Puntaje de la central en la franja media: se revisa al final de la cola."
+        etiqueta="Por qué tiene prioridad baja"
+        lado="derecha"
+        anclada
+      />
     </span>
   )
 }
@@ -211,16 +219,37 @@ export function datosEstadoFila(
   }
 }
 
-/** Pastilla de la etapa: la misma en la celda apilada y en la cola de Cofianza. */
-export function PastillaEtapa({ texto, tono, ayuda }: Pick<DatosEstadoFila, 'texto' | 'tono' | 'ayuda'>) {
-  return (
+/**
+ * Pastilla de la etapa: la misma en la celda apilada y en la cola de Cofianza.
+ * Con `conAyuda`, la frase «Qué sigue» va en una burbuja junto a la pastilla
+ * (se abre con toque y teclado; el title solo se ve con mouse). Sin ella queda
+ * el title: el widget del inicio la pinta dentro de un enlace, donde no cabe
+ * un botón.
+ */
+export function PastillaEtapa({
+  texto,
+  tono,
+  ayuda,
+  conAyuda = false,
+}: Pick<DatosEstadoFila, 'texto' | 'tono' | 'ayuda'> & { conAyuda?: boolean }) {
+  const pastilla = (
     <span
-      title={ayuda}
+      title={conAyuda ? undefined : ayuda}
       // rounded-xl: en una línea se ve igual que rounded-full; si el plazo la parte en dos, no queda una cápsula estirada.
       className={cn('inline-flex items-center gap-1.5 rounded-xl px-2.5 py-0.5 text-xs font-medium', TONO[tono].wrap)}
     >
       <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', TONO[tono].dot)} />
       {texto}
+    </span>
+  )
+  if (!conAyuda || !ayuda) return pastilla
+  // Anclada al inicio de la pastilla y abierta a la derecha: la pastilla va al inicio
+  // de su celda o columna, y con una etapa larga el ícono queda cerca del borde (en
+  // 390 px una burbuja que abriera desde el ícono se salía de la pantalla).
+  return (
+    <span className="relative inline-flex items-center gap-0.5">
+      {pastilla}
+      <InfoTip texto={ayuda} etiqueta={`Qué sigue en «${texto}»`} lado="derecha" anclada />
     </span>
   )
 }

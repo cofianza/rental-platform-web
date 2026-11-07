@@ -21,6 +21,7 @@ import type { EtapaEstudio, VistaTurno } from '@/lib/etapaEstudio'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, EXPEDIENTE_UI_MESSAGES } from './constants'
 import { formatDate } from '@/lib/constants'
 import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import {
   IconArrowRight,
   IconChevronUp,
@@ -270,9 +271,10 @@ function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
 function Etapa({ datos }: { datos: DatosEstadoFila }) {
   return (
     <div className="flex flex-col items-start gap-1">
-      <PastillaEtapa texto={datos.texto} tono={datos.tono} ayuda={datos.ayuda} />
+      <PastillaEtapa texto={datos.texto} tono={datos.tono} ayuda={datos.ayuda} conAyuda />
+      {/* Qué es el puntaje: una sola vez, en la burbuja del pie. */}
       {datos.score > 0 && (
-        <span title={AYUDA_PUNTAJE} className="text-xs tabular-nums text-gray-500">
+        <span className="text-xs tabular-nums text-gray-500">
           Puntaje de la central: {datos.score}
         </span>
       )}
@@ -352,11 +354,8 @@ export function ExpedientesTable({
         </span>
       )
     }
-    return (
-      <span title={AYUDA.responsable} className="text-sm text-gray-500">
-        Sin asignar
-      </span>
-    )
+    // «Sin responsable» se entiende sin el encabezado de la columna (la vista apilada no lo tiene).
+    return <span className="text-sm text-gray-500">Sin responsable</span>
   }
 
   // Con el ratón, toda la fila abre el estudio; con teclado y lector de pantalla,
@@ -422,7 +421,15 @@ export function ExpedientesTable({
                 <th scope="col" className={th}>Inmueble</th>
                 <th scope="col" className={th}>Etapa</th>
                 <th scope="col" className={th}>Qué sigue</th>
-                {conResponsable && <th scope="col" className={th}>Responsable</th>}
+                {conResponsable && (
+                  <th scope="col" className={th}>
+                    {/* Abre a la izquierda: la columna va cerca del borde derecho. */}
+                    <span className="inline-flex items-center gap-0.5">
+                      Responsable
+                      <InfoTip texto={AYUDA.responsable} etiqueta="Qué es el responsable" lado="izquierda" />
+                    </span>
+                  </th>
+                )}
                 <th
                   scope="col"
                   className={th}
@@ -508,8 +515,10 @@ export function ExpedientesTable({
 
       {/* Una sola vez al pie, no en cada fila: «(no es el de Cofianza)» competía con la etapa. */}
       {conPuntaje && (
-        <p className="pt-3 text-xs text-gray-500">
-          El puntaje que se muestra es el de la central de riesgo (0 a 999), no el de Cofianza.
+        // La burbuja va al inicio de la línea y abre a la derecha: al final, en 390 px, se salía del borde.
+        <p className="flex items-start gap-1 pt-3 text-xs text-gray-500">
+          <InfoTip texto={AYUDA_PUNTAJE} etiqueta="Qué es el puntaje de la central" lado="derecha" className="-mt-0.5 shrink-0" />
+          <span>El puntaje que se muestra es el de la central de riesgo (0 a 999), no el de Cofianza.</span>
         </p>
       )}
 

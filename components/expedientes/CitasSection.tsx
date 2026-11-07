@@ -230,12 +230,17 @@ export function CitasSection({ expedienteId, expedienteEstado, citaOmitida, inmu
                   {!estudioYaCorrio && <PagoEstudioPill estado={pagoEstudioEstado} />}
                 </>
               ) : completedCita.expediente?.estudio_rechazado ? (
-                <span
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300"
-                  title={completedCita.expediente?.motivo_estudio_rechazado || 'Se decidió no habilitar la evaluación.'}
-                >
-                  Evaluación no habilitada
-                </span>
+                <>
+                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium text-gray-700 bg-gray-100 border border-gray-300">
+                    Evaluación no habilitada
+                  </span>
+                  {/* El motivo a la vista (antes solo en un title, que no se ve en táctil). */}
+                  {completedCita.expediente?.motivo_estudio_rechazado && (
+                    <p className="w-full break-words text-xs text-green-800">
+                      Motivo: {completedCita.expediente.motivo_estudio_rechazado}
+                    </p>
+                  )}
+                </>
               ) : null}
             </div>
           )}

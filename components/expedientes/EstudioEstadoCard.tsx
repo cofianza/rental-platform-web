@@ -726,14 +726,19 @@ function EstudioPanel({
                       ? 'text-amber-900'
                       : 'text-gray-900',
                 )}
-                title={esCofianza ? (estudio.antecedentes.motivo ?? undefined) : undefined}
               >
                 {(estudio.antecedentes.reportado_en_listas ||
                   estudio.antecedentes.estado !== 'verificado' ||
                   estudio.antecedentes.flags_revision.length > 0) && (
                   <IconAlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
                 )}
-                <span>{primeraMayuscula(describirAntecedentes(estudio.antecedentes, esCofianza))}</span>
+                <span>
+                  {primeraMayuscula(describirAntecedentes(estudio.antecedentes, esCofianza))}
+                  {/* El motivo, solo para Cofianza, a la vista: en un title no se veía en táctil. */}
+                  {esCofianza && estudio.antecedentes.motivo && (
+                    <span className="mt-0.5 block break-words text-xs text-gray-600">{estudio.antecedentes.motivo}</span>
+                  )}
+                </span>
               </span>
             </Dato>
           )}

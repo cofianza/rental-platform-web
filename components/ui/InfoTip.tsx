@@ -16,10 +16,17 @@ interface Props {
   etiqueta?: string
   /** Hacia dónde abre la burbuja: cerca del borde derecho, 'izquierda'. */
   lado?: 'centro' | 'izquierda' | 'derecha'
+  /**
+   * La burbuja se ubica respecto al contenedor posicionado (`relative`) más
+   * cercano, no respecto al ícono. Para un ícono pegado a una pastilla de largo
+   * variable: con el contenedor al inicio de la celda y lado 'derecha', abre
+   * desde ese borde y no se sale de la pantalla aunque el ícono quede a la derecha.
+   */
+  anclada?: boolean
   className?: string
 }
 
-export function InfoTip({ texto, etiqueta = 'Más información', lado = 'centro', className }: Props) {
+export function InfoTip({ texto, etiqueta = 'Más información', lado = 'centro', anclada = false, className }: Props) {
   const [hover, setHover] = useState(false)
   const [fijo, setFijo] = useState(false)
   const abierto = hover || fijo
@@ -51,7 +58,7 @@ export function InfoTip({ texto, etiqueta = 'Más información', lado = 'centro'
   return (
     <span
       ref={ref}
-      className={cn('relative inline-flex align-middle normal-case tracking-normal', className)}
+      className={cn(!anclada && 'relative', 'inline-flex align-middle normal-case tracking-normal', className)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
