@@ -225,7 +225,7 @@ export const META: Record<string, MetaParametro> = {
     queHace:
       'Encendido: una mora vigente deja de rechazar siempre; si cumple las condiciones, el saldo en mora se compara con el canon. Apagado: toda mora vigente rechaza.',
     excepciones: [
-      'Condiciones: toda la mora es de sector no financiero (telefonía, comunicaciones, servicios públicos, comercio), sin castigo, dudoso recaudo ni cobro jurídico; la persona tiene suficientes créditos financieros al día y no tuvo mora financiera reciente.',
+      'Condiciones: toda la mora es de sector no financiero (telefonía, comunicaciones, servicios públicos, comercio), sin cartera castigada ni en cobro jurídico; la persona tiene suficientes créditos financieros al día y no tuvo mora financiera reciente.',
       'Saldo en mora por debajo de la mora tolerada → sigue la evaluación normal.',
       'Saldo entre la tolerada y la de rechazo → decide un analista, que puede aprobarlo sujeto a paz y salvo.',
       'Saldo por encima de la de rechazo → se rechaza.',
