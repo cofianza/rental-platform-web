@@ -37,6 +37,8 @@ export const AYUDA = {
     'El estudio no se aprobó solo. Puede estar aprobado con condición (la persona tiene un plazo para sumar un coarrendatario) o en revisión (lo decide un analista de Cofianza con la información completa).',
   responsable:
     'La persona de su equipo que sigue este estudio: recibe los avisos y los pendientes.',
+  responsableAnalista:
+    'El analista de Cofianza que sigue este estudio: recibe los avisos y los pendientes de la revisión.',
 } as const
 
 /** Qué sigue en cada etapa, para quien gestiona el estudio (franja del detalle y la lista). */

@@ -740,7 +740,7 @@ function ExpedienteDetalleContenido() {
               etiqueta={
                 <span className="inline-flex items-center gap-1">
                   Responsable
-                  <InfoTip texto={AYUDA.responsable} lado="izquierda" />
+                  <InfoTip texto={AYUDA.responsableAnalista} lado="izquierda" />
                 </span>
               }
             >
