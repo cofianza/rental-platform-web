@@ -131,14 +131,31 @@ export function queSigue(
     citaActiva?: boolean
     /** Miembro de la inmobiliaria con el perfil personal incompleto: no actúa hasta completarlo. */
     perfilIncompleto?: boolean
+    /** En una lista (burbuja de la etapa): «aquí abajo» no apunta a nada; se dice «en el detalle del estudio». */
+    enLista?: boolean
   },
 ): string {
-  const texto = queSigueBase(etapa, o)
+  const base = queSigueBase(etapa, o)
+  const texto = o.enLista ? paraLista(base) : base
   // Sin edición por el perfil incompleto, «alguien de su equipo con permiso de edición» no le decía qué hacer.
   if (o.vista === 'equipo' && o.perfilIncompleto && /permiso de edición/.test(texto)) {
     return 'Complete su perfil para poder actuar en este estudio.'
   }
   return texto
+}
+
+/** Las frases del detalle señalan tarjetas «aquí abajo»; en una lista esas tarjetas están en el detalle. */
+const EN_LISTA: Array<[RegExp, string]> = [
+  [/en la tarjeta del pago, aquí abajo/g, 'en la tarjeta del pago, en el detalle del estudio'],
+  [/en la tarjeta de la cita, aquí abajo/g, 'en la tarjeta de la cita, en el detalle del estudio'],
+  [/en la tarjeta de abajo/g, 'en el detalle del estudio'],
+  [/aquí abajo/g, 'en el detalle del estudio'],
+  [/en el detalle;/g, 'en el detalle del estudio;'],
+  [/^Abajo están/, 'En el detalle del estudio están'],
+]
+
+export function paraLista(texto: string): string {
+  return EN_LISTA.reduce((t, [re, por]) => t.replace(re, por), texto)
 }
 
 function queSigueBase(etapa: EtapaEstudio, o: Parameters<typeof queSigue>[1]): string {

@@ -490,7 +490,7 @@ export function Step3Configuration({
                 !data.miembro_responsable_id && 'text-gray-500',
               )}
             >
-              <option value="">Sin asignar</option>
+              <option value="">Sin responsable</option>
               {miembros.map((m) => (
                 <option key={m.perfil_id ?? m.id} value={m.perfil_id ?? ''}>
                   {m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email}

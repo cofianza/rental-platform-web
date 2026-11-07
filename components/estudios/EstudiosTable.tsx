@@ -27,6 +27,9 @@ import { estudioService } from '@/services/estudioService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IEstudio } from '@/types/estudio'
 
+const AYUDA_SCORE =
+  'Puntaje: el de la central de riesgo (0 a 999), no el de Cofianza. Es una entrada más: por debajo del mínimo se rechaza y en la franja media va a revisión.'
+
 // ============================================
 // Score Bar component
 // ============================================
@@ -38,11 +41,10 @@ function ScoreBar({ score }: { score?: number | null }) {
 
   // Neutro: el puntaje de la central no es el veredicto. Sin cortes escritos
   // a mano (U15): son calibrables y la Política los reserva.
+  // Qué es el puntaje: nota visible al pie de la lista (antes, solo un title). Una burbuja en el
+  // encabezado quedaba dentro del overflow-x-auto de la tabla y se recortaba.
   return (
-    <div
-      className="flex items-center gap-2"
-      title="El puntaje de la central es una entrada más: por debajo del mínimo se rechaza y en la franja media va a revisión."
-    >
+    <div className="flex items-center gap-2">
       <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-15">
         <div className="h-full rounded-full transition-all bg-primary-600" style={{ width: `${pct}%` }} />
       </div>
@@ -354,8 +356,10 @@ export function EstudiosTable({
             </div>
 
             {/* Score bar */}
+            {/* Sin burbuja: la tarjeta entera es un botón y no admite otro adentro. */}
             {estudio.score != null && (
               <div className="mb-3">
+                <p className="mb-1 text-xs text-gray-500">Puntaje de la central</p>
                 <ScoreBar score={estudio.score} />
               </div>
             )}
@@ -370,6 +374,9 @@ export function EstudiosTable({
           </div>
         ))}
       </div>
+
+      {/* Qué es el puntaje, a la vista y una sola vez (fuera del overflow de la tabla). */}
+      {estudios.some((e) => e.score != null) && <p className="pt-3 text-xs text-gray-500">{AYUDA_SCORE}</p>}
 
       {/* Pagination */}
       {meta && meta.totalPages > 1 && (

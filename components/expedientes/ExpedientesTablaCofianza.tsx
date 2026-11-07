@@ -15,7 +15,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { Avatar } from '@/components/ui/Avatar'
 import { IconArrowRight, IconClock, IconLoader, IconUserCheck } from '@/components/icons'
 import { tomarDisponible } from '@/lib/etapaFila'
-import { AYUDA } from '@/lib/ayudaEstudio'
+import { InfoTip } from '@/components/ui/InfoTip'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import type { EtapaEstudio, VistaTurno } from '@/lib/etapaEstudio'
 import type { IExpediente } from '@/types/expediente'
@@ -79,9 +79,10 @@ function Inmueble({ expediente }: { expediente: IExpediente }) {
 function Etapa({ datos }: { datos: DatosEstadoFila }) {
   return (
     <div className="flex flex-col items-start gap-1">
-      <PastillaEtapa texto={datos.texto} tono={datos.tono} ayuda={datos.ayuda} />
+      <PastillaEtapa texto={datos.texto} tono={datos.tono} ayuda={datos.ayuda} conAyuda />
+      {/* Qué es el puntaje: una sola vez, en la burbuja del pie. */}
       {datos.score > 0 && (
-        <span title={AYUDA_PUNTAJE} className="text-xs tabular-nums text-gray-500">
+        <span className="text-xs tabular-nums text-gray-500">
           Puntaje de la central: {datos.score}
         </span>
       )}
@@ -122,7 +123,7 @@ function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
           {datos.demora.texto}
         </span>
       )}
-      {datos.prioridadBaja && <PrioridadBaja />}
+      {datos.prioridadBaja && <PrioridadBaja conAyuda />}
     </div>
   )
 }
@@ -200,11 +201,8 @@ export function ExpedientesTablaCofianza({
       )
     }
     if (!onTomar) {
-      return (
-        <span title={AYUDA.responsable} className="text-sm text-gray-500">
-          Sin asignar
-        </span>
-      )
+      // La columna es la del analista de Cofianza (la ayuda del «responsable» del equipo no aplicaba aquí).
+      return <span className="text-sm text-gray-500">Sin analista</span>
     }
     // U9: «Tomar» solo cuando el turno es de Cofianza; si no, no hay nada que tomar.
     if (!tomarDisponible(expediente)) {
@@ -368,8 +366,10 @@ export function ExpedientesTablaCofianza({
       </div>
 
       {conPuntaje && (
-        <p className="pt-3 text-xs text-gray-500">
-          Puntaje de la central: el de la central de riesgo, de 0 a 999. No es el puntaje de Cofianza.
+        // La burbuja va al inicio de la línea y abre a la derecha: al final, en 390 px, se salía del borde.
+        <p className="flex items-start gap-1 pt-3 text-xs text-gray-500">
+          <InfoTip texto={AYUDA_PUNTAJE} etiqueta="Qué es el puntaje de la central" lado="derecha" className="-mt-0.5 shrink-0" />
+          <span>Puntaje de la central: el de la central de riesgo, de 0 a 999. No es el puntaje de Cofianza.</span>
         </p>
       )}
 
