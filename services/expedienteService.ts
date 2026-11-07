@@ -3,7 +3,7 @@
  * Llamadas a la API para expedientes con transformaciones backend→frontend
  */
 
-import { apiClient } from '@/lib/api'
+import { apiClient, ApiClientError } from '@/lib/api'
 import { instanteBogota } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth.store'
 import type {
@@ -23,6 +23,7 @@ import type {
   IHistorialTransicion,
   IEvaluacionRevisionManual,
   IPuntajeRevisionManual,
+  EstudioFiltro,
 } from '@/types/expediente'
 import type { IAcreditarPazYSalvoInput, IMoraVigente } from '@/types/estudio'
 
@@ -133,6 +134,27 @@ class ExpedienteService {
         totalPages: response.pagination?.totalPages || 0,
       },
     }
+  }
+
+  /**
+   * Conteo de la lista para cada chip de estudio, en una sola petición
+   * (GET /expedientes/conteos, mismo alcance y criterio que la lista). Con una
+   * API anterior al endpoint (404) cuenta como antes: una petición por chip,
+   * sin «todos» (lo da el total de la lista).
+   */
+  async getConteos(): Promise<Partial<Record<EstudioFiltro, number>>> {
+    try {
+      const response = (await apiClient.get('/expedientes/conteos')) as { data?: Partial<Record<EstudioFiltro, number>> }
+      return response.data ?? {}
+    } catch (err) {
+      if (!(err instanceof ApiClientError) || err.statusCode !== 404) throw err
+    }
+    const rs = await Promise.all(
+      (['requiere_accion', 'sin_estudio', 'en_proceso', 'condicionado', 'aprobado', 'rechazado'] as const).map((f) =>
+        this.getExpedientes({ estudio_filtro: f, page: 1, limit: 1 }).then((r) => [f, r.meta.total] as const),
+      ),
+    )
+    return Object.fromEntries(rs)
   }
 
   /**
