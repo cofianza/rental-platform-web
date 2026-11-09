@@ -101,7 +101,9 @@ export function Sidebar() {
     if (href === '/dashboard') {
       return pathname === '/dashboard'
     }
-    return pathname.startsWith(href)
+    // Un enlace más específico que también coincide gana (p. ej. la lista de
+    // acreedores dentro de /admin/calibracion): no se marcan los dos.
+    return pathname.startsWith(href) && !visibleNavItems.some((o) => o.href !== href && o.href.startsWith(href) && pathname.startsWith(o.href))
   }
 
   return (
