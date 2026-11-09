@@ -103,11 +103,11 @@ function factoresA5d(v: Valores): Factor[] {
   const ventana = v.MESES_VENTANA_COMPORTAMIENTO
   return [
     {
-      nombre: 'Score de la central',
+      nombre: 'Puntaje de la central',
       max: 50,
       como: t
-        ? `Por la tabla de anclajes: ${t.map((a) => `${a.score} → ${fmt(a.puntos)}`).join(' · ')}; entre dos anclajes, en línea recta. Con dos centrales cuenta el score mayor.`
-        : 'Por la tabla de anclajes, en línea recta entre dos anclajes. Con dos centrales cuenta el score mayor.',
+        ? `Por la tabla de anclajes: ${t.map((a) => `${a.score} → ${fmt(a.puntos)}`).join(' · ')}; entre dos anclajes, en línea recta. Con dos centrales cuenta el puntaje mayor.`
+        : 'Por la tabla de anclajes, en línea recta entre dos anclajes. Con dos centrales cuenta el puntaje mayor.',
     },
     { nombre: 'Deudas frente al ingreso', max: 15, como: `${DEUDAS}. Por encima del endeudamiento máximo, como hoy con la Adenda 4.` },
     { nombre: 'Canon frente al ingreso', max: 10, como: 'Siempre completo: un canon alto no resta puntos, se resuelve con el canon máximo («hasta canon de»).' },
@@ -115,7 +115,7 @@ function factoresA5d(v: Valores): Factor[] {
     {
       nombre: 'Experiencia con créditos',
       max: 6,
-      como: 'Con el sector financiero: 6 · solo con comercio u otro sector: 4 · solo con telefonía: 0. Cuentan las obligaciones abiertas o cerradas en buen estado, y las de codeudor.',
+      como: 'Con obligaciones financieras (bancos, cooperativas, fondos de empleados, libranza o quien preste dinero o emita tarjetas): 6 · solo con comercio u otro sector: 4 · solo con telefonía: 0. Cuentan las obligaciones abiertas o cerradas en buen estado, y las de codeudor.',
     },
     {
       nombre: 'Comportamiento de pago',
@@ -143,13 +143,13 @@ export function ComoSeCalculaA5D({ valores }: { valores: Valores }) {
   const puntaje = Math.round((brutos / 119) * 1000) / 10
   const conclusion =
     SCORE_EJEMPLO < valores.UMBRAL_SCORE_RECHAZO
-      ? 'se rechaza por el score'
+      ? 'se rechaza por el puntaje de la central'
       : puntaje < valores.PISO_SEGUNDO_FIRMANTE
         ? 'se rechaza: queda por debajo del piso'
         : puntaje >= valores.UMBRAL_APROBADO && SCORE_EJEMPLO >= valores.SCORE_MINIMO_SOLO
           ? 'se aprueba sin segundo firmante'
           : puntaje >= valores.UMBRAL_APROBADO
-            ? `queda aprobado con segundo firmante, porque el score es menor que ${valores.SCORE_MINIMO_SOLO}`
+            ? `queda aprobado con segundo firmante, porque el puntaje de la central es menor que ${valores.SCORE_MINIMO_SOLO}`
             : 'queda aprobado con segundo firmante, porque no llega al puntaje para aprobar'
   return (
     <div className="space-y-4 text-sm text-gray-700">
@@ -164,7 +164,7 @@ export function ComoSeCalculaA5D({ valores }: { valores: Valores }) {
       <div className="rounded-lg border border-gray-200 p-3">
         <p className="font-semibold text-gray-900">Ejemplo</p>
         <p className="mt-1 max-w-prose text-gray-600">
-          Score de {SCORE_EJEMPLO} ({fmt(Math.round(v1 * 10) / 10)} puntos) y lo demás completo, sin mora: {fmt(Math.round(brutos * 10) / 10)}{' '}
+          Puntaje de la central de {SCORE_EJEMPLO} ({fmt(Math.round(v1 * 10) / 10)} puntos) y lo demás completo, sin mora: {fmt(Math.round(brutos * 10) / 10)}{' '}
           de 119 = <b className="tabular-nums text-gray-900">{fmt(puntaje)}</b>. Con los valores de este panel, {conclusion}.
         </p>
       </div>

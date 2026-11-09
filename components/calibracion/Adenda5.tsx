@@ -114,14 +114,14 @@ export function TablaAnclajes({
         </p>
       )}
       <table className="w-full text-sm">
-        <caption className="sr-only">Tabla que convierte el score de la central en puntos</caption>
+        <caption className="sr-only">Tabla que convierte el puntaje de la central en puntos</caption>
         <thead>
           <tr className="border-b border-gray-200 text-left text-xs font-semibold text-gray-600">
             <th scope="col" className="w-16 px-4 py-2 font-semibold sm:px-5">
               Anclaje
             </th>
             <th scope="col" className="px-2 py-2 font-semibold">
-              Score de la central
+              Puntaje de la central
             </th>
             <th scope="col" className="px-4 py-2 font-semibold sm:px-5">
               Puntos (de 50)
@@ -150,7 +150,7 @@ export function TablaAnclajes({
         <div className="space-y-1.5 border-t border-gray-100 px-4 py-3 text-xs text-gray-600 sm:px-5">
           {ejemplo !== null && (
             <p>
-              <span className="font-semibold text-gray-700">Ejemplo:</span> un score de {ejemplo} recibe{' '}
+              <span className="font-semibold text-gray-700">Ejemplo:</span> un puntaje de la central de {ejemplo} recibe{' '}
               {fmt(Math.round(puntosDeScore(t, ejemplo) * 10) / 10)} puntos de 50: queda entre el anclaje 3 ({a.score} → {fmt(a.puntos)}) y el 4 (
               {b.score} → {fmt(b.puntos)}), y los puntos se reparten en línea recta.
             </p>
@@ -158,7 +158,7 @@ export function TablaAnclajes({
           <p className="flex items-start gap-1.5 text-amber-800">
             <IconAlertTriangle size={13} className="mt-0.5 shrink-0" />
             <span>
-              Los anclajes deben crecer, en score y en puntos. Para correr la tabla hacia arriba, mueva primero los anclajes altos; hacia abajo,
+              Los anclajes deben crecer, en puntaje de la central y en puntos. Para correr la tabla hacia arriba, mueva primero los anclajes altos; hacia abajo,
               primero los bajos.
             </span>
           </p>
@@ -232,7 +232,7 @@ export function BandasMora({ valores }: { valores: Valores }) {
       </div>
       <p className="mt-3 max-w-prose text-xs text-gray-600">
         Siempre rechazan: cualquier mora financiera vigente, y una mora no financiera de quien tenga menos de {n}{' '}
-        {n === 1 ? 'obligación financiera vigente y al día' : 'obligaciones financieras vigentes y al día'}. En la vía rápida (score desde{' '}
+        {n === 1 ? 'obligación financiera vigente y al día' : 'obligaciones financieras vigentes y al día'}. En la vía rápida (puntaje de la central desde{' '}
         {v.VIA_RAPIDA_SCORE} y {v.VIA_RAPIDA_MIN_OBLIG_FIN} {v.VIA_RAPIDA_MIN_OBLIG_FIN === 1 ? 'obligación financiera' : 'obligaciones financieras'} al
         día) las moras de telefonía, televisión e internet no cuentan.
       </p>

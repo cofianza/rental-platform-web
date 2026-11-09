@@ -143,7 +143,7 @@ export default function AdminCalibracionPage() {
   const encontrados = q
     ? params.filter((p) => {
         const m = metaDe(p.clave)
-        return `${m.nombre} ${textoCompleto(m)} ${m.conA5d ?? ''} ${m.saleConA5d ?? ''} ${p.descripcion} ${p.clave}`.toLowerCase().includes(q)
+        return `${m.nombre} ${textoCompleto(m, valores)} ${m.conA5d ?? ''} ${m.saleConA5d ?? ''} ${p.descripcion} ${p.clave}`.toLowerCase().includes(q)
       })
     : []
   const conteo =

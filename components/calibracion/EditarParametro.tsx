@@ -70,8 +70,9 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
   const a5d = a5dEncendida(valores)
   const notasA5d = a5dDisponible(valores)
   // Por qué no aplica hoy: la Adenda 5 apagada (lo nuevo) o encendida (lo que retira), o la nota de siempre.
+  const a5dPendiente = meta.rige === 'a5d' && !a5d
   const porQueNoAplica =
-    meta.rige === 'a5d' && !a5d
+    a5dPendiente
       ? 'Aplica al encender la Adenda 5 definitiva: hoy no cambia ningún resultado.'
       : meta.saleConA5d && a5d
         ? `Dejó de aplicar con la Adenda 5 definitiva: ${meta.saleConA5d}.`
@@ -110,11 +111,26 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
   }
 
   const accion = unidad === 'onoff' ? (nuevo === 1 ? 'Encender' : 'Apagar') : 'Guardar cambio'
+  // La confirmación no puede decir «desde ya» de un valor que hoy no decide nada.
+  const cuandoAplica = aplicaHoy
+    ? 'Aplica desde ya a lo que se procese de aquí en adelante.'
+    : a5dPendiente
+      ? 'Queda guardado. Aplica cuando se encienda la Adenda 5 definitiva.'
+      : 'Queda guardado para cuando aplique: hoy no cambia ningún resultado.'
+  // Hasta que la plataforma tenga completo el motor nuevo, el API manda el interruptor fijo en apagado.
+  const a5dNoDisponible = p.clave === 'ADENDA5_DEF' && fijo && p.valor !== 1
+  const bloqueo = a5dNoDisponible
+    ? 'Todavía no se puede encender: falta completar el motor nuevo de la Adenda 5 definitiva.'
+    : !fijo
+      ? 'Solo la Gerencia General puede cambiar este valor.'
+      : meta.rige === 'nunca'
+        ? 'Este valor está fijo: ya no se usa y no se puede cambiar.'
+        : 'Este valor está fijo: no se puede cambiar desde este panel.'
 
   return (
     <Modal isOpen onClose={guardando ? () => {} : onClose} title={meta.nombre} size="lg">
       <div className="space-y-4 text-sm">
-        <p className="text-gray-700">{textoCompleto(meta) || humanizar(p.descripcion)}</p>
+        <p className="text-gray-700">{textoCompleto(meta, valores) || humanizar(p.descripcion)}</p>
         {meta.ejemplo?.(valores) && <p className="text-gray-600">{meta.ejemplo(valores)}</p>}
         {meta.nota && <p className="text-gray-600">{meta.nota}</p>}
         {notasA5d && meta.saleConA5d && !a5d && (
@@ -300,11 +316,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
         {soloLectura ? (
           <p className="flex items-center gap-2 rounded-lg bg-gray-100 p-3 text-xs text-gray-700">
             <IconLock size={14} className="shrink-0" />
-            {fijo
-              ? meta.rige === 'nunca'
-                ? 'Este valor está fijo: ya no se usa y no se puede cambiar.'
-                : 'Este valor está fijo: no se puede cambiar desde este panel.'
-              : 'Solo la Gerencia General puede cambiar este valor.'}
+            {bloqueo}
           </p>
         ) : (
           <>
@@ -325,8 +337,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
             {cambiado ? (
               <p className="rounded-lg border border-primary-200 bg-primary-50 p-3 font-medium text-gray-900">
                 Pasa de <span className="tabular-nums">{conUnidad(p.valor, p)}</span> a{' '}
-                <span className="font-bold tabular-nums text-primary-800">{conUnidad(nuevo, p)}</span>. Aplica desde ya a lo que se procese de aquí en
-                adelante.
+                <span className="font-bold tabular-nums text-primary-800">{conUnidad(nuevo, p)}</span>. {cuandoAplica}
               </p>
             ) : (
               valido && tocado && <p className="text-xs text-gray-600">El valor nuevo es igual al actual: no hay nada que guardar.</p>

@@ -203,7 +203,7 @@ function tramosA5dPuntaje(v: Valores): Tramo[] {
     hasta: 101,
     clave: 'UMBRAL_APROBADO',
     titulo: 'Aprobado',
-    detalle: `Sin segundo firmante, si además el score llega a ${v.SCORE_MINIMO_SOLO}, tiene historial financiero y ninguna mora en banda; si le falta algo, aprobado con segundo firmante.`,
+    detalle: `Sin segundo firmante, si además el puntaje de la central llega a ${v.SCORE_MINIMO_SOLO}, tiene historial financiero y ninguna mora en banda; si le falta algo, aprobado con segundo firmante.`,
     tono: 'verde',
   })
   return t
@@ -275,7 +275,7 @@ export function EscalaA5D({ valores, onAbrir }: { valores: Valores; onAbrir: (cl
         </p>
       </div>
       <Barra
-        titulo="2. Score de la central (el mayor, si se consultan las dos)"
+        titulo="2. Puntaje de la central (el mayor, si se consultan las dos)"
         tramos={tramosA5dScore(valores)}
         min={SCORE_MIN}
         max={SCORE_MAX}
@@ -403,7 +403,7 @@ export function EscalaPuntaje({ valores, resaltar }: { valores: Valores; resalta
   if (CLAVES_A5D_PUNTAJE.includes(resaltar))
     return <Barra titulo="Puntaje de la persona (Adenda 5)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} resaltar={resaltar} decimales />
   if (CLAVES_A5D_SCORE.includes(resaltar) || (a5d && resaltar === 'UMBRAL_SCORE_RECHAZO'))
-    return <Barra titulo="Score de la central (Adenda 5)" tramos={tramosA5dScore(valores)} min={SCORE_MIN} max={SCORE_MAX} resaltar={resaltar} />
+    return <Barra titulo="Puntaje de la central (Adenda 5)" tramos={tramosA5dScore(valores)} min={SCORE_MIN} max={SCORE_MAX} resaltar={resaltar} />
   if (resaltar.startsWith('UMBRAL_CASCADA_'))
     return <Barra titulo="Consulta a la segunda central" tramos={tramosCentrales(valores)} min={0} max={100} resaltar={resaltar} decimales />
   if (resaltar.startsWith('UMBRAL_SCORE_'))

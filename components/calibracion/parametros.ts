@@ -72,8 +72,9 @@ export interface MetaParametro {
   /**
    * Las excepciones a la regla del resumen, una por viñeta: «condición → qué
    * pasa». La tarjeta las pliega; el diálogo y la búsqueda las leen enteras.
+   * Como función cuando citan valores del panel: así no quedan escritos a mano.
    */
-  excepciones?: string[]
+  excepciones?: string[] | ((v: Valores) => string[])
   /** Cómo se nombran en el plegable si no son excepciones: [singular, plural]. */
   etiquetaExcepciones?: [string, string]
   ejemplo?: (v: Valores) => string | null
@@ -147,6 +148,7 @@ export const SECCIONES: Seccion[] = [
       titulo: TAMBIEN_A5D,
       claves: [
         'UMBRAL_SCORE_RECHAZO',
+        'DIAS_MORA_RECIENTE_RECHAZO',
         'FACTOR_AJUSTE_INGRESO_CANON',
         'FACTOR_AJUSTE_INGRESO_DTI',
         'MESES_VENTANA_COMPORTAMIENTO',
@@ -159,8 +161,8 @@ export const SECCIONES: Seccion[] = [
   {
     id: 'a5d_score',
     grupo: 'a5d',
-    titulo: 'Score',
-    ayuda: 'Cómo el score de la central se convierte en puntos, y qué variables se dan por cumplidas mientras no se puedan verificar.',
+    titulo: 'Puntaje de la central',
+    ayuda: 'Cómo el puntaje de la central (de 0 a 999) se convierte en puntos, y qué variables se dan por cumplidas mientras no se puedan verificar.',
     relacionados: { titulo: TAMBIEN_A5D, claves: ['UMBRAL_SCORE_RECHAZO'] },
   },
   {
@@ -232,7 +234,7 @@ const obligaciones = (n: number) => `${n} ${n === 1 ? 'obligación financiera' :
 export const N_ANCLAJES = 7
 export const claveAncla = (n: number, que: 'SCORE' | 'PUNTOS') => `SCORE_ANCLA_${n}_${que}`
 export const esClaveAncla = (clave: string) => /^SCORE_ANCLA_[1-7]_(SCORE|PUNTOS)$/.test(clave)
-export const SUB_ANCLAJES = 'Tabla del score'
+export const SUB_ANCLAJES = 'Tabla del puntaje de la central'
 
 /** Pura: la tabla vigente, en orden; null si el API todavía no la manda. */
 export function anclajes(v: Valores): { score: number; puntos: number }[] | null {
@@ -253,13 +255,18 @@ export function puntosDeScore(t: { score: number; puntos: number }[], score: num
 function metaAnclas(): Record<string, MetaParametro> {
   const m: Record<string, MetaParametro> = {}
   for (let n = 1; n <= N_ANCLAJES; n++) {
-    const borde = n === 1 ? ' Un score igual o menor recibe los puntos de este anclaje.' : n === N_ANCLAJES ? ' Un score igual o mayor recibe los puntos de este anclaje.' : ''
+    const borde =
+      n === 1
+        ? ' Un puntaje de la central igual o menor recibe los puntos de este anclaje.'
+        : n === N_ANCLAJES
+          ? ' Un puntaje de la central igual o mayor recibe los puntos de este anclaje.'
+          : ''
     m[claveAncla(n, 'SCORE')] = {
-      nombre: `Score del anclaje ${n}`,
+      nombre: `Puntaje de la central del anclaje ${n}`,
       seccion: 'a5d_score',
       sub: SUB_ANCLAJES,
       unidad: 'num',
-      queHace: `Score de la central (de 0 a 999) del anclaje ${n} de la tabla.${borde} Entre dos anclajes, los puntos se reparten en línea recta.`,
+      queHace: `Puntaje de la central (de 0 a 999) del anclaje ${n} de la tabla.${borde} Entre dos anclajes, los puntos se reparten en línea recta.`,
       rige: 'a5d',
       ...DECISION,
     }
@@ -268,7 +275,7 @@ function metaAnclas(): Record<string, MetaParametro> {
       seccion: 'a5d_score',
       sub: SUB_ANCLAJES,
       unidad: 'puntos',
-      queHace: `Puntos (de 50) que recibe un score igual al del anclaje ${n}. El score pesa 50 de los 119 puntos del puntaje.`,
+      queHace: `Puntos (de 50) que recibe un puntaje de la central igual al del anclaje ${n}. El puntaje de la central pesa 50 de los 119 puntos del puntaje de la persona.`,
       rige: 'a5d',
       ...DECISION,
     }
@@ -285,13 +292,16 @@ const META_A5D: Record<string, MetaParametro> = {
     unidad: 'onoff',
     queHace:
       'Encendido: rige la Adenda 5 definitiva. Cada estudio sale aprobado, aprobado con segundo firmante o rechazado; la revisión manual deja de ser una salida del motor y el analista solo atiende apelaciones y excepciones de tope. Apagado: se decide como hoy.',
-    excepciones: [
-      'La tabla de 85 y 70 (aprobar solo, zona gris y «Está cerca») → deja de aplicar: deciden el puntaje para aprobar, el score mínimo para ir sin segundo firmante y el piso para pedir segundo firmante.',
-      'Revisión manual como salida del motor → desaparece: un score de 450 a 599 ya no va a un analista, pide segundo firmante.',
-      'El puntaje → se calcula sobre 119 puntos, con el score convertido por la tabla de anclajes y las variables que no se pueden verificar acreditadas.',
-      'Dos centrales → cuenta el score mayor, no el promedio; la segunda se consulta solo si la primera falla o no entrega el saldo en mora de cada obligación.',
+    // Las cifras salen del panel: si la Gerencia mueve un valor, el texto lo sigue.
+    excepciones: (v) => [
+      `La tabla de ${v.UMBRAL_APROBACION_AUTOMATICA} y ${v.UMBRAL_ZONA_GRIS} (aprobar solo, zona gris y «Está cerca») → deja de aplicar: deciden el puntaje para aprobar, el puntaje mínimo en la central para ir sin segundo firmante y el piso para pedir segundo firmante.`,
+      v.UMBRAL_SCORE_REVISION >= v.UMBRAL_SCORE_RECHAZO
+        ? `Revisión manual como salida del motor → desaparece: un puntaje de la central de ${v.UMBRAL_SCORE_RECHAZO} a ${v.UMBRAL_SCORE_REVISION} ya no va a un analista, pide segundo firmante.`
+        : 'Revisión manual como salida del motor → desaparece: un puntaje de la central bajo ya no va a un analista, pide segundo firmante.',
+      'El puntaje → se calcula sobre 119 puntos, con el puntaje de la central convertido por la tabla de anclajes y las variables que no se pueden verificar acreditadas.',
+      'Dos centrales → cuenta el puntaje mayor, no el promedio; la segunda se consulta si la primera falla, no reporta puntaje o no entrega el saldo en mora de cada obligación.',
       'Mora vigente de telefonía, comercio o servicios públicos → ya no rechaza siempre: se trata por bandas según la razón de mora. La mora financiera vigente sigue rechazando.',
-      'Canon por encima de la parte del ingreso que puede ser canon → no rechaza ni va a un analista: se aprueba «hasta canon de» ese máximo. Desaparece el margen del 15 %.',
+      `Canon por encima de la parte del ingreso que puede ser canon → no rechaza ni va a un analista: se aprueba «hasta canon de» ese máximo. Desaparece el margen del ${fmt(v.TOLERANCIA_CANON)} %.`,
       'Coarrendatario → pasa a ser segundo firmante: nunca resta, se puede sustituir con una consulta adicional y, si vence el plazo sin uno válido, el estudio se rechaza.',
       'Las dos tarifas mensuales y la prima que baja con coarrendatario → una sola tarifa mensual y una sola prima de vinculación.',
     ],
@@ -309,7 +319,7 @@ const META_A5D: Record<string, MetaParametro> = {
     queHace:
       'Desde este puntaje (de 0 a 100) la persona se aprueba sin segundo firmante, si además cumple las tres condiciones. Si le falta alguna, o no llega a este puntaje pero sí al piso, queda aprobada con segundo firmante.',
     excepciones: [
-      'Score de la central → igual o mayor que el score mínimo para ir sin segundo firmante.',
+      'Puntaje de la central → igual o mayor que el mínimo para ir sin segundo firmante.',
       'Historial financiero → al menos las obligaciones financieras que pide ese valor.',
       'Mora de telefonía, comercio o servicios públicos → ninguna en banda.',
     ],
@@ -317,7 +327,7 @@ const META_A5D: Record<string, MetaParametro> = {
     nota: 'Con un segundo firmante válido, el titular se aprueba si su puntaje más el bono del segundo firmante llega a este valor.',
     ejemplo: (v) => {
       const bajo = Math.max(v.PISO_SEGUNDO_FIRMANTE, v.UMBRAL_APROBADO - 3)
-      return `Con ${v.UMBRAL_APROBADO}: ${Math.min(100, v.UMBRAL_APROBADO + 2)} puntos, con score de ${v.SCORE_MINIMO_SOLO + 20}, historial financiero y sin mora en banda, se aprueba sin segundo firmante${
+      return `Con ${v.UMBRAL_APROBADO}: ${Math.min(100, v.UMBRAL_APROBADO + 2)} puntos, con puntaje de la central de ${v.SCORE_MINIMO_SOLO + 20}, historial financiero y sin mora en banda, se aprueba sin segundo firmante${
         bajo < v.UMBRAL_APROBADO ? `; ${bajo} puntos queda aprobado con segundo firmante` : ''
       }.`
     },
@@ -325,15 +335,15 @@ const META_A5D: Record<string, MetaParametro> = {
     ...DECISION,
   },
   SCORE_MINIMO_SOLO: {
-    nombre: 'Score mínimo para ir sin segundo firmante',
+    nombre: 'Puntaje mínimo en la central para ir sin segundo firmante',
     seccion: 'a5d_motor',
     sub: 'Decisión sobre cada persona',
     unidad: 'num',
     queHace:
-      'Desde este score de la central (de 0 a 999) la persona puede aprobarse sin segundo firmante. Por debajo, aunque alcance el puntaje, se le pide uno. Si se consultan dos centrales, cuenta el score mayor.',
-    nota: 'Un score entre el mínimo de la central y este valor ya no va a un analista: pide segundo firmante.',
+      'Desde este puntaje de la central (de 0 a 999) la persona puede aprobarse sin segundo firmante. Por debajo, aunque alcance el puntaje para aprobar, se le pide uno. Si se consultan dos centrales, cuenta el puntaje mayor.',
+    nota: 'Un puntaje de la central entre el mínimo en la central y este valor ya no va a un analista: pide segundo firmante.',
     ejemplo: (v) =>
-      `Con ${v.SCORE_MINIMO_SOLO}: con ${Math.min(100, v.UMBRAL_APROBADO + 5)} puntos, un score de ${v.SCORE_MINIMO_SOLO - 20} queda aprobado con segundo firmante; uno de ${v.SCORE_MINIMO_SOLO + 10}, con lo demás en regla, se aprueba sin segundo firmante.`,
+      `Con ${v.SCORE_MINIMO_SOLO}: con ${Math.min(100, v.UMBRAL_APROBADO + 5)} puntos, un puntaje de la central de ${v.SCORE_MINIMO_SOLO - 20} queda aprobado con segundo firmante; uno de ${v.SCORE_MINIMO_SOLO + 10}, con lo demás en regla, se aprueba sin segundo firmante.`,
     rige: 'a5d',
     ...DECISION,
   },
@@ -346,7 +356,7 @@ const META_A5D: Record<string, MetaParametro> = {
       'Obligaciones financieras (con un banco, una cooperativa, un fondo de empleados o quien preste dinero o emita tarjetas, incluida la libranza), vigentes o ya cerradas, como titular o codeudora, que debe tener la persona para aprobarse sin segundo firmante. Sin ellas se le pide uno. En 0 no se exige.',
     ejemplo: (v) =>
       v.HISTORIAL_FINANCIERO_MINIMO_SOLO > 0
-        ? `Con ${v.HISTORIAL_FINANCIERO_MINIMO_SOLO}: quien solo tiene obligaciones de telefonía o de comercio queda aprobado con segundo firmante, aunque alcance el puntaje y el score.`
+        ? `Con ${v.HISTORIAL_FINANCIERO_MINIMO_SOLO}: quien solo tiene obligaciones de telefonía o de comercio queda aprobado con segundo firmante, aunque alcance el puntaje para aprobar y el mínimo en la central.`
         : 'Con 0: no se exige historial financiero para ir sin segundo firmante.',
     rige: 'a5d',
     ...DECISION,
@@ -357,10 +367,10 @@ const META_A5D: Record<string, MetaParametro> = {
     sub: 'Reglas de rechazo',
     unidad: 'meses',
     queHace:
-      'Una mora de más de 30 días en una obligación financiera dentro de estos meses, contados desde la consulta, rechaza el estudio, esté pagada o no. Las moras de telefonía, comercio o servicios públicos no cuentan en esta regla.',
+      'Una mora en una obligación financiera dentro de estos meses, contados desde la consulta, rechaza el estudio, esté pagada o no, desde los días que fija «Mora de los últimos 6 meses que rechaza». Las moras de telefonía, comercio o servicios públicos no cuentan en esta regla.',
     nota: 'Además, toda mora vigente en una obligación financiera rechaza, por cualquier monto.',
     ejemplo: (v) =>
-      `Con ${v.MESES_VENTANA_MORA_FINANCIERA}: una mora de 60 días en una tarjeta de crédito dentro de ${v.MESES_VENTANA_MORA_FINANCIERA === 1 ? 'el último mes' : `los últimos ${v.MESES_VENTANA_MORA_FINANCIERA} meses`}, aunque ya esté pagada, rechaza el estudio.`,
+      `Con ${v.MESES_VENTANA_MORA_FINANCIERA}: una mora de ${Math.max(60, v.DIAS_MORA_RECIENTE_RECHAZO)} días en una tarjeta de crédito dentro de ${v.MESES_VENTANA_MORA_FINANCIERA === 1 ? 'el último mes' : `los últimos ${v.MESES_VENTANA_MORA_FINANCIERA} meses`}, aunque ya esté pagada, rechaza el estudio.`,
     rige: 'a5d',
     motivo: true,
     ...DECISION,
@@ -489,22 +499,22 @@ const META_A5D: Record<string, MetaParametro> = {
     unidad: 'obligaciones',
     queHace:
       'Quien tiene una mora vigente no financiera debe tener al menos estas obligaciones financieras vigentes y al día, como deudor principal. Si no, el estudio se rechaza por falta de respaldo, aunque la mora esté por debajo de la banda.',
-    nota: 'Una mora no financiera ya pagada no es mora vigente y no exige respaldo.',
+    nota: 'Una mora no financiera ya pagada no es mora vigente y no exige respaldo. En la vía rápida, las moras de telefonía, televisión e internet tampoco lo exigen.',
     ejemplo: (v) =>
-      `Con ${v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA}: una mora de celular de $150.000 con ${obligaciones(Math.max(0, v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA - 1))} al día rechaza el estudio.`,
+      `Con ${v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA}: una mora de $150.000 en un almacén, con ${obligaciones(Math.max(0, v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA - 1))} al día, rechaza el estudio.`,
     rige: 'a5d',
     motivo: true,
     ...DECISION,
   },
   VIA_RAPIDA_SCORE: {
-    nombre: 'Vía rápida: score mínimo',
+    nombre: 'Vía rápida: puntaje mínimo en la central',
     seccion: 'a5d_mora',
     sub: 'Vía rápida',
     unidad: 'num',
     queHace:
-      'Desde este score de la central, con las obligaciones financieras al día que pide el valor siguiente, las moras de telefonía, televisión e internet se descartan por completo: no cuentan en la razón de mora, no restan en comportamiento y no exigen respaldo. No cambia nada para las moras financieras, las castigadas ni las de comercio.',
+      'Desde este puntaje de la central, con las obligaciones financieras al día que pide el valor siguiente, las moras de telefonía, televisión e internet se descartan por completo: no cuentan en la razón de mora, no restan en comportamiento y no exigen respaldo. No cambia nada para las moras financieras, las castigadas ni las de comercio.',
     ejemplo: (v) =>
-      `Con ${v.VIA_RAPIDA_SCORE}: con score de ${v.VIA_RAPIDA_SCORE + 30} y ${obligaciones(v.VIA_RAPIDA_MIN_OBLIG_FIN)} al día, una mora de celular de $400.000 no cuenta.`,
+      `Con ${v.VIA_RAPIDA_SCORE}: con puntaje de la central de ${v.VIA_RAPIDA_SCORE + 30} y ${obligaciones(v.VIA_RAPIDA_MIN_OBLIG_FIN)} al día, una mora de celular de $400.000 no cuenta.`,
     rige: 'a5d',
     ...DECISION,
   },
@@ -513,7 +523,7 @@ const META_A5D: Record<string, MetaParametro> = {
     seccion: 'a5d_mora',
     sub: 'Vía rápida',
     unidad: 'obligaciones',
-    queHace: 'Obligaciones financieras vigentes y al día, como deudor principal, que necesita la persona, además del score, para entrar a la vía rápida.',
+    queHace: 'Obligaciones financieras vigentes y al día, como deudor principal, que necesita la persona, además del puntaje de la central, para entrar a la vía rápida.',
     rige: 'a5d',
     ...DECISION,
   },
@@ -596,7 +606,7 @@ const META_A5D: Record<string, MetaParametro> = {
 export const META: Record<string, MetaParametro> = {
   // ── Quién se aprueba ──────────────────────────────────────────────────────
   UMBRAL_APROBACION_AUTOMATICA: {
-    saleConA5d: 'se elimina el puntaje de aprobación automática: aprueba el «puntaje para aprobar», con el score mínimo, el historial financiero y sin mora en banda',
+    saleConA5d: 'se elimina el puntaje de aprobación automática: aprueba el «puntaje para aprobar», con el puntaje mínimo en la central, el historial financiero y sin mora en banda',
     nombre: 'Puntaje para aprobar solo',
     seccion: 'aprobacion',
     sub: 'Puntaje del solicitante',
@@ -624,7 +634,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_CASCADA_RECHAZO: {
-    saleConA5d: 'con dos centrales cuenta el score mayor, y la segunda se consulta solo si la primera falla o no entrega el saldo en mora de cada obligación',
+    saleConA5d: 'con dos centrales cuenta el puntaje mayor, y la segunda se consulta si la primera falla, no reporta puntaje o no entrega el saldo en mora de cada obligación',
     nombre: 'Puntaje para rechazar sin consultar la segunda central',
     seccion: 'aprobacion',
     sub: 'Segunda central',
@@ -640,7 +650,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_CASCADA_APROBACION: {
-    saleConA5d: 'con dos centrales cuenta el score mayor, y la segunda se consulta solo si la primera falla o no entrega el saldo en mora de cada obligación',
+    saleConA5d: 'con dos centrales cuenta el puntaje mayor, y la segunda se consulta si la primera falla, no reporta puntaje o no entrega el saldo en mora de cada obligación',
     nombre: 'Puntaje para aprobar sin consultar la segunda central',
     seccion: 'aprobacion',
     sub: 'Segunda central',
@@ -652,7 +662,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_SCORE_RECHAZO: {
-    conA5d: 'sigue rechazando a cualquier persona del estudio por debajo de este valor; si se consultan las dos centrales, cuenta el score mayor y no el promedio',
+    conA5d: 'sigue rechazando a cualquier persona del estudio por debajo de este valor; si se consultan las dos centrales, cuenta el puntaje mayor y no el promedio',
     nombre: 'Puntaje mínimo en la central',
     seccion: 'aprobacion',
     sub: 'Puntaje que reporta la central',
@@ -664,7 +674,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_SCORE_REVISION: {
-    saleConA5d: 'un score bajo ya no va a un analista: por debajo del «score mínimo para ir sin segundo firmante» se pide segundo firmante',
+    saleConA5d: 'un puntaje de la central bajo ya no va a un analista: por debajo del «puntaje mínimo en la central para ir sin segundo firmante» se pide segundo firmante',
     nombre: 'Puntaje en la central que exige un analista',
     seccion: 'aprobacion',
     sub: 'Puntaje que reporta la central',
@@ -681,6 +691,8 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   DIAS_MORA_RECIENTE_RECHAZO: {
+    conA5d:
+      'solo cuentan las moras financieras, dentro de los «meses en que una mora financiera rechaza» y no de los últimos 6; las de telefonía, comercio o servicios públicos se tratan por bandas',
     nombre: 'Mora de los últimos 6 meses que rechaza: desde cuántos días',
     seccion: 'aprobacion',
     sub: 'Moras que rechazan',
@@ -856,7 +868,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   PUNTAJE_MINIMO_COARRENDATARIO: {
-    conA5d: 'es el puntaje mínimo del segundo firmante, que además no puede tener ninguna causa de rechazo; no se le exigen el score mínimo para ir sin segundo firmante ni historial financiero',
+    conA5d: 'es el puntaje mínimo del segundo firmante, que además no puede tener ninguna causa de rechazo; no se le exigen el puntaje mínimo en la central para ir sin segundo firmante ni historial financiero',
     nombre: 'Puntaje mínimo para que un coarrendatario cuente',
     seccion: 'coarrendatarios',
     sub: 'Cuánto aporta',
@@ -1388,9 +1400,15 @@ export const metaDe = (clave: string): MetaParametro =>
   META[clave] ?? { nombre: clave, seccion: 'otros', unidad: 'num', queHace: '', rige: 'siempre' }
 export const nombreDe = (clave: string) => metaDe(clave).nombre
 
+/** Las excepciones con los valores vigentes (las que los citan se calculan). */
+export const excepcionesDe = (m: Pick<MetaParametro, 'excepciones'>, v: Valores): string[] =>
+  typeof m.excepciones === 'function' ? m.excepciones(v) : (m.excepciones ?? [])
+
 /** El resumen con sus excepciones en un solo texto (diálogo de edición y búsqueda). */
-export const textoCompleto = (m: MetaParametro) =>
-  m.excepciones?.length ? `${m.queHace} ${m.excepciones.join(' ')}` : m.queHace
+export function textoCompleto(m: MetaParametro, v: Valores): string {
+  const e = excepcionesDe(m, v)
+  return e.length ? `${m.queHace} ${e.join(' ')}` : m.queHace
+}
 
 // El orden de META es el de la pantalla (subtemas incluidos), no el del API.
 const ORDEN = Object.keys(META)
@@ -1492,7 +1510,7 @@ export function coherenciaA5d(clave: string, nuevo: number, v: Valores): string 
     if (!t) return null
     for (let i = 1; i < t.length; i++) {
       if (t[i].score <= t[i - 1].score)
-        return `Los anclajes deben crecer: el score del anclaje ${i + 1} (${fmt(t[i].score, true)}) debe quedar por encima del score del anclaje ${i} (${fmt(t[i - 1].score, true)}). Para correr la tabla hacia arriba, mueva primero los anclajes altos; hacia abajo, primero los bajos.`
+        return `Los anclajes deben crecer: el puntaje de la central del anclaje ${i + 1} (${fmt(t[i].score, true)}) debe quedar por encima del puntaje del anclaje ${i} (${fmt(t[i - 1].score, true)}). Para correr la tabla hacia arriba, mueva primero los anclajes altos; hacia abajo, primero los bajos.`
       if (t[i].puntos <= t[i - 1].puntos)
         return `Los anclajes deben crecer: los puntos del anclaje ${i + 1} (${fmt(t[i].puntos)}) deben quedar por encima de los del anclaje ${i} (${fmt(t[i - 1].puntos)}).`
     }

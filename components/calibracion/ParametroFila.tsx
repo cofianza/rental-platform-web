@@ -5,7 +5,7 @@ import type { IHistorialCalibracion, IParametroCalibracion } from '@/services/ca
 import { IconAlertTriangle, IconArrowRight, IconChevronDown, IconClock, IconLock } from '@/components/icons'
 import { formatDate } from '@/lib/constants'
 import { cn } from '@/lib/utils'
-import { a5dDisponible, a5dEncendida, conUnidad, humanizar, metaDe, type Valores } from './parametros'
+import { a5dDisponible, a5dEncendida, conUnidad, excepcionesDe, humanizar, metaDe, type Valores } from './parametros'
 
 interface Props {
   p: IParametroCalibracion
@@ -38,7 +38,7 @@ export function ParametroFila({ p, valores, ultimo, onAbrir }: Props) {
   const ejemplo = meta.ejemplo?.(valores)
   const fijo = p.min === p.max
   const fecha = ultimo?.created_at ?? p.actualizado_en
-  const excepciones = meta.excepciones ?? []
+  const excepciones = excepcionesDe(meta, valores)
   const [singular, plural] = meta.etiquetaExcepciones ?? ['excepción', 'excepciones']
   const [abierto, setAbierto] = useState(false)
   const idLista = useId()
