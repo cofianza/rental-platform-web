@@ -290,6 +290,18 @@ export const NAV_ITEMS: NavItem[] = [
     group: 'Administración',
   },
   {
+    // Adenda 5 definitiva §3: clasificación de los acreedores que reportan las
+    // centrales. Sin recurso RBAC propio (gerencia_consulta no tiene
+    // configuracion:read): se gatea por rol, los mismos que admite la API en
+    // /admin/acreedores (administrador clasifica; gerencia solo consulta).
+    label: 'Lista de acreedores',
+    href: '/admin/calibracion/acreedores',
+    icon: 'Bank',
+    description: 'Clasificación de los acreedores que reportan las centrales',
+    requiredRoles: ['administrador', 'gerencia_consulta'],
+    group: 'Administración',
+  },
+  {
     label: 'Configuración',
     href: '/configuracion',
     icon: 'Settings',

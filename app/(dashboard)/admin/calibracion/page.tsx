@@ -36,7 +36,8 @@ import {
   type ICascadaCentrales,
   type IRevisionManual,
 } from '@/services/calibracionService'
-import { IconLock, IconSearch, IconChevronDown, IconRefresh, IconX } from '@/components/icons'
+import Link from 'next/link'
+import { IconBank, IconLock, IconSearch, IconChevronDown, IconRefresh, IconX } from '@/components/icons'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils'
 import { EditarParametro } from '@/components/calibracion/EditarParametro'
@@ -216,6 +217,15 @@ export default function AdminCalibracionPage() {
       <PageHeader
         title="Calibración del modelo"
         subtitle="Los valores con los que la plataforma decide, cobra y fija plazos. Un cambio aplica de inmediato y queda en el historial."
+        actions={
+          <Link
+            href="/admin/calibracion/acreedores"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <IconBank size={16} />
+            Lista de acreedores
+          </Link>
+        }
       />
 
       {loading ? (
