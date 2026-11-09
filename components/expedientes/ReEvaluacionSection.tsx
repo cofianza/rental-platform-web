@@ -39,10 +39,7 @@ const PROPOSITO_LABELS: Record<PropositoSoporte, string> = {
   codeudor: 'Respaldo de un tercero',
   poliza: 'Póliza de arrendamiento',
   otros_soportes: 'Otros soportes',
-  // Adenda 5 §7: lo carga el candidato por su enlace cuando el analista lo exige; aquí solo se nombra.
-  paz_y_salvo: 'Paz y salvo',
 }
-const OPCIONES_PROPOSITO = Object.entries(PROPOSITO_LABELS).filter(([value]) => value !== 'paz_y_salvo')
 
 const MIME_TYPES_ALLOWED = ['application/pdf', 'image/jpeg', 'image/png']
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
@@ -421,7 +418,7 @@ export function ReEvaluacionSection({
             disabled={uploading}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
           >
-            {OPCIONES_PROPOSITO.map(([value, label]) => (
+            {Object.entries(PROPOSITO_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>

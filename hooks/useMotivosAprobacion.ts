@@ -1,8 +1,6 @@
 /**
  * Motivos de aprobación que este estudio no admite y por qué. Con `habilitado`
  * atado a la apertura del formulario, cada apertura lee el estado actual.
- * Adenda 5 §7: trae también R10 (rechazar por la mora del tramo de revisión),
- * que la API rechaza con 400 fuera de ese tramo.
  */
 
 'use client'

@@ -15,8 +15,6 @@ export interface OpcionesTurno {
   analista?: boolean
   /** U2: autorizó y pagó, pero la consulta no arrancó sola. */
   sinEjecutar?: boolean
-  /** Adenda 5 §7: el candidato ya cargó el paz y salvo; a Cofianza le falta acreditarlo, no decidir. */
-  pazYSalvoCargado?: boolean
   /**
    * Revisión que ya tomó OTRO analista (nombre): para quien mira no es «Su turno»,
    * es el de esa persona. Solo aplica a la revisión de Cofianza.
@@ -63,7 +61,7 @@ export function textoTurno(turno: Turno, vista: VistaTurno, o: OpcionesTurno = {
         if (vista !== 'cofianza') return 'En revisión de Cofianza'
         if (!o.analista) return 'En revisión de un analista'
         if (o.tomadoPor) return `En revisión de ${o.tomadoPor}`
-        return o.pazYSalvoCargado ? 'Su turno: acreditar el paz y salvo' : 'Su turno: decidir el estudio'
+        return 'Su turno: decidir el estudio'
       }
       return 'Cofianza procesando'
     case 'firmas':
@@ -78,7 +76,6 @@ export function PastillaTurno({
   accion,
   analista,
   sinEjecutar,
-  pazYSalvoCargado,
   condicion,
   className,
 }: {
@@ -86,7 +83,7 @@ export function PastillaTurno({
   vista: VistaTurno
   className?: string
 } & OpcionesTurno) {
-  const o = { revision, accion, analista, sinEjecutar, pazYSalvoCargado, condicion }
+  const o = { revision, accion, analista, sinEjecutar, condicion }
   return (
     <span
       className={cn(
