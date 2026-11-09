@@ -30,18 +30,36 @@ export type Unidad =
   | 'factor'
   | 'veces'
   | 'consultas'
+  | 'obligaciones'
+  // Fracción del canon (0,20 = 20 %): las bandas de la razón de mora.
+  | 'fraccion'
   | 'num'
-  // Fracción del canon guardada como 0,15: se muestra «15 % del canon» (con 'pct' saldría «0,15 %»).
-  | 'fraccion_canon'
 
-export type SeccionId = 'aprobacion' | 'ingreso' | 'coarrendatarios' | 'capacidad' | 'precios' | 'plazos' | 'contratos' | 'migracion' | 'otros'
+export type SeccionId =
+  | 'aprobacion'
+  | 'ingreso'
+  | 'coarrendatarios'
+  | 'capacidad'
+  | 'precios'
+  | 'plazos'
+  | 'contratos'
+  | 'migracion'
+  | 'otros'
+  // Adenda 5 definitiva: un grupo propio en el menú.
+  | 'a5d_motor'
+  | 'a5d_score'
+  | 'a5d_segundo'
+  | 'a5d_mora'
+  | 'a5d_sustituciones'
+  | 'a5d_precio'
 
 /**
  * Cuándo el valor cambia algún resultado: siempre, solo con un paquete de
  * reglas encendido (o apagado), nunca (retirado) o en parte (`notaRige` dice
- * dónde). Con lo que no rige hoy, la sección lo pliega al final.
+ * dónde). Con lo que no rige hoy, la sección lo pliega al final. 'a5d' = solo
+ * con la Adenda 5 definitiva encendida (ADENDA5_DEF).
  */
-export type Rige = 'siempre' | 'v2' | 'sin_v2' | 'a4' | 'v2_a4' | 'a5' | 'nunca' | 'parcial'
+export type Rige = 'siempre' | 'v2' | 'sin_v2' | 'a4' | 'v2_a4' | 'a5d' | 'nunca' | 'parcial'
 
 export interface MetaParametro {
   nombre: string
@@ -54,8 +72,9 @@ export interface MetaParametro {
   /**
    * Las excepciones a la regla del resumen, una por viñeta: «condición → qué
    * pasa». La tarjeta las pliega; el diálogo y la búsqueda las leen enteras.
+   * Como función cuando citan valores del panel: así no quedan escritos a mano.
    */
-  excepciones?: string[]
+  excepciones?: string[] | ((v: Valores) => string[])
   /** Cómo se nombran en el plegable si no son excepciones: [singular, plural]. */
   etiquetaExcepciones?: [string, string]
   ejemplo?: (v: Valores) => string | null
@@ -69,9 +88,28 @@ export interface MetaParametro {
   matriz?: boolean
   /** Valores admitidos cuando no es un rango (se eligen con botones). */
   opciones?: number[]
+  /**
+   * Rige hoy y deja de aplicar al encender la Adenda 5 definitiva: qué lo
+   * reemplaza. No se oculta mientras esté apagada.
+   */
+  saleConA5d?: string
+  /** Sigue rigiendo con la Adenda 5 definitiva, pero cambia lo que hace: cómo. */
+  conA5d?: string
 }
 
-export const SECCIONES: { id: SeccionId; titulo: string; ayuda: string }[] = [
+export interface Seccion {
+  id: SeccionId
+  titulo: string
+  ayuda: string
+  /** 'a5d': va en el grupo «Adenda 5 definitiva» del menú. */
+  grupo?: 'a5d'
+  /** Valores de otras secciones que también usa esta (se listan al final, en corto). */
+  relacionados?: { titulo: string; claves: string[] }
+}
+
+const TAMBIEN_A5D = 'Siguen como están y también rigen con la Adenda 5 definitiva (se cambian en su sección)'
+
+export const SECCIONES: Seccion[] = [
   {
     id: 'aprobacion',
     titulo: 'Quién se aprueba',
@@ -101,31 +139,79 @@ export const SECCIONES: { id: SeccionId; titulo: string; ayuda: string }[] = [
   { id: 'contratos', titulo: 'Canon y contratos', ayuda: 'Hasta qué canon se afianza, cuánto puede subir y los plazos del contrato.' },
   { id: 'migracion', titulo: 'Migración de cartera', ayuda: 'Reglas para traer contratos que ya estaban afianzados por fuera de la plataforma.' },
   { id: 'otros', titulo: 'Otros', ayuda: 'Valores sin sección asignada.' },
+  {
+    id: 'a5d_motor',
+    grupo: 'a5d',
+    titulo: 'Interruptor y motor',
+    ayuda: 'El interruptor de la Adenda 5 definitiva y cómo decide sobre cada persona: aprobada, aprobada con segundo firmante o rechazada.',
+    relacionados: {
+      titulo: TAMBIEN_A5D,
+      claves: [
+        'UMBRAL_SCORE_RECHAZO',
+        'DIAS_MORA_RECIENTE_RECHAZO',
+        'FACTOR_AJUSTE_INGRESO_CANON',
+        'FACTOR_AJUSTE_INGRESO_DTI',
+        'MESES_VENTANA_COMPORTAMIENTO',
+        'FACTOR_CUOTA_MINIMA_TARJETA',
+        'CONSULTAS_APELACION_ASUMIDAS',
+        'DIAS_CADUCIDAD_ESTUDIO',
+      ],
+    },
+  },
+  {
+    id: 'a5d_score',
+    grupo: 'a5d',
+    titulo: 'Puntaje de la central',
+    ayuda: 'Cómo el puntaje de la central (de 0 a 999) se convierte en puntos, y qué variables se dan por cumplidas mientras no se puedan verificar.',
+    relacionados: { titulo: TAMBIEN_A5D, claves: ['UMBRAL_SCORE_RECHAZO'] },
+  },
+  {
+    id: 'a5d_segundo',
+    grupo: 'a5d',
+    titulo: 'Segundo firmante',
+    ayuda: 'Cuándo se pide un segundo firmante (coarrendatario, deudor solidario o codeudor), cuándo es válido y cuánto aporta.',
+    relacionados: {
+      titulo: 'Valores de «Coarrendatarios» que también rigen al segundo firmante',
+      claves: [
+        'PUNTAJE_MINIMO_COARRENDATARIO',
+        'BONO_COARRENDATARIO_70_79',
+        'BONO_COARRENDATARIO_80_89',
+        'BONO_COARRENDATARIO_90_100',
+        'VIGENCIA_CONDICION_COARRENDATARIO_DIAS',
+        'HORAS_ESPERA_AUTORIZACION',
+      ],
+    },
+  },
+  {
+    id: 'a5d_mora',
+    grupo: 'a5d',
+    titulo: 'Mora no financiera',
+    ayuda: 'Cómo se trata la mora vigente de telefonía, televisión, internet, comercio y servicios públicos. Toda mora financiera vigente sigue rechazando.',
+  },
+  {
+    id: 'a5d_sustituciones',
+    grupo: 'a5d',
+    titulo: 'Sustituciones y consulta adicional',
+    ayuda: 'Cuántas veces se puede cambiar a una persona del estudio, cuánto cuesta consultar a la persona nueva y cuánto se reutiliza un reporte.',
+    relacionados: { titulo: TAMBIEN_A5D, claves: ['TARIFA_IVA'] },
+  },
+  {
+    id: 'a5d_precio',
+    grupo: 'a5d',
+    titulo: 'Precio',
+    ayuda: 'La prima de vinculación, la tarifa mensual única de la fianza y el cashback.',
+    relacionados: { titulo: TAMBIEN_A5D, claves: ['TARIFA_IVA'] },
+  },
 ]
 
-// es-CO: coma decimal y punto de miles («1,15», «3.000.000»).
-export const fmt = (n: number, entero = false) => n.toLocaleString('es-CO', { maximumFractionDigits: entero ? 0 : 4 })
-const pesos = (n: number) => `$${fmt(Math.round(n), true)}`
+/** El título con su grupo, para donde la sección se nombra sola (búsqueda, encabezado). */
+export const tituloSeccion = (s: Seccion) => (s.grupo === 'a5d' ? `Adenda 5 definitiva · ${s.titulo}` : s.titulo)
+export const grupoDe = (id: string) => SECCIONES.find((s) => s.id === id)?.grupo
 
-/**
- * La escalera de la mora vigente con un canon de ejemplo (Adenda 5 §4): hasta
- * dónde no frena, de dónde a dónde va a un analista y desde dónde rechaza. Los
- * bordes son exactos (la API compara sin redondear): la tolerada es «menor que»,
- * la de rechazo es «mayor que». Los factores se pasan a diezmilésimas para no
- * arrastrar el error de coma flotante (1.300.000 × 0,3 = 389.999,99…).
- */
-const CANON_EJEMPLO = 1_300_000
-function escaleraMora(tolerada: number, rechazo: number, canon = CANON_EJEMPLO) {
-  const tope = (f: number) => (canon * Math.round(f * 10_000)) / 10_000
-  const desdeRevision = Math.ceil(tope(tolerada))
-  const hastaRevision = Math.floor(tope(rechazo))
-  return { hastaTolerada: desdeRevision - 1, desdeRevision, hastaRevision }
-}
-const textoEscalera = (v: Valores) => {
-  const e = escaleraMora(v.FACTOR_MORA_TOLERADA, v.FACTOR_MORA_RECHAZO)
-  if (e.hastaRevision < e.desdeRevision) return null
-  return `Con canon de ${pesos(CANON_EJEMPLO)}: hasta ${pesos(Math.max(0, e.hastaTolerada))} en mora sigue la evaluación normal; de ${pesos(e.desdeRevision)} a ${pesos(e.hastaRevision)} decide un analista; más de ${pesos(e.hastaRevision)} se rechaza.`
-}
+// es-CO: coma decimal y punto de miles («1,15», «3.000.000»).
+// Los negativos con el signo menos «−» (U+2212), el mismo del resto del panel. Solo para mostrar: el campo del diálogo usa String(valor).
+export const fmt = (n: number, entero = false) => n.toLocaleString('es-CO', { maximumFractionDigits: entero ? 0 : 4 }).replace(/^-/, '−')
+const pesos = (n: number) => `$${fmt(Math.round(n), true)}`
 
 /** 209912 = «nunca»: es el valor con el que el cobro queda apagado. */
 export const MES_APAGADO = 209912
@@ -133,9 +219,395 @@ const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', '
 
 const DECISION = { matriz: true } as const
 
+// ── Adenda 5 definitiva ───────────────────────────────────────────────────
+// Todos aplican solo con ADENDA5_DEF encendido (rige 'a5d'), salvo el propio
+// interruptor. Mientras esté apagado, sus secciones los muestran como «aplica
+// al encender la Adenda 5 definitiva» y no los pliegan. Los textos siguen las
+// descripciones del API (src/lib/calibracion.ts).
+
+/** 0,20 → «0,20»: las bandas se escriben con dos decimales, como en la adenda. */
+const fraccion = (n: number) => n.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+/** Canon de los casos de prueba de la adenda. */
+const CANON_CASO = 1_300_000
+const obligaciones = (n: number) => `${n} ${n === 1 ? 'obligación financiera' : 'obligaciones financieras'}`
+
+/** Los 7 anclajes del score: el score de la central (0 a 999) y sus puntos (de 50). */
+export const N_ANCLAJES = 7
+export const claveAncla = (n: number, que: 'SCORE' | 'PUNTOS') => `SCORE_ANCLA_${n}_${que}`
+export const esClaveAncla = (clave: string) => /^SCORE_ANCLA_[1-7]_(SCORE|PUNTOS)$/.test(clave)
+export const SUB_ANCLAJES = 'Tabla del puntaje de la central'
+
+/** Pura: la tabla vigente, en orden; null si el API todavía no la manda. */
+export function anclajes(v: Valores): { score: number; puntos: number }[] | null {
+  const t = Array.from({ length: N_ANCLAJES }, (_, i) => ({ score: v[claveAncla(i + 1, 'SCORE')], puntos: v[claveAncla(i + 1, 'PUNTOS')] }))
+  return t.every((a) => typeof a.score === 'number' && typeof a.puntos === 'number') ? t : null
+}
+
+/** Pura: los puntos (de 50) de un score, en línea recta entre los dos anclajes que lo rodean. */
+export function puntosDeScore(t: { score: number; puntos: number }[], score: number): number {
+  if (score <= t[0].score) return t[0].puntos
+  const ultimo = t[t.length - 1]
+  if (score >= ultimo.score) return ultimo.puntos
+  const i = t.findIndex((a) => a.score >= score)
+  const [a, b] = [t[i - 1], t[i]]
+  return a.puntos + ((score - a.score) / (b.score - a.score)) * (b.puntos - a.puntos)
+}
+
+function metaAnclas(): Record<string, MetaParametro> {
+  const m: Record<string, MetaParametro> = {}
+  for (let n = 1; n <= N_ANCLAJES; n++) {
+    const borde =
+      n === 1
+        ? ' Un puntaje de la central igual o menor recibe los puntos de este anclaje.'
+        : n === N_ANCLAJES
+          ? ' Un puntaje de la central igual o mayor recibe los puntos de este anclaje.'
+          : ''
+    m[claveAncla(n, 'SCORE')] = {
+      nombre: `Puntaje de la central del anclaje ${n}`,
+      seccion: 'a5d_score',
+      sub: SUB_ANCLAJES,
+      unidad: 'num',
+      queHace: `Puntaje de la central (de 0 a 999) del anclaje ${n} de la tabla.${borde} Entre dos anclajes, los puntos se reparten en línea recta.`,
+      rige: 'a5d',
+      ...DECISION,
+    }
+    m[claveAncla(n, 'PUNTOS')] = {
+      nombre: `Puntos del anclaje ${n}`,
+      seccion: 'a5d_score',
+      sub: SUB_ANCLAJES,
+      unidad: 'puntos',
+      queHace: `Puntos (de 50) que recibe un puntaje de la central igual al del anclaje ${n}. El puntaje de la central pesa 50 de los 119 puntos del puntaje de la persona.`,
+      rige: 'a5d',
+      ...DECISION,
+    }
+  }
+  return m
+}
+
+const META_A5D: Record<string, MetaParametro> = {
+  // ── Interruptor y motor ───────────────────────────────────────────────────
+  ADENDA5_DEF: {
+    nombre: 'Reglas de decisión con segundo firmante (Adenda 5 definitiva)',
+    seccion: 'a5d_motor',
+    sub: 'Interruptor',
+    unidad: 'onoff',
+    queHace:
+      'Encendido: rige la Adenda 5 definitiva. Cada estudio sale aprobado, aprobado con segundo firmante o rechazado, y la revisión manual deja de ser una salida del motor. El analista sale del flujo normal y atiende apelaciones y excepciones de tope; las verificaciones de cumplimiento (identidad o biometría, posible homónimo en listas y la consulta de antecedentes cuando no responde) siguen como hoy. Apagado: se decide como hoy.',
+    // Las cifras salen del panel: si la Gerencia mueve un valor, el texto lo sigue.
+    excepciones: (v) => [
+      `La tabla de ${v.UMBRAL_APROBACION_AUTOMATICA} y ${v.UMBRAL_ZONA_GRIS} (aprobar solo, zona gris y «Está cerca») → deja de aplicar: deciden el puntaje para aprobar, el puntaje mínimo en la central para ir sin segundo firmante y el piso para pedir segundo firmante.`,
+      v.UMBRAL_SCORE_REVISION >= v.UMBRAL_SCORE_RECHAZO
+        ? `Revisión manual como salida del motor → desaparece: un puntaje de la central de ${v.UMBRAL_SCORE_RECHAZO} a ${v.UMBRAL_SCORE_REVISION} ya no va a un analista, pide segundo firmante.`
+        : 'Revisión manual como salida del motor → desaparece: un puntaje de la central bajo ya no va a un analista, pide segundo firmante.',
+      'El puntaje → se calcula sobre 119 puntos, con el puntaje de la central convertido por la tabla de anclajes y las variables que no se pueden verificar acreditadas.',
+      'Dos centrales → cuenta el puntaje mayor, no el promedio; la segunda se consulta si la primera falla, no reporta puntaje o no entrega el saldo en mora de cada obligación.',
+      'Mora vigente de telefonía, comercio o servicios públicos → ya no rechaza siempre: se trata por bandas según la razón de mora. La mora financiera vigente sigue rechazando.',
+      `Canon por encima de la parte del ingreso que puede ser canon → no rechaza ni va a un analista: se aprueba «hasta canon de» ese máximo. Desaparece el margen del ${fmt(v.TOLERANCIA_CANON)} %.`,
+      'Coarrendatario → pasa a ser segundo firmante: nunca resta, se puede sustituir con una consulta adicional y, si vence el plazo sin uno válido, el estudio se rechaza.',
+      'Las dos tarifas mensuales y la prima que baja con coarrendatario → una sola tarifa mensual y una sola prima de vinculación.',
+    ],
+    etiquetaExcepciones: ['cambio al encenderla', 'cambios al encenderla'],
+    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) y las de capacidad de pago (Adenda 4) encendidas; mientras esté encendida, esas dos no se pueden apagar. Se podrá encender cuando la plataforma tenga completo el motor nuevo; hasta entonces el panel no deja encenderla.',
+    rige: 'siempre',
+    motivo: true,
+    ...DECISION,
+  },
+  UMBRAL_APROBADO: {
+    nombre: 'Puntaje para aprobar',
+    seccion: 'a5d_motor',
+    sub: 'Decisión sobre cada persona',
+    unidad: 'puntos',
+    queHace:
+      'Desde este puntaje (de 0 a 100) la persona se aprueba sin segundo firmante, si además cumple las tres condiciones. Si le falta alguna, o no llega a este puntaje pero sí al piso, queda aprobada con segundo firmante.',
+    excepciones: [
+      'Puntaje de la central → igual o mayor que el mínimo para ir sin segundo firmante.',
+      'Historial financiero → al menos las obligaciones financieras que pide ese valor.',
+      'Mora de telefonía, comercio o servicios públicos → ninguna en banda.',
+    ],
+    etiquetaExcepciones: ['condición', 'condiciones'],
+    nota: 'Con un segundo firmante válido, el titular se aprueba si su puntaje más el bono del segundo firmante llega a este valor.',
+    ejemplo: (v) => {
+      const bajo = Math.max(v.PISO_SEGUNDO_FIRMANTE, v.UMBRAL_APROBADO - 3)
+      return `Con ${v.UMBRAL_APROBADO}: ${Math.min(100, v.UMBRAL_APROBADO + 2)} puntos, con puntaje de la central de ${v.SCORE_MINIMO_SOLO + 20}, historial financiero y sin mora en banda, se aprueba sin segundo firmante${
+        bajo < v.UMBRAL_APROBADO ? `; ${bajo} puntos queda aprobado con segundo firmante` : ''
+      }.`
+    },
+    rige: 'a5d',
+    ...DECISION,
+  },
+  SCORE_MINIMO_SOLO: {
+    nombre: 'Puntaje mínimo en la central para ir sin segundo firmante',
+    seccion: 'a5d_motor',
+    sub: 'Decisión sobre cada persona',
+    unidad: 'num',
+    queHace:
+      'Desde este puntaje de la central (de 0 a 999) la persona puede aprobarse sin segundo firmante. Por debajo, aunque alcance el puntaje para aprobar, se le pide uno. Si se consultan dos centrales, cuenta el puntaje mayor.',
+    nota: 'Un puntaje de la central entre el mínimo en la central y este valor ya no va a un analista: pide segundo firmante.',
+    ejemplo: (v) =>
+      `Con ${v.SCORE_MINIMO_SOLO}: con ${Math.min(100, v.UMBRAL_APROBADO + 5)} puntos, un puntaje de la central de ${v.SCORE_MINIMO_SOLO - 20} queda aprobado con segundo firmante; uno de ${v.SCORE_MINIMO_SOLO + 10}, con lo demás en regla, se aprueba sin segundo firmante.`,
+    rige: 'a5d',
+    ...DECISION,
+  },
+  HISTORIAL_FINANCIERO_MINIMO_SOLO: {
+    nombre: 'Historial financiero para ir sin segundo firmante',
+    seccion: 'a5d_motor',
+    sub: 'Decisión sobre cada persona',
+    unidad: 'obligaciones',
+    queHace:
+      'Obligaciones financieras (con un banco, una cooperativa, un fondo de empleados o quien preste dinero o emita tarjetas, incluida la libranza), vigentes o ya cerradas, como titular o codeudora, que debe tener la persona para aprobarse sin segundo firmante. Sin ellas se le pide uno. En 0 no se exige.',
+    ejemplo: (v) =>
+      v.HISTORIAL_FINANCIERO_MINIMO_SOLO > 0
+        ? `Con ${v.HISTORIAL_FINANCIERO_MINIMO_SOLO}: quien solo tiene obligaciones de telefonía o de comercio queda aprobado con segundo firmante, aunque alcance el puntaje para aprobar y el mínimo en la central.`
+        : 'Con 0: no se exige historial financiero para ir sin segundo firmante.',
+    rige: 'a5d',
+    ...DECISION,
+  },
+  MESES_VENTANA_MORA_FINANCIERA: {
+    nombre: 'Meses en que una mora financiera rechaza',
+    seccion: 'a5d_motor',
+    sub: 'Reglas de rechazo',
+    unidad: 'meses',
+    queHace:
+      'Una mora en una obligación financiera dentro de estos meses, contados desde la consulta, rechaza el estudio, esté pagada o no, desde los días que fija «Mora de los últimos 6 meses que rechaza». Las moras de telefonía, comercio o servicios públicos no cuentan en esta regla.',
+    nota: 'Además, toda mora vigente en una obligación financiera rechaza, por cualquier monto.',
+    ejemplo: (v) =>
+      `Con ${v.MESES_VENTANA_MORA_FINANCIERA}: una mora de ${Math.max(60, v.DIAS_MORA_RECIENTE_RECHAZO)} días en una tarjeta de crédito dentro de ${v.MESES_VENTANA_MORA_FINANCIERA === 1 ? 'el último mes' : `los últimos ${v.MESES_VENTANA_MORA_FINANCIERA} meses`}, aunque ya esté pagada, rechaza el estudio.`,
+    rige: 'a5d',
+    motivo: true,
+    ...DECISION,
+  },
+  DTI_MAXIMO: {
+    nombre: 'Endeudamiento máximo',
+    seccion: 'a5d_motor',
+    sub: 'Endeudamiento y canon máximo',
+    unidad: 'pct',
+    queHace:
+      'Parte máxima del ingreso ajustado que pueden llevarse las cuotas de la persona, con la de la fianza. Por encima, con ingreso verificado, el estudio se rechaza; sin ingreso verificado no rechaza: el endeudamiento se puntúa por cómo paga la persona.',
+    nota: 'Hoy la plataforma usa un 65 % fijo; este valor lo usa al encender la Adenda 5 definitiva.',
+    ejemplo: (v) => `Con ${fmt(v.DTI_MAXIMO)} % y un ingreso verificado de $3.000.000: cuotas por más de ${pesos(30_000 * v.DTI_MAXIMO)} al mes rechazan.`,
+    rige: 'a5d',
+    motivo: true,
+    ...DECISION,
+  },
+  CANON_INGRESO_MAXIMO: {
+    nombre: 'Parte del ingreso que puede ser canon',
+    seccion: 'a5d_motor',
+    sub: 'Endeudamiento y canon máximo',
+    unidad: 'pct',
+    queHace:
+      'Fija el canon máximo: este porcentaje del ingreso ajustado para canon del titular. Si el canon pedido lo supera, el estudio no se rechaza ni va a un analista: se aprueba «hasta canon de» ese valor. El ingreso del segundo firmante no lo aumenta.',
+    nota: 'Hoy la plataforma usa un 40 % fijo; este valor lo usa al encender la Adenda 5 definitiva.',
+    ejemplo: (v) => `Con ${fmt(v.CANON_INGRESO_MAXIMO)} % y un ingreso ajustado de $2.500.000: se aprueba hasta un canon de ${pesos(25_000 * v.CANON_INGRESO_MAXIMO)}.`,
+    rige: 'a5d',
+    ...DECISION,
+  },
+
+  // ── Score ─────────────────────────────────────────────────────────────────
+  ...metaAnclas(),
+  ACREDITAR_VARIABLES_NO_EVALUABLES: {
+    nombre: 'Acreditar las variables que no se pueden verificar',
+    seccion: 'a5d_score',
+    sub: 'Variables que no se pueden verificar',
+    unidad: 'onoff',
+    queHace:
+      'Encendido: la seguridad social, la estabilidad laboral y el historial de arrendamiento, que hoy no se pueden verificar, reciben su puntaje completo (23 de los 119 puntos) y el estudio deja constancia de que fueron acreditadas, no verificadas. Apagado: esas variables no suman puntos.',
+    nota: 'Cuando una de esas variables se pueda verificar, se evalúa con su valor real aunque esto siga encendido.',
+    rige: 'a5d',
+    motivo: true,
+    ...DECISION,
+  },
+
+  // ── Segundo firmante ──────────────────────────────────────────────────────
+  PISO_SEGUNDO_FIRMANTE: {
+    nombre: 'Piso para pedir segundo firmante',
+    seccion: 'a5d_segundo',
+    sub: 'Cuándo se pide',
+    unidad: 'puntos',
+    queHace:
+      'Por debajo de este puntaje (de 0 a 100) la persona queda rechazada, por cualquier causa: ningún segundo firmante la compensa. Si es la única persona del estudio, o la otra también queda rechazada, el estudio se rechaza. Desde este puntaje, quien no alcanza a aprobarse sin segundo firmante queda aprobado con segundo firmante.',
+    nota: 'Reemplaza el puntaje mínimo para exigir coarrendatario, que solo aplicaba a algunas causas.',
+    ejemplo: (v) =>
+      `Con ${v.PISO_SEGUNDO_FIRMANTE}: una persona con ${Math.min(v.PISO_SEGUNDO_FIRMANTE + 3, v.UMBRAL_APROBADO - 1)} puntos queda aprobada con segundo firmante; con ${Math.max(0, v.PISO_SEGUNDO_FIRMANTE - 1)}, rechazada. Si la otra persona del estudio se aprueba sola, el estudio sale aprobado con ella.`,
+    rige: 'a5d',
+    motivo: true,
+    ...DECISION,
+  },
+
+  // ── Mora no financiera ────────────────────────────────────────────────────
+  BANDA_TELCO_TOLERADA: {
+    nombre: 'Telefonía: hasta dónde se tolera la mora',
+    seccion: 'a5d_mora',
+    sub: 'Solo telefonía, televisión o internet',
+    unidad: 'fraccion',
+    queHace:
+      'Cuando todas las moras vigentes no financieras son de telefonía, televisión o internet: si su suma, frente al canon, queda por debajo de este valor, se toleran. No impiden ir sin segundo firmante y dejan el comportamiento en 0 puntos. Desde este valor hasta el de rechazo, la mora queda en banda.',
+    ejemplo: (v) =>
+      `Con ${fraccion(v.BANDA_TELCO_TOLERADA)} y canon de $1.300.000: menos de ${pesos(CANON_CASO * v.BANDA_TELCO_TOLERADA)} en mora se tolera; desde ahí queda en banda.`,
+    rige: 'a5d',
+    ...DECISION,
+  },
+  BANDA_TELCO_RECHAZO: {
+    nombre: 'Telefonía: desde dónde rechaza la mora',
+    seccion: 'a5d_mora',
+    sub: 'Solo telefonía, televisión o internet',
+    unidad: 'fraccion',
+    queHace:
+      'Si la suma de esas moras, frente al canon, pasa de este valor, el estudio se rechaza. Hasta este valor inclusive, la mora queda en banda: resta 15 puntos de comportamiento y la persona queda, como máximo, aprobada con segundo firmante.',
+    ejemplo: (v) => `Con ${fraccion(v.BANDA_TELCO_RECHAZO)} y canon de $1.300.000: más de ${pesos(CANON_CASO * v.BANDA_TELCO_RECHAZO)} en mora rechaza.`,
+    rige: 'a5d',
+    motivo: true,
+    ...DECISION,
+  },
+  BANDA_REAL_TOLERADA: {
+    nombre: 'Comercio y otros: hasta dónde se tolera la mora',
+    seccion: 'a5d_mora',
+    sub: 'Con comercio, servicios públicos u otro sector',
+    unidad: 'fraccion',
+    queHace:
+      'Cuando al menos una mora vigente no financiera es de comercio, servicios públicos u otro sector que no sea telefonía: si la suma de todas, frente al canon, queda por debajo de este valor, se toleran. No impiden ir sin segundo firmante y restan en comportamiento los puntos fijados abajo. Desde este valor hasta el de rechazo, la mora queda en banda.',
+    ejemplo: (v) =>
+      `Con ${fraccion(v.BANDA_REAL_TOLERADA)} y canon de $1.300.000: menos de ${pesos(CANON_CASO * v.BANDA_REAL_TOLERADA)} en mora se tolera; desde ahí queda en banda.`,
+    rige: 'a5d',
+    ...DECISION,
+  },
+  BANDA_REAL_RECHAZO: {
+    nombre: 'Comercio y otros: desde dónde rechaza la mora',
+    seccion: 'a5d_mora',
+    sub: 'Con comercio, servicios públicos u otro sector',
+    unidad: 'fraccion',
+    queHace:
+      'Si la suma de esas moras, frente al canon, pasa de este valor, el estudio se rechaza. Hasta este valor inclusive, la mora queda en banda: resta 15 puntos de comportamiento y la persona queda, como máximo, aprobada con segundo firmante.',
+    ejemplo: (v) => `Con ${fraccion(v.BANDA_REAL_RECHAZO)} y canon de $1.300.000: más de ${pesos(CANON_CASO * v.BANDA_REAL_RECHAZO)} en mora rechaza.`,
+    rige: 'a5d',
+    motivo: true,
+    ...DECISION,
+  },
+  PENAL_REAL_TOLERADA: {
+    nombre: 'Comportamiento con mora tolerada de comercio',
+    seccion: 'a5d_mora',
+    sub: 'Con comercio, servicios públicos u otro sector',
+    unidad: 'puntos',
+    queHace:
+      'Puntos de comportamiento (de 10) de quien tiene una mora tolerada de comercio u otro sector. Es un número negativo: resta. Como referencia: sin mora son 10, con mora de telefonía tolerada 0 y con mora en banda menos 15.',
+    ejemplo: (v) => `Con ${fmt(v.PENAL_REAL_TOLERADA, true)}: el comportamiento pasa de 10 puntos a ${fmt(v.PENAL_REAL_TOLERADA, true)}.`,
+    rige: 'a5d',
+    ...DECISION,
+  },
+  MIN_OBLIGACIONES_FINANCIERAS_AL_DIA: {
+    nombre: 'Respaldo de una mora no financiera',
+    seccion: 'a5d_mora',
+    sub: 'Respaldo',
+    unidad: 'obligaciones',
+    queHace:
+      'Quien tiene una mora vigente no financiera debe tener al menos estas obligaciones financieras vigentes y al día, como deudor principal. Si no, el estudio se rechaza por falta de respaldo, aunque la mora esté por debajo de la banda, salvo en la vía rápida cuando toda la mora es de telefonía, televisión o internet: esa mora se descarta.',
+    nota: 'Una mora no financiera ya pagada no es mora vigente y no exige respaldo.',
+    ejemplo: (v) =>
+      `Con ${v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA}: una mora de $150.000 en un almacén, con ${obligaciones(Math.max(0, v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA - 1))} al día, rechaza el estudio.`,
+    rige: 'a5d',
+    motivo: true,
+    ...DECISION,
+  },
+  VIA_RAPIDA_SCORE: {
+    nombre: 'Vía rápida: puntaje mínimo en la central',
+    seccion: 'a5d_mora',
+    sub: 'Vía rápida',
+    unidad: 'num',
+    queHace:
+      'Desde este puntaje de la central, con las obligaciones financieras al día que pide el valor siguiente, las moras de telefonía, televisión e internet se descartan por completo: no cuentan en la razón de mora, no restan en comportamiento y no exigen respaldo. No cambia nada para las moras financieras, las castigadas ni las de comercio.',
+    ejemplo: (v) =>
+      `Con ${v.VIA_RAPIDA_SCORE}: con puntaje de la central de ${v.VIA_RAPIDA_SCORE + 30} y ${obligaciones(v.VIA_RAPIDA_MIN_OBLIG_FIN)} al día, una mora de celular de $400.000 no cuenta.`,
+    rige: 'a5d',
+    ...DECISION,
+  },
+  VIA_RAPIDA_MIN_OBLIG_FIN: {
+    nombre: 'Vía rápida: obligaciones financieras al día',
+    seccion: 'a5d_mora',
+    sub: 'Vía rápida',
+    unidad: 'obligaciones',
+    queHace: 'Obligaciones financieras vigentes y al día, como deudor principal, que necesita la persona, además del puntaje de la central, para entrar a la vía rápida.',
+    rige: 'a5d',
+    ...DECISION,
+  },
+
+  // ── Sustituciones y consulta adicional ────────────────────────────────────
+  MAX_SUSTITUCIONES: {
+    nombre: 'Sustituciones por estudio',
+    seccion: 'a5d_sustituciones',
+    sub: 'Sustituciones',
+    unidad: 'veces',
+    queHace:
+      'Veces que la inmobiliaria puede cambiar a una persona del estudio que no pasa o no completa las condiciones, en total sobre el mismo estudio. Agotadas, el estudio no admite más cambios. Retirar a una persona por coincidencia en listas no cuenta y no se cobra.',
+    ejemplo: (v) =>
+      v.MAX_SUSTITUCIONES > 0
+        ? `Con ${v.MAX_SUSTITUCIONES}: después de ${v.MAX_SUSTITUCIONES === 1 ? 'un cambio' : `${v.MAX_SUSTITUCIONES} cambios`}, el estudio no admite otro.`
+        : 'Con 0: no se puede cambiar a ninguna persona del estudio.',
+    rige: 'a5d',
+    ...DECISION,
+  },
+  VALOR_CONSULTA_ADICIONAL: {
+    nombre: 'Consulta adicional (sin IVA)',
+    seccion: 'a5d_sustituciones',
+    sub: 'Consulta adicional',
+    unidad: 'cop',
+    queHace:
+      'Se cobra, más IVA, por la consulta de cada persona nueva que entra por sustitución, y por consultar de nuevo a quien ya pasó cuando su reporte venció. Se paga antes de la consulta, aparte del paquete prepagado, y el valor se avisa antes de cargar a la persona.',
+    nota: 'Agregar el segundo firmante que pide el estudio no es una sustitución: no se cobra.',
+    ejemplo: (v) => `Con IVA del ${fmt(v.TARIFA_IVA)} %, cada consulta adicional cuesta ${pesos(v.VALOR_CONSULTA_ADICIONAL * (1 + v.TARIFA_IVA / 100))}.`,
+    rige: 'a5d',
+  },
+  DIAS_VIGENCIA_REPORTE: {
+    nombre: 'Días que se reutiliza el reporte de la central',
+    seccion: 'a5d_sustituciones',
+    sub: 'Consulta adicional',
+    unidad: 'dias',
+    queHace:
+      'Días desde la consulta a la central en que su resultado se reutiliza sin consultar de nuevo: se conserva a la persona que ya pasó cuando se sustituye a la otra, y un inmueble de canon mayor se reevalúa sin cobro. Vencidos, la nueva consulta se cobra como consulta adicional.',
+    ejemplo: (v) =>
+      `Con ${v.DIAS_VIGENCIA_REPORTE}: si a los ${v.DIAS_VIGENCIA_REPORTE + 5} días de la consulta se cambia a la otra persona, quien ya pasó se consulta de nuevo y se cobra.`,
+    rige: 'a5d',
+  },
+
+  // ── Precio ────────────────────────────────────────────────────────────────
+  PRIMA_VINCULACION: {
+    nombre: 'Prima de vinculación',
+    seccion: 'a5d_precio',
+    sub: 'Al firmar el contrato',
+    unidad: 'pct',
+    queHace:
+      'Porcentaje del canon mensual, más IVA, que se cobra una sola vez al firmar el contrato inicial, vaya la persona sola o con segundo firmante. La prórroga o la renovación no la cobran de nuevo.',
+    ejemplo: (v) => {
+      const base = (2_000_000 * v.PRIMA_VINCULACION) / 100
+      return `Con canon de $2.000.000: ${pesos(base)} más IVA (${pesos(base * (1 + v.TARIFA_IVA / 100))}), una sola vez.`
+    },
+    rige: 'a5d',
+  },
+  TARIFA_MENSUAL: {
+    nombre: 'Tarifa mensual única',
+    seccion: 'a5d_precio',
+    sub: 'Cada mes',
+    unidad: 'pct',
+    queHace:
+      'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza, igual para todos los contratos sin importar cómo se aprobó el estudio. Se cobra sobre el canon vigente hasta que termine el contrato.',
+    nota: 'Reemplaza las dos tarifas de hoy (aprobación automática y no automática).',
+    ejemplo: (v) => tarifaEjemplo(v.TARIFA_MENSUAL, v.TARIFA_IVA),
+    rige: 'a5d',
+  },
+  PORCENTAJE_CASHBACK: {
+    nombre: 'Cashback',
+    seccion: 'a5d_precio',
+    sub: 'Cada mes',
+    unidad: 'pct',
+    queHace: 'Porcentaje de la tarifa mensual efectivamente pagada, sin IVA, que se reconoce como cashback, en las condiciones ya definidas para causarlo.',
+    ejemplo: (v) =>
+      `Con tarifa del ${fmt(v.TARIFA_MENSUAL)} % y canon de $2.000.000: ${pesos((20_000 * v.TARIFA_MENSUAL * v.PORCENTAJE_CASHBACK) / 100)} al mes.`,
+    rige: 'a5d',
+  },
+}
+
 export const META: Record<string, MetaParametro> = {
   // ── Quién se aprueba ──────────────────────────────────────────────────────
   UMBRAL_APROBACION_AUTOMATICA: {
+    saleConA5d: 'lo reemplaza el «puntaje para aprobar», junto con el puntaje mínimo en la central, el historial financiero y la ausencia de mora en banda',
     nombre: 'Puntaje para aprobar solo',
     seccion: 'aprobacion',
     sub: 'Puntaje del solicitante',
@@ -146,6 +618,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_ZONA_GRIS: {
+    saleConA5d: 'en lugar de la zona gris y de «Está cerca», deciden el «puntaje para aprobar» y el «piso para pedir segundo firmante»',
     nombre: 'Puntaje mínimo para no rechazar',
     seccion: 'aprobacion',
     sub: 'Puntaje del solicitante',
@@ -162,6 +635,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_CASCADA_RECHAZO: {
+    saleConA5d: 'con dos centrales cuenta el puntaje mayor, y la segunda se consulta si la primera falla, no reporta puntaje o no entrega el saldo en mora de cada obligación',
     nombre: 'Puntaje para rechazar sin consultar la segunda central',
     seccion: 'aprobacion',
     sub: 'Segunda central',
@@ -177,6 +651,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_CASCADA_APROBACION: {
+    saleConA5d: 'con dos centrales cuenta el puntaje mayor, y la segunda se consulta si la primera falla, no reporta puntaje o no entrega el saldo en mora de cada obligación',
     nombre: 'Puntaje para aprobar sin consultar la segunda central',
     seccion: 'aprobacion',
     sub: 'Segunda central',
@@ -188,6 +663,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_SCORE_RECHAZO: {
+    conA5d: 'sigue rechazando a cualquier persona del estudio por debajo de este valor; si se consultan las dos centrales, cuenta el puntaje mayor y no el promedio',
     nombre: 'Puntaje mínimo en la central',
     seccion: 'aprobacion',
     sub: 'Puntaje que reporta la central',
@@ -199,6 +675,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_SCORE_REVISION: {
+    saleConA5d: 'por debajo del «puntaje mínimo en la central para ir sin segundo firmante» se pide segundo firmante, sin pasar por un analista',
     nombre: 'Puntaje en la central que exige un analista',
     seccion: 'aprobacion',
     sub: 'Puntaje que reporta la central',
@@ -214,90 +691,22 @@ export const META: Record<string, MetaParametro> = {
     rige: 'siempre',
     ...DECISION,
   },
-  // Adenda 5: la mora vigente deja de rechazar siempre (escalera frente al canon).
-  // El monto mínimo de la mora vigente (PR #152) se retiró: la Adenda 5 §5(a)
-  // dice «de cualquier monto» y la escalera lo reemplaza.
-  ADENDA5: {
-    nombre: 'Reglas de mora vigente de bajo monto (Adenda 5)',
-    seccion: 'aprobacion',
-    sub: 'Mora vigente y reciente',
-    unidad: 'onoff',
-    queHace:
-      'Encendido: una mora vigente deja de rechazar siempre; si cumple las condiciones, el saldo en mora se compara con el canon. Apagado: toda mora vigente rechaza.',
-    excepciones: [
-      'Condiciones: toda la mora es de sector no financiero (telefonía, comunicaciones, servicios públicos, comercio), sin cartera castigada ni en cobro jurídico; la persona tiene suficientes créditos financieros al día y no tuvo mora financiera reciente.',
-      'Saldo en mora por debajo de la mora tolerada → sigue la evaluación normal.',
-      'Saldo entre la tolerada y la de rechazo → decide un analista, que puede aprobarlo sujeto a paz y salvo.',
-      'Saldo por encima de la de rechazo → se rechaza.',
-    ],
-    etiquetaExcepciones: ['condición y caso', 'condiciones y casos'],
-    nota: 'Solo se puede encender con las reglas de capacidad de pago (Adenda 4) encendidas, y estas no se pueden apagar mientras esta esté encendida. Solo aplica cuando la central principal es DataCrédito: con TransUnion, la mora vigente rechaza.',
-    rige: 'siempre',
-    motivo: true,
-    ...DECISION,
-  },
-  FACTOR_MORA_TOLERADA: {
-    nombre: 'Mora vigente tolerada: hasta qué parte del canon',
-    seccion: 'aprobacion',
-    sub: 'Mora vigente y reciente',
-    unidad: 'fraccion_canon',
-    queHace:
-      'Si el saldo en mora sumado (todo de sector no financiero y con las demás condiciones) es menor que esta parte del canon, la mora no rechaza ni frena el estudio: sigue la evaluación normal, aunque resta puntos y no cuenta como «sin moras». El canon es sin administración ni servicios. Se escribe como fracción: 0,15 = 15 % del canon.',
-    ejemplo: textoEscalera,
-    nota: 'Solo aplica con DataCrédito como central principal. Es una regla de rechazo: moverlo exige autorización escrita de la Dirección de Riesgo. Debe quedar por debajo de la mora que rechaza.',
-    rige: 'a5',
-    motivo: true,
-    ...DECISION,
-  },
-  FACTOR_MORA_RECHAZO: {
-    nombre: 'Mora vigente que rechaza: desde qué parte del canon',
-    seccion: 'aprobacion',
-    sub: 'Mora vigente y reciente',
-    unidad: 'fraccion_canon',
-    queHace:
-      'Si el saldo en mora sumado supera esta parte del canon, el estudio se rechaza. Desde la mora tolerada hasta este valor, ambos inclusive, el estudio va a un analista y no puede aprobarse solo; el analista lo aprueba, lo aprueba sujeto a paz y salvo o lo rechaza, y si lo aprueba se cobra la tarifa de aprobación no automática. Se escribe como fracción: 0,30 = 30 % del canon.',
-    ejemplo: textoEscalera,
-    nota: 'Es una regla de rechazo: moverlo exige autorización escrita de la Dirección de Riesgo. Debe quedar por encima de la mora tolerada.',
-    rige: 'a5',
-    motivo: true,
-    ...DECISION,
-  },
-  MIN_OBLIGACIONES_FINANCIERAS_AL_DIA: {
-    nombre: 'Créditos financieros al día para tolerar una mora',
-    seccion: 'aprobacion',
-    sub: 'Mora vigente y reciente',
-    unidad: 'num',
-    queHace:
-      'Créditos con bancos, cooperativas o financieras, vigentes, todos al día y a nombre de la persona como deudor principal, que debe tener para que una mora vigente de sector no financiero no la rechace. Sin ellos, la mora vigente rechaza cualquiera que sea su monto.',
-    ejemplo: (v) => {
-      const n = v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA
-      const menos = n - 1
-      return menos === 0
-        ? `Con ${n}: quien no tiene ningún crédito financiero al día y tiene una mora de $50.000 en un celular se rechaza.`
-        : `Con ${n}: quien tiene ${menos === 1 ? 'un solo crédito financiero' : `${menos} créditos financieros`} al día y una mora de $50.000 en un celular se rechaza.`
-    },
-    nota: 'Es una regla de rechazo: moverlo exige autorización escrita de la Dirección de Riesgo.',
-    rige: 'a5',
-    motivo: true,
-    ...DECISION,
-  },
   DIAS_MORA_RECIENTE_RECHAZO: {
+    conA5d:
+      'solo cuentan las moras financieras, dentro de los «meses en que una mora financiera rechaza» y no de los últimos 6; las de telefonía, comercio o servicios públicos se tratan por bandas',
     nombre: 'Mora de los últimos 6 meses que rechaza: desde cuántos días',
     seccion: 'aprobacion',
-    sub: 'Mora vigente y reciente',
+    sub: 'Moras que rechazan',
     unidad: 'dias',
     queHace:
       'Si en los últimos 6 meses la persona tuvo una mora de al menos estos días, el estudio se rechaza sin importar el puntaje. La central reporta la mora por tramos (30, 60, 90 o 120 días); en 30, cualquier mora reportada rechaza.',
-    excepciones: [
-      'Reglas de mora vigente de bajo monto encendidas → esta regla no cuenta la mora vigente que esas reglas toleran o mandan a un analista; cualquier otra mora de los últimos 6 meses sigue rechazando.',
-    ],
     ejemplo: (v) =>
       v.DIAS_MORA_RECIENTE_RECHAZO === 30
         ? 'Con 30: una mora de 30 días hace 4 meses rechaza el estudio.'
         : `Con ${v.DIAS_MORA_RECIENTE_RECHAZO}: una mora de 30 días hace 4 meses no rechaza (sigue restando puntos); una de ${v.DIAS_MORA_RECIENTE_RECHAZO} días sí.`,
     rige: 'siempre',
     opciones: [30, 60, 90, 120],
-    nota: 'La política vigente la fija en 30, también con las reglas de mora vigente de bajo monto. Solo aplica con DataCrédito: TransUnion no informa la mora mes a mes. Moverlo exige autorización escrita de la Dirección de Riesgo.',
+    nota: 'Esta regla solo aplica con DataCrédito: TransUnion no informa la mora mes a mes. Moverlo exige autorización escrita de la Dirección de Riesgo.',
     motivo: true,
     ...DECISION,
   },
@@ -332,7 +741,7 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Paquete de reglas',
     unidad: 'onoff',
     queHace: 'Encendido: el ingreso estimado se ajusta aparte para el canon y para las deudas, el coarrendatario suma puntos e ingreso, y a quien casi aprueba se le ofrece presentar uno («Está cerca»). Apagado: se decide como antes.',
-    nota: 'No se puede apagar mientras estén encendidas las reglas de capacidad de pago (Adenda 4).',
+    nota: 'No se puede apagar mientras estén encendidas las reglas de capacidad de pago (Adenda 4) o la Adenda 5 definitiva.',
     rige: 'siempre',
     motivo: true,
     ...DECISION,
@@ -403,6 +812,7 @@ export const META: Record<string, MetaParametro> = {
 
   // ── Coarrendatarios ───────────────────────────────────────────────────────
   PUNTAJE_MINIMO_TITULAR_PARA_COARRENDATARIO: {
+    saleConA5d: 'el segundo firmante se pide desde el «piso para pedir segundo firmante»',
     nombre: 'Puntaje mínimo para ofrecer coarrendatario',
     seccion: 'coarrendatarios',
     sub: 'Cuándo se pide',
@@ -418,6 +828,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   PUNTAJE_PISO_COARRENDATARIO: {
+    saleConA5d: 'lo reemplaza el «piso para pedir segundo firmante», que vale para cualquier causa',
     nombre: 'Puntaje mínimo para exigir coarrendatario',
     seccion: 'coarrendatarios',
     sub: 'Cuándo se pide',
@@ -432,6 +843,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   VIGENCIA_CONDICION_COARRENDATARIO_DIAS: {
+    conA5d: 'es el plazo para presentar el segundo firmante; vencido sin uno válido, el estudio se rechaza',
     nombre: 'Plazo para presentar el coarrendatario',
     seccion: 'coarrendatarios',
     sub: 'Cuándo se pide',
@@ -445,6 +857,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   HORAS_ESPERA_AUTORIZACION: {
+    conA5d: 'la espera sigue igual y vale para las dos personas del estudio',
     nombre: 'Espera a que autorice el coarrendatario',
     seccion: 'coarrendatarios',
     sub: 'Cuándo se pide',
@@ -456,6 +869,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   PUNTAJE_MINIMO_COARRENDATARIO: {
+    conA5d: 'es el puntaje mínimo del segundo firmante, que además no puede tener ninguna causa de rechazo; no se le exigen el puntaje mínimo en la central para ir sin segundo firmante ni historial financiero',
     nombre: 'Puntaje mínimo para que un coarrendatario cuente',
     seccion: 'coarrendatarios',
     sub: 'Cuánto aporta',
@@ -465,6 +879,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   BONO_COARRENDATARIO_70_79: {
+    conA5d: 'se suman al puntaje del titular; el estudio se aprueba si con ellos llega al «puntaje para aprobar»',
     nombre: 'Puntos que suma un coarrendatario de 70 a 79',
     seccion: 'coarrendatarios',
     sub: 'Cuánto aporta',
@@ -476,6 +891,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   BONO_COARRENDATARIO_80_89: {
+    conA5d: 'se suman al puntaje del titular; el estudio se aprueba si con ellos llega al «puntaje para aprobar»',
     nombre: 'Puntos que suma un coarrendatario de 80 a 89',
     seccion: 'coarrendatarios',
     sub: 'Cuánto aporta',
@@ -487,6 +903,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   BONO_COARRENDATARIO_90_100: {
+    conA5d: 'se suman al puntaje del titular; el estudio se aprueba si con ellos llega al «puntaje para aprobar»',
     nombre: 'Puntos que suma un coarrendatario de 90 a 100',
     seccion: 'coarrendatarios',
     sub: 'Cuánto aporta',
@@ -498,6 +915,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   INGRESO_COARRENDATARIO_COMPUTABLE: {
+    conA5d: 'el ingreso del segundo firmante solo cuenta para el endeudamiento, y solo si lo mejora; no aumenta el canon máximo',
     nombre: 'Parte del ingreso del coarrendatario que se suma',
     seccion: 'coarrendatarios',
     sub: 'Cuánto aporta',
@@ -508,6 +926,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_COARRENDATARIO: {
+    saleConA5d: 'un solicitante sin historial sigue las mismas reglas que los demás, y el segundo firmante se mide con el puntaje mínimo para que un coarrendatario cuente',
     nombre: 'Puntaje del coarrendatario para un solicitante sin historial',
     seccion: 'coarrendatarios',
     sub: 'Solicitantes sin historial',
@@ -532,7 +951,7 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Paquete de reglas',
     unidad: 'onoff',
     queHace: 'Encendido: sin ingreso comprobado con documentos, un endeudamiento alto o un canon alto frente al ingreso ya no rechazan solos (van a un analista o piden coarrendatario) y el endeudamiento se puntúa por cómo paga la persona. Apagado: se decide como antes.',
-    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) encendidas, y no se puede apagar mientras estén encendidas las reglas de mora vigente de bajo monto (Adenda 5).',
+    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) encendidas. No se puede apagar mientras esté encendida la Adenda 5 definitiva.',
     rige: 'siempre',
     motivo: true,
     ...DECISION,
@@ -552,10 +971,7 @@ export const META: Record<string, MetaParametro> = {
     seccion: 'capacidad',
     sub: 'Quién es buen pagador',
     unidad: 'meses',
-    queHace:
-      'Meses hacia atrás sin ninguna mora de más de 30 días que se exigen para contar como buen pagador. Con las reglas de mora vigente de bajo monto encendidas, es también la ventana en la que no puede haber mora en ningún crédito financiero para que una mora vigente no financiera no rechace. Solo 6 o 12.',
-    nota: 'Moverlo cambia a la vez quién es buen pagador y la condición de las moras vigentes de bajo monto.',
-    // Las reglas de mora vigente de bajo monto exigen las de capacidad de pago: 'a4' cubre las dos.
+    queHace: 'Meses hacia atrás sin ninguna mora de más de 30 días que se exigen para contar como buen pagador. Solo 6 o 12.',
     rige: 'a4',
     opciones: [6, 12],
     ...DECISION,
@@ -657,24 +1073,26 @@ export const META: Record<string, MetaParametro> = {
     rige: 'siempre',
   },
   TARIFA_VIA_AUTOMATICA: {
+    saleConA5d: 'la reemplaza la «tarifa mensual única»',
     nombre: 'Tarifa mensual: aprobación automática',
     seccion: 'precios',
     sub: 'Tarifa mensual de la fianza',
     unidad: 'pct',
     queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza si el estudio se aprueba solo (también con coarrendatario) y en otro caso.',
     excepciones: [
-      'Un analista lo aprueba sin condiciones y solo lo frenaron la capacidad de pago o la identidad (no si también lo frenó una mora vigente de bajo monto) → también se cobra esta tarifa.',
+      'Un analista lo aprueba sin condiciones y solo lo frenaron la capacidad de pago o la identidad → también se cobra esta tarifa.',
     ],
     etiquetaExcepciones: ['otro caso', 'otros casos'],
     ejemplo: (v) => tarifaEjemplo(v.TARIFA_VIA_AUTOMATICA, v.TARIFA_IVA),
     rige: 'siempre',
   },
   TARIFA_VIA_NO_AUTOMATICA: {
+    saleConA5d: 'la reemplaza la «tarifa mensual única»',
     nombre: 'Tarifa mensual: aprobación no automática',
     seccion: 'precios',
     sub: 'Tarifa mensual de la fianza',
     unidad: 'pct',
-    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza en las demás aprobaciones: de un analista por otros motivos (incluida la mora vigente de bajo monto que fue a revisión, con o sin paz y salvo), con una condición adicional o de la Gerencia General sobre el tope.',
+    queHace: 'Porcentaje del canon, más IVA, que se cobra cada mes por la fianza en las demás aprobaciones: de un analista por otros motivos, con una condición adicional o de la Gerencia General sobre el tope.',
     ejemplo: (v) => tarifaEjemplo(v.TARIFA_VIA_NO_AUTOMATICA, v.TARIFA_IVA),
     rige: 'siempre',
   },
@@ -742,17 +1160,6 @@ export const META: Record<string, MetaParametro> = {
     nota: 'Acortarlo aplica también a los estudios ya creados: los que ya pasen el plazo nuevo sin la autorización del solicitante se cierran en la siguiente revisión automática (cada hora). Alargarlo no reabre los cerrados.',
     rige: 'a4',
   },
-  DIAS_PLAZO_PAZ_Y_SALVO: {
-    nombre: 'Plazo para acreditar el paz y salvo',
-    seccion: 'plazos',
-    sub: 'Plazos',
-    unidad: 'dias',
-    queHace:
-      'Días calendario que tiene el candidato para acreditar el paz y salvo de una mora cuando el analista aprueba el estudio sujeto a ese requisito; mientras tanto no se puede crear el contrato. Vencido sin acreditarlo, el estudio se cierra como no aprobado, salvo la excepción.',
-    excepciones: ['El candidato cargó el documento a tiempo y nadie lo ha revisado → decide un analista.'],
-    nota: 'Debe quedar por debajo de los días que vale el certificado de riesgo. Aplica a los requisitos que se exijan desde el cambio: los ya exigidos conservan su fecha.',
-    rige: 'a5',
-  },
   VIGENCIA_CRC_DIAS: {
     nombre: 'Días que vale el certificado de riesgo',
     seccion: 'plazos',
@@ -818,6 +1225,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   TOLERANCIA_CANON: {
+    saleConA5d: 'en lugar del margen, un canon igual o menor al aprobado no se reevalúa y uno mayor se reevalúa sin cobro mientras el reporte de la central esté vigente',
     nombre: 'Cuánto puede subir el canon sin nueva evaluación',
     seccion: 'contratos',
     sub: 'Topes de canon',
@@ -828,6 +1236,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   TOPE_CANON_INGRESO_RECALCULO: {
+    saleConA5d: 'el canon máximo lo fija la «parte del ingreso que puede ser canon»',
     nombre: 'Peso máximo del canon sobre el ingreso al subirlo',
     seccion: 'contratos',
     sub: 'Topes de canon',
@@ -968,6 +1377,9 @@ export const META: Record<string, MetaParametro> = {
     queHace: 'Al reportarse una mora sobre un contrato migrado, se le piden a la inmobiliaria los datos que no se exigieron al migrar: celular y correo del arrendatario, coarrendatarios, copia del contrato firmado e historial de pagos. Tiene estos días hábiles para entregarlos. Cada lote conserva el plazo de su acta.',
     rige: 'siempre',
   },
+
+  // La Adenda 5 definitiva va al final: su grupo cierra el menú.
+  ...META_A5D,
 }
 
 function tarifaEjemplo(pct: number, iva: number): string {
@@ -975,22 +1387,47 @@ function tarifaEjemplo(pct: number, iva: number): string {
   return `Con canon de $2.000.000: ${pesos(base)} más IVA (${pesos(base * (1 + iva / 100))}) al mes.`
 }
 
+/**
+ * Valores de reglas reemplazadas que ya no deciden nada. Si un API anterior
+ * los sigue listando, la pantalla no los muestra (ni siquiera en «Otros»,
+ * donde saldrían con su clave y editables): la escalera de mora vigente y el
+ * paz y salvo de la Adenda 5 anterior, que reemplazó la Adenda 5 definitiva.
+ * MIN_OBLIGACIONES_FINANCIERAS_AL_DIA no está: la definitiva lo reutiliza.
+ */
+const RETIRADOS = new Set(['ADENDA5', 'FACTOR_MORA_TOLERADA', 'FACTOR_MORA_RECHAZO', 'DIAS_PLAZO_PAZ_Y_SALVO'])
+export const seMuestra = (p: { clave: string }) => !RETIRADOS.has(p.clave)
+
 export const metaDe = (clave: string): MetaParametro =>
   META[clave] ?? { nombre: clave, seccion: 'otros', unidad: 'num', queHace: '', rige: 'siempre' }
 export const nombreDe = (clave: string) => metaDe(clave).nombre
 
+/** Las excepciones con los valores vigentes (las que los citan se calculan). */
+export const excepcionesDe = (m: Pick<MetaParametro, 'excepciones'>, v: Valores): string[] =>
+  typeof m.excepciones === 'function' ? m.excepciones(v) : (m.excepciones ?? [])
+
 /** El resumen con sus excepciones en un solo texto (diálogo de edición y búsqueda). */
-export const textoCompleto = (m: MetaParametro) =>
-  m.excepciones?.length ? `${m.queHace} ${m.excepciones.join(' ')}` : m.queHace
+export function textoCompleto(m: MetaParametro, v: Valores): string {
+  const e = excepcionesDe(m, v)
+  return e.length ? `${m.queHace} ${e.join(' ')}` : m.queHace
+}
 
 // El orden de META es el de la pantalla (subtemas incluidos), no el del API.
 const ORDEN = Object.keys(META)
 const posicion = (clave: string) => (ORDEN.includes(clave) ? ORDEN.indexOf(clave) : ORDEN.length)
 export const porOrden = (a: { clave: string }, b: { clave: string }) => posicion(a.clave) - posicion(b.clave)
 
-/** ¿Cambia algo hoy, con los paquetes de reglas como están? */
-export function rigeHoy(rige: Rige, v: Valores): boolean {
-  switch (rige) {
+/** ¿Está encendida la Adenda 5 definitiva? */
+export const a5dEncendida = (v: Valores) => v.ADENDA5_DEF === 1
+/** ¿El API ya trae la Adenda 5 definitiva? Uno anterior no la lista: entonces sus notas no se muestran. */
+export const a5dDisponible = (v: Valores) => typeof v.ADENDA5_DEF === 'number'
+
+/**
+ * ¿Cambia algo hoy, con los paquetes de reglas como están? Lo que la Adenda 5
+ * definitiva retira deja de aplicar al encenderla.
+ */
+export function rigeHoy(m: Pick<MetaParametro, 'rige' | 'saleConA5d'>, v: Valores): boolean {
+  if (m.saleConA5d && a5dEncendida(v)) return false
+  switch (m.rige) {
     case 'v2':
       return v.ADENDA3_V2 === 1
     case 'sin_v2':
@@ -999,8 +1436,8 @@ export function rigeHoy(rige: Rige, v: Valores): boolean {
       return v.ADENDA4 === 1
     case 'v2_a4':
       return v.ADENDA3_V2 === 1 && v.ADENDA4 === 1
-    case 'a5':
-      return v.ADENDA5 === 1
+    case 'a5d':
+      return a5dEncendida(v)
     case 'nunca':
       return false
     default:
@@ -1017,8 +1454,6 @@ export function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'e
       return `$${v}`
     case 'pct':
       return `${v} %`
-    case 'fraccion_canon':
-      return `${fmt(n * 100)} % del canon`
     case 'puntos':
       return `${v} pts`
     case 'horas':
@@ -1033,6 +1468,10 @@ export function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'e
       return `${v} ${n === 1 ? 'vez' : 'veces'}`
     case 'consultas':
       return `${v} ${n === 1 ? 'consulta' : 'consultas'}`
+    case 'obligaciones':
+      return `${v} ${n === 1 ? 'obligación' : 'obligaciones'}`
+    case 'fraccion':
+      return `${fraccion(n)} (${fmt(n * 100)} %)`
     case 'factor':
       return `×${v}`
     case 'onoff':
@@ -1058,3 +1497,41 @@ export const humanizar = (texto: string) =>
     .replace(/\b[A-Z][A-Z0-9]+(?:_[A-Z0-9]+)+\b/g, (c) => (META[c] ? `«${META[c].nombre.toLowerCase()}»` : c))
     .replace(/\s*\(AAAAMM[^)]*\)/g, '')
     .replace(new RegExp(`\\b${MES_APAGADO}\\b`, 'g'), '«Sin activar»')
+
+/**
+ * Las reglas de coherencia del API para la Adenda 5 definitiva, antes de
+ * enviar: así el error sale al escribir y no después de guardar. El API las
+ * vuelve a validar (src/lib/calibracion.ts, validarCoherencia). Devuelve el
+ * motivo, o null si el valor nuevo cuadra con los demás.
+ */
+export function coherenciaA5d(clave: string, nuevo: number, v: Valores): string | null {
+  const c: Valores = { ...v, [clave]: nuevo }
+  if (esClaveAncla(clave)) {
+    const t = anclajes(c)
+    if (!t) return null
+    for (let i = 1; i < t.length; i++) {
+      if (t[i].score <= t[i - 1].score)
+        return `Los anclajes deben crecer: el puntaje de la central del anclaje ${i + 1} (${fmt(t[i].score, true)}) debe quedar por encima del puntaje del anclaje ${i} (${fmt(t[i - 1].score, true)}). Para correr la tabla hacia arriba, mueva primero los anclajes altos; hacia abajo, primero los bajos.`
+      if (t[i].puntos <= t[i - 1].puntos)
+        return `Los anclajes deben crecer: los puntos del anclaje ${i + 1} (${fmt(t[i].puntos)}) deben quedar por encima de los del anclaje ${i} (${fmt(t[i - 1].puntos)}).`
+    }
+    return null
+  }
+  const parejas: [bajo: string, alto: string][] = [
+    ['BANDA_TELCO_TOLERADA', 'BANDA_TELCO_RECHAZO'],
+    ['BANDA_REAL_TOLERADA', 'BANDA_REAL_RECHAZO'],
+    ['PISO_SEGUNDO_FIRMANTE', 'UMBRAL_APROBADO'],
+  ]
+  for (const [bajo, alto] of parejas) {
+    if ((clave === bajo || clave === alto) && typeof c[bajo] === 'number' && typeof c[alto] === 'number' && c[bajo] >= c[alto]) {
+      // Las bandas, solo como fracción («0,40»): con el porcentaje entre paréntesis el mensaje quedaba con paréntesis dobles.
+      const d = (k: string) => (META[k].unidad === 'fraccion' ? fraccion(c[k]) : conUnidad(c[k], { clave: k, entero: true }))
+      return `«${META[bajo].nombre}» (${d(bajo)}) debe quedar por debajo de «${META[alto].nombre.toLowerCase()}» (${d(alto)}).`
+    }
+  }
+  if (clave === 'ADENDA5_DEF' && nuevo === 1 && (c.ADENDA3_V2 !== 1 || c.ADENDA4 !== 1))
+    return 'La Adenda 5 definitiva se enciende sobre las reglas de coarrendatarios e ingreso (Adenda 3) y las de capacidad de pago (Adenda 4): encienda primero esas.'
+  if ((clave === 'ADENDA3_V2' || clave === 'ADENDA4') && nuevo !== 1 && c.ADENDA5_DEF === 1)
+    return 'No se puede apagar mientras esté encendida la Adenda 5 definitiva: apague primero esa.'
+  return null
+}

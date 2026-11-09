@@ -16,7 +16,20 @@ import { IconAlertTriangle, IconCheck, IconLoader, IconLock } from '@/components
 import { cn } from '@/lib/utils'
 import { CambioItem } from './Historial'
 import { EscalaPuntaje, ESCALA_CLAVES } from './EscalaDecision'
-import { conUnidad, fmt, humanizar, MES_APAGADO, metaDe, rigeHoy, textoCompleto, type Valores } from './parametros'
+import { TablaAnclajes } from './Adenda5'
+import {
+  a5dDisponible,
+  a5dEncendida,
+  coherenciaA5d,
+  conUnidad,
+  esClaveAncla,
+  humanizar,
+  MES_APAGADO,
+  metaDe,
+  rigeHoy,
+  textoCompleto,
+  type Valores,
+} from './parametros'
 
 interface Props {
   p: IParametroCalibracion
@@ -47,26 +60,35 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
 
   const fijo = p.min === p.max
   const soloLectura = fijo || p.editable === false
-  const exigeMotivo = !!meta.motivo
+  // El API dice cuáles exigen motivo; un API anterior no lo manda y vale lo de esta pantalla.
+  const exigeMotivo = p.exige_motivo ?? !!meta.motivo
   const nuevo = Number(valor)
   const valido = valor.trim() !== '' && Number.isFinite(nuevo)
   const cambiado = valido && nuevo !== p.valor
   const anteriores = historial.filter((h) => h.clave === p.clave).slice(0, 5)
-  const aplicaHoy = rigeHoy(meta.rige, valores)
+  const aplicaHoy = rigeHoy(meta, valores)
+  const a5d = a5dEncendida(valores)
+  const notasA5d = a5dDisponible(valores)
+  // Por qué no aplica hoy: la Adenda 5 apagada (lo nuevo) o encendida (lo que retira), o la nota de siempre.
+  const a5dPendiente = meta.rige === 'a5d' && !a5d
+  const porQueNoAplica =
+    a5dPendiente
+      ? 'Aplica al encender la Adenda 5 definitiva: hoy no cambia ningún resultado.'
+      : meta.saleConA5d && a5d
+        ? `Dejó de aplicar con la Adenda 5 definitiva: ${meta.saleConA5d}.`
+        : `Hoy no cambia ningún resultado${meta.notaRige ? `: ${meta.notaRige}` : ''}.`
 
   function validar(): string | null {
     if (!valido)
       return unidad === 'mes' ? 'Elija un mes, o «Dejar sin activar».' : 'Escriba solo el número, sin puntos de miles (por ejemplo 3500000).'
-    // La fracción del canon se escribe como fracción (0,15), aunque se lea «15 % del canon»:
-    // quien escribe el porcentaje (15) no debe leer que 15 está dentro del rango.
-    if (unidad === 'fraccion_canon' && (nuevo < p.min || nuevo > p.max))
-      return nuevo > p.max && nuevo <= 100
-        ? `Escríbalo como fracción: ${fmt(nuevo / 100)} = ${fmt(nuevo)} % del canon.`
-        : `Escríbalo como fracción, de ${fmt(p.min)} a ${fmt(p.max)} (0,15 = 15 % del canon).`
+    // Resta puntos: el signo menos se olvida fácil.
+    if (p.clave === 'PENAL_REAL_TOLERADA' && nuevo > 0) return 'Escriba el número con el signo menos (por ejemplo -5): estos puntos se restan.'
     if (nuevo < p.min || nuevo > p.max) return `Debe estar entre ${conUnidad(p.min, p)} y ${conUnidad(p.max, p)}.`
     if (p.entero && !Number.isInteger(nuevo)) return 'Debe ser un número entero.'
     if (unidad === 'mes' && nuevo < MES_APAGADO && (nuevo % 100 < 1 || nuevo % 100 > 12)) return 'Elija un mes válido.'
     if (meta.opciones && !meta.opciones.includes(nuevo)) return `Elija ${meta.opciones.map((o) => conUnidad(o, p)).join(', ')}.`
+    const incoherente = coherenciaA5d(p.clave, nuevo, valores)
+    if (incoherente) return incoherente
     if (exigeMotivo && !motivo.trim()) return 'Escriba el motivo: este cambio lo exige.'
     return null
   }
@@ -89,21 +111,46 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
   }
 
   const accion = unidad === 'onoff' ? (nuevo === 1 ? 'Encender' : 'Apagar') : 'Guardar cambio'
+  // La confirmación no puede decir «desde ya» de un valor que hoy no decide nada.
+  const cuandoAplica = aplicaHoy
+    ? 'Aplica desde ya a lo que se procese de aquí en adelante.'
+    : a5dPendiente
+      ? 'Queda guardado. Aplica cuando se encienda la Adenda 5 definitiva.'
+      : 'Queda guardado para cuando aplique: hoy no cambia ningún resultado.'
+  // Hasta que la plataforma tenga completo el motor nuevo, el API manda el interruptor fijo en apagado.
+  const a5dNoDisponible = p.clave === 'ADENDA5_DEF' && fijo && p.valor !== 1
+  const bloqueo = a5dNoDisponible
+    ? 'Todavía no se puede encender: falta completar el motor nuevo de la Adenda 5 definitiva.'
+    : !fijo
+      ? 'Solo la Gerencia General puede cambiar este valor.'
+      : meta.rige === 'nunca'
+        ? 'Este valor está fijo: ya no se usa y no se puede cambiar.'
+        : 'Este valor está fijo: no se puede cambiar desde este panel.'
 
   return (
     <Modal isOpen onClose={guardando ? () => {} : onClose} title={meta.nombre} size="lg">
       <div className="space-y-4 text-sm">
-        <p className="text-gray-700">{textoCompleto(meta) || humanizar(p.descripcion)}</p>
+        <p className="text-gray-700">{textoCompleto(meta, valores) || humanizar(p.descripcion)}</p>
         {meta.ejemplo?.(valores) && <p className="text-gray-600">{meta.ejemplo(valores)}</p>}
         {meta.nota && <p className="text-gray-600">{meta.nota}</p>}
+        {notasA5d && meta.saleConA5d && !a5d && (
+          <p className="text-gray-600">
+            <span className="font-semibold">Deja de aplicar con la Adenda 5 definitiva:</span> {meta.saleConA5d}.
+          </p>
+        )}
+        {notasA5d && meta.conA5d && (
+          <p className="text-gray-600">
+            <span className="font-semibold">Con la Adenda 5 definitiva:</span> {meta.conA5d}.
+          </p>
+        )}
         {aplicaHoy && meta.notaRige && (
           <p className="text-gray-600">
             <span className="font-semibold">Cuándo aplica:</span> {meta.notaRige}.
           </p>
         )}
-        {!aplicaHoy && !fijo && (
+        {!aplicaHoy && (!fijo || meta.rige === 'a5d') && (
           <p className="rounded-lg bg-gray-100 p-3 text-xs text-gray-700">
-            Hoy no cambia ningún resultado{meta.notaRige ? `: ${meta.notaRige}` : ''}.
+            {porQueNoAplica}
             {!soloLectura && ' Se puede dejar listo para cuando aplique.'}
           </p>
         )}
@@ -223,20 +270,28 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                 <p id={`rango-${p.clave}`} className="mt-1 text-xs text-gray-600">
                   {unidad === 'mes'
                     ? 'Primer mes que cobra la plataforma (AAAA-MM, por ejemplo 2026-11).'
-                    : unidad === 'fraccion_canon'
-                      ? `Escríbalo como fracción, de ${fmt(p.min)} a ${fmt(p.max)} (0,15 = 15 % del canon).`
-                      : `Permitido: de ${conUnidad(p.min, p)} a ${conUnidad(p.max, p)}.`}
-                  {unidad === 'cop' && valido && <span className="font-semibold text-gray-700"> Quedaría en {conUnidad(nuevo, p)}.</span>}
+                    : `Permitido: de ${conUnidad(p.min, p)} a ${conUnidad(p.max, p)}.`}
+                  {unidad === 'fraccion' && ' Se escribe como fracción del canon: 0,20 = 20 %.'}
+                  {(unidad === 'cop' || unidad === 'fraccion') && valido && (
+                    <span className="font-semibold text-gray-700"> Quedaría en {conUnidad(nuevo, p)}.</span>
+                  )}
                 </p>
               )}
             </div>
           )}
         </div>
 
-        {!soloLectura && cambiado && ESCALA_CLAVES.includes(p.clave) && (
+        {/* Con un valor que cruza a su pareja la escala no se puede dibujar: basta el error. */}
+        {!soloLectura && cambiado && ESCALA_CLAVES.includes(p.clave) && !coherenciaA5d(p.clave, nuevo, valores) && (
           <div>
             <p className="mb-1 text-xs font-semibold text-gray-600">Así quedaría la escala</p>
             <EscalaPuntaje valores={{ ...valores, [p.clave]: nuevo }} resaltar={p.clave} />
+          </div>
+        )}
+        {esClaveAncla(p.clave) && (
+          <div>
+            <p className="mb-1 text-xs font-semibold text-gray-600">{!soloLectura && cambiado ? 'Así quedaría la tabla' : 'Así está la tabla'}</p>
+            <TablaAnclajes valores={!soloLectura && cambiado ? { ...valores, [p.clave]: nuevo } : valores} params={params} resaltar={p.clave} />
           </div>
         )}
 
@@ -261,7 +316,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
         {soloLectura ? (
           <p className="flex items-center gap-2 rounded-lg bg-gray-100 p-3 text-xs text-gray-700">
             <IconLock size={14} className="shrink-0" />
-            {fijo ? 'Este valor está fijo: ya no se usa y no se puede cambiar.' : 'Solo la Gerencia General puede cambiar este valor.'}
+            {bloqueo}
           </p>
         ) : (
           <>
@@ -282,8 +337,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
             {cambiado ? (
               <p className="rounded-lg border border-primary-200 bg-primary-50 p-3 font-medium text-gray-900">
                 Pasa de <span className="tabular-nums">{conUnidad(p.valor, p)}</span> a{' '}
-                <span className="font-bold tabular-nums text-primary-800">{conUnidad(nuevo, p)}</span>. Aplica desde ya a lo que se procese de aquí en
-                adelante.
+                <span className="font-bold tabular-nums text-primary-800">{conUnidad(nuevo, p)}</span>. {cuandoAplica}
               </p>
             ) : (
               valido && tocado && <p className="text-xs text-gray-600">El valor nuevo es igual al actual: no hay nada que guardar.</p>
@@ -337,8 +391,6 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
 /** La unidad al lado del campo: «pts», «%», «días»… ($ va antes). */
 function sufijo(unidad: string, n: number): string {
   const uno = n === 1
-  // La fracción se escribe como tal (0,15) y al lado se lee en porcentaje del canon.
-  if (unidad === 'fraccion_canon') return Number.isFinite(n) ? `= ${fmt(n * 100)} % del canon` : '% del canon'
   return (
     {
       pct: '%',
@@ -349,6 +401,8 @@ function sufijo(unidad: string, n: number): string {
       meses: uno ? 'mes' : 'meses',
       veces: 'veces',
       consultas: uno ? 'consulta' : 'consultas',
+      obligaciones: uno ? 'obligación' : 'obligaciones',
+      fraccion: 'del canon',
     } as Record<string, string>
   )[unidad] ?? ''
 }

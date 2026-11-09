@@ -25,23 +25,6 @@ import type {
   IPuntajeRevisionManual,
   EstudioFiltro,
 } from '@/types/expediente'
-import type { IAcreditarPazYSalvoInput, IMoraVigente } from '@/types/estudio'
-
-/** Lo que el analista resuelve al aprobar una revisión manual (aprobar o aprobar sujeto a paz y salvo). */
-export interface IRevisionManualInput {
-  /** Sin lista de motivos (API anterior). Con `motivos`, el API arma el fundamento. */
-  fundamento?: string
-  motivos?: string[]
-  motivo_detalle?: string
-  documentos_consultados: string[]
-  evaluacion: IEvaluacionRevisionManual
-  /** Política §15: sin historial en ninguna central, el analista verificó una fuente de capacidad. */
-  fuente_capacidad_verificada?: boolean
-  /** Adenda 4 §9: aprobó exigiendo algo más (tarifa no automática). */
-  condicion_adicional?: boolean
-  /** Biometría «no coincide»: cómo verificó el analista la identidad (la API la exige). */
-  nota_identidad?: string
-}
 
 // ============================================
 // Helpers
@@ -660,7 +643,20 @@ class ExpedienteService {
    */
   async aprobarCondicionado(
     expedienteId: string,
-    revision: IRevisionManualInput,
+    revision: {
+      /** Sin lista de motivos (API anterior). Con `motivos`, el API arma el fundamento. */
+      fundamento?: string
+      motivos?: string[]
+      motivo_detalle?: string
+      documentos_consultados: string[]
+      evaluacion: IEvaluacionRevisionManual
+      /** Política §15: sin historial en ninguna central, el analista verificó una fuente de capacidad. */
+      fuente_capacidad_verificada?: boolean
+      /** Adenda 4 §9: aprobó exigiendo algo más (tarifa no automática). */
+      condicion_adicional?: boolean
+      /** Biometría «no coincide»: cómo verificó el analista la identidad (la API la exige). */
+      nota_identidad?: string
+    },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
     expediente: { id: string; numero: string; estado: 'aprobado' }
@@ -674,59 +670,6 @@ class ExpedienteService {
       contrato_id: string | null
       puntaje_revision_manual?: IPuntajeRevisionManual | null
     }>(`/expedientes/${expedienteId}/aprobar-condicionado`, { ...revision, ...(datosContrato ?? {}) })
-    return response.data
-  }
-
-  /**
-   * Adenda 5 §4 y §7 (solo Cofianza): la escalera de mora vigente del titular
-   * (tramo, razón, obligaciones en mora con su marca de reclamo) y el estado del
-   * paz y salvo. Sin escalera evaluada, `tramo` llega null o ausente.
-   */
-  async moraVigente(expedienteId: string): Promise<IMoraVigente> {
-    const response = await apiClient.get<IMoraVigente>(`/expedientes/${expedienteId}/mora-vigente`)
-    return response.data
-  }
-
-  /**
-   * Adenda 5 §7: el analista aprueba sujeto a paz y salvo de las obligaciones
-   * elegidas (sus `ref`). Mismas validaciones que aprobar; el estudio NO pasa a
-   * Aprobado: queda pendiente del candidato hasta acreditarlo o vencer el plazo.
-   * 400 PAZ_Y_SALVO_NO_APLICA si el estudio no está en el tramo de revisión.
-   */
-  async aprobarSujetoPazYSalvo(
-    expedienteId: string,
-    revision: IRevisionManualInput & { obligaciones: string[] },
-  ): Promise<{
-    expediente: { id: string; numero: string; estado: 'condicionado' }
-    paz_y_salvo: { vence_en: string; dias_plazo: number; obligaciones: string[] }
-  }> {
-    const response = await apiClient.post<{
-      expediente: { id: string; numero: string; estado: 'condicionado' }
-      paz_y_salvo: { vence_en: string; dias_plazo: number; obligaciones: string[] }
-    }>(`/expedientes/${expedienteId}/aprobar-sujeto-paz-y-salvo`, revision)
-    return response.data
-  }
-
-  /**
-   * Adenda 5 §7: Cofianza acredita el paz y salvo (con el documento que cargó el
-   * candidato o declarando que una nueva consulta muestra la obligación al día)
-   * y la aprobación que quedó en espera se consuma: el estudio pasa a Aprobado.
-   */
-  async acreditarPazYSalvo(
-    expedienteId: string,
-    body: IAcreditarPazYSalvoInput,
-  ): Promise<{
-    expediente: { id: string; numero: string; estado: 'aprobado' }
-    contrato_id: string | null
-    puntaje_revision_manual: IPuntajeRevisionManual | null
-    paz_y_salvo: { via: 'documento' | 'consulta'; acreditado_en: string }
-  }> {
-    const response = await apiClient.post<{
-      expediente: { id: string; numero: string; estado: 'aprobado' }
-      contrato_id: string | null
-      puntaje_revision_manual: IPuntajeRevisionManual | null
-      paz_y_salvo: { via: 'documento' | 'consulta'; acreditado_en: string }
-    }>(`/expedientes/${expedienteId}/paz-y-salvo/acreditar`, body)
     return response.data
   }
 

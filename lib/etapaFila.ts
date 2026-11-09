@@ -68,13 +68,11 @@ export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | unde
 
 /**
  * U9: «Tomar» solo cuando el turno es de Cofianza: la decisión sin condición de
- * coarrendatario ni paz y salvo pendiente (Adenda 5 §7: espera al candidato,
- * salvo que ya lo haya cargado y falte acreditarlo), la consulta fallida y la
- * que no arrancó. En las demás no hay nada que un analista deba tomar.
+ * coarrendatario, la consulta fallida y la que no arrancó. En las demás no hay
+ * nada que un analista deba tomar.
  */
 export function tomarDisponible(e: IExpediente, etapa: EtapaEstudio = etapaDeFila(e)): boolean {
-  const ev = e.estudio_vigente
-  if (etapa === 'decision') return !ev?.condicion_coarrendatario && (!ev?.paz_y_salvo_vence_en || !!ev.paz_y_salvo_cargado)
+  if (etapa === 'decision') return !e.estudio_vigente?.condicion_coarrendatario
   return etapa === 'fallida' || etapa === 'sin_ejecutar'
 }
 

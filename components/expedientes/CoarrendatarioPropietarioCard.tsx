@@ -47,11 +47,6 @@ interface CoarrendatarioPropietarioCardProps {
    * expediente" sobre un estado que ya no existe (400 al pulsarlo).
    */
   onEstudioCompletado?: () => void
-  /**
-   * Adenda 5 §7: el estudio espera el paz y salvo del candidato. El formulario lo
-   * dice sin nombrarlo (§10): un coarrendatario no reemplaza ese requisito.
-   */
-  requisitoPendiente?: boolean
   /** Aprobado con la condición de sumar un coarrendatario: invitarlo es lo que falta (botón principal). */
   conCondicion?: boolean
 }
@@ -74,7 +69,6 @@ export function CoarrendatarioPropietarioCard({
   expedienteEstado,
   userRol,
   onEstudioCompletado,
-  requisitoPendiente = false,
   conCondicion = false,
 }: CoarrendatarioPropietarioCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -197,7 +191,6 @@ export function CoarrendatarioPropietarioCard({
         audience="gestor"
         aprobado={expedienteEstado === 'aprobado'}
         antesDeLaDecision={antesDeLaDecision}
-        pazYSalvoPendiente={requisitoPendiente}
         condicionGestor={conCondicion}
         onInvited={() => { fetchCoa(); fetchVentana() }}
       />

@@ -41,6 +41,11 @@ export const ESCALA_CLAVES = [
   'UMBRAL_CASCADA_APROBACION',
   'UMBRAL_SCORE_RECHAZO',
   'UMBRAL_SCORE_REVISION',
+  // Adenda 5 definitiva
+  'UMBRAL_APROBADO',
+  'PISO_SEGUNDO_FIRMANTE',
+  'SCORE_MINIMO_SOLO',
+  'VIA_RAPIDA_SCORE',
 ]
 
 function tramosPuntaje(v: Valores): Tramo[] {
@@ -177,6 +182,109 @@ function tramosScore(v: Valores): Tramo[] {
   ]
 }
 
+// ── Adenda 5 definitiva ─────────────────────────────────────────────────────
+
+/** Puntaje de la persona: rechazo bajo el piso, segundo firmante hasta el umbral, aprobada desde él. */
+function tramosA5dPuntaje(v: Valores): Tramo[] {
+  const piso = v.PISO_SEGUNDO_FIRMANTE
+  const umbral = v.UMBRAL_APROBADO
+  const t: Tramo[] = []
+  if (piso > 0) t.push({ desde: 0, hasta: piso, titulo: 'Se rechaza', detalle: 'Ningún segundo firmante lo compensa.', tono: 'rojo' })
+  t.push({
+    desde: piso,
+    hasta: umbral,
+    clave: 'PISO_SEGUNDO_FIRMANTE',
+    titulo: 'Aprobado con segundo firmante',
+    detalle: `Se aprueba cuando se presente un segundo firmante válido y el puntaje más su bono llegue a ${umbral}.`,
+    tono: 'ambar',
+  })
+  t.push({
+    desde: umbral,
+    hasta: 101,
+    clave: 'UMBRAL_APROBADO',
+    titulo: 'Aprobado',
+    detalle: `Sin segundo firmante, si además el puntaje de la central llega a ${v.SCORE_MINIMO_SOLO}, tiene historial financiero y ninguna mora en banda; si le falta algo, aprobado con segundo firmante.`,
+    tono: 'verde',
+  })
+  return t
+}
+
+/** Score de la central (el mayor, si se consultan dos): rechazo, segundo firmante, puede ir sin él y vía rápida. */
+function tramosA5dScore(v: Valores): Tramo[] {
+  const minimo = v.UMBRAL_SCORE_RECHAZO
+  const solo = Math.max(v.SCORE_MINIMO_SOLO, minimo)
+  const rapida = Math.max(v.VIA_RAPIDA_SCORE, minimo)
+  const rapidaTxt = 'Con sus obligaciones financieras al día, las moras de telefonía, televisión e internet no cuentan.'
+  const t: Tramo[] = [{ desde: SCORE_MIN, hasta: minimo, titulo: 'Se rechaza', detalle: 'Sin importar el resto.', tono: 'rojo' }]
+  if (rapida >= solo) {
+    if (solo > minimo)
+      t.push({ desde: minimo, hasta: solo, clave: 'UMBRAL_SCORE_RECHAZO', titulo: 'Pide segundo firmante', detalle: 'Aunque alcance el puntaje.', tono: 'ambar' })
+    if (rapida > solo)
+      t.push({
+        desde: solo,
+        hasta: rapida,
+        clave: solo > minimo ? 'SCORE_MINIMO_SOLO' : 'UMBRAL_SCORE_RECHAZO',
+        titulo: 'Puede ir sin segundo firmante',
+        detalle: 'Si cumple las demás condiciones.',
+        tono: 'verde',
+      })
+    t.push({
+      desde: rapida,
+      hasta: SCORE_MAX + 1,
+      clave: rapida > solo ? 'VIA_RAPIDA_SCORE' : solo > minimo ? 'SCORE_MINIMO_SOLO' : 'UMBRAL_SCORE_RECHAZO',
+      titulo: 'Puede ir sin segundo firmante, con vía rápida',
+      detalle: rapidaTxt,
+      tono: 'verde',
+    })
+  } else {
+    // La vía rápida por debajo del score para ir sin segundo firmante: descarta las moras, pero sigue pidiéndolo.
+    if (rapida > minimo)
+      t.push({ desde: minimo, hasta: rapida, clave: 'UMBRAL_SCORE_RECHAZO', titulo: 'Pide segundo firmante', detalle: 'Aunque alcance el puntaje.', tono: 'ambar' })
+    t.push({
+      desde: rapida,
+      hasta: solo,
+      clave: rapida > minimo ? 'VIA_RAPIDA_SCORE' : 'UMBRAL_SCORE_RECHAZO',
+      titulo: 'Pide segundo firmante, con vía rápida',
+      detalle: rapidaTxt,
+      tono: 'ambar',
+    })
+    t.push({
+      desde: solo,
+      hasta: SCORE_MAX + 1,
+      clave: 'SCORE_MINIMO_SOLO',
+      titulo: 'Puede ir sin segundo firmante, con vía rápida',
+      detalle: 'Si cumple las demás condiciones.',
+      tono: 'verde',
+    })
+  }
+  return t
+}
+
+const CLAVES_A5D_PUNTAJE = ['UMBRAL_APROBADO', 'PISO_SEGUNDO_FIRMANTE']
+const CLAVES_A5D_SCORE = ['SCORE_MINIMO_SOLO', 'VIA_RAPIDA_SCORE']
+
+/** La escala de la Adenda 5 definitiva, con sus valores (vigentes o los que aplicarán al encenderla). */
+export function EscalaA5D({ valores, onAbrir }: { valores: Valores; onAbrir: (clave: string) => void }) {
+  return (
+    <div className="space-y-8">
+      <div>
+        <Barra titulo="1. Puntaje de la persona (0 a 100)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} onAbrir={onAbrir} decimales />
+        <p className="mt-3 max-w-prose text-xs text-gray-600">
+          Antes que este puntaje mandan las reglas de rechazo (por ejemplo, una mora financiera vigente o una mora no financiera por encima de
+          la banda). Con dos personas, el titular es la de mayor puntaje entre las no rechazadas.
+        </p>
+      </div>
+      <Barra
+        titulo="2. Puntaje de la central (el mayor, si se consultan las dos)"
+        tramos={tramosA5dScore(valores)}
+        min={SCORE_MIN}
+        max={SCORE_MAX}
+        onAbrir={onAbrir}
+      />
+    </div>
+  )
+}
+
 interface BarraProps {
   titulo: string
   tramos: Tramo[]
@@ -291,6 +399,11 @@ function Barra({ titulo, tramos, min, max, resaltar, onAbrir, decimales }: Barra
 
 /** Solo la escala del umbral que se está cambiando (para previsualizar el cambio). */
 export function EscalaPuntaje({ valores, resaltar }: { valores: Valores; resaltar: string }) {
+  const a5d = valores.ADENDA5_DEF === 1
+  if (CLAVES_A5D_PUNTAJE.includes(resaltar))
+    return <Barra titulo="Puntaje de la persona (Adenda 5 definitiva)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} resaltar={resaltar} decimales />
+  if (CLAVES_A5D_SCORE.includes(resaltar) || (a5d && resaltar === 'UMBRAL_SCORE_RECHAZO'))
+    return <Barra titulo="Puntaje de la central (Adenda 5 definitiva)" tramos={tramosA5dScore(valores)} min={SCORE_MIN} max={SCORE_MAX} resaltar={resaltar} />
   if (resaltar.startsWith('UMBRAL_CASCADA_'))
     return <Barra titulo="Consulta a la segunda central" tramos={tramosCentrales(valores)} min={0} max={100} resaltar={resaltar} decimales />
   if (resaltar.startsWith('UMBRAL_SCORE_'))

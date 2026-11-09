@@ -54,7 +54,7 @@ const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
 const BOGOTA = 'America/Bogota'
 const diaBogota = (d: Date) => Date.parse(d.toLocaleDateString('en-CA', { timeZone: BOGOTA }))
 
-/** Plazo de la condición del coarrendatario o del paz y salvo, en días de calendario de Colombia. */
+/** Plazo de la condición del coarrendatario, en días de calendario de Colombia. */
 function plazo(venceEn: string): string {
   const vence = new Date(venceEn)
   const d = Math.round((diaBogota(vence) - diaBogota(new Date())) / 86_400_000)
@@ -77,14 +77,6 @@ function pastillaEtapa(e: IExpediente, etapa: EtapaEstudio, interno: boolean): {
   const c = ev?.condicion_coarrendatario
   if (etapa === 'decision' && c) {
     return { texto: `${c.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'} · ${plazo(c.vence_en)}`, tono }
-  }
-  // Adenda 5 §7 y §10: sin acreedor ni monto. Ya cargado, lo revisa Cofianza
-  // (a la inmobiliaria y al propietario sin nombrar el documento).
-  if (etapa === 'decision' && ev?.paz_y_salvo_vence_en) {
-    if (ev.paz_y_salvo_cargado) {
-      return { texto: interno ? 'Paz y salvo cargado: por acreditar' : 'Requisito cargado: lo revisa Cofianza', tono }
-    }
-    return { texto: `Requisito pendiente del candidato · ${plazo(ev.paz_y_salvo_vence_en)}`, tono }
   }
   if (etapa === 'espera_coarrendatario' && ev?.espera_coarrendatario_hasta) {
     const hasta = new Date(ev.espera_coarrendatario_hasta).toLocaleString('es-CO', {
@@ -168,18 +160,11 @@ export function datosEstadoFila(
   const conPuntaje = etapa !== 'no_aprobado' && etapa !== 'cancelado'
   const score = conPuntaje && ev?.resultado && ev.resultado !== 'pendiente' ? (ev.score ?? 0) : 0
   const c = ev?.condicion_coarrendatario
-  // Adenda 5 §7: aprobado sujeto a paz y salvo; espera al candidato, no al analista
-  // (hasta que lo carga: ahí falta que Cofianza lo acredite).
-  const pazYSalvo = ev?.paz_y_salvo_vence_en ?? null
-  const pazYSalvoCargado = !!pazYSalvo && !!ev?.paz_y_salvo_cargado
-  // Ya cargado, el turno es de Cofianza (acreditarlo), como en el detalle, aunque depende_de no lo diga aún.
-  const turnoPazYSalvo = pazYSalvoCargado && etapa === 'decision'
-  const revision = expediente.estado === 'condicionado' && (expediente.depende_de === 'cofianza' || turnoPazYSalvo)
+  const revision = expediente.estado === 'condicionado' && expediente.depende_de === 'cofianza'
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
-  const demora =
-    interno && etapa === 'decision' && !c && (!pazYSalvo || pazYSalvoCargado) ? revisionDemorada(expediente.en_revision_desde, ahora) : null
+  const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
-  const turno = turnoPazYSalvo ? 'cofianza' : etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
+  const turno = etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
   // En la espera, la etapa ya dice a quién se espera: «Esperando al prospecto» la contradecía.
   // U8: fuera de Cofianza la etapa ya dice «En revisión de Cofianza»; la pastilla de turno lo repetía.
@@ -201,8 +186,6 @@ export function datosEstadoFila(
       fechaCondicion: c ? fechaCondicion(c.vence_en) : null,
       esperaHasta: ev?.espera_coarrendatario_hasta ?? null,
       sinInmueble: !expediente.inmueble_id,
-      fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo) : null,
-      pazYSalvoCargado,
       enLista: true,
     }),
     score,
@@ -213,7 +196,6 @@ export function datosEstadoFila(
             revision,
             analista,
             sinEjecutar: etapa === 'sin_ejecutar',
-            pazYSalvoCargado,
             condicion: !!c && etapa === 'decision',
             tomadoPor: revision && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,

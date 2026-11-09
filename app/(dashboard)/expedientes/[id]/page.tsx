@@ -69,7 +69,6 @@ import { revisionDemorada } from '@/lib/etapaFila'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import { useEtapaEstudio, ETAPA_LABEL, turnoDeEtapa } from '@/hooks/useEtapaEstudio'
-import { pazYSalvoPendiente, pazYSalvoYaCargado } from '@/lib/pazYSalvo'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
@@ -224,12 +223,11 @@ function ExpedienteDetalleContenido() {
   const [reasignadoDesde, setReasignadoDesde] = useState<string | null>(null)
   const estadoExpediente = expediente?.estado
   const actualizadoEn = expediente?.updated_at
-  // Adenda 5 §7: exigir el paz y salvo no mueve el expediente (sigue en revisión),
-  // así que en revisión el titular se relee con cada carga, no solo al cambiar.
+  // En revisión la evaluación puede cambiar sin que cambien el estado ni el updated_at
+  // del estudio (p. ej. la del coarrendatario): el titular se relee con cada carga.
   const recargaEnRevision = estadoExpediente === 'condicionado' ? cargas : 0
-  // Última lectura correcta (id, estado y updated_at). Una relectura por recarga con la
-  // misma clave es nueva respecto de main: si falla, se conserva lo leído (un 429 no
-  // borra la condición del coarrendatario ni el paz y salvo).
+  // Última lectura correcta (id, estado y updated_at). Si falla una relectura por recarga
+  // con la misma clave, se conserva lo leído (un 429 no borra la condición del coarrendatario).
   const titularLeidoRef = useRef<string | null>(null)
   useEffect(() => {
     if (!estadoExpediente) return
@@ -258,7 +256,7 @@ function ExpedienteDetalleContenido() {
       })
       .catch(() => {
         if (cancel) return
-        // Relectura por recarga (mismo id, estado y updated_at): main no la hacía; se conserva lo último.
+        // Relectura por recarga (mismo id, estado y updated_at): se conserva lo último leído.
         if (titularLeidoRef.current === clave) return
         setTitular(null)
         setObsCoaRevision(null)
@@ -298,21 +296,6 @@ function ExpedienteDetalleContenido() {
   // Adenda 3 §6: aprobado con condición de coarrendatario (la API responde 409
   // a aprobarlo a mano, pedir soportes y reasignar).
   const condicionCoa = titularCondicionado?.condicion_coarrendatario ?? null
-  // Adenda 5 §7: aprobado sujeto a paz y salvo. Como la condición, espera al
-  // candidato (no al analista) y la API responde 409 a aprobarlo a mano.
-  const pazYSalvoTitular = titularCondicionado?.paz_y_salvo ?? null
-  const pazYSalvo = pazYSalvoPendiente(pazYSalvoTitular) ? pazYSalvoTitular : null
-  // Ya cargado, el turno es de Cofianza (revisarlo y acreditarlo), aunque aprobar a
-  // mano siga cerrado hasta acreditarlo. Lo dice el propio estudio, con el criterio
-  // del barrido y de la lista (paz_y_salvo_cargado), para los cinco roles: Cofianza y
-  // Gerencia reciben cuándo (cargado_en); la inmobiliaria y el propietario, solo que
-  // ya se cargó (§10). Sin petición aparte. Con ADENDA5 apagada `pazYSalvo` es null.
-  const pazYSalvoCargadoEn = pazYSalvo?.cargado_en ?? null
-  const pazYSalvoRecibido = !!pazYSalvo && pazYSalvoYaCargado(pazYSalvo)
-  // La decisión espera algo del candidato: el coarrendatario o el paz y salvo (sin cargar).
-  const esperaCandidato = !!condicionCoa || (!!pazYSalvo && !pazYSalvoRecibido)
-  // Con la condición o el paz y salvo pendiente (cargado o no) la API responde 409 a aprobar.
-  const aprobacionCerrada = !!condicionCoa || !!pazYSalvo
 
   // Decisión 2: la invitación del coarrendatario sigue en pie en revisión o
   // aprobado antes del contrato (`vigente`, la regla del API); mientras tanto
@@ -585,30 +568,23 @@ function ExpedienteDetalleContenido() {
         : expediente.estado === 'condicionado'
           ? condicionCoa
             ? condicionCoa.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
-            : // Ya cargado, lo revisa un analista: como su barra («Recibimos su paz y salvo»).
-              pazYSalvo && !pazYSalvoRecibido ? 'Pendiente de un requisito' : 'En revisión'
+            : 'En revisión'
           : undefined
       : coaFallidaVive
         ? 'Falló la consulta del coarrendatario'
         : etapa === 'decision' && condicionCoa
           ? condicionCoa.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
-          : etapa === 'decision' && pazYSalvo
-            ? pazYSalvoRecibido
-              ? // Como la lista (EstadoFila): a la inmobiliaria y al propietario sin nombrar el documento (§10).
-                isInternalRole ? 'Paz y salvo cargado: por acreditar' : 'Requisito cargado: lo revisa Cofianza'
-              : 'Requisito pendiente del candidato'
-            : etapa
+          : etapa
             ? ETAPA_LABEL[etapa]
             : undefined
   // En la espera, la franja ya dice que falta el coarrendatario: «Esperando al prospecto» la contradecía.
-  const turnoBase = etapaTurno && etapaTurno !== 'espera_coarrendatario' ? turnoDeEtapa(etapaTurno, esperaCandidato) : null
+  const turnoBase = etapaTurno && etapaTurno !== 'espera_coarrendatario' ? turnoDeEtapa(etapaTurno, !!condicionCoa) : null
   // La lista no le pone turno a la visita (como el RPC), pero a la inmobiliaria y al
   // propietario sí les toca: agendarla o marcarla como hecha. Sin esto la franja no decía de quién era.
   const turno = turnoBase ?? (!isInternalRole && etapaTurno === 'visita' ? 'gestor' : null)
   const vistaTurno = isInternalRole ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
-  // Las mismas transiciones que ofrece el modal: con condición o con el paz y salvo
-  // pendiente no se aprueba a mano (la API responde 409); no aprobarlo sí se ofrece.
-  const transicionesModal = (transiciones ?? []).filter((t) => !(aprobacionCerrada && t.estado_destino === 'aprobado'))
+  // Las mismas transiciones que ofrece el modal (con condición no se aprueba a mano).
+  const transicionesModal = (transiciones ?? []).filter((t) => !(condicionCoa && t.estado_destino === 'aprobado'))
   // Al dueño la API solo le ofrece cerrar o cancelar: el botón lo dice, y no como acción principal.
   const soloCierre = transicionesModal.every((t) => t.estado_destino === 'cerrado')
 
@@ -817,8 +793,6 @@ function ExpedienteDetalleContenido() {
           conCondicion={!!condicionCoa}
           condicionObligatoria={!!condicionCoa?.obligatoria}
           condicionDecideAnalista={!!condicionCoa?.decide_analista}
-          requisitoPendienteHasta={pazYSalvo ? fechaCondicion(pazYSalvo.vence_en) : null}
-          requisitoRecibido={pazYSalvoRecibido}
           etapa={user?.rol === 'solicitante' ? undefined : etapa}
           etiquetaActual={etiquetaEtapa}
         />
@@ -826,21 +800,19 @@ function ExpedienteDetalleContenido() {
             Como la lista: lo propio en coral con flecha; el turno de otros, en gris. */}
         {etapaTurno && user?.rol !== 'solicitante' && (() => {
           const opcionesTurno = {
-            revision: etapaTurno === 'decision' && !esperaCandidato,
+            revision: etapaTurno === 'decision' && !condicionCoa,
             analista: puedeAsignar,
             sinEjecutar: etapaTurno === 'sin_ejecutar',
-            pazYSalvoCargado: pazYSalvoRecibido,
             condicion: etapaTurno === 'decision' && !!condicionCoa,
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» y sin coral.
             tomadoPor:
-              etapaTurno === 'decision' && !esperaCandidato && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
+              etapaTurno === 'decision' && !condicionCoa && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
           }
           const propio = !!turno && turnoPropio(turno, vistaTurno, opcionesTurno)
           // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
           const demora =
-            isInternalRole && etapaTurno === 'decision' && !esperaCandidato
-              ? // Con el paz y salvo cargado, la espera de Cofianza corre desde la carga.
-                revisionDemorada(pazYSalvoCargadoEn ?? expediente.en_revision_desde, Date.now())
+            isInternalRole && etapaTurno === 'decision' && !condicionCoa
+              ? revisionDemorada(expediente.en_revision_desde, Date.now())
               : null
           // La decisión está en el Resumen: un atajo para llegar a ella desde cualquier pestaña.
           // Con la revisión tomada por otro, el atajo se conserva: un analista puede seguir decidiendo.
@@ -870,8 +842,6 @@ function ExpedienteDetalleContenido() {
                     fechaCondicion: condicionCoa ? fechaCondicion(condicionCoa.vence_en) : null,
                     esperaHasta,
                     sinInmueble: !expediente.inmueble,
-                    fechaPazYSalvo: pazYSalvo ? fechaCondicion(pazYSalvo.vence_en) : null,
-                    pazYSalvoCargado: pazYSalvoRecibido,
                     citaActiva,
                     perfilIncompleto: bloqueadoPorPerfil,
                     // Propietario directo: la API no admite coarrendatario (espera el Convenio).
@@ -901,7 +871,7 @@ function ExpedienteDetalleContenido() {
                         })
                       }}
                     >
-                      {pazYSalvoRecibido ? 'Ir al paz y salvo' : 'Ir a la decisión'}
+                      Ir a la decisión
                     </Button>
                   )}
                 </div>
@@ -1047,7 +1017,6 @@ function ExpedienteDetalleContenido() {
                   userRol={user?.rol}
                   onUpdate={fetchExpediente}
                   condicion={condicionCoa}
-                  pazYSalvoPendiente={!!pazYSalvo}
                 />
                 <ContratoSolicitanteCard expedienteId={id} expedienteEstado={expediente.estado} />
               </div>
@@ -1100,8 +1069,6 @@ function ExpedienteDetalleContenido() {
                         motivoRevision={titularCondicionado?.observaciones ?? null}
                         motivoRevisionCoarrendatario={titularCondicionado ? obsCoaRevision : null}
                         sinInmueble={!expediente.inmueble}
-                        pazYSalvo={pazYSalvo}
-                        adenda5Tramo={titularCondicionado?.adenda5_tramo ?? null}
                         onAprobado={fetchExpediente}
                       />
                       </div>
@@ -1186,7 +1153,6 @@ function ExpedienteDetalleContenido() {
                       // La ponderación puede mover el expediente sola al completar el
                       // estudio del coarrendatario: se recarga.
                       onEstudioCompletado={fetchExpediente}
-                      requisitoPendiente={!!pazYSalvo}
                       conCondicion={!!condicionCoa}
                     />
                   ),
@@ -1436,7 +1402,6 @@ function ExpedienteDetalleContenido() {
                   expedienteEstado={expediente.estado}
                   userRol={user?.rol}
                   onEstudioCompletado={fetchExpediente}
-                  requisitoPendiente={!!pazYSalvo}
                   conCondicion={!!condicionCoa}
                 />
               </>
