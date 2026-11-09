@@ -16,7 +16,35 @@ interface Factor {
   como: string
 }
 
-const DEUDAS = 'Hasta 25 %: 15 · más de 25 y hasta 35 %: 12 · más de 35 y hasta 45 %: 8 · más de 45 y hasta 55 %: 4 · más de 55 y hasta 65 %: 2'
+/** Tramos de deudas frente al ingreso (TABLA_V2 de scorecard.ts): hasta qué % y cuántos puntos. */
+const TRAMOS_DEUDAS: [hasta: number, puntos: number][] = [
+  [25, 15],
+  [35, 12],
+  [45, 8],
+  [55, 4],
+  [65, 2],
+]
+/** El motor de hoy corta en 65 % fijo (V2_DTI_MAXIMO); la Adenda 5 definitiva, en el endeudamiento máximo del panel. */
+const DTI_MAXIMO_HOY = 65
+
+/**
+ * La tabla de deudas con el último tramo terminando en `max` (el endeudamiento
+ * máximo). Si el máximo queda por debajo de un corte, la tabla termina ahí.
+ */
+function deudasHasta(max: number): string {
+  const partes: string[] = []
+  let desde = 0
+  for (const [i, [hasta, puntos]] of TRAMOS_DEUDAS.entries()) {
+    const ultimo = i === TRAMOS_DEUDAS.length - 1 || hasta >= max
+    const tope = ultimo ? max : hasta
+    partes.push(desde === 0 ? `Hasta ${fmt(tope)} %: ${puntos}` : `más de ${fmt(desde)} y hasta ${fmt(tope)} %: ${puntos}`)
+    if (ultimo) break
+    desde = hasta
+  }
+  return partes.join(' · ')
+}
+
+const DEUDAS = deudasHasta(DTI_MAXIMO_HOY)
 const CANON = 'Hasta 25 %: 10 · más de 25 y hasta 30 %: 7 · más de 30 y hasta 35 %: 4 · más de 35 y hasta 40 %: 2'
 
 /** Los textos que dependen de las reglas encendidas (deudas y canon con Adenda 4). */
@@ -101,6 +129,11 @@ function factoresA5d(v: Valores): Factor[] {
   const nv = 'No se puede verificar hoy: ' + (acreditar ? 'se acredita completo y el estudio deja constancia de que no fue verificado.' : 'no suma puntos.')
   const m = v.MESES_VENTANA_MORA_FINANCIERA
   const ventana = v.MESES_VENTANA_COMPORTAMIENTO
+  // Un API sin el endeudamiento máximo en el panel: el 65 % fijo de hoy.
+  const dti = typeof v.DTI_MAXIMO === 'number' ? v.DTI_MAXIMO : DTI_MAXIMO_HOY
+  // La regla de rechazo usa los días de «Mora de los últimos 6 meses que rechaza» (30 = la del §5).
+  const dias = v.DIAS_MORA_RECIENTE_RECHAZO
+  const moraQueRechaza = typeof dias === 'number' && dias !== 30 ? `de ${dias} días o más` : 'de más de 30 días'
   return [
     {
       nombre: 'Puntaje de la central',
@@ -109,7 +142,11 @@ function factoresA5d(v: Valores): Factor[] {
         ? `Por la tabla de anclajes: ${t.map((a) => `${a.score} → ${fmt(a.puntos)}`).join(' · ')}; entre dos anclajes, en línea recta. Con dos centrales cuenta el puntaje mayor.`
         : 'Por la tabla de anclajes, en línea recta entre dos anclajes. Con dos centrales cuenta el puntaje mayor.',
     },
-    { nombre: 'Deudas frente al ingreso', max: 15, como: `${DEUDAS}. Por encima del endeudamiento máximo, como hoy con la Adenda 4.` },
+    {
+      nombre: 'Deudas frente al ingreso',
+      max: 15,
+      como: `${deudasHasta(dti)}. Más de ${fmt(dti)} %: con ingreso verificado se rechaza; sin él no rechaza y se puntúa por cómo paga la persona (0, o los puntos por comportamiento si paga al día), como con la Adenda 4.`,
+    },
     { nombre: 'Canon frente al ingreso', max: 10, como: 'Siempre completo: un canon alto no resta puntos, se resuelve con el canon máximo («hasta canon de»).' },
     { nombre: 'Seguridad social', max: 8, como: nv },
     {
@@ -122,7 +159,7 @@ function factoresA5d(v: Valores): Factor[] {
       max: 10,
       como: `Sin mora, o sin historial: 10 · mora de telefonía tolerada: 0 · mora de comercio tolerada: ${fmt(v.PENAL_REAL_TOLERADA, true)} · mora en banda: −15${
         m < ventana ? ` · mora financiera de más de 30 días entre el mes ${m + 1} y el ${ventana}: 0` : ''
-      }. Dentro de ${m === 1 ? 'el último mes' : `los últimos ${m} meses`}, esa mora rechaza.`,
+      }. Una mora financiera ${moraQueRechaza} dentro de ${m === 1 ? 'el último mes' : `los últimos ${m} meses`} rechaza, esté pagada o no.`,
     },
     { nombre: 'Estabilidad laboral', max: 10, como: nv },
     { nombre: 'Antigüedad del historial', max: 5, como: 'Más de 8 años: 5 · de 5 a 8 años: 4 · de 2 a menos de 5 años: 3 · de 6 meses a menos de 2 años: 1 · menos de 6 meses: 0.' },

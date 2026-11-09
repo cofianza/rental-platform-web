@@ -150,7 +150,7 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
         <Tarjeta
           titulo="Cómo se decide un estudio"
           ayuda="Con la Adenda 5 definitiva: con el puntaje de la persona (de 0 a 100) y el puntaje que reporta la central (de 0 a 999). Toque un número para cambiarlo."
-          accion={verTodo('a5d_motor', 'Ver el motor de la Adenda 5')}
+          accion={verTodo('a5d_motor', 'Ver el motor de la Adenda 5 definitiva')}
         >
           <div className="px-4 py-4 sm:px-5">
             <EscalaA5D valores={valores} onAbrir={onAbrir} />

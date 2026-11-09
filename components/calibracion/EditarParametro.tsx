@@ -290,7 +290,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
         )}
         {esClaveAncla(p.clave) && (
           <div>
-            <p className="mb-1 text-xs font-semibold text-gray-600">{!soloLectura && cambiado ? 'Así quedaría la tabla' : 'La tabla de hoy'}</p>
+            <p className="mb-1 text-xs font-semibold text-gray-600">{!soloLectura && cambiado ? 'Así quedaría la tabla' : 'Así está la tabla'}</p>
             <TablaAnclajes valores={!soloLectura && cambiado ? { ...valores, [p.clave]: nuevo } : valores} params={params} resaltar={p.clave} />
           </div>
         )}

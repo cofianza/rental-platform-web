@@ -107,7 +107,7 @@ export interface Seccion {
   relacionados?: { titulo: string; claves: string[] }
 }
 
-const TAMBIEN_A5D = 'Siguen como están y también rigen con la Adenda 5 (se cambian en su sección)'
+const TAMBIEN_A5D = 'Siguen como están y también rigen con la Adenda 5 definitiva (se cambian en su sección)'
 
 export const SECCIONES: Seccion[] = [
   {
@@ -209,7 +209,8 @@ export const tituloSeccion = (s: Seccion) => (s.grupo === 'a5d' ? `Adenda 5 defi
 export const grupoDe = (id: string) => SECCIONES.find((s) => s.id === id)?.grupo
 
 // es-CO: coma decimal y punto de miles («1,15», «3.000.000»).
-export const fmt = (n: number, entero = false) => n.toLocaleString('es-CO', { maximumFractionDigits: entero ? 0 : 4 })
+// Los negativos con el signo menos «−» (U+2212), el mismo del resto del panel. Solo para mostrar: el campo del diálogo usa String(valor).
+export const fmt = (n: number, entero = false) => n.toLocaleString('es-CO', { maximumFractionDigits: entero ? 0 : 4 }).replace(/^-/, '−')
 const pesos = (n: number) => `$${fmt(Math.round(n), true)}`
 
 /** 209912 = «nunca»: es el valor con el que el cobro queda apagado. */
@@ -221,7 +222,7 @@ const DECISION = { matriz: true } as const
 // ── Adenda 5 definitiva ───────────────────────────────────────────────────
 // Todos aplican solo con ADENDA5_DEF encendido (rige 'a5d'), salvo el propio
 // interruptor. Mientras esté apagado, sus secciones los muestran como «aplica
-// al encender la Adenda 5» y no los pliegan. Los textos siguen las
+// al encender la Adenda 5 definitiva» y no los pliegan. Los textos siguen las
 // descripciones del API (src/lib/calibracion.ts).
 
 /** 0,20 → «0,20»: las bandas se escriben con dos decimales, como en la adenda. */
@@ -291,7 +292,7 @@ const META_A5D: Record<string, MetaParametro> = {
     sub: 'Interruptor',
     unidad: 'onoff',
     queHace:
-      'Encendido: rige la Adenda 5 definitiva. Cada estudio sale aprobado, aprobado con segundo firmante o rechazado; la revisión manual deja de ser una salida del motor y el analista solo atiende apelaciones y excepciones de tope. Apagado: se decide como hoy.',
+      'Encendido: rige la Adenda 5 definitiva. Cada estudio sale aprobado, aprobado con segundo firmante o rechazado, y la revisión manual deja de ser una salida del motor. El analista sale del flujo normal y atiende apelaciones y excepciones de tope; las verificaciones de cumplimiento (identidad o biometría, posible homónimo en listas y la consulta de antecedentes cuando no responde) siguen como hoy. Apagado: se decide como hoy.',
     // Las cifras salen del panel: si la Gerencia mueve un valor, el texto lo sigue.
     excepciones: (v) => [
       `La tabla de ${v.UMBRAL_APROBACION_AUTOMATICA} y ${v.UMBRAL_ZONA_GRIS} (aprobar solo, zona gris y «Está cerca») → deja de aplicar: deciden el puntaje para aprobar, el puntaje mínimo en la central para ir sin segundo firmante y el piso para pedir segundo firmante.`,
@@ -306,7 +307,7 @@ const META_A5D: Record<string, MetaParametro> = {
       'Las dos tarifas mensuales y la prima que baja con coarrendatario → una sola tarifa mensual y una sola prima de vinculación.',
     ],
     etiquetaExcepciones: ['cambio al encenderla', 'cambios al encenderla'],
-    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) y las de capacidad de pago (Adenda 4) encendidas; mientras esté encendida, esas dos no se pueden apagar. Se enciende una sola vez, cuando la plataforma tenga completo el motor nuevo: hasta entonces no deja encenderla.',
+    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) y las de capacidad de pago (Adenda 4) encendidas; mientras esté encendida, esas dos no se pueden apagar. Se podrá encender cuando la plataforma tenga completo el motor nuevo; hasta entonces el panel no deja encenderla.',
     rige: 'siempre',
     motivo: true,
     ...DECISION,
@@ -382,7 +383,7 @@ const META_A5D: Record<string, MetaParametro> = {
     unidad: 'pct',
     queHace:
       'Parte máxima del ingreso ajustado que pueden llevarse las cuotas de la persona, con la de la fianza. Por encima, con ingreso verificado, el estudio se rechaza; sin ingreso verificado no rechaza: el endeudamiento se puntúa por cómo paga la persona.',
-    nota: 'Hoy la plataforma usa un 65 % fijo; este valor lo usa al encender la Adenda 5.',
+    nota: 'Hoy la plataforma usa un 65 % fijo; este valor lo usa al encender la Adenda 5 definitiva.',
     ejemplo: (v) => `Con ${fmt(v.DTI_MAXIMO)} % y un ingreso verificado de $3.000.000: cuotas por más de ${pesos(30_000 * v.DTI_MAXIMO)} al mes rechazan.`,
     rige: 'a5d',
     motivo: true,
@@ -395,7 +396,7 @@ const META_A5D: Record<string, MetaParametro> = {
     unidad: 'pct',
     queHace:
       'Fija el canon máximo: este porcentaje del ingreso ajustado para canon del titular. Si el canon pedido lo supera, el estudio no se rechaza ni va a un analista: se aprueba «hasta canon de» ese valor. El ingreso del segundo firmante no lo aumenta.',
-    nota: 'Hoy la plataforma usa un 40 % fijo; este valor lo usa al encender la Adenda 5.',
+    nota: 'Hoy la plataforma usa un 40 % fijo; este valor lo usa al encender la Adenda 5 definitiva.',
     ejemplo: (v) => `Con ${fmt(v.CANON_INGRESO_MAXIMO)} % y un ingreso ajustado de $2.500.000: se aprueba hasta un canon de ${pesos(25_000 * v.CANON_INGRESO_MAXIMO)}.`,
     rige: 'a5d',
     ...DECISION,
@@ -423,10 +424,10 @@ const META_A5D: Record<string, MetaParametro> = {
     sub: 'Cuándo se pide',
     unidad: 'puntos',
     queHace:
-      'Por debajo de este puntaje (de 0 a 100) el estudio se rechaza, por cualquier causa: ningún segundo firmante lo compensa. Desde este puntaje, quien no alcanza a aprobarse sin segundo firmante queda aprobado con segundo firmante.',
+      'Por debajo de este puntaje (de 0 a 100) la persona queda rechazada, por cualquier causa: ningún segundo firmante la compensa. Si es la única persona del estudio, o la otra también queda rechazada, el estudio se rechaza. Desde este puntaje, quien no alcanza a aprobarse sin segundo firmante queda aprobado con segundo firmante.',
     nota: 'Reemplaza el puntaje mínimo para exigir coarrendatario, que solo aplicaba a algunas causas.',
     ejemplo: (v) =>
-      `Con ${v.PISO_SEGUNDO_FIRMANTE}: ${Math.min(v.PISO_SEGUNDO_FIRMANTE + 3, v.UMBRAL_APROBADO - 1)} puntos queda aprobado con segundo firmante; ${Math.max(0, v.PISO_SEGUNDO_FIRMANTE - 1)} se rechaza.`,
+      `Con ${v.PISO_SEGUNDO_FIRMANTE}: una persona con ${Math.min(v.PISO_SEGUNDO_FIRMANTE + 3, v.UMBRAL_APROBADO - 1)} puntos queda aprobada con segundo firmante; con ${Math.max(0, v.PISO_SEGUNDO_FIRMANTE - 1)}, rechazada. Si la otra persona del estudio se aprueba sola, el estudio sale aprobado con ella.`,
     rige: 'a5d',
     motivo: true,
     ...DECISION,
@@ -498,8 +499,8 @@ const META_A5D: Record<string, MetaParametro> = {
     sub: 'Respaldo',
     unidad: 'obligaciones',
     queHace:
-      'Quien tiene una mora vigente no financiera debe tener al menos estas obligaciones financieras vigentes y al día, como deudor principal. Si no, el estudio se rechaza por falta de respaldo, aunque la mora esté por debajo de la banda.',
-    nota: 'Una mora no financiera ya pagada no es mora vigente y no exige respaldo. En la vía rápida, las moras de telefonía, televisión e internet tampoco lo exigen.',
+      'Quien tiene una mora vigente no financiera debe tener al menos estas obligaciones financieras vigentes y al día, como deudor principal. Si no, el estudio se rechaza por falta de respaldo, aunque la mora esté por debajo de la banda, salvo en la vía rápida cuando toda la mora es de telefonía, televisión o internet: esa mora se descarta.',
+    nota: 'Una mora no financiera ya pagada no es mora vigente y no exige respaldo.',
     ejemplo: (v) =>
       `Con ${v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA}: una mora de $150.000 en un almacén, con ${obligaciones(Math.max(0, v.MIN_OBLIGACIONES_FINANCIERAS_AL_DIA - 1))} al día, rechaza el estudio.`,
     rige: 'a5d',
@@ -606,7 +607,7 @@ const META_A5D: Record<string, MetaParametro> = {
 export const META: Record<string, MetaParametro> = {
   // ── Quién se aprueba ──────────────────────────────────────────────────────
   UMBRAL_APROBACION_AUTOMATICA: {
-    saleConA5d: 'se elimina el puntaje de aprobación automática: aprueba el «puntaje para aprobar», con el puntaje mínimo en la central, el historial financiero y sin mora en banda',
+    saleConA5d: 'lo reemplaza el «puntaje para aprobar», junto con el puntaje mínimo en la central, el historial financiero y la ausencia de mora en banda',
     nombre: 'Puntaje para aprobar solo',
     seccion: 'aprobacion',
     sub: 'Puntaje del solicitante',
@@ -617,7 +618,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_ZONA_GRIS: {
-    saleConA5d: 'desaparecen la zona gris y «Está cerca»: lo reemplazan el «puntaje para aprobar» y el «piso para pedir segundo firmante»',
+    saleConA5d: 'en lugar de la zona gris y de «Está cerca», deciden el «puntaje para aprobar» y el «piso para pedir segundo firmante»',
     nombre: 'Puntaje mínimo para no rechazar',
     seccion: 'aprobacion',
     sub: 'Puntaje del solicitante',
@@ -674,7 +675,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   UMBRAL_SCORE_REVISION: {
-    saleConA5d: 'un puntaje de la central bajo ya no va a un analista: por debajo del «puntaje mínimo en la central para ir sin segundo firmante» se pide segundo firmante',
+    saleConA5d: 'por debajo del «puntaje mínimo en la central para ir sin segundo firmante» se pide segundo firmante, sin pasar por un analista',
     nombre: 'Puntaje en la central que exige un analista',
     seccion: 'aprobacion',
     sub: 'Puntaje que reporta la central',
@@ -1224,7 +1225,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   TOLERANCIA_CANON: {
-    saleConA5d: 'desaparece el margen: un canon igual o menor al aprobado no se reevalúa, y uno mayor se reevalúa sin cobro mientras el reporte de la central esté vigente',
+    saleConA5d: 'en lugar del margen, un canon igual o menor al aprobado no se reevalúa y uno mayor se reevalúa sin cobro mientras el reporte de la central esté vigente',
     nombre: 'Cuánto puede subir el canon sin nueva evaluación',
     seccion: 'contratos',
     sub: 'Topes de canon',

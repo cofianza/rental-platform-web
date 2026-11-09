@@ -459,7 +459,7 @@ function Seccion({
         {id === 'a5d_score' && (
           <details className="group rounded-xl border border-gray-200 bg-white">
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 sm:px-5 [&::-webkit-details-marker]:hidden">
-              Cómo se calcula el puntaje con la Adenda 5
+              Cómo se calcula el puntaje con la Adenda 5 definitiva
               <IconChevronDown size={18} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
             </summary>
             <div className="border-t border-gray-100 px-4 py-4 sm:px-5">

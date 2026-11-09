@@ -401,9 +401,9 @@ function Barra({ titulo, tramos, min, max, resaltar, onAbrir, decimales }: Barra
 export function EscalaPuntaje({ valores, resaltar }: { valores: Valores; resaltar: string }) {
   const a5d = valores.ADENDA5_DEF === 1
   if (CLAVES_A5D_PUNTAJE.includes(resaltar))
-    return <Barra titulo="Puntaje de la persona (Adenda 5)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} resaltar={resaltar} decimales />
+    return <Barra titulo="Puntaje de la persona (Adenda 5 definitiva)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} resaltar={resaltar} decimales />
   if (CLAVES_A5D_SCORE.includes(resaltar) || (a5d && resaltar === 'UMBRAL_SCORE_RECHAZO'))
-    return <Barra titulo="Puntaje de la central (Adenda 5)" tramos={tramosA5dScore(valores)} min={SCORE_MIN} max={SCORE_MAX} resaltar={resaltar} />
+    return <Barra titulo="Puntaje de la central (Adenda 5 definitiva)" tramos={tramosA5dScore(valores)} min={SCORE_MIN} max={SCORE_MAX} resaltar={resaltar} />
   if (resaltar.startsWith('UMBRAL_CASCADA_'))
     return <Barra titulo="Consulta a la segunda central" tramos={tramosCentrales(valores)} min={0} max={100} resaltar={resaltar} decimales />
   if (resaltar.startsWith('UMBRAL_SCORE_'))

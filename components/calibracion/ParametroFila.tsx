@@ -59,7 +59,7 @@ export function ParametroFila({ p, valores, ultimo, onAbrir }: Props) {
           {meta.rige === 'a5d' && !a5d && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-800">
               <IconClock size={11} />
-              Aplica al encender la Adenda 5
+              Aplica al encender la Adenda 5 definitiva
             </span>
           )}
         </div>

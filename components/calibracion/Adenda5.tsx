@@ -23,7 +23,7 @@ import {
   type Valores,
 } from './parametros'
 
-/** Arriba de cada sección de la Adenda 5 mientras esté apagada. */
+/** Arriba de cada sección de la Adenda 5 definitiva mientras esté apagada. */
 export function AvisoA5d({ onIr }: { onIr?: (v: SeccionId) => void }) {
   return (
     <div className="flex items-start gap-2.5 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900">
@@ -231,10 +231,11 @@ export function BandasMora({ valores }: { valores: Valores }) {
         ))}
       </div>
       <p className="mt-3 max-w-prose text-xs text-gray-600">
-        Siempre rechazan: cualquier mora financiera vigente, y una mora no financiera de quien tenga menos de {n}{' '}
-        {n === 1 ? 'obligación financiera vigente y al día' : 'obligaciones financieras vigentes y al día'}. En la vía rápida (puntaje de la central desde{' '}
-        {v.VIA_RAPIDA_SCORE} y {v.VIA_RAPIDA_MIN_OBLIG_FIN} {v.VIA_RAPIDA_MIN_OBLIG_FIN === 1 ? 'obligación financiera' : 'obligaciones financieras'} al
-        día) las moras de telefonía, televisión e internet no cuentan.
+        Siempre rechaza cualquier mora financiera vigente. También rechaza una mora no financiera de quien tenga menos de {n}{' '}
+        {n === 1 ? 'obligación financiera vigente y al día' : 'obligaciones financieras vigentes y al día'}, salvo en la vía rápida cuando toda la mora
+        es de telefonía, televisión o internet. En la vía rápida (puntaje de la central desde {v.VIA_RAPIDA_SCORE} y {v.VIA_RAPIDA_MIN_OBLIG_FIN}{' '}
+        {v.VIA_RAPIDA_MIN_OBLIG_FIN === 1 ? 'obligación financiera' : 'obligaciones financieras'} al día) las moras de telefonía, televisión e internet
+        no cuentan.
       </p>
     </section>
   )
@@ -270,7 +271,7 @@ export function Relacionados({
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-gray-900">{m.nombre}</span>
-                  {m.conA5d && <span className="mt-0.5 block text-xs text-gray-600">Con la Adenda 5: {m.conA5d}.</span>}
+                  {m.conA5d && <span className="mt-0.5 block text-xs text-gray-600">Con la Adenda 5 definitiva: {m.conA5d}.</span>}
                 </span>
                 <span className="shrink-0 text-sm font-bold tabular-nums text-gray-900">{conUnidad(p.valor, p)}</span>
               </button>
