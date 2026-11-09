@@ -38,7 +38,7 @@ import { Historial } from '@/components/calibracion/Historial'
 import { Indicadores } from '@/components/calibracion/Indicadores'
 import { ParametroFila } from '@/components/calibracion/ParametroFila'
 import { Resumen } from '@/components/calibracion/Resumen'
-import { metaDe, porOrden, rigeHoy, SECCIONES, textoCompleto, type SeccionId, type Valores } from '@/components/calibracion/parametros'
+import { metaDe, porOrden, rigeHoy, SECCIONES, seMuestra, textoCompleto, type SeccionId, type Valores } from '@/components/calibracion/parametros'
 
 type Vista = 'resumen' | SeccionId | 'indicadores' | 'historial'
 const VISTAS: { id: Vista; titulo: string }[] = [
@@ -74,7 +74,7 @@ export default function AdminCalibracionPage() {
         calibracionService.getCascada(30).catch(() => null),
         calibracionService.getRevisionManual(30).catch(() => null),
       ])
-      setParams([...p].sort(porOrden))
+      setParams(p.filter(seMuestra).sort(porOrden))
       setHistorial(h ?? [])
       setErrorHistorial(h === null)
       setCascada(c)

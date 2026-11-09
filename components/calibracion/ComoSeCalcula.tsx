@@ -16,12 +16,10 @@ interface Factor {
   como: string
 }
 
-const COMPORTAMIENTO = 'Sin moras en 24 meses: +10 · sin historial: +5 · mora de más de 30 días en 12 meses: −15.'
-
 const DEUDAS = 'Hasta 25 %: 15 · más de 25 y hasta 35 %: 12 · más de 35 y hasta 45 %: 8 · más de 45 y hasta 55 %: 4 · más de 55 y hasta 65 %: 2'
 const CANON = 'Hasta 25 %: 10 · más de 25 y hasta 30 %: 7 · más de 30 y hasta 35 %: 4 · más de 35 y hasta 40 %: 2'
 
-/** Los textos que dependen de las reglas encendidas (mora con Adenda 5; deudas y canon con Adenda 4). */
+/** Los textos que dependen de las reglas encendidas (deudas y canon con Adenda 4). */
 function factores(v: Valores): Factor[] {
   const a4 = v.ADENDA4 === 1
   const como: Record<string, string> = {
@@ -31,10 +29,6 @@ function factores(v: Valores): Factor[] {
     'Canon frente al ingreso': a4
       ? `${CANON}. Más de 40 %: con ingreso verificado se rechaza; sin él vale 0 y no rechaza por sí solo: decide un analista, que pide soporte de ingreso (si el puntaje no alcanza el mínimo por otras causas, se rechaza).`
       : `${CANON} · más de 40 %: se rechaza (en estudios de inmobiliaria se compensa con un coarrendatario).`,
-    'Comportamiento de pago':
-      v.ADENDA5 === 1
-        ? `${COMPORTAMIENTO} Una mora vigente de sector no financiero de bajo monto frente al canon puede no rechazar: resta 15 puntos y no cuenta como «sin moras» (ver «Mora vigente y reciente»). Cualquier otra mora vigente, y la de los últimos 6 meses, rechaza.`
-        : `${COMPORTAMIENTO} Una mora vigente o reciente rechaza (ver «Mora vigente y reciente»).`,
   }
   return FACTORES.map((f) => (como[f.nombre] ? { ...f, como: como[f.nombre] } : f))
 }
@@ -61,8 +55,7 @@ const FACTORES: Factor[] = [
   { nombre: 'Canon frente al ingreso', max: 10, como: CANON },
   { nombre: 'Seguridad social', max: 8, como: 'Hoy no se cuenta: la consulta de antecedentes (Auco) no es fuente de este factor y ninguna central lo reporta.' },
   { nombre: 'Experiencia con créditos', max: 6, como: 'Con bancos o financieras: 6 · solo con comercio o cooperativas: 4.' },
-  // El texto de la mora depende de las reglas encendidas: lo arma factores().
-  { nombre: 'Comportamiento de pago', max: 10, como: COMPORTAMIENTO },
+  { nombre: 'Comportamiento de pago', max: 10, como: 'Sin moras en 24 meses: +10 · sin historial: +5 · mora de más de 30 días en 12 meses: −15. Una mora vigente o reciente rechaza (ver «Moras que rechazan»).' },
   { nombre: 'Estabilidad laboral', max: 10, como: 'En el estudio automático no se cuenta; en revisión manual lo puntúa el analista.' },
   { nombre: 'Antigüedad del historial', max: 5, como: 'Más de 8 años: 5 · de 5 a 8 años: 4 · de 2 a menos de 5 años: 3 · de 6 meses a menos de 2 años: 1 · menos de 6 meses: 0.' },
   { nombre: 'Arriendos anteriores', max: 5, como: 'En el estudio automático no se cuenta; en revisión manual lo puntúa el analista.' },
@@ -119,8 +112,7 @@ export function ComoSeCalcula({ valores }: { valores: Valores }) {
       </div>
 
       <p className="max-w-prose text-xs text-gray-600">
-        Antes de este puntaje mandan las reglas que rechazan siempre: listas restrictivas,{' '}
-        {valores.ADENDA5 === 1 ? 'mora vigente (salvo la de bajo monto en sector no financiero) o reciente' : 'mora vigente o reciente'} y
+        Antes de este puntaje mandan las reglas que rechazan siempre: listas restrictivas, mora vigente o reciente y
         puntaje de la central por debajo de {minCentral}
         {valores.ADENDA4 === 1
           ? ' y, con ingreso verificado, endeudamiento o canon por encima del máximo'
