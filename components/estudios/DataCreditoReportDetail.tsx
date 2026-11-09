@@ -67,7 +67,8 @@ const EVENTOS_CIERRE = new Set([
 /**
  * Tabla 4 — eventos de pago de una obligación en mora hoy: 17-41 mora activa,
  * 45 castigada y 47 dudoso recaudo (el mismo criterio del motor). Sirve para
- * reconocer la fila en mora cuando la API quitó los importes (Adenda 5 §10).
+ * reconocer la fila en mora cuando la API quitó los importes (reserva del
+ * detalle de la mora).
  */
 function eventoEnMora(evento: string): boolean {
   const n = Number(evento)
@@ -433,7 +434,7 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
     ESTADOS_ABIERTOS.has(codigoCatalogo(item.status?.account?.businessAccountStatus)) &&
     !EVENTOS_CIERRE.has(codigoCatalogo(item.status?.payment?.businessBureauEvent))
   /**
-   * Adenda 5 §10: a la inmobiliaria y al propietario la API les quita el
+   * Reserva del detalle de la mora: a la inmobiliaria y al propietario la API les quita el
    * acreedor, el número y los montos de las obligaciones EN MORA y las marca
    * con `detalle_reservado` (la inmobiliaria y el propietario no reciben el detalle). La fila
    * sigue: estado y tipo, sin inventar datos. Sin la marca, nada cambia.
@@ -470,7 +471,7 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
     .map((v) => num(v))
     .filter((v): v is number => v !== null)
   const valorMora = moras.length > 0 ? Math.max(...moras) : null
-  // §10: la API también quitó el saldo en mora del consolidado (con una sola obligación lo revela).
+  // Con la reserva, la API también quitó el saldo en mora del consolidado (con una sola obligación lo revela).
   // La marca en la raíz cubre la mora que solo sale del consolidado (ninguna fila marcada).
   const moraConsolidadaReservada = (report.detalle_reservado === true || hayReservadas) && valorMora === null
   const cuotaMensual = num(balances?.valueMonthlyPayment)
@@ -801,7 +802,7 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
                         {reservada ? <span className="italic text-gray-500">Reservado</span> : nombreEntidad(item.account)}
                       </td>
                       <td className="py-1.5 px-1 text-gray-700">{tipoObligacion(item.account)}</td>
-                      {/* Reservada: el guion es de las canceladas; aquí el monto se quitó por reserva (§10). */}
+                      {/* Reservada: el guion es de las canceladas; aquí el monto se quitó por reserva. */}
                       <td className="py-1.5 px-1 text-right text-gray-900">
                         {reservada ? <span className="italic text-gray-500">Reservado</span> : formatCOP(item.values?.debtBalance)}
                       </td>

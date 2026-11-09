@@ -89,7 +89,7 @@ export interface TransUnionResponse {
   CreditVision_5694?: TransUnionCreditVision
   Informacion_Comercial_154?: TransUnionInfoComercial
   /**
-   * Adenda 5 §10 (no es de TransUnion: lo agrega la API): a la inmobiliaria y
+   * Reserva del detalle de la mora (no es de TransUnion: lo agrega la API): a la inmobiliaria y
    * al propietario se les quitaron los montos en mora y el detalle de las
    * obligaciones en mora. Ausente en Cofianza y en los estudios sin la reserva.
    */

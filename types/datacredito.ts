@@ -232,7 +232,7 @@ export interface DcLiability {
   status?: DcAccountStatus
   values?: DcAccountValues[]
   /**
-   * Adenda 5 §10 (no es de DataCrédito: lo agrega la API): a la inmobiliaria y
+   * Reserva del detalle de la mora (no es de DataCrédito: lo agrega la API): a la inmobiliaria y
    * al propietario les quitó el acreedor, la cuenta y los montos de esta
    * obligación en mora. Solo el evaluado conoce el detalle.
    */
@@ -246,7 +246,7 @@ export interface DcCreditCard {
   FeaturesCreditCard?: DcFeaturesCreditCard
   status?: DcAccountStatus
   values?: DcAccountValues[]
-  /** Adenda 5 §10: ver DcLiability.detalle_reservado. */
+  /** Reserva del detalle de la mora: ver DcLiability.detalle_reservado. */
   detalle_reservado?: boolean
 }
 
@@ -424,7 +424,7 @@ export interface DcAgregatedInfo {
 
 export interface DcReport {
   /**
-   * Adenda 5 §10: la API quitó el saldo en mora del consolidado por reserva,
+   * Reserva del detalle de la mora: la API quitó el saldo en mora del consolidado,
    * aunque ninguna obligación haya quedado marcada. Ausente sin reserva.
    */
   detalle_reservado?: boolean

@@ -109,7 +109,7 @@ export function TransUnionReportDetail({ data }: TransUnionReportDetailProps) {
   const registroTotal = consolidado?.Registro
   const resumenPrincipal = consolidado?.ResumenPrincipal?.Registro
   const huellas = infoComercial?.HuellaConsulta?.Consulta
-  // Adenda 5 §10: a la inmobiliaria y al propietario la API les quita ValorMora y
+  // Reserva del detalle de la mora: a la inmobiliaria y al propietario la API les quita ValorMora y
   // SaldoObligacionesMora y marca la respuesta con `detalle_reservado`. Sin la
   // marca nada cambia; con ella, el monto que falta se lee «Reservado», no «$0».
   const conReserva = data.detalle_reservado === true
