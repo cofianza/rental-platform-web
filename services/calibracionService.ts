@@ -23,6 +23,8 @@ export interface IParametroCalibracion {
    */
   nivel?: 'riesgo' | 'operativo'
   editable?: boolean
+  /** El PATCH responde 400 MOTIVO_REQUERIDO si el cambio llega sin motivo. Opcional: un API anterior no lo manda. */
+  exige_motivo?: boolean
 }
 
 export interface IHistorialCalibracion {

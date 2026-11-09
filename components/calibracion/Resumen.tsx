@@ -9,10 +9,10 @@
 
 import type { IHistorialCalibracion, IParametroCalibracion } from '@/services/calibracionService'
 import { IconAlertTriangle, IconArrowRight, IconChevronDown, IconLock, IconPencil } from '@/components/icons'
-import { EscalaDecision } from './EscalaDecision'
-import { ComoSeCalcula } from './ComoSeCalcula'
+import { EscalaA5D, EscalaDecision } from './EscalaDecision'
+import { ComoSeCalcula, ComoSeCalculaA5D } from './ComoSeCalcula'
 import { ParametroFila } from './ParametroFila'
-import { conUnidad, metaDe, rigeHoy, type SeccionId, type Valores } from './parametros'
+import { a5dEncendida, conUnidad, metaDe, rigeHoy, type SeccionId, type Valores } from './parametros'
 
 interface Props {
   params: IParametroCalibracion[]
@@ -22,8 +22,10 @@ interface Props {
   onIr: (v: SeccionId) => void
 }
 
-const REGLAS = ['ADENDA3_V2', 'ADENDA4']
+const REGLAS = ['ADENDA3_V2', 'ADENDA4', 'ADENDA5_DEF']
 const COBROS = ['PRECIO_ESTUDIO_INDIVIDUAL', 'TARIFA_IVA', 'TARIFA_VIA_AUTOMATICA', 'TARIFA_VIA_NO_AUTOMATICA']
+// Adenda 5 definitiva: una prima y una tarifa únicas en lugar de las dos tarifas.
+const COBROS_A5D = ['PRECIO_ESTUDIO_INDIVIDUAL', 'TARIFA_IVA', 'PRIMA_VINCULACION', 'TARIFA_MENSUAL']
 const CLAVE = ['CANON_MAX_TRANSITORIO', 'DIAS_EXPIRACION_ESTUDIO', 'DIAS_CADUCIDAD_ESTUDIO', 'VIGENCIA_CRC_DIAS', 'DIAS_EXPIRACION_FIRMA']
 
 function Tarjeta({
@@ -74,6 +76,9 @@ function Tarjeta({
 }
 
 export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
+  const a5d = a5dEncendida(valores)
+  // La Adenda 5 solo si el API la trae: con uno anterior, el resumen queda como estaba.
+  const hayA5d = params.some((p) => p.clave === 'ADENDA5_DEF')
   const de = (claves: string[]) => claves.map((c) => params.find((p) => p.clave === c)).filter((p): p is IParametroCalibracion => !!p)
 
   const cifra = (p: IParametroCalibracion) => {
@@ -141,17 +146,33 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
         </ul>
       </section>
 
-      <Tarjeta
-        titulo="Cómo se decide un estudio"
-        ayuda="Con el puntaje del solicitante (de 0 a 100) y el puntaje que reporta la central de riesgo. Toque un número para cambiarlo."
-        accion={verTodo('aprobacion', 'Ver todos los puntajes')}
-      >
-        <div className="px-4 py-4 sm:px-5">
-          <EscalaDecision valores={valores} onAbrir={onAbrir} />
-        </div>
-      </Tarjeta>
+      {a5d ? (
+        <Tarjeta
+          titulo="Cómo se decide un estudio"
+          ayuda="Con la Adenda 5 definitiva: con el puntaje de la persona (de 0 a 100) y el score que reporta la central. Toque un número para cambiarlo."
+          accion={verTodo('a5d_motor', 'Ver el motor de la Adenda 5')}
+        >
+          <div className="px-4 py-4 sm:px-5">
+            <EscalaA5D valores={valores} onAbrir={onAbrir} />
+          </div>
+        </Tarjeta>
+      ) : (
+        <Tarjeta
+          titulo="Cómo se decide un estudio"
+          ayuda="Con el puntaje del solicitante (de 0 a 100) y el puntaje que reporta la central de riesgo. Toque un número para cambiarlo."
+          accion={verTodo('aprobacion', 'Ver todos los puntajes')}
+        >
+          <div className="px-4 py-4 sm:px-5">
+            <EscalaDecision valores={valores} onAbrir={onAbrir} />
+          </div>
+        </Tarjeta>
+      )}
 
-      <Tarjeta titulo="Reglas encendidas" ayuda="Paquetes de reglas que se encienden o apagan completos.">
+      <Tarjeta
+        titulo="Reglas encendidas"
+        ayuda="Paquetes de reglas que se encienden o apagan completos."
+        accion={hayA5d ? verTodo('a5d_motor', 'Ver la Adenda 5 definitiva') : undefined}
+      >
         <div className="divide-y divide-gray-100">
           {de(REGLAS).map((p) => (
             <ParametroFila key={p.clave} p={p} valores={valores} ultimo={ultimo.get(p.clave)} onAbrir={onAbrir} />
@@ -160,7 +181,7 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
       </Tarjeta>
 
       <Tarjeta titulo="Lo que se cobra" accion={verTodo('precios', 'Ver precios y cobros')}>
-        <ul className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">{de(COBROS).map(cifra)}</ul>
+        <ul className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">{de(a5d ? COBROS_A5D : COBROS).map(cifra)}</ul>
       </Tarjeta>
 
       <Tarjeta
@@ -172,17 +193,19 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
           </div>
         }
       >
-        <ul className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-3">{de(CLAVE).filter((p) => rigeHoy(metaDe(p.clave).rige, valores)).map(cifra)}</ul>
+        <ul className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-3">{de(CLAVE).filter((p) => rigeHoy(metaDe(p.clave), valores)).map(cifra)}</ul>
       </Tarjeta>
 
       <Tarjeta
         titulo="Cómo se calcula el puntaje del solicitante"
-        ayuda="La fórmula de la Política: nueve factores que suman puntos y se llevan a una escala de 0 a 100."
+        ayuda={
+          a5d
+            ? 'La fórmula de la Adenda 5 definitiva: nueve factores que suman hasta 119 puntos y se llevan a una escala de 0 a 100.'
+            : 'La fórmula de la Política: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
+        }
         plegable
       >
-        <div className="px-4 py-4 sm:px-5">
-          <ComoSeCalcula valores={valores} />
-        </div>
+        <div className="px-4 py-4 sm:px-5">{a5d ? <ComoSeCalculaA5D valores={valores} /> : <ComoSeCalcula valores={valores} />}</div>
       </Tarjeta>
     </div>
   )

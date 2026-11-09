@@ -16,7 +16,20 @@ import { IconAlertTriangle, IconCheck, IconLoader, IconLock } from '@/components
 import { cn } from '@/lib/utils'
 import { CambioItem } from './Historial'
 import { EscalaPuntaje, ESCALA_CLAVES } from './EscalaDecision'
-import { conUnidad, humanizar, MES_APAGADO, metaDe, rigeHoy, textoCompleto, type Valores } from './parametros'
+import { TablaAnclajes } from './Adenda5'
+import {
+  a5dDisponible,
+  a5dEncendida,
+  coherenciaA5d,
+  conUnidad,
+  esClaveAncla,
+  humanizar,
+  MES_APAGADO,
+  metaDe,
+  rigeHoy,
+  textoCompleto,
+  type Valores,
+} from './parametros'
 
 interface Props {
   p: IParametroCalibracion
@@ -47,20 +60,34 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
 
   const fijo = p.min === p.max
   const soloLectura = fijo || p.editable === false
-  const exigeMotivo = !!meta.motivo
+  // El API dice cuáles exigen motivo; un API anterior no lo manda y vale lo de esta pantalla.
+  const exigeMotivo = p.exige_motivo ?? !!meta.motivo
   const nuevo = Number(valor)
   const valido = valor.trim() !== '' && Number.isFinite(nuevo)
   const cambiado = valido && nuevo !== p.valor
   const anteriores = historial.filter((h) => h.clave === p.clave).slice(0, 5)
-  const aplicaHoy = rigeHoy(meta.rige, valores)
+  const aplicaHoy = rigeHoy(meta, valores)
+  const a5d = a5dEncendida(valores)
+  const notasA5d = a5dDisponible(valores)
+  // Por qué no aplica hoy: la Adenda 5 apagada (lo nuevo) o encendida (lo que retira), o la nota de siempre.
+  const porQueNoAplica =
+    meta.rige === 'a5d' && !a5d
+      ? 'Aplica al encender la Adenda 5 definitiva: hoy no cambia ningún resultado.'
+      : meta.saleConA5d && a5d
+        ? `Dejó de aplicar con la Adenda 5 definitiva: ${meta.saleConA5d}.`
+        : `Hoy no cambia ningún resultado${meta.notaRige ? `: ${meta.notaRige}` : ''}.`
 
   function validar(): string | null {
     if (!valido)
       return unidad === 'mes' ? 'Elija un mes, o «Dejar sin activar».' : 'Escriba solo el número, sin puntos de miles (por ejemplo 3500000).'
+    // Resta puntos: el signo menos se olvida fácil.
+    if (p.clave === 'PENAL_REAL_TOLERADA' && nuevo > 0) return 'Escriba el número con el signo menos (por ejemplo -5): estos puntos se restan.'
     if (nuevo < p.min || nuevo > p.max) return `Debe estar entre ${conUnidad(p.min, p)} y ${conUnidad(p.max, p)}.`
     if (p.entero && !Number.isInteger(nuevo)) return 'Debe ser un número entero.'
     if (unidad === 'mes' && nuevo < MES_APAGADO && (nuevo % 100 < 1 || nuevo % 100 > 12)) return 'Elija un mes válido.'
     if (meta.opciones && !meta.opciones.includes(nuevo)) return `Elija ${meta.opciones.map((o) => conUnidad(o, p)).join(', ')}.`
+    const incoherente = coherenciaA5d(p.clave, nuevo, valores)
+    if (incoherente) return incoherente
     if (exigeMotivo && !motivo.trim()) return 'Escriba el motivo: este cambio lo exige.'
     return null
   }
@@ -90,14 +117,24 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
         <p className="text-gray-700">{textoCompleto(meta) || humanizar(p.descripcion)}</p>
         {meta.ejemplo?.(valores) && <p className="text-gray-600">{meta.ejemplo(valores)}</p>}
         {meta.nota && <p className="text-gray-600">{meta.nota}</p>}
+        {notasA5d && meta.saleConA5d && !a5d && (
+          <p className="text-gray-600">
+            <span className="font-semibold">Deja de aplicar con la Adenda 5 definitiva:</span> {meta.saleConA5d}.
+          </p>
+        )}
+        {notasA5d && meta.conA5d && (
+          <p className="text-gray-600">
+            <span className="font-semibold">Con la Adenda 5 definitiva:</span> {meta.conA5d}.
+          </p>
+        )}
         {aplicaHoy && meta.notaRige && (
           <p className="text-gray-600">
             <span className="font-semibold">Cuándo aplica:</span> {meta.notaRige}.
           </p>
         )}
-        {!aplicaHoy && !fijo && (
+        {!aplicaHoy && (!fijo || meta.rige === 'a5d') && (
           <p className="rounded-lg bg-gray-100 p-3 text-xs text-gray-700">
-            Hoy no cambia ningún resultado{meta.notaRige ? `: ${meta.notaRige}` : ''}.
+            {porQueNoAplica}
             {!soloLectura && ' Se puede dejar listo para cuando aplique.'}
           </p>
         )}
@@ -218,17 +255,27 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
                   {unidad === 'mes'
                     ? 'Primer mes que cobra la plataforma (AAAA-MM, por ejemplo 2026-11).'
                     : `Permitido: de ${conUnidad(p.min, p)} a ${conUnidad(p.max, p)}.`}
-                  {unidad === 'cop' && valido && <span className="font-semibold text-gray-700"> Quedaría en {conUnidad(nuevo, p)}.</span>}
+                  {unidad === 'fraccion' && ' Se escribe como fracción del canon: 0,20 = 20 %.'}
+                  {(unidad === 'cop' || unidad === 'fraccion') && valido && (
+                    <span className="font-semibold text-gray-700"> Quedaría en {conUnidad(nuevo, p)}.</span>
+                  )}
                 </p>
               )}
             </div>
           )}
         </div>
 
-        {!soloLectura && cambiado && ESCALA_CLAVES.includes(p.clave) && (
+        {/* Con un valor que cruza a su pareja la escala no se puede dibujar: basta el error. */}
+        {!soloLectura && cambiado && ESCALA_CLAVES.includes(p.clave) && !coherenciaA5d(p.clave, nuevo, valores) && (
           <div>
             <p className="mb-1 text-xs font-semibold text-gray-600">Así quedaría la escala</p>
             <EscalaPuntaje valores={{ ...valores, [p.clave]: nuevo }} resaltar={p.clave} />
+          </div>
+        )}
+        {esClaveAncla(p.clave) && (
+          <div>
+            <p className="mb-1 text-xs font-semibold text-gray-600">{!soloLectura && cambiado ? 'Así quedaría la tabla' : 'La tabla de hoy'}</p>
+            <TablaAnclajes valores={!soloLectura && cambiado ? { ...valores, [p.clave]: nuevo } : valores} params={params} resaltar={p.clave} />
           </div>
         )}
 
@@ -253,7 +300,11 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
         {soloLectura ? (
           <p className="flex items-center gap-2 rounded-lg bg-gray-100 p-3 text-xs text-gray-700">
             <IconLock size={14} className="shrink-0" />
-            {fijo ? 'Este valor está fijo: ya no se usa y no se puede cambiar.' : 'Solo la Gerencia General puede cambiar este valor.'}
+            {fijo
+              ? meta.rige === 'nunca'
+                ? 'Este valor está fijo: ya no se usa y no se puede cambiar.'
+                : 'Este valor está fijo: no se puede cambiar desde este panel.'
+              : 'Solo la Gerencia General puede cambiar este valor.'}
           </p>
         ) : (
           <>
@@ -339,6 +390,8 @@ function sufijo(unidad: string, n: number): string {
       meses: uno ? 'mes' : 'meses',
       veces: 'veces',
       consultas: uno ? 'consulta' : 'consultas',
+      obligaciones: uno ? 'obligación' : 'obligaciones',
+      fraccion: 'del canon',
     } as Record<string, string>
   )[unidad] ?? ''
 }

@@ -8,7 +8,7 @@
  * aquí también. Los cortes que sí son del panel se leen de `valores`.
  */
 
-import type { Valores } from './parametros'
+import { anclajes, fmt, puntosDeScore, type Valores } from './parametros'
 
 interface Factor {
   nombre: string
@@ -61,6 +61,117 @@ const FACTORES: Factor[] = [
   { nombre: 'Arriendos anteriores', max: 5, como: 'En el estudio automático no se cuenta; en revisión manual lo puntúa el analista.' },
 ]
 
+/** La lista de factores, igual en las dos versiones: una lista y no una tabla, para que quepa en el celular. */
+function ListaFactores({ factores }: { factores: Factor[] }) {
+  return (
+    <div>
+      <div aria-hidden className="hidden border-b border-gray-200 pb-2 text-xs font-semibold text-gray-600 sm:grid sm:grid-cols-[11rem_3.5rem_minmax(0,1fr)] sm:gap-x-3">
+        <span>Factor</span>
+        <span className="text-right">Máx.</span>
+        <span>Cómo da puntos</span>
+      </div>
+      <dl className="divide-y divide-gray-100">
+        {factores.map((f) => (
+          <div key={f.nombre} className="py-2.5 sm:grid sm:grid-cols-[11rem_3.5rem_minmax(0,1fr)] sm:gap-x-3">
+            <dt className="flex items-baseline justify-between gap-3 font-medium text-gray-900 sm:contents">
+              <span>{f.nombre}</span>
+              <span className="text-xs font-normal tabular-nums text-gray-600 sm:text-right sm:text-sm sm:text-gray-700">
+                <span className="sm:hidden">máximo </span>
+                {f.max}
+                <span className="sm:hidden"> puntos</span>
+              </span>
+            </dt>
+            <dd className="mt-0.5 text-gray-600 sm:mt-0">{f.como}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
+/**
+ * Adenda 5 definitiva §6: divisor fijo de 119; el score por la tabla de
+ * anclajes del panel; canon siempre completo; seguridad social, estabilidad y
+ * arriendos acreditados (si el interruptor lo dice); comportamiento por las
+ * bandas de mora. Las demás tablas, como hoy (Adenda 4).
+ */
+function factoresA5d(v: Valores): Factor[] {
+  const acreditar = v.ACREDITAR_VARIABLES_NO_EVALUABLES === 1
+  const t = anclajes(v)
+  const nv = 'No se puede verificar hoy: ' + (acreditar ? 'se acredita completo y el estudio deja constancia de que no fue verificado.' : 'no suma puntos.')
+  const m = v.MESES_VENTANA_MORA_FINANCIERA
+  const ventana = v.MESES_VENTANA_COMPORTAMIENTO
+  return [
+    {
+      nombre: 'Score de la central',
+      max: 50,
+      como: t
+        ? `Por la tabla de anclajes: ${t.map((a) => `${a.score} → ${fmt(a.puntos)}`).join(' · ')}; entre dos anclajes, en línea recta. Con dos centrales cuenta el score mayor.`
+        : 'Por la tabla de anclajes, en línea recta entre dos anclajes. Con dos centrales cuenta el score mayor.',
+    },
+    { nombre: 'Deudas frente al ingreso', max: 15, como: `${DEUDAS}. Por encima del endeudamiento máximo, como hoy con la Adenda 4.` },
+    { nombre: 'Canon frente al ingreso', max: 10, como: 'Siempre completo: un canon alto no resta puntos, se resuelve con el canon máximo («hasta canon de»).' },
+    { nombre: 'Seguridad social', max: 8, como: nv },
+    {
+      nombre: 'Experiencia con créditos',
+      max: 6,
+      como: 'Con el sector financiero: 6 · solo con comercio u otro sector: 4 · solo con telefonía: 0. Cuentan las obligaciones abiertas o cerradas en buen estado, y las de codeudor.',
+    },
+    {
+      nombre: 'Comportamiento de pago',
+      max: 10,
+      como: `Sin mora, o sin historial: 10 · mora de telefonía tolerada: 0 · mora de comercio tolerada: ${fmt(v.PENAL_REAL_TOLERADA, true)} · mora en banda: −15${
+        m < ventana ? ` · mora financiera de más de 30 días entre el mes ${m + 1} y el ${ventana}: 0` : ''
+      }. Dentro de ${m === 1 ? 'el último mes' : `los últimos ${m} meses`}, esa mora rechaza.`,
+    },
+    { nombre: 'Estabilidad laboral', max: 10, como: nv },
+    { nombre: 'Antigüedad del historial', max: 5, como: 'Más de 8 años: 5 · de 5 a 8 años: 4 · de 2 a menos de 5 años: 3 · de 6 meses a menos de 2 años: 1 · menos de 6 meses: 0.' },
+    { nombre: 'Arriendos anteriores', max: 5, como: nv },
+  ]
+}
+
+/** El caso 2 de la adenda (score 660, lo demás completo), con los valores del panel. */
+const SCORE_EJEMPLO = 660
+
+export function ComoSeCalculaA5D({ valores }: { valores: Valores }) {
+  const t = anclajes(valores)
+  if (!t) return null
+  const v1 = puntosDeScore(t, SCORE_EJEMPLO)
+  // Sin acreditar, seguridad social (8), estabilidad (10) y arriendos (5) no suman.
+  const resto = valores.ACREDITAR_VARIABLES_NO_EVALUABLES === 1 ? 69 : 46
+  const brutos = v1 + resto
+  const puntaje = Math.round((brutos / 119) * 1000) / 10
+  const conclusion =
+    SCORE_EJEMPLO < valores.UMBRAL_SCORE_RECHAZO
+      ? 'se rechaza por el score'
+      : puntaje < valores.PISO_SEGUNDO_FIRMANTE
+        ? 'se rechaza: queda por debajo del piso'
+        : puntaje >= valores.UMBRAL_APROBADO && SCORE_EJEMPLO >= valores.SCORE_MINIMO_SOLO
+          ? 'se aprueba sin segundo firmante'
+          : puntaje >= valores.UMBRAL_APROBADO
+            ? `queda aprobado con segundo firmante, porque el score es menor que ${valores.SCORE_MINIMO_SOLO}`
+            : 'queda aprobado con segundo firmante, porque no llega al puntaje para aprobar'
+  return (
+    <div className="space-y-4 text-sm text-gray-700">
+      <div className="rounded-lg bg-gray-50 p-3">
+        <p className="font-semibold tabular-nums text-gray-900">Puntaje = puntos obtenidos ÷ 119 × 100</p>
+        <p className="mt-1 max-w-prose text-gray-600">
+          Siempre se divide entre 119, haya o no fuente para cada factor. Si a la persona le falta un dato, ese factor vale 0 (por ejemplo,
+          sin ingreso estimado, las deudas frente al ingreso). El puntaje se calcula siempre, aunque la persona cumpla una regla de rechazo.
+        </p>
+      </div>
+      <ListaFactores factores={factoresA5d(valores)} />
+      <div className="rounded-lg border border-gray-200 p-3">
+        <p className="font-semibold text-gray-900">Ejemplo</p>
+        <p className="mt-1 max-w-prose text-gray-600">
+          Score de {SCORE_EJEMPLO} ({fmt(Math.round(v1 * 10) / 10)} puntos) y lo demás completo, sin mora: {fmt(Math.round(brutos * 10) / 10)}{' '}
+          de 119 = <b className="tabular-nums text-gray-900">{fmt(puntaje)}</b>. Con los valores de este panel, {conclusion}.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export function ComoSeCalcula({ valores }: { valores: Valores }) {
   const auto = valores.UMBRAL_APROBACION_AUTOMATICA
   const gris = valores.UMBRAL_ZONA_GRIS
@@ -79,28 +190,7 @@ export function ComoSeCalcula({ valores }: { valores: Valores }) {
       </div>
 
       {/* Una lista y no una tabla: en el celular la tabla de 520 px se cortaba y obligaba a desplazar de lado. */}
-      <div>
-        <div aria-hidden className="hidden border-b border-gray-200 pb-2 text-xs font-semibold text-gray-600 sm:grid sm:grid-cols-[11rem_3.5rem_minmax(0,1fr)] sm:gap-x-3">
-          <span>Factor</span>
-          <span className="text-right">Máx.</span>
-          <span>Cómo da puntos</span>
-        </div>
-        <dl className="divide-y divide-gray-100">
-          {factores(valores).map((f) => (
-            <div key={f.nombre} className="py-2.5 sm:grid sm:grid-cols-[11rem_3.5rem_minmax(0,1fr)] sm:gap-x-3">
-              <dt className="flex items-baseline justify-between gap-3 font-medium text-gray-900 sm:contents">
-                <span>{f.nombre}</span>
-                <span className="text-xs font-normal tabular-nums text-gray-600 sm:text-right sm:text-sm sm:text-gray-700">
-                  <span className="sm:hidden">máximo </span>
-                  {f.max}
-                  <span className="sm:hidden"> puntos</span>
-                </span>
-              </dt>
-              <dd className="mt-0.5 text-gray-600 sm:mt-0">{f.como}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
+      <ListaFactores factores={factores(valores)} />
 
       <div className="rounded-lg border border-gray-200 p-3">
         <p className="font-semibold text-gray-900">Ejemplo</p>
