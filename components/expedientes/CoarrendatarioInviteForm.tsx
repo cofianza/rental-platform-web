@@ -1,8 +1,8 @@
 /**
  * CoarrendatarioInviteForm — formulario para invitar a un coarrendatario
  * cuando el estudio está en revisión ('condicionado') o, desde la Decisión 2
- * (2026-09-25), aprobado y todavía sin contrato: ahí baja la prima de
- * vinculación del 20 % al 10 % del canon. Compartido por:
+ * (2026-09-25), aprobado y todavía sin contrato (el beneficio sobre la prima,
+ * si lo hay, lo manda la API: `beneficioPrima`). Compartido por:
  *   - el SOLICITANTE (audience='solicitante'), desde CoarrendatarioCard y, sin
  *     cuenta, desde su enlace personal /cargar-documentos (P18).
  *   - el GESTOR (audience='gestor'): inmobiliaria / propietario / admin /
@@ -55,8 +55,10 @@ interface CoarrendatarioInviteFormProps {
    *  promesa se rompe y le toca teclear los mismos cuatro campos otra vez. */
   initial?: { nombre?: string; apellido?: string; email?: string; telefono?: string } | null
   onInvited?: () => void
-  /** Estudio ya aprobado (Decisión 2): el coarrendatario es opcional y baja la prima. */
+  /** Estudio ya aprobado (Decisión 2): el coarrendatario es opcional. */
   aprobado?: boolean
+  /** Con `aprobado`: la frase del beneficio sobre la prima, tal como la manda la API; sin ella no se menciona. */
+  beneficioPrima?: string | null
   /** Adenda 3 §6: aprobado con condición de coarrendatario. Ahí NO es opcional.
    *  Qué pasa si no acepta antes de `vence_en` lo dice `siVence` (enlace) o las
    *  reglas de la condición (panel). `vence_en` falta donde la API no la manda. */
@@ -96,6 +98,7 @@ export function CoarrendatarioInviteForm({
   initial,
   onInvited,
   aprobado = false,
+  beneficioPrima = null,
   condicion = null,
   antesDeLaDecision = false,
   condicionGestor = false,
@@ -202,11 +205,10 @@ export function CoarrendatarioInviteForm({
               condicion?.obligatoria ? mensajeCondicionCoarrendatario(condicion) : `Está cerca. ${mensajeCondicionCoarrendatario(condicion ?? {})}`
             ) : aprobado ? (
               <>
-                {esGestor
-                  ? 'El estudio quedó aprobado y el solicitante puede firmar solo. Si antes del contrato suma como '
-                  : 'Su estudio fue aprobado y puede firmar solo. Si antes del contrato suma como '}
-                <strong>coarrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}, la prima de
-                vinculación baja del 20 % al 10 % del canon; la evaluación del coarrendatario no tiene costo adicional.{' '}
+                {esGestor ? 'El estudio quedó aprobado y el solicitante puede firmar solo. ' : 'Su estudio fue aprobado y puede firmar solo. '}
+                {beneficioPrima ? 'Si antes del contrato suma como ' : 'Antes del contrato puede sumar como '}
+                <strong>coarrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}
+                {beneficioPrima ? `, ${beneficioPrima}` : ''}; la evaluación del coarrendatario no tiene costo adicional.{' '}
                 No necesita finca raíz. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
               </>
             ) : esGestor && antesDeLaDecision ? (

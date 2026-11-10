@@ -10,7 +10,7 @@
  *     'aprobado' y 'rechazado' para que quede el rastro de quién acompañó).
  *   - Sin coarrendatario, el formulario para invitarlo solo si el API abre la
  *     ventana: en revisión o, desde la Decisión 2 (2026-09-25), aprobado antes
- *     del contrato (prima del 10 %); nunca en el canal del propietario directo
+ *     del contrato; nunca en el canal del propietario directo
  *     (Decisión 4). Si no, no se muestra.
  *   - Adenda 3 V2 §6.1: también antes de la decisión del titular, si el API
  *     abre la ventana (coarrendatario desde el inicio).
@@ -27,6 +27,7 @@ import { coarrendatarioService, type ICoarrendatario, type IVentanaCoarrendatari
 import { estudioService } from '@/services/estudioService'
 import { EstudioDetailModal } from './EstudioDetailModal'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
+import { textoCoarrendatarioFuera } from '@/lib/textosPrima'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
@@ -123,7 +124,10 @@ export function CoarrendatarioPropietarioCard({
     coarrendatarioService.getVentana(expedienteId).then(setVentana, () => setVentana(null))
   }, [expedienteId])
   const antesDeLaDecision = PREVIOS_A_LA_DECISION.includes(expedienteEstado)
-  const ventanaAplica = expedienteEstado === 'condicionado' || expedienteEstado === 'aprobado' || antesDeLaDecision
+  // También con el estudio ya resuelto: la ventana trae lo que la API dice de la
+  // prima, que el aviso del coarrendatario evaluado necesita (ahí no se puede invitar).
+  const ventanaAplica =
+    expedienteEstado === 'condicionado' || expedienteEstado === 'aprobado' || expedienteEstado === 'rechazado' || expedienteEstado === 'cerrado' || antesDeLaDecision
   useEffect(() => {
     if (ventanaAplica) fetchVentana()
     else setVentana(null)
@@ -167,7 +171,7 @@ export function CoarrendatarioPropietarioCard({
   // Sin coarrendatario aún: el gestor (inmobiliaria / propietario / admin /
   // operador) puede invitarlo directamente — útil cuando es la inmobiliaria la
   // que lleva el expediente. Solo con la ventana abierta (en revisión, o
-  // aprobado antes del contrato para bajar la prima al 10 %); si no, no hay
+  // aprobado antes del contrato); si no, no hay
   // nada que mostrar.
   if (!coa && errorCarga) {
     return (
@@ -190,6 +194,7 @@ export function CoarrendatarioPropietarioCard({
         invitar={(input) => coarrendatarioService.invitar(expedienteId, input)}
         audience="gestor"
         aprobado={expedienteEstado === 'aprobado'}
+        beneficioPrima={ventana?.beneficio_prima?.completo}
         antesDeLaDecision={antesDeLaDecision}
         condicionGestor={conCondicion}
         onInvited={() => { fetchCoa(); fetchVentana() }}
@@ -238,9 +243,7 @@ export function CoarrendatarioPropietarioCard({
           resultado ? (
             <p>
               {resultado.resultado === 'rechazado'
-                ? resultado.noCalifica
-                  ? 'No aporta puntos ni ingreso, y el estudio sigue con el titular. No entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'
-                  : 'Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'
+                ? textoCoarrendatarioFuera(ventana?.beneficio_prima, !!resultado.noCalifica)
                 : resultado.resultado === 'condicionado'
                   ? 'Cofianza está revisando la evaluación del coarrendatario.'
                   : 'La evaluación del coarrendatario terminó.'}

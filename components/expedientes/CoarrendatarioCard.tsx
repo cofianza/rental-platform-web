@@ -1,7 +1,7 @@
 /**
  * CoarrendatarioCard — visible para el SOLICITANTE cuando su expediente
  * está en estado 'condicionado' o, desde la Decisión 2 (2026-09-25), aprobado
- * y todavía sin contrato: sumar al coarrendatario baja la prima al 10 %. La
+ * y todavía sin contrato (lo que eso cambia en la prima lo dice la API). La
  * ventana la decide el API (en revisión o aprobado antes del contrato, canal de
  * inmobiliaria: Decisión 4).
  *
@@ -22,6 +22,7 @@ import { autorizacionService } from '@/services/autorizacionService'
 import type { IPerfilProspecto } from '@/types/autorizacion'
 import type { ICondicionCoarrendatario } from '@/types/estudio'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
+import { textoEvaluacionTerminadaSobreAprobado, textoEvaluandoSobreAprobado, type BeneficioPrima } from '@/lib/textosPrima'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { IconRefresh, IconUsers } from '@/components/icons'
@@ -161,6 +162,7 @@ export function CoarrendatarioCard({
           audience="solicitante"
           initial={intencion}
           aprobado={aprobado}
+          beneficioPrima={ventana?.beneficio_prima?.completo}
           condicion={condicion}
           onInvited={() => { fetchCoa(); fetchVentana(); onUpdate?.() }}
         />
@@ -183,7 +185,7 @@ export function CoarrendatarioCard({
         </div>
       </div>
 
-      <EstadoBadge coa={coa} sinEfecto={!vigente} aprobado={aprobado} antesDeLaDecision={antesDeLaDecision} condicion={condicion} />
+      <EstadoBadge coa={coa} sinEfecto={!vigente} aprobado={aprobado} antesDeLaDecision={antesDeLaDecision} condicion={condicion} beneficioPrima={ventana?.beneficio_prima} />
 
       {/* Invitación pendiente: el solicitante puede corregirla y reenviarla, o
           cancelarla para invitar a otra persona (P4); con el estudio ya
@@ -213,12 +215,15 @@ function EstadoBadge({
   aprobado,
   antesDeLaDecision,
   condicion,
+  beneficioPrima,
 }: {
   coa: ICoarrendatario
   sinEfecto: boolean
   aprobado: boolean
   antesDeLaDecision: boolean
   condicion: ICondicionCoarrendatario | null
+  /** Lo que la API dice de la prima con coarrendatario (ver lib/textosPrima). */
+  beneficioPrima: BeneficioPrima
 }) {
   // Con condición no decide un analista: se pondera contra el puntaje objetivo.
   const conCondicion = !aprobado && !!condicion
@@ -255,7 +260,7 @@ function EstadoBadge({
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',
       mensaje: aprobado
-        ? 'Estamos procesando su evaluación crediticia. Si queda vinculado, la prima de vinculación baja al 10 % del canon; le avisamos por correo.'
+        ? textoEvaluandoSobreAprobado(beneficioPrima)
         : antesDeLaDecision
           ? 'Estamos haciendo su evaluación crediticia. Su estudio se decide con los resultados de los dos y le avisamos por correo.'
           : conCondicion
@@ -274,7 +279,7 @@ function EstadoBadge({
       // Sobre un aprobado (Decisión 2) su resultado no es del titular (Ley 1266):
       // solo si quedó vinculado, y eso va por correo.
       mensaje: aprobado
-        ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
+        ? textoEvaluacionTerminadaSobreAprobado(beneficioPrima)
         : antesDeLaDecision
           ? 'La evaluación de su coarrendatario terminó. Su estudio se decide con los resultados de los dos y le avisamos por correo.'
           : conCondicion

@@ -4,7 +4,7 @@
  * que el solicitante suba su documentación adicional; también llega en el
  * correo del condicionado. Desde aquí el prospecto, sin cuenta, invita a su
  * coarrendatario (P18); desde la Decisión 2 (2026-09-25), también con el
- * estudio aprobado y antes del contrato, para bajar la prima al 10 % (el enlace
+ * estudio aprobado y antes del contrato (el enlace
  * llega en el correo del aprobado). El API decide si se puede (Decisión 4: no en
  * el canal del propietario directo).
  */
@@ -16,6 +16,7 @@ import { useParams } from 'next/navigation'
 import { toast } from 'sonner'
 import { IconLoader, IconCheckCircle, IconFileText, IconRefresh, IconUsers } from '@/components/icons'
 import { CoarrendatarioInviteForm } from '@/components/expedientes/CoarrendatarioInviteForm'
+import { textoEvaluacionTerminadaSobreAprobado, type BeneficioPrima } from '@/lib/textosPrima'
 import { fechaCondicion } from '@/components/expedientes/textoVisible'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
@@ -40,6 +41,8 @@ function textoInvitado(
   plazo: string | null,
   /** Qué pasa si vence sin coarrendatario (API); null = no lo sabemos. */
   siVence: ContextoCargaDocumentos['condicion_si_vence'],
+  /** Lo que la API dice de la prima con coarrendatario (ver lib/textosPrima). */
+  beneficioPrima?: BeneficioPrima,
 ): string {
   if (estadoEstudio === 'cerrado') {
     return invitado.estado === 'pendiente_aceptacion'
@@ -66,7 +69,7 @@ function textoInvitado(
   }
   if (invitado.estado === 'aceptado') return 'Aceptó la invitación. Estamos haciendo su evaluación crediticia.'
   return estadoEstudio === 'aprobado'
-    ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
+    ? textoEvaluacionTerminadaSobreAprobado(beneficioPrima)
     : conCondicion
       ? 'La evaluación de su coarrendatario terminó. Le avisamos el resultado por correo.'
       : 'La evaluación de su coarrendatario terminó. Un analista de Cofianza decide su caso con los resultados de los dos y le avisamos por correo.'
@@ -240,6 +243,7 @@ export default function CargarDocumentosPage() {
           <CoarrendatarioInviteForm
             audience="solicitante"
             aprobado={aprobado}
+            beneficioPrima={ctx.coarrendatario.beneficio_prima?.completo}
             condicion={
               conCondicion
                 ? {
@@ -264,7 +268,7 @@ export default function CargarDocumentosPage() {
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />
             <div className="min-w-0 text-sm">
               <p className="font-semibold text-gray-900">Usted invitó a {ctx.coarrendatario.invitado.nombre} como coarrendatario</p>
-              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion, plazo, ctx.condicion_si_vence)}</p>
+              <p className="mt-1 text-gray-700">{textoInvitado(ctx.coarrendatario.invitado, ctx.estado, vigente, conCondicion, plazo, ctx.condicion_si_vence, ctx.coarrendatario.beneficio_prima)}</p>
             </div>
           </div>
         )}

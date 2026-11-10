@@ -4,6 +4,7 @@
  * invita a un coarrendatario que acepta T&C y se le hace su propio estudio.
  */
 
+import type { IBeneficioPrima } from '@/lib/textosPrima'
 import { apiClient } from '@/lib/api'
 
 export type CoarrendatarioEstado =
@@ -59,6 +60,8 @@ export interface IVentanaCoarrendatario {
   vigente: boolean
   puede_invitar: boolean
   motivo: string | null
+  /** Lo que las tarjetas dicen de la prima con coarrendatario: el texto lo manda la API; null = no hay beneficio (ausente en un API anterior). */
+  beneficio_prima?: IBeneficioPrima | null
 }
 
 export interface IInvitarCoarrendatarioInput {

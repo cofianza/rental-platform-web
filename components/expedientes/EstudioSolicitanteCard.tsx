@@ -97,7 +97,7 @@ export function EstudioSolicitanteCard({
   const [authError, setAuthError] = useState(false)
   const [descargandoCert, setDescargandoCert] = useState(false)
   // Decisión 2 (2026-09-25): el aprobado puede sumar coarrendatario antes del
-  // contrato y pagar la prima del 10 %. La oferta sale solo si el API abre la
+  // contrato. La oferta (y su texto) sale solo si el API la manda y abre la
   // ventana (sin contrato fijo, sin otra invitación, canal de inmobiliaria).
   const [puedeSumarCoa, setPuedeSumarCoa] = useState(false)
 
@@ -681,10 +681,8 @@ export function EstudioSolicitanteCard({
                   formulario es la tarjeta del coarrendatario, debajo. */}
               {r.coarrendatarioAbarataPrima && puedeSumarCoa && (
                 <div className="mt-3">
-                  <p className={`text-sm ${tono.texto}`}>
-                    Si antes del contrato suma como coarrendatario a la persona con quien va a vivir, la prima de
-                    vinculación baja del 20 % al 10 % del canon. Esa persona no necesita tener finca raíz.
-                  </p>
+                  {/* El texto de la oferta (con su cifra) lo manda la API. */}
+                  {r.ofertaCoarrendatario && <p className={`text-sm ${tono.texto}`}>{r.ofertaCoarrendatario}</p>}
                   <a
                     href="#coarrendatario"
                     className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"

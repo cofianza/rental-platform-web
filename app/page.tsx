@@ -16,6 +16,7 @@ import { PublicFooter } from '@/components/vitrina/PublicFooter'
 import { VitrinaPreview } from '@/components/vitrina/VitrinaPreview'
 import { ScrollReveal } from '@/components/vitrina/ScrollReveal'
 import { IconCheck, IconX, IconArrowRight, IconSearch, IconCheckCircle, IconHome } from '@/components/icons'
+import { API_BASE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: 'Cofianza — ¿Le pidieron fiador? Soy yo. Llámenos.',
@@ -23,7 +24,34 @@ export const metadata: Metadata = {
     'Afianzadora digital en Colombia. Respaldamos su contrato de arrendamiento para que no tenga que buscar codeudor. Estudio en segundos, firma por WhatsApp, cashback 30%.',
 }
 
-export default function HomePage() {
+// Respaldo de «¿Cuánto cuesta y qué incluye?» si la API no responde (p. ej. en
+// la build de CI). El texto vigente lo manda la API: ver textoFaqCosto.
+const FAQ_COSTO_RESPALDO =
+  'El estudio de arrendamiento tiene un costo único al inicio. Si aprueba, paga una sola vez la prima de vinculación: 20% de un canon si firma solo o 10% si tiene un coarrendatario aprobado, más IVA. Luego paga una tarifa mensual más IVA. Al terminar el contrato recupera el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por usted o que la inmobiliaria o el propietario no haya cumplido a tiempo sus reportes a Cofianza.'
+
+/**
+ * El texto de la pregunta de precio lo manda la API (endpoint público, sin
+ * autenticación), cacheado diez minutos: así la página no fija cifras y cambia
+ * sin desplegar. Si la API no responde, queda el respaldo.
+ */
+async function textoFaqCosto(): Promise<string> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/public/precios/landing`, {
+      next: { revalidate: 600 },
+      // La página no espera a una API lenta: a los tres segundos sale el respaldo.
+      signal: AbortSignal.timeout(3000),
+    })
+    if (!res.ok) return FAQ_COSTO_RESPALDO
+    const json = (await res.json()) as { data?: { faq_costo?: unknown } }
+    const texto = json.data?.faq_costo
+    return typeof texto === 'string' && texto.trim() ? texto : FAQ_COSTO_RESPALDO
+  } catch {
+    return FAQ_COSTO_RESPALDO
+  }
+}
+
+export default async function HomePage() {
+  const faqCosto = await textoFaqCosto()
   return (
     <div className="min-h-screen bg-white text-gray-900 font-display antialiased">
       <PublicNavbar />
@@ -557,7 +585,7 @@ export default function HomePage() {
               },
               {
                 q: '¿Cuánto cuesta y qué incluye?',
-                a: 'El estudio de arrendamiento tiene un costo único al inicio. Si aprueba, paga una sola vez la prima de vinculación: 20% de un canon si firma solo o 10% si tiene un coarrendatario aprobado, más IVA. Luego paga una tarifa mensual más IVA. Al terminar el contrato recupera el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por usted o que la inmobiliaria o el propietario no haya cumplido a tiempo sus reportes a Cofianza.',
+                a: faqCosto,
               },
               {
                 q: '¿Qué pasa si no me aprueban?',
