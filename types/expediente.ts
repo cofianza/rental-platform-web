@@ -4,14 +4,14 @@
  */
 
 import type { EstadoExpediente } from '@/lib/constants'
-import type { EstadoEstudio, ResultadoEstudio } from './estudio'
+import type { EstadoEstudio, IDesenlaceEstudio, ResultadoEstudio } from './estudio'
 import type { EstadoBloqueo } from './autorizacion'
 
 // Re-export del tipo de estado
 export type { EstadoExpediente }
 
 /** Estudio vigente (el más reciente) embebido en la fila del expediente. */
-export interface IEstudioVigente {
+export interface IEstudioVigente extends IDesenlaceEstudio {
   estado: EstadoEstudio
   resultado: ResultadoEstudio
   score?: number | null

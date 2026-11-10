@@ -104,3 +104,30 @@ test('U8: la revisión sin condición se llama «En revisión de Cofianza»', as
   const { ETAPA_LABEL } = await import('./etapaEstudio')
   assert.equal(ETAPA_LABEL.decision, 'En revisión de Cofianza')
 })
+
+// Con el resultado que envía la API (`desenlace`), la etapa del condicionado sale de él.
+test('condicionado: sin desenlace, «decision» como siempre', () => {
+  assert.equal(calcularEtapa({ ...base, estado: 'condicionado' }), 'decision')
+  assert.equal(calcularEtapa({ ...base, estado: 'condicionado', desenlace: null }), 'decision')
+  // Un valor que esta versión no conoce no rompe nada.
+  assert.equal(calcularEtapa({ ...base, estado: 'condicionado', desenlace: 'otro' }), 'decision')
+})
+
+test('condicionado: con desenlace, su etapa y su turno', () => {
+  assert.equal(calcularEtapa({ ...base, estado: 'condicionado', desenlace: 'aprobado_segundo_firmante' }), 'segundo_firmante')
+  assert.equal(calcularEtapa({ ...base, estado: 'condicionado', desenlace: 'bloqueado_listas' }), 'bloqueado')
+  assert.equal(turnoDeEtapa('segundo_firmante', true), 'prospecto')
+  assert.equal(turnoDeEtapa('bloqueado', false), 'gestor')
+  // Fuera del condicionado el desenlace no mueve la etapa.
+  assert.equal(calcularEtapa({ ...base, estado: 'aprobado', desenlace: 'aprobado' }), 'contrato')
+  assert.equal(calcularEtapa({ ...base, estado: 'rechazado', desenlace: 'rechazado' }), 'no_aprobado')
+})
+
+test('queSigue: en las etapas del resultado manda el texto de la API', () => {
+  const o = { vista: 'gestor' as const, analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false }
+  assert.equal(queSigue('segundo_firmante', { ...o, textoApi: 'Texto de la API.' }), 'Texto de la API.')
+  assert.equal(queSigue('bloqueado', { ...o, textoApi: 'Otro texto.' }), 'Otro texto.')
+  // Sin texto de la API hay un respaldo; en las demás etapas el texto de la API no se usa.
+  assert.match(queSigue('segundo_firmante', o), /segundo firmante/)
+  assert.doesNotMatch(queSigue('decision', { ...o, textoApi: 'Texto de la API.' }), /Texto de la API/)
+})

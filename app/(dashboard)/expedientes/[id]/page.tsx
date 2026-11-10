@@ -68,7 +68,7 @@ import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes
 import { revisionDemorada } from '@/lib/etapaFila'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
-import { useEtapaEstudio, ETAPA_LABEL, turnoDeEtapa } from '@/hooks/useEtapaEstudio'
+import { useEtapaEstudio, ETAPA_LABEL, turnoDeEtapa, esEsperaDePersona } from '@/hooks/useEtapaEstudio'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
@@ -572,7 +572,10 @@ function ExpedienteDetalleContenido() {
           : undefined
       : coaFallidaVive
         ? 'Falló la consulta del coarrendatario'
-        : etapa === 'decision' && condicionCoa
+        : etapa === 'segundo_firmante' || etapa === 'bloqueado'
+          ? // El nombre del resultado lo redacta la API.
+            (titularCondicionado?.desenlace_texto ?? ETAPA_LABEL[etapa])
+          : etapa === 'decision' && condicionCoa
           ? condicionCoa.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
           : etapa
             ? ETAPA_LABEL[etapa]
@@ -584,7 +587,8 @@ function ExpedienteDetalleContenido() {
   const turno = turnoBase ?? (!isInternalRole && etapaTurno === 'visita' ? 'gestor' : null)
   const vistaTurno = isInternalRole ? 'cofianza' : puedeEditar ? 'gestor' : 'equipo'
   // Las mismas transiciones que ofrece el modal (con condición no se aprueba a mano).
-  const transicionesModal = (transiciones ?? []).filter((t) => !(condicionCoa && t.estado_destino === 'aprobado'))
+  // Con la operación bloqueada tampoco: la API responde 409 mientras la persona siga en el estudio.
+  const transicionesModal = (transiciones ?? []).filter((t) => !((condicionCoa || etapa === 'bloqueado') && t.estado_destino === 'aprobado'))
   // Al dueño la API solo le ofrece cerrar o cancelar: el botón lo dice, y no como acción principal.
   const soloCierre = transicionesModal.every((t) => t.estado_destino === 'cerrado')
 
@@ -803,7 +807,7 @@ function ExpedienteDetalleContenido() {
             revision: etapaTurno === 'decision' && !condicionCoa,
             analista: puedeAsignar,
             sinEjecutar: etapaTurno === 'sin_ejecutar',
-            condicion: etapaTurno === 'decision' && !!condicionCoa,
+            condicion: !!condicionCoa && esEsperaDePersona(etapaTurno, true),
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» y sin coral.
             tomadoPor:
               etapaTurno === 'decision' && !condicionCoa && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
@@ -844,6 +848,7 @@ function ExpedienteDetalleContenido() {
                     sinInmueble: !expediente.inmueble,
                     citaActiva,
                     perfilIncompleto: bloqueadoPorPerfil,
+                    textoApi: titularCondicionado?.siguiente_accion_texto ?? null,
                     // Propietario directo: la API no admite coarrendatario (espera el Convenio).
                   })}
                 </p>
@@ -1054,7 +1059,8 @@ function ExpedienteDetalleContenido() {
                       />
                     ) : null,
                   decision:
-                    esCondicionado && puedeActuar ? (
+                    // Con la operación bloqueada no hay decisión de un analista: qué hacer está en la evaluación.
+                    esCondicionado && puedeActuar && etapa !== 'bloqueado' ? (
                       // Destino del atajo «Ir a la decisión» de la franja del turno.
                       <div id="decision-estudio" tabIndex={-1} className="scroll-mt-4 rounded-xl focus:outline-none">
                       <AprobarCondicionadoCard

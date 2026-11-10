@@ -127,3 +127,25 @@ test('X5: el encabezado Actividad recorre los cuatro órdenes y vuelve al inicio
     { sortBy: 'updated_at', sortOrder: 'desc' },
   ])
 })
+
+// Con el resultado que envía la API (`desenlace`), la etapa sale de él; sin él, todo sigue como siempre.
+test('condicionado: sin desenlace sigue siendo «decision»', () => {
+  assert.equal(etapaDeFila(fila({ estado: 'condicionado' }, { estado: 'completado', resultado: 'condicionado' })), 'decision')
+  assert.equal(etapaDeFila(fila({ estado: 'condicionado' }, { estado: 'completado', resultado: 'condicionado', desenlace: null })), 'decision')
+})
+
+test('condicionado: con desenlace, la etapa es la del resultado', () => {
+  const sf = fila({ estado: 'condicionado', depende_de: 'prospecto' }, { estado: 'completado', resultado: 'condicionado', desenlace: 'aprobado_segundo_firmante' })
+  assert.equal(etapaDeFila(sf), 'segundo_firmante')
+  const bloqueado = fila({ estado: 'condicionado', depende_de: 'gestor' }, { estado: 'completado', resultado: 'condicionado', desenlace: 'bloqueado_listas' })
+  assert.equal(etapaDeFila(bloqueado), 'bloqueado')
+  assert.equal(accionDeFila(bloqueado, 'bloqueado'), 'revisar el bloqueo en el detalle')
+  // No son revisiones de un analista: no hay nada que «tomar».
+  assert.equal(tomarDisponible(sf), false)
+  assert.equal(tomarDisponible(bloqueado), false)
+})
+
+test('el desenlace no cambia las etapas que no son del condicionado', () => {
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado' }, { estado: 'completado', resultado: 'aprobado', desenlace: 'aprobado' })), 'contrato')
+  assert.equal(etapaDeFila(fila({ estado: 'rechazado' }, { estado: 'completado', resultado: 'rechazado', desenlace: 'rechazado' })), 'no_aprobado')
+})

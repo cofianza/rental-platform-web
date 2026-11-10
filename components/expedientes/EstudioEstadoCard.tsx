@@ -35,6 +35,9 @@ import type { IEstudio, EstadoEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { motivoCoarrendatario, textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida, partirObservaciones } from './textoVisible'
 import { MotivosRevision } from './MotivosRevision'
+import { MarcarRestitucionModal } from './MarcarRestitucionModal'
+import { MotivoDialog } from '@/components/ui/MotivoDialog'
+import { useMarcaEstudio } from '@/hooks/useMarcaEstudio'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -118,6 +121,8 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
     if (esCoarrendatario && e.resultado === 'aprobado') return 'Válido'
     if (esCoarrendatario && e.resultado === 'rechazado') return 'No califica'
     if (esCoarrendatario && e.resultado === 'condicionado') return 'En revisión'
+    // Con el resultado que envía la API, su nombre es el de ella (la web no lo redacta).
+    if (!esCoarrendatario && e.desenlace && e.desenlace_texto) return e.desenlace_texto
     if (e.resultado === 'condicionado') {
       if (e.decision_cofianza === 'aprobado') return 'Aprobado'
       if (e.decision_cofianza === 'negado') return 'No aprobable'
@@ -267,6 +272,10 @@ function getSiguientePaso(
       }
       if (estudio.decision_cofianza === 'negado') {
         return 'Un analista de Cofianza revisó el caso y no lo aprobó. El estudio no avanza al contrato.'
+      }
+      // Resultado que envía la API con su «qué hacer»: no está en revisión de un analista.
+      if (estudio.desenlace === 'aprobado_segundo_firmante' || estudio.desenlace === 'bloqueado_listas') {
+        return estudio.siguiente_accion_texto ?? ''
       }
       // Adenda 3 V2 §7: lo primero que tiene que hacer Cofianza.
       if (esCofianza && estudio.listas?.estado === 'por_confirmar') {
@@ -481,6 +490,9 @@ export function EstudioEstadoCard({
           estudio={estudioTitular}
           etiqueta="Titular"
           persona={titularSolicitante}
+          segundoFirmante={
+            estudioCoa?.estado === 'completado' && coaSolicitante ? `${coaSolicitante.nombre} ${coaSolicitante.apellido ?? ''}`.trim() : null
+          }
           tieneContrato={tieneContrato}
           expedienteId={expedienteId}
           expedienteEstado={expedienteEstado}
@@ -537,6 +549,8 @@ interface EstudioPanelProps {
   /** Solo titular: pedir una autorización nueva si firmó con otro documento. */
   expedienteId?: string
   onReasignado?: () => void
+  /** Solo titular: nombre del segundo firmante ya evaluado, si lo hay (a quién puede corresponder una marca). */
+  segundoFirmante?: string | null
   /** Coarrendatario con el estudio ya resuelto: su evaluación ya no se reintenta (P3). */
   sinReintento?: boolean
   /** Solo titular: ya hay contrato (o el estudio se cerró): no se dice «generar contrato». */
@@ -556,11 +570,19 @@ function EstudioPanel({
   destinacion,
   onReasignado,
   expedienteId,
+  segundoFirmante,
   sinReintento,
   tieneContrato = false,
   expedienteEstado,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
+  const [marcaAbierta, setMarcaAbierta] = useState(false)
+  const [retiroAbierto, setRetiroAbierto] = useState(false)
+  // La API dice si quien mira puede marcar (solo en la evaluación del titular) y si ya hay una marca.
+  const restitucion = etiqueta === 'Titular' ? estudio.restitucion : undefined
+  // Con contrato o con el estudio cerrado la API no admite la marca: no se ofrece.
+  const puedeMarcar = !!restitucion?.puede_marcar && !tieneContrato && expedienteEstado !== 'cerrado'
+  const { retirar: retirarMarca, guardando: retirandoMarca } = useMarcaEstudio(estudio.id, onRetried)
   // `userRol` no distingue al miembro 'solo_lectura' de una inmobiliaria: entra
   // como rol 'inmobiliaria' y hasta aquí veía Reintentar y Reasignar, dos
   // mutaciones que el API le niega. Gerencia no llega a esGestor.
@@ -780,7 +802,18 @@ function EstudioPanel({
         </SeccionPaso>
       )}
 
-      {(puedeReasignar || onVerEstudios) && (
+      {restitucion?.marca && (
+        <p role="status" className="mx-4 mb-3 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 sm:mx-5">
+          <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <span className="min-w-0 break-words">
+            Marca de restitución registrada el {new Date(restitucion.marca.marcada_en).toLocaleDateString('es-CO', { timeZone: 'America/Bogota' })} sobre{' '}
+            {restitucion.marca.persona === 'solicitante' ? 'el titular' : 'el segundo firmante'}. Soporte: {restitucion.marca.soporte}. Motivo:{' '}
+            {restitucion.marca.motivo}
+          </span>
+        </p>
+      )}
+
+      {(puedeReasignar || onVerEstudios || puedeMarcar) && (
         <div className="flex flex-wrap items-center gap-2 px-4 py-3 sm:px-5">
           {onVerEstudios && (
             <button
@@ -802,7 +835,45 @@ function EstudioPanel({
               {inmuebleActualId ? 'Reasignar a otra propiedad' : 'Vincular inmueble'}
             </button>
           )}
+          {puedeMarcar && (
+            <button
+              type="button"
+              onClick={() => (restitucion?.marca ? setRetiroAbierto(true) : setMarcaAbierta(true))}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+            >
+              <IconAlertTriangle size={16} />
+              {restitucion?.marca ? 'Retirar marca de restitución' : 'Marcar restitución'}
+            </button>
+          )}
         </div>
+      )}
+
+      {puedeMarcar && restitucion && (
+        <>
+          <MarcarRestitucionModal
+            isOpen={marcaAbierta}
+            onClose={() => setMarcaAbierta(false)}
+            estudioId={estudio.id}
+            ayuda={restitucion.ayuda}
+            titular={nombreCompleto}
+            segundoFirmante={segundoFirmante}
+            onGuardado={onRetried}
+          />
+          <MotivoDialog
+            isOpen={retiroAbierto}
+            onClose={() => setRetiroAbierto(false)}
+            onConfirm={async (motivo) => {
+              const ok = await retirarMarca(motivo)
+              if (ok) setRetiroAbierto(false)
+              return ok
+            }}
+            title="Retirar la marca de restitución"
+            descripcion="El estudio se decide de nuevo sin la marca. El retiro queda en el registro con su motivo."
+            confirmLabel="Retirar marca"
+            isLoading={retirandoMarca}
+            minLength={10}
+          />
+        </>
       )}
 
       {puedeReasignar && (
