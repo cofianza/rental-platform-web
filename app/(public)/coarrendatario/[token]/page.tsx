@@ -20,6 +20,8 @@ import {
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
+import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
+import { correoParaEnviar, correoResultadoValido } from '@/lib/correoResultado'
 
 /** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
 const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
@@ -85,6 +87,9 @@ export default function CoarrendatarioPublicPage() {
   // Sus datos de notificación: el contrato los imprime (cláusula de notificaciones).
   const [direccion, setDireccion] = useState('')
   const [municipio, setMunicipio] = useState('')
+  // El correo para el resultado de su evaluación: solo si la API lo pide (prellenado con el de la invitación).
+  const [correoResultado, setCorreoResultado] = useState('')
+  const [errorCorreo, setErrorCorreo] = useState(false)
   const [resultMsg, setResultMsg] = useState<string | null>(null)
 
   const fetchView = useCallback(async () => {
@@ -93,6 +98,7 @@ export default function CoarrendatarioPublicPage() {
     try {
       const data = await coarrendatarioService.getPublicByToken(token)
       setView(data)
+      if (data.contacto_resultado?.requerido) setCorreoResultado((actual) => actual || data.email || '')
       // Si ya respondió antes, saltamos a la pantalla correspondiente.
       if (data.estado === 'aceptado') {
         setPhase('aceptado')
@@ -131,6 +137,12 @@ export default function CoarrendatarioPublicPage() {
       setErrorMsg('Escriba su dirección de residencia y su municipio.')
       return
     }
+    const pideCorreo = !!view?.contacto_resultado?.requerido
+    if (pideCorreo && !correoResultadoValido(correoResultado)) {
+      setErrorCorreo(true)
+      setErrorMsg('Escriba el correo donde quiere recibir el resultado de su evaluación.')
+      return
+    }
     if (!acceptTerms || !acceptData) {
       setErrorMsg('Debe aceptar los términos y la política de tratamiento de datos.')
       return
@@ -138,7 +150,11 @@ export default function CoarrendatarioPublicPage() {
     setErrorMsg(null)
     setPhase('aceptando')
     try {
-      const r = await coarrendatarioService.aceptar(token, { direccion: direccion.trim(), municipio: municipio.trim() })
+      const r = await coarrendatarioService.aceptar(
+        token,
+        { direccion: direccion.trim(), municipio: municipio.trim() },
+        correoParaEnviar(view?.contacto_resultado?.requerido, correoResultado),
+      )
       setResultMsg(r.mensaje)
       setPhase('aceptado')
     } catch (err) {
@@ -485,6 +501,17 @@ export default function CoarrendatarioPublicPage() {
               A esta dirección, a su correo y a su celular llegarán las notificaciones del contrato.
             </p>
           </div>
+
+          {view?.contacto_resultado?.requerido && (
+            <CampoCorreoResultado
+              valor={correoResultado}
+              onCambio={(v) => {
+                setCorreoResultado(v)
+                if (errorCorreo && correoResultadoValido(v)) setErrorCorreo(false)
+              }}
+              mostrarError={errorCorreo}
+            />
+          )}
 
           <div className="space-y-3">
             <label className="flex items-start gap-3 rounded-lg py-1.5 text-sm text-gray-700 cursor-pointer">

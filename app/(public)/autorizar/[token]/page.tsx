@@ -64,6 +64,8 @@ import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { Modal } from '@/components/ui/Modal'
 import { buttonClasses } from '@/components/ui/Button'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
+import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
+import { correoParaEnviar, correoResultadoValido } from '@/lib/correoResultado'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -241,6 +243,10 @@ export default function AutorizarPage() {
   // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
   // Este `false` es normativo — no lo cambies a true ni lo derives de nada.
   const [acepta, setAcepta] = useState(false)
+  // El correo donde quiere recibir el resultado de su evaluación: solo si la API lo pide
+  // (contacto_resultado). Se prellena al confirmar su documento con el de su ficha.
+  const [correoResultado, setCorreoResultado] = useState('')
+  const [errorCorreo, setErrorCorreo] = useState(false)
   const [openFin, setOpenFin] = useState<number | null>(null)
   const [consents, setConsents] = useState<Record<ConsentKey, boolean>>({
     analitica: false,
@@ -484,7 +490,8 @@ export default function AutorizarPage() {
     setDocumentoError('')
     try {
       // Una API anterior al bloque 2 no manda intentos_restantes: 0 = detenido.
-      const { coincide, intentos_restantes = 0 } = await autorizacionPublicService.confirmarIdentidad(token, documento.trim())
+      const { coincide, intentos_restantes = 0, correo_resultado } = await autorizacionPublicService.confirmarIdentidad(token, documento.trim())
+      if (coincide && correo_resultado) setCorreoResultado((actual) => actual || correo_resultado)
       if (coincide) setIdentidadOk(true)
       else if (intentos_restantes > 0) volverAlDocumento(intentos_restantes)
       else setPageState('no_coincide')
@@ -578,6 +585,7 @@ export default function AutorizarPage() {
         // lo vuelve a comparar (un POST directo no se salta la confirmación).
         numero_documento: documento.trim(),
         consentimientos_opcionales: consents,
+        ...correoParaEnviar(data?.contacto_resultado?.requerido, correoResultado),
       })
       setHashDocumento(result.hash_documento)
       setPagoRequerido(!!result.pago_requerido)
@@ -1149,6 +1157,18 @@ export default function AutorizarPage() {
               . La revocación la hace usted, ante Cofianza.
             </p>
 
+            {/* Fuera del texto legal: dónde quiere recibir el resultado (solo si la API lo pide). */}
+            {data.contacto_resultado?.requerido && (
+              <CampoCorreoResultado
+                valor={correoResultado}
+                onCambio={(v) => {
+                  setCorreoResultado(v)
+                  if (errorCorreo && correoResultadoValido(v)) setErrorCorreo(false)
+                }}
+                mostrarError={errorCorreo}
+              />
+            )}
+
             {/* Aceptación */}
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-white p-3.5">
               <input
@@ -1173,7 +1193,13 @@ export default function AutorizarPage() {
 
             <button
               type="button"
-              onClick={() => irAPaso(2)}
+              onClick={() => {
+                if (data.contacto_resultado?.requerido && !correoResultadoValido(correoResultado)) {
+                  setErrorCorreo(true)
+                  return
+                }
+                irAPaso(2)
+              }}
               disabled={!acepta}
               className={buttonClasses('primary', 'lg', 'w-full')}
             >
