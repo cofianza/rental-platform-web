@@ -18,3 +18,17 @@ export function correoResultadoValido(correo: string): boolean {
 export function correoParaEnviar(requerido: boolean | undefined, correo: string): { correo_resultado?: string } {
   return requerido ? { correo_resultado: correo.trim() } : {}
 }
+
+/**
+ * Lo que se agrega al cuerpo de la aceptación cuando la API pide comprobar el documento antes
+ * (`contacto_resultado.documento_requerido`): el número que la persona escribió. Nada si no lo pide.
+ */
+export function documentoParaEnviar(requerido: boolean | undefined, numero: string): { numero_documento?: string } {
+  return requerido ? { numero_documento: numero.trim() } : {}
+}
+
+/** «a <correo>» si la API lo mandó; si no, «al correo que usted registró» (sin el dato). Con la preposición. */
+export function destinoDelCorreo(correo: string | null | undefined): string {
+  const c = correo?.trim()
+  return c ? `a ${c}` : 'al correo que usted registró'
+}
