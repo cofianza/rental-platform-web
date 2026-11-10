@@ -21,7 +21,8 @@ import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
-import { correoParaEnviar, correoResultadoValido } from '@/lib/correoResultado'
+import { CampoComprobarDocumento } from '@/components/public/CampoComprobarDocumento'
+import { correoParaEnviar, correoResultadoValido, destinoDelCorreo, documentoParaEnviar } from '@/lib/correoResultado'
 
 /** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
 const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
@@ -74,6 +75,7 @@ export default function CoarrendatarioPublicPage() {
   const [yaReportado, setYaReportado] = useState(false)
   const documentoRef = useRef<HTMLElement>(null)
   const confirmarDocumentoRef = useRef<HTMLButtonElement>(null)
+  const documentoInputRef = useRef<HTMLInputElement>(null)
   const errorRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (errorMsg) errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -90,6 +92,8 @@ export default function CoarrendatarioPublicPage() {
   // El correo para el resultado de su evaluación: solo si la API lo pide (prellenado con el de la invitación).
   const [correoResultado, setCorreoResultado] = useState('')
   const [errorCorreo, setErrorCorreo] = useState(false)
+  // Cuando la API pide comprobar el documento: lo que escribió la persona y coincidió (va en la aceptación).
+  const [numeroDocumento, setNumeroDocumento] = useState('')
   const [resultMsg, setResultMsg] = useState<string | null>(null)
 
   const fetchView = useCallback(async () => {
@@ -98,12 +102,13 @@ export default function CoarrendatarioPublicPage() {
     try {
       const data = await coarrendatarioService.getPublicByToken(token)
       setView(data)
-      if (data.contacto_resultado?.requerido) setCorreoResultado((actual) => actual || data.email || '')
+      // Si la API pide comprobar el documento, el correo llega después (al comprobarlo), no aquí.
+      if (data.contacto_resultado?.requerido && data.email) setCorreoResultado((actual) => actual || data.email || '')
       // Si ya respondió antes, saltamos a la pantalla correspondiente.
       if (data.estado === 'aceptado') {
         setPhase('aceptado')
         // Puede reabrirlo días después: «estamos procesando» no siempre es cierto.
-        setResultMsg(`Ya aceptó esta invitación. Le escribimos a ${data.email} cuando su evaluación termine.`)
+        setResultMsg(`Ya aceptó esta invitación. Le escribimos ${destinoDelCorreo(data.email)} cuando su evaluación termine.`)
       } else if (data.estado === 'estudio_completado') {
         setPhase('aceptado')
         setResultMsg('Ya había aceptado esta invitación y su evaluación terminó.')
@@ -124,11 +129,17 @@ export default function CoarrendatarioPublicPage() {
 
   useEffect(() => { fetchView() }, [fetchView])
 
+  const pideDocumento = !!view?.contacto_resultado?.documento_requerido
+
   const handleAceptar = async () => {
     if (!token) return
     // No va en `disabled`: con el botón apagado no sabría qué le falta.
-    if (view?.documento && !documentoConfirmado) {
-      setErrorMsg('Antes de autorizar, confirme arriba que el documento es el suyo («Sí, es mi documento»).')
+    if ((pideDocumento || view?.documento) && !documentoConfirmado) {
+      setErrorMsg(
+        pideDocumento
+          ? 'Antes de autorizar, escriba arriba su número de documento y pulse «Comprobar».'
+          : 'Antes de autorizar, confirme arriba que el documento es el suyo («Sí, es mi documento»).',
+      )
       setFaltaConfirmarDocumento(true)
       return
     }
@@ -153,7 +164,10 @@ export default function CoarrendatarioPublicPage() {
       const r = await coarrendatarioService.aceptar(
         token,
         { direccion: direccion.trim(), municipio: municipio.trim() },
-        correoParaEnviar(view?.contacto_resultado?.requerido, correoResultado),
+        {
+          ...correoParaEnviar(view?.contacto_resultado?.requerido, correoResultado),
+          ...documentoParaEnviar(pideDocumento, numeroDocumento),
+        },
       )
       setResultMsg(r.mensaje)
       setPhase('aceptado')
@@ -301,8 +315,8 @@ export default function CoarrendatarioPublicPage() {
         {view?.estado !== 'aceptado' && (
           <p className="text-xs text-gray-500 mt-4 break-words">
             {view?.estado === 'estudio_completado'
-              ? `Le enviamos el resultado a ${view.email}.`
-              : `Le enviaremos a ${view?.email} el resultado de su evaluación cuando esté listo.`}
+              ? `Le enviamos el resultado ${destinoDelCorreo(view.email)}.`
+              : `Le enviaremos el resultado de su evaluación ${destinoDelCorreo(pideDocumento ? correoResultado : view?.email)} cuando esté listo.`}
           </p>
         )}
         <ContactoCofianza />
@@ -375,8 +389,21 @@ export default function CoarrendatarioPublicPage() {
                 {documentoConfirmado ? (
                   <p role="status" className="mt-3 flex items-center gap-2 text-sm font-medium text-primary-800">
                     <IconCheckCircle size={18} className="shrink-0 text-primary-700" />
-                    Confirmó que es su documento.
+                    {pideDocumento ? 'Su número de documento coincide con el de la invitación.' : 'Confirmó que es su documento.'}
                   </p>
+                ) : pideDocumento ? (
+                  <CampoComprobarDocumento
+                    token={token}
+                    inputRef={documentoInputRef}
+                    disabled={procesando}
+                    onNoDisponible={fetchView}
+                    onComprobado={(correo, numero) => {
+                      setNumeroDocumento(numero)
+                      setCorreoResultado((actual) => actual || correo)
+                      setDocumentoConfirmado(true)
+                      if (faltaConfirmarDocumento) { setErrorMsg(null); setFaltaConfirmarDocumento(false) }
+                    }}
+                  />
                 ) : (
                   <button
                     ref={confirmarDocumentoRef}
@@ -504,7 +531,7 @@ export default function CoarrendatarioPublicPage() {
             </p>
           </div>
 
-          {view?.contacto_resultado?.requerido && (
+          {view?.contacto_resultado?.requerido && (!pideDocumento || documentoConfirmado) && (
             <CampoCorreoResultado
               valor={correoResultado}
               onCambio={(v) => {
@@ -553,13 +580,13 @@ export default function CoarrendatarioPublicPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const destino = confirmarDocumentoRef.current ?? documentoRef.current
+                    const destino = documentoInputRef.current ?? confirmarDocumentoRef.current ?? documentoRef.current
                     documentoRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
                     destino?.focus({ preventScroll: true })
                   }}
                   className="mt-2 block min-h-11 font-semibold text-red-800 underline underline-offset-2 hover:text-red-900"
                 >
-                  Ir a confirmar mi documento
+                  {pideDocumento ? 'Ir a escribir mi documento' : 'Ir a confirmar mi documento'}
                 </button>
               )}
             </div>

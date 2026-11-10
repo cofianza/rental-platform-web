@@ -81,7 +81,8 @@ export interface ICoarrendatarioPublicView {
   apellido: string
   /** Enmascarado («CC ••••5678»): el invitado reconoce si es el suyo. */
   documento: string
-  email: string
+  /** Ausente cuando la API pide comprobar el documento antes (contacto_resultado.documento_requerido). */
+  email?: string
   estado: CoarrendatarioEstado
   expediente: {
     numero: string
@@ -93,7 +94,11 @@ export interface ICoarrendatarioPublicView {
   /** Adenda 3 V2 §9: ofrecer «No soy esa persona» (solo con las reglas nuevas encendidas). */
   permite_no_soy_yo?: boolean
   /** Pide el correo donde quiere recibir el resultado de su evaluación. Ausente = no se pide. */
-  contacto_resultado?: { requerido: true }
+  contacto_resultado?: {
+    requerido: true
+    /** Pide escribir el número de documento antes de mostrar el correo y de aceptar. */
+    documento_requerido?: true
+  }
   /**
    * Texto integro de la autorizacion de tratamiento de datos que el invitado
    * acepta, con su version. Flujo del modulo de estudios §8.4: debe estar
@@ -168,8 +173,8 @@ export const coarrendatarioService = {
   async aceptar(
     token: string,
     notificacion?: { direccion: string; municipio: string },
-    /** Solo si la pantalla lo pide (contacto_resultado): el correo para el resultado de su evaluación. */
-    contacto?: { correo_resultado?: string },
+    /** Solo si la pantalla lo pide (contacto_resultado): el correo para el resultado de su evaluación y su documento. */
+    contacto?: { correo_resultado?: string; numero_documento?: string },
   ): Promise<{ ok: true; estudio_id: string | null; mensaje: string }> {
     const res = (await apiClient.post(`/public/coarrendatario/${token}/aceptar`, {
       acepta_terminos: true,
@@ -177,6 +182,14 @@ export const coarrendatarioService = {
       ...notificacion,
       ...contacto,
     })) as unknown as { data: { ok: true; estudio_id: string | null; mensaje: string } }
+    return res.data
+  },
+
+  /** Comprueba el número de documento que escribió el invitado; si coincide, devuelve el correo para prellenar. */
+  async confirmarDocumento(token: string, numeroDocumento: string): Promise<{ coincide: true; correo_resultado: string | null }> {
+    const res = (await apiClient.post(`/public/coarrendatario/${token}/confirmar-documento`, {
+      numero_documento: numeroDocumento,
+    })) as unknown as { data: { coincide: true; correo_resultado: string | null } }
     return res.data
   },
 
