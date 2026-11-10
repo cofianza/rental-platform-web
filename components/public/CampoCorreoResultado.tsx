@@ -50,11 +50,11 @@ export function CampoCorreoResultado({
           invalido ? 'border-red-400' : 'border-gray-200',
         )}
       />
-      {invalido && (
-        <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
-          Escriba un correo válido, por ejemplo nombre@correo.com.
-        </p>
-      )}
+      {/* La región viva existe siempre (aria-live anuncia cuando cambia su contenido); el id del error
+          solo se referencia desde aria-describedby cuando hay error. */}
+      <p id={`${id}-error`} aria-live="polite" className={invalido ? 'mt-1 text-xs text-red-600' : 'sr-only'}>
+        {invalido ? 'Escriba un correo válido, por ejemplo nombre@correo.com.' : ''}
+      </p>
     </div>
   )
 }
