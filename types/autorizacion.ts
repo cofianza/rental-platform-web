@@ -78,6 +78,8 @@ export interface IConfirmarIdentidadResponse {
   coincide: boolean
   /** BLQ §1. Ausente en APIs anteriores: se toma como 0 (detenido). */
   intentos_restantes?: number
+  /** Con la identidad confirmada, el correo para prellenar el campo del resultado (solo si la pantalla lo pide). */
+  correo_resultado?: string | null
 }
 
 /** BLQ §7: solo roles internos de Cofianza. */
@@ -177,6 +179,8 @@ export interface IAutorizacionPublicData {
   pago?: { requerido: boolean; monto_formateado: string | null } | null
   /** BLQ §1: intentos que le quedan para escribir su documento. null/ausente = no se sabe. */
   intentos_restantes?: number | null
+  /** Pide el correo donde la persona quiere recibir el resultado de su evaluación. Ausente = no se pide. */
+  contacto_resultado?: { requerido: true }
 }
 
 /** Vocabulario del cotejo. `omitida` = el titular ejerció su derecho a negarse. */
@@ -209,6 +213,8 @@ export interface IFirmarInput {
   numero_documento: string
   datos_firma?: string
   codigo_otp?: string
+  /** El correo donde quiere recibir el resultado (solo si la pantalla lo pide). */
+  correo_resultado?: string
   consentimientos_opcionales?: {
     analitica?: boolean
     comercial?: boolean

@@ -92,6 +92,8 @@ export interface ICoarrendatarioPublicView {
   expira_en: string
   /** Adenda 3 V2 §9: ofrecer «No soy esa persona» (solo con las reglas nuevas encendidas). */
   permite_no_soy_yo?: boolean
+  /** Pide el correo donde quiere recibir el resultado de su evaluación. Ausente = no se pide. */
+  contacto_resultado?: { requerido: true }
   /**
    * Texto integro de la autorizacion de tratamiento de datos que el invitado
    * acepta, con su version. Flujo del modulo de estudios §8.4: debe estar
@@ -166,11 +168,14 @@ export const coarrendatarioService = {
   async aceptar(
     token: string,
     notificacion?: { direccion: string; municipio: string },
+    /** Solo si la pantalla lo pide (contacto_resultado): el correo para el resultado de su evaluación. */
+    contacto?: { correo_resultado?: string },
   ): Promise<{ ok: true; estudio_id: string | null; mensaje: string }> {
     const res = (await apiClient.post(`/public/coarrendatario/${token}/aceptar`, {
       acepta_terminos: true,
       acepta_datos: true,
       ...notificacion,
+      ...contacto,
     })) as unknown as { data: { ok: true; estudio_id: string | null; mensaje: string } }
     return res.data
   },
