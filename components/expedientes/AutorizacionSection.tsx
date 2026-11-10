@@ -18,6 +18,7 @@ import { autorizacionService } from '@/services/autorizacionService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import type { IAutorizacion, IRevocarInput } from '@/types/autorizacion'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useRevocarAutorizacion } from '@/hooks/useRevocarAutorizacion'
 import { CorregirDocumentoModal } from '@/components/expedientes/CorregirDocumentoModal'
 import { OtraPersonaModal } from '@/components/expedientes/OtraPersonaModal'
 import { TrazaAutorizacion } from '@/components/expedientes/TrazaAutorizacion'
@@ -120,7 +121,8 @@ export function AutorizacionSection({
   const [revocarMotivo, setRevocarMotivo] = useState('')
   const [revocarCanal, setRevocarCanal] = useState<IRevocarInput['canal'] | ''>('')
   const [revocarFecha, setRevocarFecha] = useState('')
-  const [revocando, setRevocando] = useState(false)
+  // Dos titulares con firma vigente (cambio de solicitante): a cuál corresponde la revocación.
+  const [titularElegido, setTitularElegido] = useState('')
   // Detalle de la firma: evidencia legal y texto literal firmado (colapsables).
   const [showEvidencia, setShowEvidencia] = useState(false)
   const [showTexto, setShowTexto] = useState(false)
@@ -337,27 +339,22 @@ export function AutorizacionSection({
 
   const revocacionCompleta = !!revocarCanal && fechaCompleta(revocarFecha) && revocarMotivo.trim().length >= 10
 
+  const { revocar, revocarDe, revocando, titularesAElegir, cancelarEleccion } = useRevocarAutorizacion(expedienteId, () => {
+    cerrarRevocar()
+    fetchStatus()
+  })
+
   const handleRevocar = async () => {
     if (!revocarCanal || !fechaCompleta(revocarFecha) || revocarMotivo.trim().length < 10) {
       toast.error('Indique la fecha, el canal y el soporte de la solicitud (mín. 10 caracteres)')
       return
     }
-    setRevocando(true)
-    try {
-      await autorizacionService.revocar(expedienteId, {
-        canal: revocarCanal,
-        fecha_solicitud: revocarFecha,
-        motivo: revocarMotivo.trim(),
-      })
-      toast.success('Revocación registrada')
-      cerrarRevocar()
-      fetchStatus()
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al revocar'
-      toast.error(msg)
-    } finally {
-      setRevocando(false)
-    }
+    setTitularElegido('')
+    await revocar({
+      canal: revocarCanal,
+      fecha_solicitud: revocarFecha,
+      motivo: revocarMotivo.trim(),
+    })
   }
 
   if (loading) {
@@ -996,6 +993,45 @@ export function AutorizacionSection({
             : ''
         }`}
         confirmLabel="Reenviar enlace"
+      />
+
+      <ConfirmDialog
+        isOpen={!!titularesAElegir}
+        onClose={() => {
+          cancelarEleccion()
+          setTitularElegido('')
+        }}
+        onConfirm={() => revocarDe(titularElegido)}
+        isLoading={revocando}
+        confirmDisabled={!titularElegido}
+        variant="danger"
+        title="¿De quién es la solicitud de revocación?"
+        message={
+          <fieldset className="space-y-3">
+            <legend className="text-sm text-gray-700">
+              Este estudio tiene autorizaciones vigentes de más de un solicitante porque hubo un cambio de solicitante.
+              Elija la persona que pidió la revocación: solo se revoca su autorización y no se puede deshacer.
+            </legend>
+            {(titularesAElegir ?? []).map((t) => (
+              <label
+                key={t.solicitante_id}
+                className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-gray-200 p-3 text-sm text-gray-900 has-[:checked]:border-red-300 has-[:checked]:bg-red-50"
+              >
+                <input
+                  type="radio"
+                  name="titular-revocacion"
+                  value={t.solicitante_id}
+                  checked={titularElegido === t.solicitante_id}
+                  onChange={() => setTitularElegido(t.solicitante_id)}
+                  className="h-4 w-4 shrink-0 text-red-600 focus:ring-red-500"
+                />
+                <IconUserX size={16} className="shrink-0 text-gray-500" aria-hidden="true" />
+                <span className="min-w-0 break-words">{t.nombre}</span>
+              </label>
+            ))}
+          </fieldset>
+        }
+        confirmLabel="Registrar revocación"
       />
 
       {showOtraPersona && <OtraPersonaModal isOpen onClose={() => setShowOtraPersona(false)} expedienteId={expedienteId} />}

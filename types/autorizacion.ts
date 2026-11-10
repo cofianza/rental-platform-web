@@ -234,6 +234,8 @@ export interface IRevocarInput {
   fecha_solicitud: string
   /** Soporte o nota (radicado, correo, resumen de la llamada…). */
   motivo: string
+  /** Solo cuando la API pidió elegir: de cuál solicitante es la autorización a revocar. */
+  solicitante_id?: string
 }
 
 export interface IRevocarResponse {
