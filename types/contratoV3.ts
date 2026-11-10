@@ -41,6 +41,8 @@ export interface EstadoAsistente {
     inmueble: { id: string; codigo: string | null; direccion: string; municipio: string; canonRegistroCop: number };
     fianza: null | { via: 'automatica' | 'condicionada_coarrendatario' | 'revision_manual'; primaPct: number;
       tarifaPct: number; ivaPct: number; cashbackPct: number; negociada: boolean;
+      /** Presente cuando las condiciones no dependen de la ruta de aprobación (lo decide la API). */
+      precioUnico?: true;
       crc: { codigo: string; fechaEmision: string; vigenteHasta: string } | null };
     canon: { evaluadoCop: number | null; maximoSinNuevaEvaluacionCop: number | null };
   };

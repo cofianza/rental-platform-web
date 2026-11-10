@@ -42,6 +42,8 @@ export interface ContextoCargaDocumentos {
     invitado: { nombre: string; estado: CoarrendatarioEstado; vencida?: boolean } | null
     /** Solo nombre y apellido: el correo y el WhatsApp del tercero no viajan. */
     sugerido: { nombre: string; apellido: string } | null
+    /** Lo que la página dice de la prima con coarrendatario: el texto lo manda la API; null = no hay beneficio (ausente en un API anterior). */
+    beneficio_prima?: { completo: string; corto: string } | null
   }
 }
 

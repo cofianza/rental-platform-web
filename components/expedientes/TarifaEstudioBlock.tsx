@@ -118,10 +118,11 @@ export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
           <dd className="font-semibold">{t.cashback_pct}%</dd>
         </div>
       </dl>
-      <p className="text-xs text-gray-500">Tipo de aprobación: {VIA_LABEL[t.via]}</p>
+      {/* Con precio único (lo dice la API) la tarifa no depende del tipo de aprobación: no se rotula. */}
+      {!t.precio_unico && <p className="text-xs text-gray-500">Tipo de aprobación: {VIA_LABEL[t.via]}</p>}
       {provisional && (
         <p className="text-xs text-gray-500">
-          {t.via === 'automatica'
+          {t.via === 'automatica' && !t.precio_unico
             ? 'Se confirma cuando Cofianza decida. Si el analista exige una condición adicional al aprobar, pasa a la tarifa de aprobación no automática.'
             : 'Se confirma cuando Cofianza decida el estudio.'}
         </p>

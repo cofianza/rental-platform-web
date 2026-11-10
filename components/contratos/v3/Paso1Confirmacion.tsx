@@ -143,7 +143,8 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
       >
         {fianza ? (
           <>
-            <Dato label="Ruta de aprobación" valor={VIA_LABEL[fianza.via] ?? fianza.via} />
+            {/* Con precio único (lo dice la API) las condiciones no dependen de la ruta: no se rotula. */}
+            {!fianza.precioUnico && <Dato label="Ruta de aprobación" valor={VIA_LABEL[fianza.via] ?? fianza.via} />}
             <Dato
               label="Condiciones"
               valor={`Prima ${porcentaje(fianza.primaPct)} % + IVA, tarifa mensual ${porcentaje(fianza.tarifaPct)} % + IVA, cashback ${porcentaje(fianza.cashbackPct)} %`}

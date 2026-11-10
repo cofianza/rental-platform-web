@@ -497,6 +497,8 @@ export interface IRutaResultado {
   coarrendatarioObligatorio: boolean
   /** Solo en perfil_medio: el incentivo comercial que el §10 pide mostrar. */
   coarrendatarioAbarataPrima: boolean
+  /** El texto de ese incentivo, tal como lo manda la API (ausente si no aplica o en un API anterior). */
+  ofertaCoarrendatario?: string
   /** Interna. La API la borra para el rol 'solicitante' (lleva el puntaje). */
   etiquetaGestor?: string
 }
@@ -560,6 +562,8 @@ export interface ITarifasCalculadas {
   cashback_pct: number
   /** true cuando alguna cifra viene de condiciones especiales autorizadas. */
   negociada: boolean
+  /** Presente cuando la tarifa y la prima no dependen del tipo de aprobación (lo decide la API). */
+  precio_unico?: { prima_vinculacion_pct: number; tarifa_mensual_pct: number }
 }
 
 export interface ITarifaEstudio {
