@@ -9,7 +9,7 @@
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 import { autorizacionService } from '@/services/autorizacionService'
-import { titularesDeRevocacionAmbigua, type ITitularRevocacion } from '@/lib/revocacionTitulares'
+import { CODIGO_REVOCACION_AMBIGUA, titularesDeRevocacionAmbigua, type ITitularRevocacion } from '@/lib/revocacionTitulares'
 import type { IRevocarInput } from '@/types/autorizacion'
 
 export function useRevocarAutorizacion(expedienteId: string, alTerminar?: () => void) {
@@ -31,6 +31,9 @@ export function useRevocarAutorizacion(expedienteId: string, alTerminar?: () => 
         const titulares = input.solicitante_id ? null : titularesDeRevocacionAmbigua(err)
         if (titulares) {
           setEleccion({ titulares, input })
+        } else if (!input.solicitante_id && (err as { code?: unknown } | null)?.code === CODIGO_REVOCACION_AMBIGUA) {
+          // Pidió elegir pero no llegaron las opciones: no hay dónde indicarlo desde aquí.
+          toast.error('No se pudo identificar a los solicitantes del estudio. Recargue la página e intente de nuevo.')
         } else {
           toast.error(err instanceof Error ? err.message : 'Error al revocar')
         }

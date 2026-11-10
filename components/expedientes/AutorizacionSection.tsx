@@ -1009,7 +1009,7 @@ export function AutorizacionSection({
         message={
           <fieldset className="space-y-3">
             <legend className="text-sm text-gray-700">
-              Este estudio tiene autorizaciones vigentes de dos solicitantes porque hubo un cambio de solicitante.
+              Este estudio tiene autorizaciones vigentes de más de un solicitante porque hubo un cambio de solicitante.
               Elija la persona que pidió la revocación: solo se revoca su autorización y no se puede deshacer.
             </legend>
             {(titularesAElegir ?? []).map((t) => (
