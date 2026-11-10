@@ -40,6 +40,8 @@ export interface IDesenlaceEstudio {
   desenlace?: DesenlaceEstudio | null
   canon_maximo_cop?: number | null
   hasta_canon?: boolean
+  /** Hasta qué canon sirve el estudio sin evaluarlo de nuevo. Lo calcula la API. */
+  canon_habilitado_cop?: number | null
   siguiente_accion?: SiguienteAccionEstudio
   /** AAAA-MM-DD. */
   plazo_segundo_firmante_hasta?: string | null
@@ -423,6 +425,11 @@ export interface IVerificacionCertificado {
   numero_documento_masked: string
   /** Adenda 3 §6: «Condicionado a coarrendatario: puntaje mínimo N, vence DD/MM/AAAA». */
   condicion?: string | null
+  /** Resultado tal como lo redacta la API. Opcionales: una API anterior no los envía. */
+  desenlace?: DesenlaceEstudio | null
+  canon_maximo_cop?: number | null
+  hasta_canon?: boolean
+  resultado_texto?: string
 }
 
 // ============================================================
@@ -457,6 +464,13 @@ export interface IReasignacionEstudio {
    * entregarlo — el gestor tiene que enterarse.
    */
   certificado: 'sin_certificado' | 'regenerado' | 'desactualizado'
+  /** El estudio se evaluó de nuevo con el canon de la propiedad antes de trasladarlo. Opcionales: una API anterior no los envía. */
+  reevaluado?: boolean
+  desenlace?: DesenlaceEstudio
+  canon_maximo_cop?: number | null
+  hasta_canon?: boolean
+  /** Resultado listo para mostrar: lo redacta la API. */
+  desenlace_texto?: string
 }
 
 /**

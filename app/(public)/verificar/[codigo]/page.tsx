@@ -126,7 +126,11 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
   }
 
   const sinEfecto = data.status === 'sin_efecto'
-  const badge = RESULTADO_BADGES[data.resultado] || BADGE_DESCONOCIDO
+  // Cuando la API envía el resultado redactado, el color sale de él y no del estado interno.
+  const badge =
+    (data.resultado_texto && data.desenlace === 'aprobado' ? RESULTADO_BADGES.aprobado : null) ||
+    RESULTADO_BADGES[data.resultado] ||
+    BADGE_DESCONOCIDO
   // P32: sin efecto no dice por qué ni muestra un resultado que ya no vale.
   const encabezado = sinEfecto
     ? {
@@ -166,8 +170,11 @@ export default function VerificarCertificadoPage({ params }: PageProps) {
         {!sinEfecto && (
           <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
             <span className="text-sm font-medium text-gray-700">Resultado del estudio</span>
-            <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${badge.bg} ${badge.text}`}>
-              {badge.label}
+            <span
+              className={`inline-flex max-w-full px-3 py-1 text-xs font-semibold ${data.resultado_texto ? 'rounded-lg text-left' : 'rounded-full'} ${badge.bg} ${badge.text}`}
+            >
+              {/* El texto del resultado lo redacta la API cuando lo envía. */}
+              {data.resultado_texto ?? badge.label}
             </span>
           </div>
         )}

@@ -14,7 +14,9 @@
 import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { IconLoader, IconFileText } from '@/components/icons'
+import { IconLoader, IconFileText, IconAlertTriangle, IconRefresh } from '@/components/icons'
+import { ApiClientError } from '@/lib/api'
+import { useReevaluarCanon } from '@/hooks/useReevaluarCanon'
 import { contratoService } from '@/services/contratoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
@@ -60,9 +62,20 @@ export function GenerarContratoModal({
   const [comision, setComision] = useState('')
   const [servicios, setServicios] = useState<Record<string, CargoServicio>>(SERVICIOS_DEFAULT)
   const [generating, setGenerating] = useState(false)
+  // El canon del contrato supera lo que el estudio habilita: el mensaje y la salida los da la API.
+  const [canonBloqueo, setCanonBloqueo] = useState<{ mensaje: string; estudioId?: string; inmuebleId?: string; puedeReevaluar: boolean } | null>(null)
+  const { reevaluar, evaluando } = useReevaluarCanon()
+
+  async function handleReevaluar() {
+    if (!canonBloqueo?.estudioId || !canonBloqueo.inmuebleId) return
+    const error = await reevaluar(canonBloqueo.estudioId, canonBloqueo.inmuebleId)
+    // Evaluado: se quita el aviso y ya puede generar el contrato. Si no, queda lo que respondió la API.
+    setCanonBloqueo(error ? { ...canonBloqueo, mensaje: error.mensaje, puedeReevaluar: error.reintentar } : null)
+  }
 
   useEffect(() => {
     if (isOpen) {
+      setCanonBloqueo(null)
       setFechaInicio(hoyBogota())
       setDuracionMeses('12')
       setModalidad('plena')
@@ -76,6 +89,7 @@ export function GenerarContratoModal({
 
   async function handleGenerar() {
     setGenerating(true)
+    setCanonBloqueo(null)
     try {
       await contratoService.generarContrato(expedienteId, {
         fecha_inicio: fechaInicio || undefined,
@@ -92,6 +106,16 @@ export function GenerarContratoModal({
         onEvaluacionVencida(bloqueo)
         return
       }
+      if (err instanceof ApiClientError && err.code === 'CANON_REQUIERE_REEVALUACION') {
+        const d = (err.details ?? {}) as unknown as { puede_reevaluar?: boolean; estudio_id?: string | null; inmueble_id?: string | null }
+        setCanonBloqueo({
+          mensaje: err.message,
+          estudioId: d.estudio_id ?? undefined,
+          inmuebleId: d.inmueble_id ?? undefined,
+          puedeReevaluar: d.puede_reevaluar === true && !!d.estudio_id && !!d.inmueble_id,
+        })
+        return
+      }
       toast.error(err instanceof Error ? err.message : 'Error al generar el contrato')
     } finally {
       setGenerating(false)
@@ -99,11 +123,11 @@ export function GenerarContratoModal({
   }
 
   const handleClose = () => {
-    if (generating) return
+    if (generating || evaluando) return
     onClose()
   }
 
-  const puedeGenerar = !generating && fechaCompleta(fechaInicio) && !!duracionMeses && !comisionInvalida
+  const puedeGenerar = !generating && !evaluando && fechaCompleta(fechaInicio) && !!duracionMeses && !comisionInvalida
 
   if (!isOpen) return null
 
@@ -116,7 +140,7 @@ export function GenerarContratoModal({
       size="md"
       footer={
         <ModalAcciones>
-          <button type="button" onClick={handleClose} disabled={generating} className={botonModal('secondary')}>
+          <button type="button" onClick={handleClose} disabled={generating || evaluando} className={botonModal('secondary')}>
             Cancelar
           </button>
           <button
@@ -141,6 +165,26 @@ export function GenerarContratoModal({
         }}
         className="space-y-5"
       >
+        {canonBloqueo && (
+          <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <p className="flex gap-2">
+              <IconAlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <span>{canonBloqueo.mensaje}</span>
+            </p>
+            {canonBloqueo.puedeReevaluar && (
+              <button
+                type="button"
+                onClick={() => void handleReevaluar()}
+                disabled={evaluando || generating}
+                aria-busy={evaluando || undefined}
+                className={`${botonModal('secondary')} mt-3 w-full sm:w-auto`}
+              >
+                {evaluando ? <IconLoader size={16} className="animate-spin" aria-hidden="true" /> : <IconRefresh size={16} aria-hidden="true" />}
+                {evaluando ? 'Evaluando…' : 'Evaluar de nuevo con este canon'}
+              </button>
+            )}
+          </div>
+        )}
         <div>
           <label htmlFor="generar-contrato-modal-fecha-de-inicio-del-contrato" className="block text-sm font-medium text-gray-700 mb-1">
             Fecha de inicio del contrato

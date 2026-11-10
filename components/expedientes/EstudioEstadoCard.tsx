@@ -883,6 +883,8 @@ function EstudioPanel({
           estudioId={estudio.id}
           inmuebleActualId={inmuebleActualId}
           canonEvaluado={estudio.canon_evaluado}
+          canonHabilitado={estudio.desenlace ? (estudio.canon_habilitado_cop ?? null) : undefined}
+          sinReevaluacion={estudio.hasta_canon === true}
           canonAprobado={canonAprobado}
           destinacion={destinacion}
           expedienteId={expedienteId}
