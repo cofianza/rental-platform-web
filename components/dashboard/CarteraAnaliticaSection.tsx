@@ -116,19 +116,22 @@ export function CarteraAnaliticaSection() {
 
       {/* Desempeño de sus estudios */}
       <Panel title="Desempeño de sus estudios">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className={`grid grid-cols-1 gap-4 ${e.scorePromedio !== undefined ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
           <StatCard
             label="Estudios aprobados"
             value={e.aprobados}
             color="text-primary-600"
             sub={`de ${e.total} en total`}
           />
-          <StatCard
-            label="Score promedio"
-            value={e.scorePromedio != null ? `${e.scorePromedio}/1000` : '—'}
-            color="text-blue-600"
-            sub="inquilinos calificados"
-          />
+          {/* La API puede no enviar este dato: entonces la tarjeta no se muestra. */}
+          {e.scorePromedio !== undefined && (
+            <StatCard
+              label="Score promedio"
+              value={e.scorePromedio != null ? `${e.scorePromedio}/1000` : '—'}
+              color="text-blue-600"
+              sub="inquilinos calificados"
+            />
+          )}
           <StatCard
             label="Tasa de aprobación"
             value={d.total ? `${d.tasaAprobacion}%` : '—'}

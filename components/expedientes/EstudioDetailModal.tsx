@@ -201,6 +201,9 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
 
   if (!estudio) return null
 
+  // La API no siempre envía el reporte ni la central (depende de quién mira): sin ellos esta vista muestra solo los datos de la persona.
+  const sinReporte = (estudio.proveedor as string | undefined) == null && estudio.respuesta_proveedor === undefined
+  const hayDatosFormulario = Object.entries(estudio.datos_formulario ?? {}).some(([k, v]) => k !== 'acepta_terminos' && v != null && v !== '')
   const isTransUnion = estudio.proveedor === 'transunion'
   const isTransUnionCompleted = isTransUnion && estudio.estado === 'completado'
   const isDataCredito = estudio.proveedor === 'datacredito'
@@ -333,6 +336,10 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               <p className="text-sm text-gray-700 text-center">{estudio.ruta.etiquetaGestor}</p>
             )}
             {(isBuroCompleted || estudio.score != null) && <ScoreGauge score={estudio.score} size="md" leyenda={!externo} />}
+            {/* Qué sigue, con el texto de la API (cuando lo envía). */}
+            {estudio.tipo !== 'con_coarrendatario' && estudio.siguiente_accion_texto && (
+              <p className="max-w-prose text-center text-sm text-gray-700">{estudio.siguiente_accion_texto}</p>
+            )}
           </div>
         </div>
 
@@ -470,11 +477,11 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                 financiero (manual, SIFIN, no completados, código 14 de
                 DataCrédito o `respuesta_proveedor` no persistida) quedan los
                 datos del formulario: es el único insumo que queda. */}
-            {(isBuroCompleted || (estudio.datos_formulario && !hayReporteFinanciero)) && (
+            {(isBuroCompleted || (hayDatosFormulario && !hayReporteFinanciero)) && (
               <details className="group rounded-lg border border-gray-200 bg-white">
                 <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-2 rounded-lg px-4 py-3 text-sm hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 [&::-webkit-details-marker]:hidden">
                   <span className="font-medium text-gray-800">
-                    {externo || !isBuroCompleted ? 'Reporte de la central de riesgo' : isTransUnion ? 'Reporte TransUnion' : 'Reporte DataCrédito'}
+                    {sinReporte ? 'Datos de la persona evaluada' : externo || !isBuroCompleted ? 'Reporte de la central de riesgo' : isTransUnion ? 'Reporte TransUnion' : 'Reporte DataCrédito'}
                   </span>
                   <IconChevronDown size={16} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180" />
                 </summary>
@@ -494,11 +501,11 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                       El detalle de este reporte no quedó guardado. El resultado y sus motivos están arriba.
                     </p>
                   )}
-                  {estudio.datos_formulario && !hayReporteFinanciero && (
+                  {hayDatosFormulario && !hayReporteFinanciero && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-1">Datos del formulario</h4>
+                      {!sinReporte && <h4 className="text-sm font-medium text-gray-700 mb-1">Datos del formulario</h4>}
                       <dl className="bg-gray-50 rounded-lg px-4 py-2">
-                        {Object.entries(estudio.datos_formulario)
+                        {Object.entries(estudio.datos_formulario ?? {})
                           .filter(([key, value]) => key !== 'acepta_terminos' && value != null && value !== '')
                           .map(([key, value]) => (
                             <DetailRow

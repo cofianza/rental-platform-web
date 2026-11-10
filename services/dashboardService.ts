@@ -405,7 +405,8 @@ export interface MiCarteraAnalitica {
   estudios: {
     total: number
     aprobados: number
-    scorePromedio: number | null
+    /** La API puede no enviarlo: entonces no se muestra. */
+    scorePromedio?: number | null
     decisiones30d: {
       aprobados: number
       /** P26: en decisión (condicionados que el analista aún no resuelve); fuera de la tasa. */

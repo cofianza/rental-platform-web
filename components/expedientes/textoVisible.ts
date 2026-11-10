@@ -190,7 +190,9 @@ export function partirObservaciones(texto: string | null | undefined): { datos: 
  * Usa `desenlace_consulta` cuando la API lo manda; si no, el texto que la API
  * escribe en `observaciones` para esos dos casos (estudios.service).
  */
-export function tipoFallo(e: { observaciones?: string | null; desenlace_consulta?: string | null }): 'no_existe' | 'apellido' | 'tecnico' {
+export function tipoFallo(e: { observaciones?: string | null; desenlace_consulta?: string | null; tipo_fallo?: string | null }): 'no_existe' | 'apellido' | 'tecnico' {
+  // Si la API ya lo dice, vale eso (puede no enviar el texto de la consulta).
+  if (e.tipo_fallo === 'no_existe' || e.tipo_fallo === 'apellido' || e.tipo_fallo === 'tecnico') return e.tipo_fallo
   const obs = e.observaciones ?? ''
   if (/primer apellido/i.test(obs) && /no coincide/i.test(obs)) return 'apellido'
   if (e.desenlace_consulta === 'a_no_existe' || /^No encontramos antecedentes con este documento/i.test(obs)) return 'no_existe'
@@ -258,6 +260,10 @@ export const ADVERTENCIA_INGRESO_ADICIONAL =
 export const seCierraSiVence = (c: { obligatoria?: boolean; reglas_ingreso?: string[] }): boolean =>
   !!c.obligatoria || (c.reglas_ingreso?.length ?? 0) > 0
 
+/** La API no dijo qué pasa al vencer (no envió el dato): no se afirma ni el cierre ni la revisión. */
+export const noSeSabeSiCierraAlVencer = (c: { obligatoria?: boolean; reglas_ingreso?: string[] }): boolean =>
+  !c.obligatoria && c.reglas_ingreso === undefined
+
 /**
  * Adenda 3 V2 §6 (cuarto desenlace, «Está cerca»): el texto de la condición
  * para la inmobiliaria, el propietario y el prospecto (`prospecto`). Sin
@@ -279,6 +285,7 @@ export function textoCondicionCoarrendatario(
   const fecha = fechaCondicion(c.vence_en)
   if (c.vencida) {
     // Solo espera a un coarrendatario cuya consulta sigue en curso.
+    if (noSeSabeSiCierraAlVencer(c)) return `Venció el plazo para presentar el coarrendatario (${fecha}). Cofianza resuelve el estudio y le avisa el resultado.`
     return seCierraSiVence(c)
       ? `Venció el plazo para presentar el coarrendatario (${fecha}). Sin un coarrendatario que cumpla el ingreso, el estudio se cerrará como no aprobado.`
       : `Venció el plazo para presentar el coarrendatario (${fecha}). El estudio pasa a revisión de un analista de Cofianza.`

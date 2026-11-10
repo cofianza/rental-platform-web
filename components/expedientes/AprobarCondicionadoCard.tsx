@@ -37,7 +37,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
-import { esRolInterno, partirObservaciones, seCierraSiVence, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
+import { esRolInterno, partirObservaciones, seCierraSiVence, noSeSabeSiCierraAlVencer, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
 import { MotivosRevision } from './MotivosRevision'
 import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
@@ -53,6 +53,8 @@ interface AprobarCondicionadoCardProps {
   userRol?: string
   /** Condicionado porque el buró no tenía datos (sin score), no por riesgo medio. */
   sinInfoBuro?: boolean
+  /** La API no envió el detalle de la evaluación: no se afirma nada sobre la central. */
+  sinDetalle?: boolean
   /** Política §14 caso L: id del estudio del titular si ninguna central respondió. */
   estudioSinCentrales?: string | null
   /** Una central no respondió y la otra respondió sin puntaje (no es el caso L completo). */
@@ -78,6 +80,7 @@ export function AprobarCondicionadoCard({
   expedienteEstado,
   userRol,
   sinInfoBuro,
+  sinDetalle,
   estudioSinCentrales,
   reconsultaParcial,
   canalPropietario,
@@ -169,6 +172,8 @@ export function AprobarCondicionadoCard({
     // Sin un coarrendatario que la resuelva (al vencer o porque el evaluado no
     // alcanza: solo se admite uno), ¿se cierra como no aprobado? (API vencidaSeRechaza)
     const seCierra = seCierraSiVence(condicion)
+    // La API puede no decir qué pasa al vencer: entonces no se afirma ni el cierre ni la revisión.
+    const noSeSabeSiCierra = noSeSabeSiCierraAlVencer(condicion)
     return (
       <TarjetaSiguientePaso
         tono="revision"
@@ -209,7 +214,9 @@ export function AprobarCondicionadoCard({
             </Paso>
             <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
               <p>
-                {condicion.decide_analista && !condicion.obligatoria && !seCierra
+                {noSeSabeSiCierra
+                  ? 'Si califica, el estudio continúa con los dos. Si no califica, Cofianza resuelve el estudio y le avisa el resultado.'
+                  : condicion.decide_analista && !condicion.obligatoria && !seCierra
                   ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, no suma nada y el estudio pasa a revisión de un analista de Cofianza.'
                   : condicion.obligatoria
                   ? 'Si califica, un analista de Cofianza decide el estudio con los dos. Si no califica, el estudio se cierra como no aprobado: solo se admite un coarrendatario, así que invite a quien tenga ingresos propios suficientes.'
@@ -220,7 +227,9 @@ export function AprobarCondicionadoCard({
             </Paso>
             <Paso n={3} titulo="Si vence el plazo">
               <p>
-                {seCierra
+                {noSeSabeSiCierra
+                  ? 'Si vence el plazo sin un coarrendatario que cumpla, Cofianza resuelve el estudio y le avisa el resultado.'
+                  : seCierra
                   ? 'Sin un coarrendatario que cumpla, el estudio se cierra como no aprobado, sin repetir la consulta a las centrales.'
                   : 'El estudio pasa a revisión de un analista de Cofianza, sin repetir la consulta a las centrales.'}
               </p>
@@ -334,6 +343,8 @@ export function AprobarCondicionadoCard({
               ? 'Ninguna central de riesgo respondió cuando se consultó. No es un rechazo: falta la respuesta de las centrales.'
               : sinInfoBuro
                 ? 'Las centrales de riesgo no tienen historial de esta persona. No es un rechazo: falta información para medir el riesgo.'
+                : sinDetalle
+                  ? 'Cofianza está revisando este estudio y le avisará el resultado. No es un rechazo.'
                 : verMotivosArriba
                   ? 'La central sí evaluó a esta persona. No es un rechazo.'
                   : 'La central sí evaluó a esta persona; el motivo de la revisión está en «Evaluación crediticia», aquí abajo. No es un rechazo.'}
