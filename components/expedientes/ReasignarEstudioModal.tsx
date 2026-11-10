@@ -83,6 +83,16 @@ interface ReasignarEstudioModalProps {
    * amparado del CRC). Con él, el modal VINCULA el primer inmueble.
    */
   canonAprobado?: number | null
+  /**
+   * Hasta qué canon sirve el estudio sin evaluarlo de nuevo, cuando la API lo
+   * envía con el resultado del estudio (null = lo envía sin cifra). Con él, el
+   * aviso y la lista usan esa cifra en lugar de la estimación local, y una
+   * propiedad de canon mayor se evalúa de nuevo al reasignar. Sin él
+   * (undefined), todo sigue como siempre.
+   */
+  canonHabilitado?: number | null
+  /** La API indica que el resultado ya tiene un canon límite: un canon mayor no se evalúa de nuevo desde aquí. */
+  sinReevaluacion?: boolean
   /** Estudio sin propiedad: destinación evaluada (solo se vinculan inmuebles del mismo tipo). */
   destinacion?: string | null
   /** Para ofrecer la evaluación nueva cuando el inmueble no cabe. */
@@ -107,11 +117,15 @@ export function ReasignarEstudioModal({
   inmuebleActualId,
   canonEvaluado,
   canonAprobado,
+  canonHabilitado,
+  sinReevaluacion = false,
   destinacion,
   expedienteId,
   onReasignado,
 }: ReasignarEstudioModalProps) {
   const vincular = !inmuebleActualId
+  // La API envió el resultado del estudio con su regla de canon: no se estima nada aquí.
+  const conCanonHabilitado = canonHabilitado !== undefined
   // El inmueble elegido no cupo (409 ESTUDIO_NO_PORTABLE): se ofrece evaluar de nuevo.
   const [noCabe, setNoCabe] = useState(false)
   const [inmuebles, setInmuebles] = useState<IInmueble[]>([])
@@ -137,8 +151,11 @@ export function ReasignarEstudioModal({
   // Mismo calculo que la API (canon * (100 + pct) / 100 y no * 1.15): con
   // enteros el borde del +15% es exacto, y asi la estimacion no contradice al
   // backend justo en la frontera.
-  const canonMaximo =
-    canonAprobado ?? (canonOrigen === null ? null : (canonOrigen * (100 + TOLERANCIA_PCT)) / 100)
+  const canonMaximo = conCanonHabilitado
+    ? (canonAprobado ?? canonHabilitado ?? null)
+    : (canonAprobado ?? (canonOrigen === null ? null : (canonOrigen * (100 + TOLERANCIA_PCT)) / 100))
+  // Con la cifra de la API, una propiedad de canon mayor no se descarta: se evalúa de nuevo al reasignar.
+  const evaluaDeNuevo = conCanonHabilitado && !sinReevaluacion && !vincular && !!seleccionado && canonMaximo !== null && seleccionado.valor_arriendo > canonMaximo
 
   const cargarInmuebles = useCallback(async () => {
     setIsLoading(true)
@@ -233,7 +250,9 @@ export function ReasignarEstudioModal({
       toast.success(
         vincular
           ? `Inmueble ${seleccionado.codigo} vinculado al estudio.${vigencia}`
-          : `Estudio reasignado a ${seleccionado.codigo} sin costo adicional.${vigencia}`,
+          : res.reevaluado
+            ? `El estudio se evaluó de nuevo con el canon de ${seleccionado.codigo} y se reasignó sin costo.${res.desenlace_texto ? ` Resultado: ${res.desenlace_texto}.` : ''}${vigencia}`
+            : `Estudio reasignado a ${seleccionado.codigo} sin costo adicional.${vigencia}`,
       )
       // El certificado emitido nombra la propiedad en el PDF, que es inmutable.
       // La API lo regenera con la propiedad nueva; si no pudo, el gestor tiene
@@ -256,7 +275,9 @@ export function ReasignarEstudioModal({
       const msg = err instanceof Error ? err.message : 'No se pudo reasignar el estudio'
       setNoCabe(err instanceof ApiClientError && err.code === 'ESTUDIO_NO_PORTABLE')
       setError(msg)
-      toast.error(msg)
+      // La API avisó un valor antes de cobrar nada: es información, no una falla.
+      if (err instanceof ApiClientError && err.code === 'REQUIERE_CONSULTA_ADICIONAL') toast.warning(msg, { duration: 10000 })
+      else toast.error(msg)
     } finally {
       setIsSaving(false)
     }
@@ -270,7 +291,9 @@ export function ReasignarEstudioModal({
       description={
         vincular
           ? 'El estudio se creó sin propiedad. Elija el inmueble que la persona va a arrendar.'
-          : 'El estudio ya está pagado y ejecutado: se puede reutilizar en otra propiedad sin costo adicional.'
+          : conCanonHabilitado
+            ? 'El estudio ya está pagado y ejecutado: se puede reutilizar en otra propiedad de canon igual o menor al aprobado sin costo adicional.'
+            : 'El estudio ya está pagado y ejecutado: se puede reutilizar en otra propiedad sin costo adicional.'
       }
       size="lg"
       footer={
@@ -291,7 +314,9 @@ export function ReasignarEstudioModal({
                 </span>
               </p>
               <p className="mt-0.5 text-xs text-gray-600">
-                No se generará ningún cobro ni se descontará ningún crédito, y el estudio conserva su vigencia original.
+                {evaluaDeNuevo
+                  ? 'El canon es mayor al aprobado: el estudio se evalúa de nuevo con este canon antes de trasladarlo, sin costo mientras el reporte de la evaluación esté vigente. Si ya venció, no se traslada ni se cobra nada.'
+                  : 'No se generará ningún cobro ni se descontará ningún crédito, y el estudio conserva su vigencia original.'}
               </p>
             </div>
           ) : (
@@ -309,7 +334,7 @@ export function ReasignarEstudioModal({
               className={botonModal('primary')}
             >
               {isSaving && <IconLoader size={16} className="animate-spin" />}
-              {vincular ? 'Vincular inmueble' : 'Reasignar sin costo'}
+              {vincular ? 'Vincular inmueble' : evaluaDeNuevo ? 'Evaluar de nuevo y reasignar' : 'Reasignar sin costo'}
             </button>
           </ModalAcciones>
         </div>
@@ -335,6 +360,18 @@ export function ReasignarEstudioModal({
           <div className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
             Aprobado hasta un canon de <span className="font-semibold">{formatCurrency(canonAprobado)}</span>. Si el
             inmueble cuesta más, se requiere una evaluación nueva.
+          </div>
+        ) : conCanonHabilitado ? (
+          <div className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
+            {canonMaximo !== null ? (
+              <>
+                El estudio sirve, sin evaluarlo de nuevo, para un canon de hasta{' '}
+                <span className="font-semibold">{formatCurrency(canonMaximo)}</span>.{' '}
+                {sinReevaluacion ? 'Elija una propiedad dentro de ese valor.' : 'Con un canon mayor se evalúa de nuevo antes de trasladarlo.'}
+              </>
+            ) : (
+              'Elija la propiedad: al reasignar se verifica su canon frente al aprobado en el estudio.'
+            )}
           </div>
         ) : canonOrigen !== null ? (
           <div className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
@@ -464,8 +501,11 @@ export function ReasignarEstudioModal({
                     )}
                     {seleccionable && fueraDeTolerancia && (
                       <p className="mt-1 text-xs text-amber-800">
-                        Por encima de la tolerancia estimada — probablemente requiera una evaluación
-                        nueva.
+                        {conCanonHabilitado && !vincular
+                          ? sinReevaluacion
+                            ? 'Canon mayor al aprobado en el estudio.'
+                            : 'Canon mayor al aprobado: el estudio se evalúa de nuevo con este canon antes de trasladarlo.'
+                          : 'Por encima de la tolerancia estimada — probablemente requiera una evaluación nueva.'}
                       </p>
                     )}
                   </div>
