@@ -6,7 +6,7 @@
 
 export type EstadoSustitucion = 'pendiente_pago' | 'pagada' | 'consultada' | 'cancelada' | 'devuelta' | 'retirada'
 
-export interface IPersonaSustitucion {
+export interface IPersonaSegundoFirmante {
   persona: 'coarrendatario'
   coarrendatario_id: string
   nombre: string
@@ -14,9 +14,30 @@ export interface IPersonaSustitucion {
   ya_salio?: boolean
 }
 
+/** El solicitante del estudio (es uno solo: no lleva id). */
+export interface IPersonaSolicitante {
+  persona: 'solicitante'
+  nombre: string
+  ya_salio?: boolean
+}
+
+export type IPersonaSustitucion = IPersonaSegundoFirmante | IPersonaSolicitante
+
+/** Lo que se le envía a la API para decir quién sale. */
+export type PersonaQueSale = { persona: 'coarrendatario'; coarrendatario_id: string } | { persona: 'solicitante' }
+
+/** Lo que la API permite hacer hoy con el solicitante. */
+export interface IAccionSolicitante {
+  accion: 'sustituir' | 'retirar_por_listas' | null
+  accion_texto: string | null
+  persona: IPersonaSolicitante | null
+}
+
 /** El cambio que está en curso (uno a la vez). */
 export interface ISustitucionAbierta {
   id: string
+  /** A quién reemplaza el cambio (sin el dato, el segundo firmante). */
+  persona?: 'coarrendatario' | 'solicitante'
   estado: EstadoSustitucion
   estado_texto: string
   motivo: string
@@ -31,7 +52,7 @@ export interface ISustitucionAbierta {
 
 export interface IFilaHistorialSustitucion {
   id: string
-  sale: { persona: 'coarrendatario'; nombre: string } | null
+  sale: { persona: 'coarrendatario' | 'solicitante'; nombre: string } | null
   entra: { nombre: string } | null
   motivo: string
   motivo_texto: string
@@ -45,7 +66,10 @@ export interface IEstadoSustituciones {
   sustituciones: { usadas: number; maximo: number }
   accion: 'sustituir' | 'retirar_por_listas' | null
   accion_texto: string | null
-  persona: IPersonaSustitucion | null
+  /** El segundo firmante. */
+  persona: IPersonaSegundoFirmante | null
+  /** El solicitante (null si no hay nada que hacer con él). */
+  solicitante?: IAccionSolicitante | null
   abierta: ISustitucionAbierta | null
   historial: IFilaHistorialSustitucion[]
 }
@@ -61,6 +85,23 @@ export interface ICotizacionSustitucion {
   total_a_pagar_cop: number
   sale: IPersonaSustitucion
   aviso: string
+}
+
+/** La persona que entra como solicitante (persona natural). */
+export interface ICargarSolicitanteInput {
+  nombre: string
+  apellido: string
+  tipo_documento: 'cc' | 'ce' | 'ppt' | 'pep'
+  numero_documento: string
+  email: string
+  telefono?: string
+}
+
+export interface ISolicitanteCargado {
+  sustitucion_id: string
+  solicitante: { nombre: string }
+  /** Se le pudo enviar su solicitud de autorización. */
+  enlace_enviado: boolean
 }
 
 export interface ISustitucionCreada {

@@ -1,5 +1,6 @@
 /**
- * SustituirPersonaModal — cambiar al segundo firmante de un estudio.
+ * SustituirPersonaModal — cambiar a una persona del estudio: el segundo
+ * firmante o el solicitante (quién sale lo trae el aviso de la API).
  *
  * Antes de cargar a la persona nueva muestra el aviso que envía la API (qué
  * cuesta y cuántos cambios quedan) y pide confirmarlo. Si el cambio lleva
@@ -33,7 +34,9 @@ export function SustituirPersonaModal({ isOpen, onClose, cotizacion, onConfirmar
   const [creada, setCreada] = useState<ISustitucionCreada | null>(null)
 
   if (!cotizacion) return null
-  const nombre = cotizacion.sale.nombre || 'el segundo firmante'
+  const esSolicitante = cotizacion.sale.persona === 'solicitante'
+  const nombre = cotizacion.sale.nombre || (esSolicitante ? 'el solicitante' : 'el segundo firmante')
+  const rolNuevo = esSolicitante ? 'solicitante' : 'segundo firmante'
   // La persona ya salió del estudio: solo falta cargar a otra en su lugar.
   const yaSalio = cotizacion.sale.ya_salio === true
   const conCobro = cotizacion.requiere_pago && cotizacion.total_a_pagar_cop > 0
@@ -88,11 +91,12 @@ export function SustituirPersonaModal({ isOpen, onClose, cotizacion, onConfirmar
               <span>
                 {yaSalio ? (
                   <>
-                    <strong className="text-gray-900">{nombre}</strong> ya salió del estudio. Usted cargará a otra persona como segundo firmante.
+                    <strong className="text-gray-900">{nombre}</strong> ya salió del estudio. Usted cargará a otra persona como {rolNuevo}.
                   </>
                 ) : (
                   <>
-                    <strong className="text-gray-900">{nombre}</strong> saldrá del estudio cuando usted cargue a otra persona en su lugar.
+                    <strong className="text-gray-900">{nombre}</strong> saldrá del estudio cuando usted cargue a otra persona en su lugar
+                    {esSolicitante ? ' como solicitante. Desde ese momento deja de tener acceso al estudio, y la persona nueva autoriza y se evalúa' : ''}.
                   </>
                 )}{' '}
                 El estudio conserva su número, su inmueble y su historial.

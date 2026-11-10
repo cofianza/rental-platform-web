@@ -4,34 +4,38 @@
  */
 
 import { apiClient } from '@/lib/api'
-import type { IConsultaAdicionalCanon, ICotizacionSustitucion, IEstadoSustituciones, ISustitucionCreada } from '@/types/sustitucion'
+import type {
+  ICargarSolicitanteInput,
+  IConsultaAdicionalCanon,
+  ICotizacionSustitucion,
+  IEstadoSustituciones,
+  ISolicitanteCargado,
+  ISustitucionCreada,
+  PersonaQueSale,
+} from '@/types/sustitucion'
 
 export const sustitucionesService = {
   async estado(estudioId: string): Promise<IEstadoSustituciones> {
     return (await apiClient.get<IEstadoSustituciones>(`/estudios/${estudioId}/sustituciones`)).data
   },
 
-  async cotizar(estudioId: string): Promise<ICotizacionSustitucion> {
-    return (await apiClient.get<ICotizacionSustitucion>(`/estudios/${estudioId}/sustituciones/cotizacion`)).data
+  async cotizar(estudioId: string, persona: PersonaQueSale['persona'] = 'coarrendatario'): Promise<ICotizacionSustitucion> {
+    const q = persona === 'solicitante' ? '?persona=solicitante' : ''
+    return (await apiClient.get<ICotizacionSustitucion>(`/estudios/${estudioId}/sustituciones/cotizacion${q}`)).data
   },
 
   /** `valorAceptado` es el que la API cotizó y la persona confirmó. */
-  async crear(estudioId: string, coarrendatarioId: string, valorAceptado: number): Promise<ISustitucionCreada> {
-    return (
-      await apiClient.post<ISustitucionCreada>(`/estudios/${estudioId}/sustituciones`, {
-        sale: { persona: 'coarrendatario', coarrendatario_id: coarrendatarioId },
-        acepta_valor_cop: valorAceptado,
-      })
-    ).data
+  async crear(estudioId: string, sale: PersonaQueSale, valorAceptado: number): Promise<ISustitucionCreada> {
+    return (await apiClient.post<ISustitucionCreada>(`/estudios/${estudioId}/sustituciones`, { sale, acepta_valor_cop: valorAceptado })).data
   },
 
-  async retirar(estudioId: string, coarrendatarioId: string): Promise<{ desenlace: string | null }> {
-    return (
-      await apiClient.post<{ desenlace: string | null }>(`/estudios/${estudioId}/sustituciones/retirar-por-listas`, {
-        persona: 'coarrendatario',
-        coarrendatario_id: coarrendatarioId,
-      })
-    ).data
+  async retirar(estudioId: string, persona: PersonaQueSale): Promise<{ desenlace: string | null }> {
+    return (await apiClient.post<{ desenlace: string | null }>(`/estudios/${estudioId}/sustituciones/retirar-por-listas`, persona)).data
+  },
+
+  /** Con el cambio del solicitante ya pagado, carga a la persona que entra en su lugar. */
+  async cargarSolicitante(estudioId: string, sustitucionId: string, input: ICargarSolicitanteInput): Promise<ISolicitanteCargado> {
+    return (await apiClient.post<ISolicitanteCargado>(`/estudios/${estudioId}/sustituciones/${sustitucionId}/solicitante`, input)).data
   },
 
   async cancelar(estudioId: string, sustitucionId: string): Promise<{ estado: string }> {
