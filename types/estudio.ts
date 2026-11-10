@@ -25,8 +25,49 @@ export type ResultadoEstudio = 'pendiente' | 'aprobado' | 'rechazado' | 'condici
 // Interfaces
 // ============================================
 
-export interface IEstudio {
+/** Resultado del estudio con la política vigente (lo calcula la API; null o ausente = como antes). */
+export type DesenlaceEstudio = 'aprobado' | 'aprobado_segundo_firmante' | 'rechazado' | 'bloqueado_listas'
+
+export type SiguienteAccionEstudio =
+  | 'ninguna'
+  | 'presentar_segundo_firmante'
+  | 'sustituir_segundo_firmante'
+  | 'retirar_persona_listas'
+  | 'apelar'
+
+/** Campos del resultado que agrega la API. Todos opcionales: una API anterior no los envía. */
+export interface IDesenlaceEstudio {
+  desenlace?: DesenlaceEstudio | null
+  canon_maximo_cop?: number | null
+  hasta_canon?: boolean
+  siguiente_accion?: SiguienteAccionEstudio
+  /** AAAA-MM-DD. */
+  plazo_segundo_firmante_hasta?: string | null
+  /** Textos listos para mostrar: los redacta la API. */
+  desenlace_texto?: string
+  siguiente_accion_texto?: string | null
+  sustituciones?: { usadas: number; maximo: number; valor_consulta_adicional_cop: number; iva_cop: number; total_cop: number }
+  personas?: Array<{
+    rol_declarado: 'solicitante' | 'segundo_firmante'
+    nombre: string
+    es_titular_decision: boolean
+    estado: 'valida' | 'no_valida_sustituible' | 'bloquea_listas' | 'pendiente_autorizacion' | 'pendiente_consulta'
+  }>
+}
+
+/** Marca que registra Cofianza sobre una persona del estudio. Solo la reciben los roles de Cofianza. */
+export interface IMarcaEstudio {
+  marca: { persona: 'solicitante' | 'coarrendatario'; coarrendatario_id: string | null; marcada_en: string; soporte: string; motivo: string } | null
+  puede_marcar: boolean
+  ayuda: string
+}
+
+export interface IEstudio extends IDesenlaceEstudio {
   id: string
+  /** Solo Cofianza, en el detalle: reclamos en trámite que reporta la central. */
+  reclamos_en_tramite?: number
+  /** Solo Cofianza, en el detalle. */
+  restitucion?: IMarcaEstudio
   expediente_id?: string
   tipo: TipoEstudio
   proveedor: ProveedorEstudio

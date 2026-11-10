@@ -8,7 +8,7 @@
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IExpediente } from '@/types/expediente'
-import { ETAPA_LABEL, type EtapaEstudio, type Turno, type VistaTurno } from '@/lib/etapaEstudio'
+import { ETAPA_LABEL, esEsperaDePersona, type EtapaEstudio, type Turno, type VistaTurno } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
 import { etapaDeFila, accionDeFila, revisionDemorada } from '@/lib/etapaFila'
 import { cn } from '@/lib/utils'
@@ -42,6 +42,8 @@ const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
   sin_ejecutar: 'ambar',
   pago: 'ambar',
   decision: 'ambar',
+  segundo_firmante: 'ambar',
+  bloqueado: 'rojo',
   consulta: 'azul',
   visita: 'gris',
   habilitar: 'gris',
@@ -75,6 +77,11 @@ function pastillaEtapa(e: IExpediente, etapa: EtapaEstudio, interno: boolean): {
   }
   if (etapa === 'fallida' && ev?.coarrendatario_fallido) return { texto: 'Falló la consulta del coarrendatario', tono }
   const c = ev?.condicion_coarrendatario
+  // Etapas que salen del resultado que envía la API: su texto manda (la web no lo redacta).
+  if (etapa === 'segundo_firmante' || etapa === 'bloqueado') {
+    const base = ev?.desenlace_texto ?? ETAPA_LABEL[etapa]
+    return { texto: etapa === 'segundo_firmante' && c ? `${base} · ${plazo(c.vence_en)}` : base, tono }
+  }
   if (etapa === 'decision' && c) {
     return { texto: `${c.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'} · ${plazo(c.vence_en)}`, tono }
   }
@@ -187,6 +194,7 @@ export function datosEstadoFila(
       esperaHasta: ev?.espera_coarrendatario_hasta ?? null,
       sinInmueble: !expediente.inmueble_id,
       enLista: true,
+      textoApi: ev?.siguiente_accion_texto ?? null,
     }),
     score,
     turno:
@@ -196,7 +204,7 @@ export function datosEstadoFila(
             revision,
             analista,
             sinEjecutar: etapa === 'sin_ejecutar',
-            condicion: !!c && etapa === 'decision',
+            condicion: !!c && esEsperaDePersona(etapa, true),
             tomadoPor: revision && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
           }

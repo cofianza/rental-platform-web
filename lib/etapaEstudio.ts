@@ -19,6 +19,8 @@ export type EtapaEstudio =
   | 'sin_ejecutar'
   | 'fallida'
   | 'decision'
+  | 'segundo_firmante'
+  | 'bloqueado'
   | 'contrato'
   | 'firma'
   | 'firma_incompleta'
@@ -42,6 +44,9 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   // U8: un nombre por situación (lista, detalle y notificación). Con condición
   // de coarrendatario la fila y el detalle ponen su propio rótulo.
   decision: 'En revisión de Cofianza',
+  // Solo cuando la API envía `desenlace`; su texto (`desenlace_texto`) manda sobre estos.
+  segundo_firmante: 'Aprobado con segundo firmante',
+  bloqueado: 'Operación bloqueada',
   contrato: 'Aprobado',
   firma: 'En firma',
   firma_incompleta: 'Firma incompleta',
@@ -68,6 +73,8 @@ export const PASO_DE_ETAPA: Record<EtapaEstudio, number> = {
   sin_ejecutar: 3,
   fallida: 3,
   decision: 4,
+  segundo_firmante: 4,
+  bloqueado: 4,
   no_aprobado: 4,
   contrato: 5,
   firma: 6,
@@ -100,7 +107,23 @@ export interface DatosEtapa {
   /** Adenda 4 §12: el titular ya consultado espera a que autorice el coarrendatario (espera_autorizacion.hasta). */
   esperaHasta?: string | null
   contratosEstados: string[]
+  /** Resultado que envía la API (`desenlace`). null o ausente = la etapa sale del estado, como siempre. */
+  desenlace?: string | null
 }
+
+/**
+ * La etapa de un estudio condicionado: con `desenlace`, la que él dice; sin él
+ * (o con un valor que esta versión no conoce), «decision», como siempre. Pura.
+ */
+export function etapaCondicionado(desenlace: string | null | undefined): EtapaEstudio {
+  if (desenlace === 'aprobado_segundo_firmante') return 'segundo_firmante'
+  if (desenlace === 'bloqueado_listas') return 'bloqueado'
+  return 'decision'
+}
+
+/** Etapas en que el estudio espera a que se presente otra persona con un plazo. */
+export const esEsperaDePersona = (etapa: EtapaEstudio | null | undefined, conCondicion: boolean): boolean =>
+  etapa === 'segundo_firmante' || (etapa === 'decision' && conCondicion)
 
 /** Pura. */
 export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
@@ -114,7 +137,7 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
   // El proceso ya cerró: nadie puede firmar, le toca actuar a la inmobiliaria.
   if (d.contratosEstados.includes('firma_incompleta')) return 'firma_incompleta'
   if (d.estado === 'aprobado') return 'contrato'
-  if (d.estado === 'condicionado') return 'decision'
+  if (d.estado === 'condicionado') return etapaCondicionado(d.desenlace)
   if (d.estudioRechazado) return 'no_habilitada'
   if (!d.habilitado) return d.citaResuelta || !d.tieneInmueble ? 'habilitar' : 'visita'
   if (d.titularEstado === 'fallido') return 'fallida'
@@ -154,10 +177,13 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno 
     case 'fallida':
     case 'contrato':
     case 'firma_incompleta':
+    // Quien gestiona el estudio debe retirar a la persona indicada.
+    case 'bloqueado':
       return 'gestor'
     case 'autorizacion':
     case 'pago_prospecto':
     case 'espera_coarrendatario':
+    case 'segundo_firmante':
       return 'prospecto'
     case 'consulta':
       return 'cofianza'

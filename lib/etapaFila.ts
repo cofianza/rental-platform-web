@@ -4,7 +4,7 @@
  */
 
 import type { IExpediente, IExpedienteFilters } from '@/types/expediente'
-import type { EtapaEstudio } from './etapaEstudio'
+import { etapaCondicionado, type EtapaEstudio } from './etapaEstudio'
 
 const CONTRATO_FIRMADO = ['firmado', 'vigente', 'finalizado']
 const CONSULTA = ['en_proceso', 'completado', 'pagado', 'formulario_completado', 'documentos_cargados']
@@ -21,7 +21,7 @@ export function etapaDeFila(e: IExpediente): EtapaEstudio {
   const ev = e.estudio_vigente
   if (ev?.coarrendatario_fallido) return 'fallida'
   if (e.estado === 'aprobado') return 'contrato'
-  if (e.estado === 'condicionado') return 'decision'
+  if (e.estado === 'condicionado') return etapaCondicionado(ev?.desenlace)
   if (!ev || ev.estado === 'cancelado') {
     if (!e.cita_realizada) return 'visita'
     return e.depende_de === 'gestor' ? 'habilitar' : 'no_habilitada'
@@ -53,6 +53,8 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   firma: 'revisar la firma del contrato',
   firma_incompleta: 'revisar la firma incompleta',
   vigente: 'cargar el acta de entrega',
+  // Qué hacer exactamente lo dice el texto de la API, en el detalle.
+  bloqueado: 'revisar el bloqueo en el detalle',
 }
 
 export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | undefined {

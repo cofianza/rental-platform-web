@@ -47,6 +47,9 @@ const ORDEN: Record<EtapaEstudio, Orden> = {
   sin_ejecutar: { ahora: ['evaluacion'], detalle: ['coarrendatario'], historial: ['autorizacion', 'pago', 'visita'] },
   fallida: { ahora: ['evaluacion'], detalle: ['coarrendatario'], historial: ['autorizacion', 'pago', 'visita'] },
   decision: { ahora: ['decision', 'coarrendatario'], detalle: ['evaluacion'], historial: ['autorizacion', 'visita'] },
+  // Con el resultado que envía la API: lo que falta está en la evaluación y en la tarjeta de la otra persona.
+  segundo_firmante: { ahora: ['decision', 'coarrendatario'], detalle: ['evaluacion'], historial: ['autorizacion', 'visita'] },
+  bloqueado: { ahora: ['evaluacion', 'coarrendatario'], detalle: ['decision'], historial: ['autorizacion', 'visita'] },
   contrato: { ahora: ['vincular', 'contrato'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   firma: { ahora: ['contratoEstado'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   firma_incompleta: { ahora: ['contratoEstado'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },

@@ -230,6 +230,9 @@ function sinTurno(datos: DatosEstadoFila, e: IExpediente, vista: VistaTurno): st
   if (datos.etapa === 'visita') return vista === 'gestor' ? 'Agende la visita o indique que ya se hizo' : 'Falta la visita'
   if (identidadRechazada(e)) return 'Su equipo debe comunicarse con Cofianza'
   if (datos.etapa === 'decision' && e.depende_de === 'cofianza') return 'Esperando a Cofianza'
+  // El resultado ya dice que falta otra persona: aquí, lo que se espera (texto de la API si llega).
+  if (datos.etapa === 'segundo_firmante') return e.estudio_vigente?.siguiente_accion_texto ?? 'Falta presentar al segundo firmante'
+  if (datos.etapa === 'bloqueado') return e.estudio_vigente?.siguiente_accion_texto ?? 'La operación está bloqueada: vea qué hacer en el detalle'
   // La etapa ya dice «Esperando al coarrendatario»: aquí, lo que falta.
   if (datos.etapa === 'espera_coarrendatario') return 'Esperando su autorización'
   return null

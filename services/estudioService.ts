@@ -28,6 +28,7 @@ import type {
   IEstudiosStats,
   IReasignacionEstudio,
   ICatalogoMotivos,
+  IDesenlaceEstudio,
 } from '@/types/estudio'
 
 // ============================================
@@ -166,9 +167,24 @@ export const estudioService = {
     return res.data
   },
 
-  /** Adenda 3 V2 §7: Cofianza confirma una coincidencia en listas (rechazo sin apelación). */
-  async confirmarListas(estudioId: string, motivo: string): Promise<{ expediente_estado: 'rechazado' }> {
-    const res = await apiClient.post<{ expediente_estado: 'rechazado' }>(`/estudios/${estudioId}/listas/confirmar`, { motivo })
+  /** Cofianza confirma una coincidencia en listas. La API dice cómo quedó el estudio. */
+  async confirmarListas(estudioId: string, motivo: string): Promise<{ expediente_estado: 'rechazado' | 'bloqueado' }> {
+    const res = await apiClient.post<{ expediente_estado: 'rechazado' | 'bloqueado' }>(`/estudios/${estudioId}/listas/confirmar`, { motivo })
+    return res.data
+  },
+
+  /** Cofianza registra una marca sobre una persona del estudio; el estudio se decide de nuevo. */
+  async marcarRestitucion(
+    estudioId: string,
+    input: { persona: 'solicitante' | 'coarrendatario'; soporte: string; motivo: string },
+  ): Promise<IDesenlaceEstudio> {
+    const res = await apiClient.post<IDesenlaceEstudio>(`/estudios/${estudioId}/restitucion`, input)
+    return res.data
+  },
+
+  /** Cofianza retira la marca, con su motivo; el estudio se decide de nuevo. */
+  async retirarMarcaRestitucion(estudioId: string, motivo: string): Promise<IDesenlaceEstudio> {
+    const res = await apiClient.delete<IDesenlaceEstudio>(`/estudios/${estudioId}/restitucion`, { body: JSON.stringify({ motivo }) })
     return res.data
   },
 

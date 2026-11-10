@@ -21,6 +21,7 @@ export {
   PASOS_DETALLE,
   PASO_DE_ETAPA,
   turnoDeEtapa,
+  esEsperaDePersona,
   type DatosEtapa,
   type EtapaEstudio,
   type Turno,
@@ -103,6 +104,8 @@ export function useEtapaEstudio(
         pagoPor: titular?.pago_por ?? null,
         esperaHasta,
         contratosEstados: (contratos?.data ?? []).map((c) => c.estado),
+        // Con el resultado que envía la API, la etapa sale de él; sin él, del estado (como siempre).
+        desenlace: titular?.desenlace ?? null,
       })
       setLeida({
         etapa,

@@ -63,6 +63,9 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   decision:
     // Veraz con la API: correo a quien creó el inmueble (propietario_id) y aviso en la plataforma al responsable.
     'Lo decide un analista de Cofianza y le avisamos a quien creó el inmueble y al responsable del estudio cuando decida. Mientras tanto puede reforzar el caso con soportes de ingreso.',
+  // Respaldo: cuando la API envía el texto de qué hacer, se muestra ese.
+  segundo_firmante: 'El estudio quedó aprobado con segundo firmante: falta presentarlo antes de que venza el plazo. Puede invitarlo en la tarjeta del coarrendatario, aquí abajo.',
+  bloqueado: 'La operación está bloqueada. En «Evaluación crediticia», aquí abajo, está qué hacer para continuar.',
   contrato: 'El estudio está aprobado: cree el contrato aquí abajo.',
   firma: 'El contrato está en firma electrónica: falta que firmen todas las partes.',
   firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Abra el contrato: allí verá qué aviso aceptar y si puede reenviarlo o debe cancelarlo.',
@@ -131,8 +134,11 @@ export function queSigue(
     perfilIncompleto?: boolean
     /** En una lista (burbuja de la etapa): «aquí abajo» no apunta a nada; se dice «en el detalle del estudio». */
     enLista?: boolean
+    /** Qué hacer, redactado por la API (`siguiente_accion_texto`). Manda en las etapas que salen del resultado. */
+    textoApi?: string | null
   },
 ): string {
+  if ((etapa === 'segundo_firmante' || etapa === 'bloqueado') && o.textoApi) return o.textoApi
   const base = queSigueBase(etapa, o)
   const texto = o.enLista ? paraLista(base) : base
   // Sin edición por el perfil incompleto, «alguien de su equipo con permiso de edición» no le decía qué hacer.

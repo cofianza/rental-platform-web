@@ -245,7 +245,8 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
     (estudio.resultado === 'rechazado' ||
       (estudio.resultado === 'condicionado' &&
         estudio.tipo !== 'con_coarrendatario' &&
-        estudio.decision_cofianza === 'negado'))
+        // También se apela el resultado «con segundo firmante» que envía la API (ella valida plazo y permisos).
+        (estudio.decision_cofianza === 'negado' || estudio.desenlace === 'aprobado_segundo_firmante')))
 
   // El CRC se emite sobre el estudio del titular: el del coarrendatario ya se
   // refleja en él (la API responde 409).
@@ -364,6 +365,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                 <ListasPorConfirmar
                   estudioId={estudio.id}
                   listas={(estudio as IEstudioConNota).listas!}
+                  bloqueada={estudio.desenlace === 'bloqueado_listas'}
                   onResuelto={() => {
                     void estudioService.getEstudioById(estudio.id).then(setEstudio).catch(() => undefined)
                   }}

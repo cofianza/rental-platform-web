@@ -20,10 +20,13 @@ export function ListasPorConfirmar({
   estudioId,
   listas,
   onResuelto,
+  bloqueada = false,
 }: {
   estudioId: string
   listas: IListasEstudio
   onResuelto: () => void
+  /** La API informó que la operación quedó bloqueada (no rechazada) por la coincidencia. */
+  bloqueada?: boolean
 }) {
   const [accion, setAccion] = useState<'confirmar' | 'descartar' | null>(null)
   const [motivo, setMotivo] = useState('')
@@ -33,7 +36,9 @@ export function ListasPorConfirmar({
     return (
       <p role="status" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
         <IconShield size={16} className="mt-0.5 shrink-0" />
-        Coincidencia en listas restrictivas confirmada por Cofianza: el estudio se rechazó y no admite apelación ni excepción.
+        {bloqueada
+          ? 'Coincidencia en listas restrictivas confirmada por Cofianza: la operación está bloqueada hasta que esa persona salga del estudio.'
+          : 'Coincidencia en listas restrictivas confirmada por Cofianza: el estudio se rechazó y no admite apelación ni excepción.'}
       </p>
     )
   }
@@ -53,9 +58,17 @@ export function ListasPorConfirmar({
     }
     setGuardando(true)
     try {
-      if (accion === 'confirmar') await estudioService.confirmarListas(estudioId, motivo.trim())
+      // La API dice cómo quedó el estudio: no aprobable, o detenido hasta que esa persona salga.
+      let confirmada: { expediente_estado: 'rechazado' | 'bloqueado' } | null = null
+      if (accion === 'confirmar') confirmada = await estudioService.confirmarListas(estudioId, motivo.trim())
       else await estudioService.descartarListas(estudioId, motivo.trim())
-      toast.success(accion === 'confirmar' ? 'Coincidencia confirmada: el estudio quedó no aprobable.' : 'Coincidencia descartada: el caso sigue en revisión.')
+      toast.success(
+        accion !== 'confirmar'
+          ? 'Coincidencia descartada: el caso sigue en revisión.'
+          : confirmada?.expediente_estado === 'bloqueado'
+            ? 'Coincidencia confirmada: la operación quedó bloqueada hasta que esa persona salga del estudio.'
+            : 'Coincidencia confirmada: el estudio quedó no aprobable.',
+      )
       setAccion(null)
       setMotivo('')
       onResuelto()
