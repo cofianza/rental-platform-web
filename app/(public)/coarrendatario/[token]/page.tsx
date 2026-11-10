@@ -140,7 +140,7 @@ export default function CoarrendatarioPublicPage() {
     const pideCorreo = !!view?.contacto_resultado?.requerido
     if (pideCorreo && !correoResultadoValido(correoResultado)) {
       setErrorCorreo(true)
-      setErrorMsg('Escriba el correo donde quiere recibir el resultado de su evaluación.')
+      setErrorMsg('Revise el correo donde quiere recibir el resultado de su evaluación.')
       return
     }
     if (!acceptTerms || !acceptData) {
@@ -498,7 +498,9 @@ export default function CoarrendatarioPublicPage() {
               </div>
             </div>
             <p className="text-xs text-gray-500">
-              A esta dirección, a su correo y a su celular llegarán las notificaciones del contrato.
+              {view?.contacto_resultado?.requerido
+                ? 'A esta dirección, al correo de esta invitación y a su celular llegarán las notificaciones del contrato.'
+                : 'A esta dirección, a su correo y a su celular llegarán las notificaciones del contrato.'}
             </p>
           </div>
 
@@ -510,6 +512,7 @@ export default function CoarrendatarioPublicPage() {
                 if (errorCorreo && correoResultadoValido(v)) setErrorCorreo(false)
               }}
               mostrarError={errorCorreo}
+              disabled={procesando}
             />
           )}
 

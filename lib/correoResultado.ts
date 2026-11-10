@@ -5,7 +5,9 @@
  * de siempre. La API vuelve a validar el formato.
  */
 
-const FORMATO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+// La misma forma que acepta la API (z.email de Zod 4): sin tildes, sin puntos seguidos ni en los extremos
+// de la parte local, y un dominio con al menos dos letras al final.
+const FORMATO = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$/
 
 export function correoResultadoValido(correo: string): boolean {
   const c = correo.trim()

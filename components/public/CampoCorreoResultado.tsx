@@ -13,11 +13,13 @@ export function CampoCorreoResultado({
   valor,
   onCambio,
   mostrarError,
+  disabled = false,
 }: {
   valor: string
   onCambio: (v: string) => void
-  /** Mostrar el error de formato (después de que la persona intentó seguir o salió del campo). */
+  /** Mostrar el error de formato (después de que la persona intentó seguir). */
   mostrarError: boolean
+  disabled?: boolean
 }) {
   const id = useId()
   const invalido = mostrarError && !correoResultadoValido(valor)
@@ -27,7 +29,8 @@ export function CampoCorreoResultado({
         Correo donde quiere recibir el resultado de su evaluación
       </label>
       <p id={`${id}-ayuda`} className="mt-0.5 text-xs text-gray-500">
-        Le escribiremos solo a usted, a este correo. Revíselo y corríjalo si no es el suyo.
+        Si en su evaluación hay información que solo usted debe conocer, se la enviaremos a este correo.
+        Revíselo y corríjalo si no es el suyo.
       </p>
       <input
         id={id}
@@ -35,6 +38,7 @@ export function CampoCorreoResultado({
         inputMode="email"
         autoComplete="email"
         required
+        disabled={disabled}
         maxLength={254}
         value={valor}
         onChange={(e) => onCambio(e.target.value)}
@@ -47,7 +51,7 @@ export function CampoCorreoResultado({
         )}
       />
       {invalido && (
-        <p id={`${id}-error`} role="alert" className="mt-1 text-xs text-red-600">
+        <p id={`${id}-error`} className="mt-1 text-xs text-red-600">
           Escriba un correo válido, por ejemplo nombre@correo.com.
         </p>
       )}
