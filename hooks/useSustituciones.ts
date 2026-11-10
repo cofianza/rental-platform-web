@@ -11,7 +11,15 @@ import { toast } from 'sonner'
 import { ApiClientError } from '@/lib/api'
 import { sustitucionesService } from '@/services/sustitucionesService'
 import { coarrendatarioService, type IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
-import type { IConsultaAdicionalCanon, ICotizacionSustitucion, IEstadoSustituciones, ISustitucionCreada, IValorConsultaAdicional } from '@/types/sustitucion'
+import type {
+  ICargarSolicitanteInput,
+  IConsultaAdicionalCanon,
+  ICotizacionSustitucion,
+  IEstadoSustituciones,
+  ISustitucionCreada,
+  IValorConsultaAdicional,
+  PersonaQueSale,
+} from '@/types/sustitucion'
 
 const mensajeDe = (err: unknown, respaldo: string) => (err instanceof Error && err.message ? err.message : respaldo)
 
@@ -71,9 +79,9 @@ export function useSustituciones(estudioId: string, activo: boolean, version?: u
   }, [alCambiar, cargar])
 
   /** El aviso del valor antes de confirmar. null = la API no lo permite (ya informó por qué). */
-  const cotizar = useCallback(async (): Promise<ICotizacionSustitucion | null> => {
+  const cotizar = useCallback(async (persona: PersonaQueSale['persona'] = 'coarrendatario'): Promise<ICotizacionSustitucion | null> => {
     try {
-      return await sustitucionesService.cotizar(estudioId)
+      return await sustitucionesService.cotizar(estudioId, persona)
     } catch (err) {
       toast.error(mensajeDe(err, 'No se pudo consultar el valor. Inténtelo de nuevo.'))
       cargar()
@@ -104,7 +112,12 @@ export function useSustituciones(estudioId: string, activo: boolean, version?: u
   const crear = useCallback(
     (cotizacion: ICotizacionSustitucion): Promise<ISustitucionCreada | null> =>
       ejecutar(
-        () => sustitucionesService.crear(estudioId, cotizacion.sale.coarrendatario_id, cotizacion.total_a_pagar_cop),
+        () =>
+          sustitucionesService.crear(
+            estudioId,
+            cotizacion.sale.persona === 'solicitante' ? { persona: 'solicitante' } : { persona: 'coarrendatario', coarrendatario_id: cotizacion.sale.coarrendatario_id },
+            cotizacion.total_a_pagar_cop,
+          ),
         (r) => (r.pago ? 'Cambio abierto. Pague la consulta adicional para cargar a la persona nueva.' : 'Cambio abierto. Ya puede cargar a la persona nueva.'),
         'No se pudo abrir el cambio. Inténtelo de nuevo.',
       ),
@@ -112,7 +125,7 @@ export function useSustituciones(estudioId: string, activo: boolean, version?: u
   )
 
   const retirar = useCallback(
-    (coarrendatarioId: string) => ejecutar(() => sustitucionesService.retirar(estudioId, coarrendatarioId), 'La persona salió del estudio.', 'No se pudo retirar a la persona. Inténtelo de nuevo.'),
+    (persona: PersonaQueSale) => ejecutar(() => sustitucionesService.retirar(estudioId, persona), 'La persona salió del estudio.', 'No se pudo retirar a la persona. Inténtelo de nuevo.'),
     [ejecutar, estudioId],
   )
 
@@ -136,7 +149,18 @@ export function useSustituciones(estudioId: string, activo: boolean, version?: u
     [terminar],
   )
 
-  return { estado, cargando, error, ocupado, recargar: cargar, cotizar, crear, retirar, cancelar, cargarPersona }
+  /** Carga a la persona que entra como solicitante. Lanza el error de la API (el formulario lo muestra). */
+  const cargarSolicitante = useCallback(
+    async (sustitucionId: string, input: ICargarSolicitanteInput) => {
+      const r = await sustitucionesService.cargarSolicitante(estudioId, sustitucionId, input)
+      toast.success(r.enlace_enviado ? `${r.solicitante.nombre} quedó como solicitante. Se le envió su solicitud de autorización.` : `${r.solicitante.nombre} quedó como solicitante. Reenvíele la solicitud de autorización desde el estudio.`)
+      terminar()
+      return r
+    },
+    [estudioId, terminar],
+  )
+
+  return { estado, cargando, error, ocupado, recargar: cargar, cotizar, crear, retirar, cancelar, cargarPersona, cargarSolicitante }
 }
 
 /** Pide la consulta adicional que la API cotizó para evaluar el estudio con un canon mayor. */
