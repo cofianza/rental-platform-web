@@ -62,6 +62,9 @@ export interface IVentanaCoarrendatario {
   motivo: string | null
   /** Lo que las tarjetas dicen de la prima con coarrendatario: el texto lo manda la API; null = no hay beneficio (ausente en un API anterior). */
   beneficio_prima?: IBeneficioPrima | null
+  /** Si cargar a la persona es directo o pasa por un cambio de persona (lo dice la API; ausente en un API anterior). */
+  es_primer_segundo_firmante?: boolean
+  cobra_consulta_adicional?: boolean
 }
 
 export interface IInvitarCoarrendatarioInput {
@@ -101,8 +104,10 @@ export interface ICoarrendatarioPublicView {
 
 export const coarrendatarioService = {
   /** Solicitante / propietario invita a un coarrendatario. */
-  async invitar(expedienteId: string, input: IInvitarCoarrendatarioInput): Promise<ICoarrendatario> {
-    const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario`, input)) as unknown as {
+  /** `sustitucionId`: el cambio de persona ya habilitado con el que entra (si aplica). */
+  async invitar(expedienteId: string, input: IInvitarCoarrendatarioInput, sustitucionId?: string): Promise<ICoarrendatario> {
+    const cuerpo = sustitucionId ? { ...input, sustitucion_id: sustitucionId } : input
+    const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario`, cuerpo)) as unknown as {
       data: ICoarrendatario
     }
     return res.data

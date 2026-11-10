@@ -36,6 +36,7 @@ import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefres
 import { motivoCoarrendatario, textoVisible, esRolInterno, tipoFallo, textoCondicionCoarrendatario, centralDefinida, partirObservaciones } from './textoVisible'
 import { MotivosRevision } from './MotivosRevision'
 import { MarcarRestitucionModal } from './MarcarRestitucionModal'
+import { SustitucionesEstudio } from './SustitucionesEstudio'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { useMarcaEstudio } from '@/hooks/useMarcaEstudio'
 
@@ -587,12 +588,9 @@ function EstudioPanel({
   // como rol 'inmobiliaria' y hasta aquí veía Reintentar y Reasignar, dos
   // mutaciones que el API le niega. Gerencia no llega a esGestor.
   const puedeEditar = usePuedeEditar()
-  const esGestor =
-    (userRol === 'inmobiliaria' ||
-    userRol === 'propietario' ||
-    userRol === 'administrador' ||
-    userRol === 'operador_analista') &&
-    puedeEditar
+  // Quien gestiona el estudio, aunque sea de solo lectura (ve; no cambia).
+  const rolGestor = userRol === 'inmobiliaria' || userRol === 'propietario' || userRol === 'administrador' || userRol === 'operador_analista'
+  const esGestor = rolGestor && puedeEditar
   const puedeReintentar = esGestor && !sinReintento && !estudio.espera_autorizacion && puedeRelanzarEstudio(estudio)
   // Portabilidad §4.3: un estudio COMPLETADO (ya ejecutado) se puede llevar a
   // otra propiedad sin volver a cobrar. El caso natural es el candidato que
@@ -846,6 +844,17 @@ function EstudioPanel({
             </button>
           )}
         </div>
+      )}
+
+      {/* Cambios de personas del estudio: la API dice qué se puede hacer, cuánto cuesta y cuántos quedan. */}
+      {etiqueta === 'Titular' && expedienteId && rolGestor && (
+        <SustitucionesEstudio
+          estudioId={estudio.id}
+          expedienteId={expedienteId}
+          activo={!!estudio.desenlace && estudio.estado === 'completado'}
+          puedeEditar={puedeEditar}
+          onCambio={onRetried}
+        />
       )}
 
       {puedeMarcar && restitucion && (

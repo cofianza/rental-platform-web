@@ -57,6 +57,9 @@ import type { IInmueble } from '@/types/inmueble'
 import { cn } from '@/lib/utils'
 import { ApiClientError } from '@/lib/api'
 import { EvaluarEnEstudioNuevo } from './EvaluarEnEstudioNuevo'
+import { PagarConsultaAdicional } from './PagarConsultaAdicional'
+import { valorConsultaAdicional } from '@/hooks/useSustituciones'
+import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import { SkeletonText } from '@/components/ui/Skeleton'
 
 /** Misma regla que la API (inmuebles/destinacion.ts): mixto o desconocido no tiene destinación. */
@@ -128,6 +131,8 @@ export function ReasignarEstudioModal({
   const conCanonHabilitado = canonHabilitado !== undefined
   // El inmueble elegido no cupo (409 ESTUDIO_NO_PORTABLE): se ofrece evaluar de nuevo.
   const [noCabe, setNoCabe] = useState(false)
+  // La API cotizó una consulta adicional para evaluar el estudio con el canon del inmueble elegido.
+  const [consultaAdicional, setConsultaAdicional] = useState<{ inmuebleId: string; valor: IValorConsultaAdicional } | null>(null)
   const [inmuebles, setInmuebles] = useState<IInmueble[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [seleccionado, setSeleccionado] = useState<IInmueble | null>(null)
@@ -241,6 +246,7 @@ export function ReasignarEstudioModal({
     if (!seleccionado || isSaving) return
     setIsSaving(true)
     setError(null)
+    setConsultaAdicional(null)
     try {
       const res = await estudioService.reasignar(estudioId, seleccionado.id)
       // La vigencia va en el toast a proposito: es la promesa del §4.3 que mas
@@ -276,6 +282,8 @@ export function ReasignarEstudioModal({
       setNoCabe(err instanceof ApiClientError && err.code === 'ESTUDIO_NO_PORTABLE')
       setError(msg)
       // La API avisó un valor antes de cobrar nada: es información, no una falla.
+      const valor = valorConsultaAdicional(err)
+      if (valor) setConsultaAdicional({ inmuebleId: seleccionado.id, valor })
       if (err instanceof ApiClientError && err.code === 'REQUIERE_CONSULTA_ADICIONAL') toast.warning(msg, { duration: 10000 })
       else toast.error(msg)
     } finally {
@@ -403,6 +411,17 @@ export function ReasignarEstudioModal({
               <div className="mt-3">
                 <EvaluarEnEstudioNuevo expedienteId={expedienteId} inmuebleDestinoId={seleccionado.id} />
               </div>
+            )}
+            {consultaAdicional && seleccionado?.id === consultaAdicional.inmuebleId && (
+              <PagarConsultaAdicional
+                estudioId={estudioId}
+                inmuebleId={consultaAdicional.inmuebleId}
+                valor={consultaAdicional.valor}
+                onSinCobro={() => {
+                  onReasignado?.()
+                  onClose()
+                }}
+              />
             )}
           </div>
         )}

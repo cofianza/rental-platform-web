@@ -80,6 +80,8 @@ interface CoarrendatarioInviteFormProps {
    * principal; sin la condición (en revisión o aprobado) es opcional.
    */
   condicionGestor?: boolean
+  /** La persona entra en lugar de otra que ya salió del estudio: textos de «persona nueva». */
+  personaNueva?: boolean
 }
 
 type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email' | 'telefono'
@@ -102,6 +104,7 @@ export function CoarrendatarioInviteForm({
   condicion = null,
   antesDeLaDecision = false,
   condicionGestor = false,
+  personaNueva = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
   // Cofianza (también con «ver como» apagado) conserva su texto y su botón de siempre.
@@ -191,14 +194,21 @@ export function CoarrendatarioInviteForm({
         </div>
         <div>
           <h3 className="text-base font-semibold text-gray-900 mb-0.5">
-            {esGestor
+            {personaNueva
+              ? 'Cargue a la persona nueva'
+              : esGestor
               ? 'Invite a un coarrendatario'
               : conCondicion
                 ? 'Invite a su coarrendatario'
                 : 'Puede sumar un coarrendatario (opcional)'}
           </h3>
           <p className="text-sm text-gray-700">
-            {conCondicion ? (
+            {personaNueva ? (
+              <>
+                Escriba los datos de la persona que entra como segundo firmante. Le enviaremos una invitación a su correo y a su
+                WhatsApp para que acepte y autorice su evaluación. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+              </>
+            ) : conCondicion ? (
               // Adenda 3 V2 §6.9: el texto literal, sin «fiador» ni «codeudor» y sin
               // presentarlo como una condición negativa. El plazo va en la lista de abajo.
               // Con la obligatoria (Adenda 4 V3 §8) o con R2 (R3) no aplica: decide un analista.
@@ -286,7 +296,7 @@ export function CoarrendatarioInviteForm({
               : 'inline-flex min-h-10 items-center gap-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500'
           }
         >
-          {botonPrincipal ? 'Agregar coarrendatario' : 'Invitar a un coarrendatario'}
+          {personaNueva ? 'Cargar a la persona nueva' : botonPrincipal ? 'Agregar coarrendatario' : 'Invitar a un coarrendatario'}
           <IconArrowRight size={16} aria-hidden="true" />
         </button>
       ) : (

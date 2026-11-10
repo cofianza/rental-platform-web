@@ -188,6 +188,9 @@ export function CoarrendatarioPropietarioCard({
     )
   }
   if (!coa) {
+    // La API indica que cargar a esta persona pasa por un cambio de persona: se hace desde la
+    // tarjeta de la evaluación («Personas del estudio»), donde se avisa el valor antes de confirmar.
+    if (ventana?.cobra_consulta_adicional) return null
     if (!(ventana?.puede_invitar ?? expedienteEstado === 'condicionado') || !puedeEditar) return null
     return (
       <CoarrendatarioInviteForm

@@ -10,6 +10,8 @@ import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 import { estudioService } from '@/services/estudioService'
 import { ApiClientError } from '@/lib/api'
+import { valorConsultaAdicional } from '@/hooks/useSustituciones'
+import type { IValorConsultaAdicional } from '@/types/sustitucion'
 
 /** Respuestas de la API que ya son definitivas: reintentar lo mismo no cambia nada. */
 const SIN_REINTENTO = ['CANON_NO_HABILITADO', 'REQUIERE_CONSULTA_ADICIONAL', 'CANON_REQUIERE_REEVALUACION', 'ESTUDIO_NO_PORTABLE', 'ESTUDIO_NO_REASIGNABLE']
@@ -19,7 +21,7 @@ export function useReevaluarCanon(alTerminar?: () => void) {
 
   /** null = quedó evaluado; si no, el mensaje de la API para mostrar y si tiene sentido reintentar. */
   const reevaluar = useCallback(
-    async (estudioId: string, inmuebleId: string): Promise<{ mensaje: string; reintentar: boolean } | null> => {
+    async (estudioId: string, inmuebleId: string): Promise<{ mensaje: string; reintentar: boolean; consultaAdicional: IValorConsultaAdicional | null } | null> => {
       setEvaluando(true)
       try {
         const res = await estudioService.reasignar(estudioId, inmuebleId)
@@ -40,6 +42,8 @@ export function useReevaluarCanon(alTerminar?: () => void) {
         return {
           mensaje: err instanceof Error ? err.message : 'No se pudo evaluar de nuevo el estudio. Inténtelo de nuevo.',
           reintentar: !(err instanceof ApiClientError && SIN_REINTENTO.includes(err.code ?? '')),
+          // La API cotizó una consulta adicional: quien llama ofrece pedirla.
+          consultaAdicional: valorConsultaAdicional(err),
         }
       } finally {
         setEvaluando(false)

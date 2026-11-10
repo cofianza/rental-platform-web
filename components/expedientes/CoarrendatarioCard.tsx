@@ -150,6 +150,8 @@ export function CoarrendatarioCard({
 
   // ── Sin coarrendatario: invitar ────────────────────────────────────
   if (!coa) {
+    // La API indica que cargar a otra persona pasa por quien gestiona el estudio: aquí no se ofrece.
+    if (ventana?.cobra_consulta_adicional) return null
     if (!puedeInvitar) return null
     // Esperamos la intención antes de montar el form: sus campos se
     // inicializan una sola vez y llegar tarde equivale a no traerla.

@@ -17,6 +17,8 @@ import { toast } from 'sonner'
 import { IconLoader, IconFileText, IconAlertTriangle, IconRefresh } from '@/components/icons'
 import { ApiClientError } from '@/lib/api'
 import { useReevaluarCanon } from '@/hooks/useReevaluarCanon'
+import { PagarConsultaAdicional } from './PagarConsultaAdicional'
+import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import { contratoService } from '@/services/contratoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
@@ -63,14 +65,21 @@ export function GenerarContratoModal({
   const [servicios, setServicios] = useState<Record<string, CargoServicio>>(SERVICIOS_DEFAULT)
   const [generating, setGenerating] = useState(false)
   // El canon del contrato supera lo que el estudio habilita: el mensaje y la salida los da la API.
-  const [canonBloqueo, setCanonBloqueo] = useState<{ mensaje: string; estudioId?: string; inmuebleId?: string; puedeReevaluar: boolean } | null>(null)
+  const [canonBloqueo, setCanonBloqueo] = useState<{
+    mensaje: string
+    estudioId?: string
+    inmuebleId?: string
+    puedeReevaluar: boolean
+    /** La API cotizó una consulta adicional para evaluar de nuevo. */
+    consultaAdicional?: IValorConsultaAdicional | null
+  } | null>(null)
   const { reevaluar, evaluando } = useReevaluarCanon()
 
   async function handleReevaluar() {
     if (!canonBloqueo?.estudioId || !canonBloqueo.inmuebleId) return
     const error = await reevaluar(canonBloqueo.estudioId, canonBloqueo.inmuebleId)
     // Evaluado: se quita el aviso y ya puede generar el contrato. Si no, queda lo que respondió la API.
-    setCanonBloqueo(error ? { ...canonBloqueo, mensaje: error.mensaje, puedeReevaluar: error.reintentar } : null)
+    setCanonBloqueo(error ? { ...canonBloqueo, mensaje: error.mensaje, puedeReevaluar: error.reintentar, consultaAdicional: error.consultaAdicional } : null)
   }
 
   useEffect(() => {
@@ -182,6 +191,14 @@ export function GenerarContratoModal({
                 {evaluando ? <IconLoader size={16} className="animate-spin" aria-hidden="true" /> : <IconRefresh size={16} aria-hidden="true" />}
                 {evaluando ? 'Evaluando…' : 'Evaluar de nuevo con este canon'}
               </button>
+            )}
+            {canonBloqueo.consultaAdicional && canonBloqueo.estudioId && canonBloqueo.inmuebleId && (
+              <PagarConsultaAdicional
+                estudioId={canonBloqueo.estudioId}
+                inmuebleId={canonBloqueo.inmuebleId}
+                valor={canonBloqueo.consultaAdicional}
+                onSinCobro={() => setCanonBloqueo(null)}
+              />
             )}
           </div>
         )}
