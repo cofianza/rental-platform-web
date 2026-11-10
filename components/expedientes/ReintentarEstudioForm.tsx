@@ -51,7 +51,8 @@ export function esCondicionadoSinInfo(estudio: {
   sin_centrales?: boolean
 }): boolean {
   // Caso L (ninguna central respondió) no es falta de información del buró.
-  return estudio.estado === 'completado' && estudio.resultado === 'condicionado' && estudio.score == null && !estudio.sin_centrales
+  // `null` = la API dice que no hubo puntaje. Si la API no envía el dato (undefined), no se puede afirmar eso.
+  return estudio.estado === 'completado' && estudio.resultado === 'condicionado' && estudio.score === null && !estudio.sin_centrales
 }
 
 /**

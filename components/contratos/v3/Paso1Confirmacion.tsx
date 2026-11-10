@@ -36,7 +36,7 @@ import {
 
 type Resumen = NonNullable<EstadoAsistente['resumen']>
 
-const VIA_LABEL: Record<NonNullable<Resumen['fianza']>['via'], string> = {
+const VIA_LABEL: Record<NonNullable<NonNullable<Resumen['fianza']>['via']>, string> = {
   automatica: 'Aprobación automática',
   condicionada_coarrendatario: 'Aprobación con coarrendatario',
   revision_manual: 'Revisión manual',
@@ -144,7 +144,7 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
         {fianza ? (
           <>
             {/* Con precio único (lo dice la API) las condiciones no dependen de la ruta: no se rotula. */}
-            {!fianza.precioUnico && <Dato label="Ruta de aprobación" valor={VIA_LABEL[fianza.via] ?? fianza.via} />}
+            {!fianza.precioUnico && fianza.via && <Dato label="Ruta de aprobación" valor={VIA_LABEL[fianza.via] ?? fianza.via} />}
             <Dato
               label="Condiciones"
               valor={`Prima ${porcentaje(fianza.primaPct)} % + IVA, tarifa mensual ${porcentaje(fianza.tarifaPct)} % + IVA, cashback ${porcentaje(fianza.cashbackPct)} %`}

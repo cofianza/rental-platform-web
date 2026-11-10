@@ -1068,6 +1068,7 @@ function ExpedienteDetalleContenido() {
                         expedienteEstado={expediente.estado}
                         userRol={user?.rol}
                         sinInfoBuro={condicionadoSinInfo}
+                        sinDetalle={!!titularCondicionado && titularCondicionado.score === undefined}
                         estudioSinCentrales={estudioSinCentrales}
                         reconsultaParcial={reconsultaParcial}
                         condicion={condicionCoa}

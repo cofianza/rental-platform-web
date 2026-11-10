@@ -39,7 +39,7 @@ export interface EstadoAsistente {
     arrendatario: { nombre: string; tipoDocumento: string; numeroDocumento: string };
     coarrendatario: { nombre: string; tipoDocumento: string; numeroDocumento: string } | null;
     inmueble: { id: string; codigo: string | null; direccion: string; municipio: string; canonRegistroCop: number };
-    fianza: null | { via: 'automatica' | 'condicionada_coarrendatario' | 'revision_manual'; primaPct: number;
+    fianza: null | { /** La API puede no enviarla. */ via?: 'automatica' | 'condicionada_coarrendatario' | 'revision_manual'; primaPct: number;
       tarifaPct: number; ivaPct: number; cashbackPct: number; negociada: boolean;
       /** Presente cuando las condiciones no dependen de la ruta de aprobación (lo decide la API). */
       precioUnico?: true;

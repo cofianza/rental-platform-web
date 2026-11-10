@@ -165,9 +165,9 @@ export interface ICondicionCoarrendatario {
   /** vence_en <= ahora: el barrido de la API la resuelve en breve. */
   vencida: boolean
   /** Adenda 3 V2 §6.7: ingreso mensual adicional que falta; null si la condición es solo por puntaje. */
-  ingreso_adicional_requerido: number | null
+  ingreso_adicional_requerido?: number | null
   /** Reglas de ingreso incumplidas; vacío = solo por puntaje (al vencer va a revisión, no a rechazo). */
-  reglas_ingreso: string[]
+  reglas_ingreso?: string[]
   /** Adenda 4 V3 §8: titular bajo 70 por el endeudamiento: al vencer sin coarrendatario válido, rechazo. */
   obligatoria?: boolean
   /** Adenda 4 R3: el titular tiene R2: con el coarrendatario decide un analista (sin «respuesta en segundos»). */
@@ -548,7 +548,8 @@ export interface ITarifaOverride {
 }
 
 export interface ITarifasCalculadas {
-  via: ViaAprobacion
+  /** La API puede no enviarla (depende de quién mira). */
+  via?: ViaAprobacion
   con_coarrendatario: boolean
   tarifa_mensual_pct: number
   tarifa_mensual_cop: number | null

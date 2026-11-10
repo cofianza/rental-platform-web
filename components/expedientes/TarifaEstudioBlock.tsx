@@ -119,7 +119,7 @@ export function TarifaEstudioBlock({ estudio }: { estudio: IEstudio }) {
         </div>
       </dl>
       {/* Con precio único (lo dice la API) la tarifa no depende del tipo de aprobación: no se rotula. */}
-      {!t.precio_unico && <p className="text-xs text-gray-500">Tipo de aprobación: {VIA_LABEL[t.via]}</p>}
+      {!t.precio_unico && t.via && <p className="text-xs text-gray-500">Tipo de aprobación: {VIA_LABEL[t.via]}</p>}
       {provisional && (
         <p className="text-xs text-gray-500">
           {t.via === 'automatica' && !t.precio_unico
