@@ -113,10 +113,11 @@ export function CoarrendatarioInviteForm({
   personaNueva = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
-  // Qué es el coarrendatario (revisión 11-nov): no «firma como arrendatario» ni es por fuerza quien vive en el inmueble.
+  // Qué es el coarrendatario (revisión 11-nov, D3): texto neutral, porque con la Adenda 5 el invitado puede quedar
+  // como arrendatario del contrato; tampoco es por fuerza quien vive en el inmueble.
   const noEsFiador = esGestor
-    ? 'No es fiador ni necesita finca raíz: firma el contrato como coarrendatario y responde solidariamente, junto con el titular, por todas sus obligaciones.'
-    : 'No es fiador ni necesita finca raíz: firma el contrato como coarrendatario y responde solidariamente, junto con usted, por todas las obligaciones del contrato.'
+    ? 'No es fiador ni necesita finca raíz: firma el contrato con el titular y los dos responden solidariamente por todas las obligaciones del contrato.'
+    : 'No es fiador ni necesita finca raíz: firma el contrato con usted y los dos responden solidariamente por todas las obligaciones del contrato.'
   // Cofianza (también con «ver como» apagado) conserva su texto y su botón de siempre.
   const interno = esRolInterno(useUsuarioVista()?.rol)
   // Opcional para quien gestiona salvo con la condición: no compite con lo que sí le toca.
@@ -231,14 +232,14 @@ export function CoarrendatarioInviteForm({
             ) : aprobado ? (
               <>
                 {esGestor ? 'El estudio quedó aprobado y el solicitante puede firmar solo. ' : 'Su estudio fue aprobado y puede firmar solo. '}
-                {beneficioPrima ? 'Si antes del contrato suma un ' : 'Antes del contrato puede sumar un '}
+                {beneficioPrima ? 'Si antes del contrato suma a un ' : 'Antes del contrato puede sumar a un '}
                 <strong>coarrendatario</strong>
                 {beneficioPrima ? `, ${beneficioPrima}` : ''}; la evaluación del coarrendatario no tiene costo adicional.{' '}
                 <strong>{noEsFiador}</strong>
               </>
             ) : esGestor && antesDeLaDecision ? (
               <>
-                Puede agregar un <strong>coarrendatario</strong> al estudio. Cada uno se consulta apenas autoriza (con el
+                Puede agregar a un <strong>coarrendatario</strong> al estudio. Cada uno se consulta apenas autoriza (con el
                 estudio pagado), y el estudio se decide con los dos. <strong>{noEsFiador}</strong>
               </>
             ) : esGestor && condicionGestor && !interno ? (
@@ -249,19 +250,19 @@ export function CoarrendatarioInviteForm({
               </>
             ) : esGestor && interno ? (
               <>
-                El estudio quedó condicionado. Puede invitar un <strong>coarrendatario</strong>: se evalúa a ambos y el
+                El estudio quedó condicionado. Puede invitar a un <strong>coarrendatario</strong>: se evalúa a ambos y el
                 estudio se decide con los dos. <strong>{noEsFiador}</strong>
               </>
             ) : esGestor ? (
               <>
                 El estudio está en revisión de Cofianza y no tiene que hacer nada para que avance. Si quiere reforzar el
-                caso, puede invitar un <strong>coarrendatario</strong>: se evalúa a ambos y el estudio se decide con los
+                caso, puede invitar a un <strong>coarrendatario</strong>: se evalúa a ambos y el estudio se decide con los
                 dos. <strong>{noEsFiador}</strong>
               </>
             ) : (
               <>
                 Su estudio está en revisión con un analista de Cofianza; no tiene que hacer
-                nada para que avance. Si quiere reforzar su caso, invite un <strong>coarrendatario</strong>: se evalúa a
+                nada para que avance. Si quiere reforzar su caso, invite a un <strong>coarrendatario</strong>: se evalúa a
                 los dos y el estudio se decide con ambos. <strong>{noEsFiador}</strong>
               </>
             )}

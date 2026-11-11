@@ -181,6 +181,11 @@ export interface IAutorizacionPublicData {
   intentos_restantes?: number | null
   /** Pide el correo donde la persona quiere recibir el resultado de su evaluación. Ausente = no se pide. */
   contacto_resultado?: { requerido: true }
+  /**
+   * false = este estudio no admite segundo firmante (canal del propietario directo con la Adenda 5): no se
+   * piden los datos del coarrendatario. Ausente = un API anterior (se piden como siempre).
+   */
+  admite_segundo_firmante?: boolean
 }
 
 /** Vocabulario del cotejo. `omitida` = el titular ejerció su derecho a negarse. */

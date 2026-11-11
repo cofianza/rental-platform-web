@@ -44,9 +44,9 @@ export function CoarrendatarioInicio({ value, errors, onChange, onClearError }: 
             Agregar un coarrendatario (opcional)
           </span>
           <span className="mt-1 block text-sm text-gray-600">
-            Es el segundo firmante del estudio. No es fiador ni necesita finca raíz: firma el contrato como
-            coarrendatario y responde solidariamente, junto con el titular, por todas sus obligaciones. Su consulta va
-            incluida en este estudio, sin costo adicional. Le enviamos su propia invitación por WhatsApp y correo para
+            Es el segundo firmante del estudio. No es fiador ni necesita finca raíz: firma el contrato con el titular
+            y los dos responden solidariamente por todas las obligaciones del contrato. Su consulta va incluida en
+            este estudio, sin costo adicional. Le enviamos su propia invitación por WhatsApp y correo para
             que autorice la consulta.
           </span>
         </span>
