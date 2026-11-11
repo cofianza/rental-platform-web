@@ -258,6 +258,12 @@ function EstadoBadge({
                 }`
               : 'Le enviamos la invitación por correo. Le avisaremos cuando responda.',
         },
+    // Salió del estudio (cambio de persona): la API no la vuelve a mostrar; si llega, se dice sin motivo.
+    retirado: {
+      color: 'bg-gray-50 border-gray-200 text-gray-900',
+      label: 'Ya no hace parte del estudio',
+      mensaje: 'Esta persona ya no hace parte de su estudio.',
+    },
     aceptado: {
       color: 'bg-blue-50 border-blue-200 text-blue-900',
       label: 'Aceptó la invitación',

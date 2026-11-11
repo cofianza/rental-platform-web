@@ -372,6 +372,12 @@ function estadoInvitacion(
             ? 'La invitación fue enviada. Su evaluación corre apenas autorice (con el estudio pagado); si no lo va a hacer, cancele la invitación.'
             : 'La invitación fue enviada por correo. Cuando la persona acepte, dispararemos su evaluación crediticia.',
         },
+    // Salió del estudio (cambio de persona): la API no la vuelve a mostrar; si llega, se dice sin motivo.
+    retirado: {
+      tono: 'neutro',
+      label: 'Ya no hace parte del estudio',
+      mensaje: 'Esta persona ya no hace parte del estudio.',
+    },
     aceptado: {
       tono: fallida ? 'alerta' : 'neutro',
       label: 'Aceptó la invitación',

@@ -23,6 +23,7 @@ import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
 import { CampoComprobarDocumento } from '@/components/public/CampoComprobarDocumento'
 import { correoParaEnviar, correoResultadoValido, destinoDelCorreo, documentoParaEnviar } from '@/lib/correoResultado'
+import { esInvitacionRetirada, faseInicialInvitacion, TEXTO_YA_NO_HACE_PARTE } from '@/lib/coarrendatarioPublico'
 
 /** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
 const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
@@ -50,7 +51,7 @@ function esEnlaceReemplazado(err: unknown): boolean {
   return e?.statusCode === 404 && e?.code === 'COARRENDATARIO_NOT_FOUND'
 }
 
-type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'error'
+type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'retirado' | 'error'
 
 export default function CoarrendatarioPublicPage() {
   const params = useParams<{ token: string }>()
@@ -104,20 +105,21 @@ export default function CoarrendatarioPublicPage() {
       setView(data)
       // Si la API pide comprobar el documento, el correo llega después (al comprobarlo), no aquí.
       if (data.contacto_resultado?.requerido && data.email) setCorreoResultado((actual) => actual || data.email || '')
-      // Si ya respondió antes, saltamos a la pantalla correspondiente.
+      // Si ya respondió antes (o ya salió del estudio), saltamos a la pantalla correspondiente.
+      const fase = faseInicialInvitacion(data.estado)
       if (data.estado === 'aceptado') {
-        setPhase('aceptado')
         // Puede reabrirlo días después: «estamos procesando» no siempre es cierto.
         setResultMsg(`Ya aceptó esta invitación. Le escribimos ${destinoDelCorreo(data.email)} cuando su evaluación termine.`)
       } else if (data.estado === 'estudio_completado') {
-        setPhase('aceptado')
         setResultMsg('Ya había aceptado esta invitación y su evaluación terminó.')
-      } else if (data.estado === 'rechazado_invitacion') {
-        setPhase('rechazado')
-      } else {
-        setPhase('lista')
       }
+      setPhase(fase)
     } catch (err) {
+      // Ya salió del estudio: una pantalla final, no un error.
+      if (esInvitacionRetirada(err)) {
+        setPhase('retirado')
+        return
+      }
       // El invitado no tiene cuenta ni a quien preguntarle: un 'Too many
       // requests' del limitador por IP (CGNAT de las operadoras) o un 5xx en
       // crudo lo dejaban sin saber si fue culpa suya ni que hacer.
@@ -243,6 +245,17 @@ export default function CoarrendatarioPublicPage() {
             <IconRefresh size={16} /> Reintentar
           </button>
         )}
+        <ContactoCofianza />
+      </div>
+    )
+  }
+
+  if (phase === 'retirado') {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-8 text-center">
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Invitación cerrada</h1>
+        <p className="text-sm text-gray-600 mb-4">{TEXTO_YA_NO_HACE_PARTE}</p>
+        <p className="text-xs text-gray-500">Puede cerrar esta página.</p>
         <ContactoCofianza />
       </div>
     )
