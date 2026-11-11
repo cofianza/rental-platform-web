@@ -26,6 +26,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import type { IEstudio, IDocumentoSoporte, PropositoSoporte, IEstudioHistorial } from '@/types/estudio'
 import { fechaCompleta } from '@/lib/constants'
+import { vigenciaDesdeLaConsulta } from '@/lib/vigenciaReporte'
 
 // ============================================
 // Constants
@@ -185,9 +186,9 @@ export function ReEvaluacionSection({
   // radicar la apelación (la fecha que registra el analista o, sin ella, el
   // primer soporte); radicada a tiempo, Cofianza responde en 10 aunque ya haya
   // pasado el día 15. Política §8: la reevaluación se registra contra el
-  // reporte de la central de la evaluación original, que sirve 30 días; el
-  // plazo que corre es el menor. Fechas 'AAAA-MM-DD': al mediodía local para
-  // que no se corran un día.
+  // reporte de la central de la evaluación original, que sirve los días que
+  // manda la API (dias_vigencia_reporte); el plazo que corre es el menor.
+  // Fechas 'AAAA-MM-DD': al mediodía local para que no se corran un día.
   const dia = (d: string) => formatDate(`${d}T12:00:00`)
   const apelarHasta = historial?.apelar_hasta
   const responderHasta = historial?.responder_hasta
@@ -201,7 +202,9 @@ export function ReEvaluacionSection({
     !!consulta?.disponible && !!reporteOriginal && hoyBogota() > reporteOriginal
   const hasta = historial ? plazoEfectivoApelacion(historial) : null
   const porReporte = !!hasta && hasta === reporteVence && hasta !== (responderHasta ?? apelarHasta)
-  const sinReporte = reporteVence ? `el reporte de la central venció el ${dia(reporteVence)} (30 días desde la consulta).` : ''
+  const sinReporte = reporteVence
+    ? `el reporte de la central venció el ${dia(reporteVence)}${vigenciaDesdeLaConsulta(historial?.dias_vigencia_reporte)}.`
+    : ''
   // Sin plazo calculado el resultado no se apela (la API solo lo calcula si se
   // puede; con listas confirmadas, no): eso va antes que el reporte vencido.
   const noAdmite = !puedeReevaluar && !apelarHasta
