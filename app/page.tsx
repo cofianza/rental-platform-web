@@ -17,17 +17,13 @@ import { VitrinaPreview } from '@/components/vitrina/VitrinaPreview'
 import { ScrollReveal } from '@/components/vitrina/ScrollReveal'
 import { IconCheck, IconX, IconArrowRight, IconSearch, IconCheckCircle, IconHome } from '@/components/icons'
 import { API_BASE_URL } from '@/lib/constants'
+import { FAQ_COSTO_RESPALDO } from '@/lib/faqCostoRespaldo'
 
 export const metadata: Metadata = {
   title: 'Cofianza — ¿Le pidieron fiador? Soy yo. Llámenos.',
   description:
     'Afianzadora digital en Colombia. Respaldamos su contrato de arrendamiento para que no tenga que buscar codeudor. Estudio en segundos, firma por WhatsApp, cashback 30%.',
 }
-
-// Respaldo de «¿Cuánto cuesta y qué incluye?» si la API no responde (p. ej. en
-// la build de CI). El texto vigente lo manda la API: ver textoFaqCosto.
-const FAQ_COSTO_RESPALDO =
-  'El estudio de arrendamiento tiene un costo único al inicio. Si aprueba, paga una sola vez la prima de vinculación: 20% de un canon si firma solo o 10% si tiene un coarrendatario aprobado, más IVA. Luego paga una tarifa mensual más IVA. Al terminar el contrato recupera el 30% de las tarifas mensuales pagadas, salvo que hayamos tenido que pagar por usted o que la inmobiliaria o el propietario no haya cumplido a tiempo sus reportes a Cofianza.'
 
 /**
  * El texto de la pregunta de precio lo manda la API (endpoint público, sin
