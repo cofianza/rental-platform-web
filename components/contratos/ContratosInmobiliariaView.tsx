@@ -293,13 +293,13 @@ export function ContratosInmobiliariaView() {
           label="En proceso de firma"
           // Sin stats (fallo o cargando), «—»: un 0 contradecía los paneles de abajo.
           value={stats ? stats.en_proceso_firma + (stats.por_estado.firma_incompleta ?? 0) : '—'}
-          color="text-blue-600"
+          color={ESTADOS_CONTRATO.pendiente_firma.textColor}
           sub="Esperando firmas o por reenviar"
         />
         <StatCard
           label="Activos"
           value={stats?.activos ?? '—'}
-          color="text-primary-600"
+          color={ESTADOS_CONTRATO.vigente.textColor}
           sub="Contratos vigentes"
         />
       </div>
@@ -308,7 +308,8 @@ export function ContratosInmobiliariaView() {
           No son contratos, por eso ninguna consulta de esta pestaña los veía. */}
       <Panel
         title="Estudios aprobados sin contrato"
-        dot="bg-coral-500"
+        // Colores de ESTADOS_CONTRATO (una sola fuente): lo que todavía no se envía a firma, el gris del borrador.
+        dot={ESTADOS_CONTRATO.borrador.dotColor}
         subtitle="Genere el contrato desde el estudio"
       >
         {loadingSinContrato ? (
@@ -371,7 +372,7 @@ export function ContratosInmobiliariaView() {
 
       {/* Borradores YA generados: aquí la acción no es generar (el contrato
           existe), sino revisarlo y mandarlo a firma. */}
-      <Panel title="Borradores por enviar a firma" dot="bg-coral-500" subtitle="Contratos generados que faltan revisar o enviar">
+      <Panel title="Borradores por enviar a firma" dot={ESTADOS_CONTRATO.borrador.dotColor} subtitle="Contratos generados que faltan revisar o enviar">
         {pendientes.data.length === 0 ? (
           <EmptyRow texto="No hay contratos en borrador." />
         ) : (
@@ -415,7 +416,7 @@ export function ContratosInmobiliariaView() {
       </Panel>
 
       {/* En proceso de firma (pendiente_firma y, en V3, firma_incompleta) */}
-      <Panel title="En proceso de firma" dot="bg-blue-600" subtitle="Esperando firmas o por reenviar (firma incompleta)">
+      <Panel title="En proceso de firma" dot={ESTADOS_CONTRATO.pendiente_firma.dotColor} subtitle="Esperando firmas o por reenviar (firma incompleta)">
         {enFirma.data.length === 0 ? (
           <EmptyRow texto="Ningún contrato en proceso de firma." />
         ) : (
@@ -448,7 +449,7 @@ export function ContratosInmobiliariaView() {
       </Panel>
 
       {/* Contratos activos (firmado / vigente) */}
-      <Panel title="Contratos activos" dot="bg-primary-600" subtitle="Contratos vigentes">
+      <Panel title="Contratos activos" dot={ESTADOS_CONTRATO.vigente.dotColor} subtitle="Contratos vigentes">
         {activos.data.length === 0 ? (
           <EmptyRow texto="Sin contratos activos." />
         ) : (
