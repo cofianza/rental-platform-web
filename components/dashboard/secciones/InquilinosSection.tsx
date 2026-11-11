@@ -267,7 +267,8 @@ export function InquilinosSection() {
         >
           {filtrados.map((r) => {
             const abierto = expanded === r.contratoId
-            const carga = r.cargaPct ?? null
+            // Un API anterior no manda cargaPct: se calcula aquí (sin cortes; el color sí viene del API).
+            const carga = r.cargaPct ?? (r.ingresos && r.ingresos > 0 ? Math.round((r.canon / r.ingresos) * 100) : null)
             return (
               <Fragment key={r.contratoId}>
                 <tr>

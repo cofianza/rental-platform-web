@@ -66,8 +66,13 @@ export function textoAntiguedad(tabla: readonly FilaTabla[]): string {
       const siguiente = tabla[i - 1].corte
       if (f.corte === 0) return `menos de ${meses(siguiente)}: ${num(f.puntos)}`
       const hasta = siguiente - 1
-      return hasta % 12 === 0
-        ? `de ${meses(f.corte)} a ${meses(hasta)}: ${num(f.puntos)}`
+      // «de 5 a 8 años» (la unidad una vez) cuando los dos extremos son años enteros.
+      const desdeAnios = f.corte % 12 === 0
+      if (hasta % 12 === 0) {
+        return desdeAnios ? `de ${f.corte / 12} a ${meses(hasta)}: ${num(f.puntos)}` : `de ${meses(f.corte)} a ${meses(hasta)}: ${num(f.puntos)}`
+      }
+      return desdeAnios && siguiente % 12 === 0
+        ? `de ${f.corte / 12} a menos de ${meses(siguiente)}: ${num(f.puntos)}`
         : `de ${meses(f.corte)} a menos de ${meses(siguiente)}: ${num(f.puntos)}`
     })
     .join(' · ')

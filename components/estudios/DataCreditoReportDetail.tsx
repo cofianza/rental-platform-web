@@ -553,8 +553,8 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
             </p>
             <p className="text-[10px] text-blue-800 mt-1">
               No es un rechazo de la central de riesgo: significa que la persona no está bancarizada o no tiene historia por
-              este canal. El estudio requiere evaluación manual con otros soportes (ingresos, referencias,
-              codeudor).
+              este canal. El estudio pasa a revisión manual con otros soportes (ingresos, referencias o un
+              coarrendatario).
               {limpiar(productResult?.responseDesc)
                 ? ` Respuesta del proveedor: ${limpiar(productResult?.responseDesc)}.`
                 : ''}

@@ -42,7 +42,18 @@ test('porcentajes: la tabla termina en el máximo', () => {
 test('antigüedad en meses dicha en años cuando se puede', () => {
   assert.equal(
     textoAntiguedad(ANTIGUEDAD),
-    'Más de 10 años: 4 · de 3 años a 10 años: 2 · de 3 meses a menos de 3 años: 1 · menos de 3 meses: 0',
+    'Más de 10 años: 4 · de 3 a 10 años: 2 · de 3 meses a menos de 3 años: 1 · menos de 3 meses: 0',
+  )
+})
+
+test('antigüedad: «a menos de» con años enteros en los dos extremos', () => {
+  assert.equal(
+    textoAntiguedad([
+      { corte: 48, puntos: 2 },
+      { corte: 12, puntos: 1 },
+      { corte: 0, puntos: 0 },
+    ]),
+    '4 años o más: 2 · de 1 a menos de 4 años: 1 · menos de 1 año: 0',
   )
 })
 

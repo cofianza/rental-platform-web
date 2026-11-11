@@ -269,7 +269,7 @@ export function RegistrarResultadoModal({
                   : null
               }
             />
-            <DatoResumen label="Score actual" value={estudio.score ?? null} />
+            <DatoResumen label="Puntaje actual de la central" value={estudio.score ?? null} />
             {estudio.observaciones && (
               <div className="col-span-2 min-w-0 sm:col-span-3">
                 <dt className="text-xs text-gray-500">Observaciones</dt>

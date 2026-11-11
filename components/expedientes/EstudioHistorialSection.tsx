@@ -110,7 +110,7 @@ export function EstudioHistorialSection({
 
                   <div className="flex items-center gap-3 text-xs text-gray-500">
                     {item.score != null && (
-                      <span className="font-semibold">Score: {item.score}</span>
+                      <span className="font-semibold">Puntaje de la central: {item.score}</span>
                     )}
                     <span>{formatDate(item.created_at)}</span>
                     <Badge estado={item.estado} />

@@ -217,6 +217,7 @@ export function UsersTable({
                 </button>
                 {onResetPassword && (
                   <button
+                    type="button"
                     onClick={() => onResetPassword(user)}
                     className="inline-flex min-h-10 min-w-10 items-center justify-center p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
                     title="Restablecer contraseña"
@@ -227,6 +228,7 @@ export function UsersTable({
                 )}
                 {onDelete && (
                   <button
+                    type="button"
                     onClick={() => onDelete(user)}
                     className="inline-flex min-h-10 min-w-10 items-center justify-center p-1.5 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                     title="Eliminar usuario"

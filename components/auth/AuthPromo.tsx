@@ -23,8 +23,8 @@ const PROPIETARIO = {
     },
     {
       icon: <IconClock size={16} />,
-      title: 'Evaluación crediticia en segundos',
-      desc: 'Su candidato paga el estudio, nosotros lo evaluamos al instante.',
+      title: 'Evaluación crediticia en minutos',
+      desc: 'Su candidato paga el estudio y nosotros lo evaluamos en minutos.',
     },
     {
       icon: <IconDollarSign size={16} />,

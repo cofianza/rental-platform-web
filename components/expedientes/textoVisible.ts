@@ -66,7 +66,7 @@ export function textoVisible(texto: string | null | undefined, opts: { externo?:
     .replace(/,?\s*versi[oó]n del modelo\s+v[\w.-]*\w/gi, '')
     .replace(/,?\s*modelo\s+V\d(?:\.\d)?/gi, '')
     .replace(/\bCaso [A-Z]\d?\s*:\s*/g, '')
-    .replace(/\bV1 = promedio\b/g, 'el score usado es el promedio')
+    .replace(/\bV1 = promedio\b/g, 'el puntaje de la central usado es el promedio')
     .replace(/\s?\bV\d\.\d\b/g, '')
     // Rótulo interno que repite los motivos que ya van en el texto.
     .replace(/Decisi[oó]n del modelo\s*:\s*/gi, '')

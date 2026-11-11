@@ -329,7 +329,7 @@ export default async function HomePage() {
                 n: '02',
                 icon: <IconCheckCircle size={22} />,
                 title: 'Lo evaluamos en minutos',
-                body: 'Paga el estudio y consultamos su información en las centrales de riesgo. Si aprueba, firmamos como su fiador. Sin papeles, sin filas, sin codeudor.',
+                body: 'Paga el estudio y consultamos su información en las centrales de riesgo. Si aprueba, firmamos como su fiador. Sin papeles, sin filas, sin codeudor. Si su caso necesita la revisión de un analista o la autorización de un coarrendatario, puede tardar más.',
               },
               {
                 n: '03',
