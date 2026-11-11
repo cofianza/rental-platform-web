@@ -129,7 +129,7 @@ function ListaFactores({ factores }: { factores: Factor[] }) {
 }
 
 /**
- * Adenda 5 definitiva §6: divisor fijo; el score por la tabla de anclajes del
+ * Adenda 5 §6: divisor fijo; el score por la tabla de anclajes del
  * panel; canon siempre completo; seguridad social, estabilidad y arriendos
  * acreditados (si el interruptor lo dice); comportamiento por las bandas de
  * mora. Las demás tablas, como hoy (Adenda 4).

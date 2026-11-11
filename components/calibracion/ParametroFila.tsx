@@ -59,7 +59,7 @@ export function ParametroFila({ p, valores, ultimo, onAbrir }: Props) {
           {meta.rige === 'a5d' && !a5d && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-800">
               <IconClock size={11} />
-              Aplica al encender la Adenda 5 definitiva
+              Aplica al encender la Adenda 5
             </span>
           )}
         </div>
@@ -123,13 +123,13 @@ export function ParametroFila({ p, valores, ultimo, onAbrir }: Props) {
         {meta.nota && <p className="mt-1 text-xs text-gray-600">{meta.nota}</p>}
         {notasA5d && meta.saleConA5d && (
           <p className="mt-1 text-xs text-gray-600">
-            <span className="font-semibold">{a5d ? 'Dejó de aplicar con la Adenda 5 definitiva:' : 'Deja de aplicar con la Adenda 5 definitiva:'}</span>{' '}
+            <span className="font-semibold">{a5d ? 'Dejó de aplicar con la Adenda 5:' : 'Deja de aplicar con la Adenda 5:'}</span>{' '}
             {meta.saleConA5d}.
           </p>
         )}
         {notasA5d && meta.conA5d && (
           <p className="mt-1 text-xs text-gray-600">
-            <span className="font-semibold">Con la Adenda 5 definitiva:</span> {meta.conA5d}.
+            <span className="font-semibold">Con la Adenda 5:</span> {meta.conA5d}.
           </p>
         )}
         {meta.notaRige && (

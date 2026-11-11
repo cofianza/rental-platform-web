@@ -1,5 +1,5 @@
 /**
- * Lista de acreedores (Adenda 5 definitiva §3). Solo Cofianza: el
+ * Lista de acreedores (Adenda 5 §3). Solo Cofianza: el
  * administrador clasifica; gerencia la consulta. El API valida todo.
  */
 

@@ -13,7 +13,7 @@
  * encendidas hoy va plegado al final de su sección. El backend valida rango,
  * coherencia y permiso y escribe el historial.
  *
- * La Adenda 5 definitiva tiene su propio grupo en el menú (interruptor y
+ * La Adenda 5 tiene su propio grupo en el menú (interruptor y
  * motor, score, segundo firmante, mora no financiera, sustituciones y
  * precio). Mientras ADENDA5_DEF esté apagado, esas secciones se muestran
  * enteras con el aviso de que aplican al encenderla; lo que la adenda retira
@@ -166,13 +166,13 @@ export default function AdminCalibracionPage() {
     const n = previaA5d(grupoDe(v.id), valores) ? null : (propios?.filter((p) => rigeHoy(metaDe(p.clave), valores)).length ?? null)
     return [{ ...v, n }]
   })
-  // El grupo «Adenda 5 definitiva» va aparte en el menú (en el celular, como grupo del selector).
+  // El grupo «Adenda 5» va aparte en el menú (en el celular, como grupo del selector).
   const enA5d = (v: { id: Vista }) => grupoDe(v.id) === 'a5d'
   const iA5d = navegables.findIndex(enA5d)
   const navAntes = iA5d < 0 ? navegables : navegables.slice(0, iA5d)
   const navA5d = navegables.filter(enA5d)
   const navDespues = iA5d < 0 ? [] : navegables.slice(iA5d).filter((v) => !enA5d(v))
-  const grupoA5d = a5dEncendida(valores) ? 'Adenda 5 definitiva' : 'Adenda 5 definitiva (aplica al encenderla)'
+  const grupoA5d = a5dEncendida(valores) ? 'Adenda 5' : 'Adenda 5 (aplica al encenderla)'
 
   const fila = (p: IParametroCalibracion) => (
     <ParametroFila key={p.clave} p={p} valores={valores} ultimo={ultimo.get(p.clave)} onAbrir={setAbierto} />
@@ -342,7 +342,7 @@ export default function AdminCalibracionPage() {
                   {navA5d.length > 0 && (
                     <li className="mt-2 border-t border-gray-200 pt-2">
                       <p id="menu-a5d" className="px-3 pb-1 pt-1 text-xs font-semibold text-gray-600">
-                        Adenda 5 definitiva
+                        Adenda 5
                         {!a5dEncendida(valores) && <span className="block font-normal">Aplica al encenderla</span>}
                       </p>
                       <ul aria-labelledby="menu-a5d" className="flex flex-col gap-0.5">
@@ -407,7 +407,7 @@ function Encabezado({ titulo, ayuda, grupo }: { titulo: string; ayuda: string; g
 /**
  * Una sección: sus valores por subtema y, plegados al final, los que no
  * cambian nada con las reglas encendidas hoy (siguen editables para dejarlos
- * listos). Las de la Adenda 5 definitiva, mientras esté apagada, no pliegan
+ * listos). Las de la Adenda 5, mientras esté apagada, no pliegan
  * nada: se muestran enteras, con el aviso de que aplican al encenderla.
  */
 function Seccion({
@@ -457,7 +457,7 @@ function Seccion({
 
   return (
     <section>
-      <Encabezado titulo={s.titulo} ayuda={s.ayuda} grupo={s.grupo === 'a5d' ? 'Adenda 5 definitiva' : undefined} />
+      <Encabezado titulo={s.titulo} ayuda={s.ayuda} grupo={s.grupo === 'a5d' ? 'Adenda 5' : undefined} />
       <div className="space-y-6">
         {primeroA5d === undefined && cabecera}
         {subtemas.map((sub) => (
@@ -476,7 +476,7 @@ function Seccion({
         {id === 'a5d_score' && (
           <details className="group rounded-xl border border-gray-200 bg-white">
             <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 hover:bg-gray-50 sm:px-5 [&::-webkit-details-marker]:hidden">
-              Cómo se calcula el puntaje con la Adenda 5 definitiva
+              Cómo se calcula el puntaje con la Adenda 5
               <IconChevronDown size={18} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
             </summary>
             <div className="border-t border-gray-100 px-4 py-4 sm:px-5">

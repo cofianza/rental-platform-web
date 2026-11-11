@@ -25,7 +25,7 @@ interface Props {
 
 const REGLAS = ['ADENDA3_V2', 'ADENDA4', 'ADENDA5_DEF']
 const COBROS = ['PRECIO_ESTUDIO_INDIVIDUAL', 'TARIFA_IVA', 'TARIFA_VIA_AUTOMATICA', 'TARIFA_VIA_NO_AUTOMATICA']
-// Adenda 5 definitiva: una prima y una tarifa únicas en lugar de las dos tarifas.
+// Adenda 5: una prima y una tarifa únicas en lugar de las dos tarifas.
 const COBROS_A5D = ['PRECIO_ESTUDIO_INDIVIDUAL', 'TARIFA_IVA', 'PRIMA_VINCULACION', 'TARIFA_MENSUAL']
 const CLAVE = ['CANON_MAX_TRANSITORIO', 'DIAS_EXPIRACION_ESTUDIO', 'DIAS_CADUCIDAD_ESTUDIO', 'VIGENCIA_CRC_DIAS', 'DIAS_EXPIRACION_FIRMA']
 
@@ -150,8 +150,8 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
       {a5d ? (
         <Tarjeta
           titulo="Cómo se decide un estudio"
-          ayuda="Con la Adenda 5 definitiva: con el puntaje de la persona (de 0 a 100) y el puntaje que reporta la central (de 0 a 999). Toque un número para cambiarlo."
-          accion={verTodo('a5d_motor', 'Ver el motor de la Adenda 5 definitiva')}
+          ayuda="Con la Adenda 5: con el puntaje de la persona (de 0 a 100) y el puntaje que reporta la central (de 0 a 999). Toque un número para cambiarlo."
+          accion={verTodo('a5d_motor', 'Ver el motor de la Adenda 5')}
         >
           <div className="px-4 py-4 sm:px-5">
             <EscalaA5D valores={valores} onAbrir={onAbrir} />
@@ -172,7 +172,7 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
       <Tarjeta
         titulo="Reglas encendidas"
         ayuda="Paquetes de reglas que se encienden o apagan completos."
-        accion={hayA5d ? verTodo('a5d_motor', 'Ver la Adenda 5 definitiva') : undefined}
+        accion={hayA5d ? verTodo('a5d_motor', 'Ver la Adenda 5') : undefined}
       >
         <div className="divide-y divide-gray-100">
           {de(REGLAS).map((p) => (
@@ -201,7 +201,7 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
         titulo="Cómo se calcula el puntaje del solicitante"
         ayuda={
           a5d
-            ? 'La fórmula de la Adenda 5 definitiva: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
+            ? 'La fórmula de la Adenda 5: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
             : 'La fórmula de la Política: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
         }
         plegable
