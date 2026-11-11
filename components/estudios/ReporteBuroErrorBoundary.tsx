@@ -44,12 +44,12 @@ export class ReporteBuroErrorBoundary extends Component<
           <IconAlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
           <div>
             <p className="text-xs font-medium text-amber-900">
-              El reporte del buró no se pudo mostrar.
+              El reporte de la central de riesgo no se pudo mostrar.
             </p>
             <p className="text-[10px] text-amber-800 mt-1">
               La respuesta del proveedor llegó con un formato inesperado. El resto del estudio (puntaje,
-              resultado y observaciones) sigue siendo válido; para revisar el detalle, vuelva a consultar el
-              buró o solicite el reporte al proveedor.
+              resultado y observaciones) sigue siendo válido; para revisar el detalle, vuelva a consultar la
+              central de riesgo o solicite el reporte al proveedor.
             </p>
           </div>
         </div>

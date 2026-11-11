@@ -22,7 +22,7 @@ import { FAQ_COSTO_RESPALDO } from '@/lib/faqCostoRespaldo'
 export const metadata: Metadata = {
   title: 'Cofianza — ¿Le pidieron fiador? Soy yo. Llámenos.',
   description:
-    'Afianzadora digital en Colombia. Respaldamos su contrato de arrendamiento para que no tenga que buscar codeudor. Estudio en segundos, firma por WhatsApp, cashback 30%.',
+    'Afianzadora digital en Colombia. Respaldamos su contrato de arrendamiento para que no tenga que buscar codeudor. Estudio en minutos, firma por WhatsApp, cashback 30%.',
 }
 
 /**
@@ -82,7 +82,7 @@ export default async function HomePage() {
               </p>
 
               <p className="text-base text-white/45 leading-relaxed max-w-lg mb-9 hero-in [animation-delay:300ms]">
-                Evaluamos su perfil en segundos y firmamos como su fiador en el contrato de
+                Evaluamos su perfil en minutos y firmamos como su fiador en el contrato de
                 arrendamiento. Sin codeudor humano. Sin deberle el favor a nadie.
               </p>
 
@@ -103,7 +103,7 @@ export default async function HomePage() {
 
               <div className="flex flex-wrap gap-5 text-sm text-white/40 font-medium hero-in [animation-delay:450ms]">
                 <span className="flex items-center gap-1.5">
-                  <IconCheck size={14} className="text-primary-400 shrink-0" /> Respuesta en segundos
+                  <IconCheck size={14} className="text-primary-400 shrink-0" /> Respuesta en minutos
                 </span>
                 <span className="flex items-center gap-1.5">
                   <IconCheck size={14} className="text-primary-400 shrink-0" /> Cashback del 30%
@@ -168,7 +168,7 @@ export default async function HomePage() {
                 </div>
                 <div className="mt-3 p-3.5 rounded-xl bg-primary-500/[0.06] border border-primary-500/10 flex justify-between items-center">
                   <div>
-                    <div className="text-xs text-white/35">Score crediticio</div>
+                    <div className="text-xs text-white/35">Puntaje de crédito</div>
                     <div className="text-lg font-bold text-primary-400">632 · Aprobado</div>
                   </div>
                   <div className="text-right">
@@ -189,7 +189,7 @@ export default async function HomePage() {
         <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-2xl border border-gray-100 grid grid-cols-2 md:grid-cols-4">
           {[
             { val: ['100', '%'], lbl: 'Digital' },
-            { val: '< 1 min', lbl: 'Respuesta' },
+            { val: 'Minutos', lbl: 'Respuesta' },
             { val: '0', lbl: 'Codeudores' },
             { val: ['30', '%'], lbl: 'Cashback al cumplir', accent: 'orange' as const },
           ].map((s, i) => (
@@ -255,7 +255,7 @@ export default async function HomePage() {
               {
                 tag: 'Reporte positivo',
                 title: 'Pagando a tiempo construye su historial crediticio.',
-                body: 'Cofianza reporta su buen comportamiento a centrales de riesgo. Cada mes que paga a tiempo mejora su score y le abre puertas.',
+                body: 'Cofianza reporta su buen comportamiento a centrales de riesgo. Cada mes que paga a tiempo mejora su historial crediticio y le abre puertas.',
                 variant: 'plain',
               },
               {
@@ -328,8 +328,8 @@ export default async function HomePage() {
               {
                 n: '02',
                 icon: <IconCheckCircle size={22} />,
-                title: 'Lo evaluamos en segundos',
-                body: 'Paga el estudio de crédito. Lo consultamos en múltiples bases de datos. Si aprueba, firmamos como su fiador. Sin papeles, sin filas, sin codeudor.',
+                title: 'Lo evaluamos en minutos',
+                body: 'Paga el estudio y consultamos su información en las centrales de riesgo. Si aprueba, firmamos como su fiador. Sin papeles, sin filas, sin codeudor. Si su caso necesita la revisión de un analista o la autorización de un coarrendatario, puede tardar más.',
               },
               {
                 n: '03',
@@ -363,7 +363,7 @@ export default async function HomePage() {
         <div className="max-w-[1200px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-1">
           {[
             { val: ['100', '%'], lbl: 'Digital — sin papeles ni filas' },
-            { val: '< 1 min', lbl: 'Respuesta de su estudio' },
+            { val: 'Minutos', lbl: 'Respuesta de su estudio' },
             { val: ['30', '%'], lbl: 'Cashback al cumplir' },
             { val: '0', lbl: 'Codeudores necesarios' },
           ].map((c, i) => (
@@ -406,7 +406,7 @@ export default async function HomePage() {
                 body: '¿Le pidieron fiador? Nosotros firmamos. Pague el estudio y firme desde su celular.',
                 items: [
                   'Sin codeudor ni fiador humano',
-                  'Respuesta en segundos',
+                  'Respuesta en minutos, sin filas ni papeles',
                   'Firma por WhatsApp',
                   'Cashback del 30% si cumple',
                   'Reporte positivo a centrales de riesgo',
@@ -541,7 +541,7 @@ export default async function HomePage() {
                 {[
                   'Nosotros firmamos. Sin pedirle a nadie.',
                   'Solo su cédula y un estudio automático',
-                  'Respuesta en segundos',
+                  'Respuesta en minutos, sin filas ni papeles',
                   'Todo desde su celular',
                   'Firma electrónica legal por WhatsApp',
                   'Reporte positivo a centrales de riesgo',
@@ -625,7 +625,7 @@ export default async function HomePage() {
           </h2>
           <p className="text-lg text-white/45 mb-10 reveal">
             <strong className="text-white">Sin codeudor humano. Sin deberle el favor a nadie.</strong>{' '}
-            Su fiador profesional en segundos.
+            Su fiador profesional en minutos.
           </p>
           <div className="flex flex-wrap gap-3 justify-center reveal">
             <Link

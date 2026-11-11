@@ -429,7 +429,7 @@ export function ReEvaluacionSection({
           </select>
 
           {/* File input */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <input
               ref={fileInputRef}
               type="file"
@@ -447,16 +447,19 @@ export function ReEvaluacionSection({
               Seleccionar archivo
             </button>
             {selectedFile && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="flex min-w-0 items-center gap-2 text-sm text-gray-600">
                 <IconFileText size={16} />
                 <span className="truncate max-w-[200px]">{selectedFile.name}</span>
                 <span className="text-gray-500">({formatFileSize(selectedFile.size)})</span>
                 <button
+                  type="button"
                   onClick={() => {
                     setSelectedFile(null)
                     if (fileInputRef.current) fileInputRef.current.value = ''
                   }}
-                  className="text-gray-500 hover:text-gray-600"
+                  aria-label="Quitar archivo"
+                  title="Quitar archivo"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center text-gray-500 hover:text-gray-600"
                 >
                   <IconTrash size={14} />
                 </button>

@@ -39,14 +39,18 @@ export function EstudiosFilters({
           <input
             type="text"
             placeholder={ESTUDIO_UI_MESSAGES.SEARCH_PLACEHOLDER}
+            aria-label="Buscar evaluaciones"
             value={filters.search}
             onChange={(e) => onFilterChange({ search: e.target.value })}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            className="w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
           {filters.search && (
             <button
+              type="button"
               onClick={() => onFilterChange({ search: '' })}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-600"
+              aria-label="Limpiar búsqueda"
+              title="Limpiar búsqueda"
+              className="absolute inset-y-0 right-0 flex min-w-10 items-center justify-center text-gray-500 hover:text-gray-600"
             >
               <IconX size={16} />
             </button>

@@ -416,23 +416,32 @@ export function InmueblesTable({
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
+                  type="button"
                   onClick={() => onView(inmueble)}
-                  className="p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                  aria-label="Ver inmueble"
+                  title="Ver inmueble"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                 >
                   <IconEye size={18} />
                 </button>
                 {canEdit && (
                   <button
+                    type="button"
                     onClick={() => onEdit(inmueble)}
-                    className="p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                    aria-label="Editar inmueble"
+                    title="Editar inmueble"
+                    className="inline-flex min-h-10 min-w-10 items-center justify-center p-2.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                   >
                     <IconEdit size={18} />
                   </button>
                 )}
                 {canDelete && (
                   <button
+                    type="button"
                     onClick={() => onDelete(inmueble)}
-                    className="p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                    aria-label="Eliminar inmueble"
+                    title="Eliminar inmueble"
+                    className="inline-flex min-h-10 min-w-10 items-center justify-center p-2.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                   >
                     <IconTrash size={18} />
                   </button>

@@ -539,7 +539,7 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
       {/* Reporte sin contenido: no se afirma nada sobre la consulta */}
       {reporteVacio && (
         <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-lg">
-          El reporte del buró no trae información para mostrar.
+          El reporte de la central de riesgo no trae información para mostrar.
         </p>
       )}
 
@@ -552,9 +552,9 @@ export function DataCreditoReportDetail({ data, externo = false }: DataCreditoRe
               La consulta fue efectiva, pero {externo ? 'la central de riesgo' : 'DataCrédito'} no reporta información crediticia de esta persona.
             </p>
             <p className="text-[10px] text-blue-800 mt-1">
-              No es un rechazo del buró: significa que la persona no está bancarizada o no tiene historia por
-              este canal. El expediente requiere evaluación manual con otros soportes (ingresos, referencias,
-              codeudor).
+              No es un rechazo de la central de riesgo: significa que la persona no está bancarizada o no tiene historia por
+              este canal. El estudio pasa a revisión manual con otros soportes (ingresos, referencias o un
+              coarrendatario).
               {limpiar(productResult?.responseDesc)
                 ? ` Respuesta del proveedor: ${limpiar(productResult?.responseDesc)}.`
                 : ''}

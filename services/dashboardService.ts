@@ -212,7 +212,14 @@ export interface InquilinoRow {
   ingresos: number | null
   empresa: string | null
   tipoPersona: string | null
+  /** Color de las fichas: lo decide el API con los cortes vigentes. Opcional: un API anterior no lo manda. */
+  scoreTono?: TonoFicha | null
+  /** Canon sobre ingresos declarados (%). */
+  cargaPct?: number | null
+  cargaTono?: TonoFicha | null
 }
+
+export type TonoFicha = 'verde' | 'amarillo' | 'rojo'
 
 export interface ContratoAdminRow {
   id: string

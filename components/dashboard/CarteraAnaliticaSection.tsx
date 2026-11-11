@@ -126,10 +126,10 @@ export function CarteraAnaliticaSection() {
           {/* La API puede no enviar este dato: entonces la tarjeta no se muestra. */}
           {e.scorePromedio !== undefined && (
             <StatCard
-              label="Score promedio"
-              value={e.scorePromedio != null ? `${e.scorePromedio}/1000` : '—'}
+              label="Puntaje promedio de la central"
+              value={e.scorePromedio != null ? String(e.scorePromedio) : '—'}
               color="text-blue-600"
-              sub="inquilinos calificados"
+              sub="escala de 0 a 999 · inquilinos calificados"
             />
           )}
           <StatCard

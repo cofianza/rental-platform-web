@@ -35,6 +35,7 @@ import {
   type IHistorialCalibracion,
   type ICascadaCentrales,
   type IRevisionManual,
+  type ITablasPuntaje,
 } from '@/services/calibracionService'
 import Link from 'next/link'
 import { IconBank, IconLock, IconSearch, IconChevronDown, IconRefresh, IconX } from '@/components/icons'
@@ -78,6 +79,8 @@ export default function AdminCalibracionPage() {
   const [historial, setHistorial] = useState<IHistorialCalibracion[]>([])
   const [cascada, setCascada] = useState<ICascadaCentrales | null>(null)
   const [revision, setRevision] = useState<IRevisionManual | null>(null)
+  // Las tablas de puntos del motor (M-3): solo para «Cómo se calcula»; si fallan, esa parte lo dice.
+  const [tablas, setTablas] = useState<ITablasPuntaje | null>(null)
   const [loading, setLoading] = useState(true)
   // Un fallo de carga no es «sin cambios registrados»: se dice y se reintenta.
   const [errorCarga, setErrorCarga] = useState(false)
@@ -91,17 +94,19 @@ export default function AdminCalibracionPage() {
 
   const cargar = async () => {
     try {
-      const [p, h, c, r] = await Promise.all([
+      const [p, h, c, r, t] = await Promise.all([
         calibracionService.listar(),
         calibracionService.historial().catch(() => null),
         calibracionService.getCascada(30).catch(() => null),
         calibracionService.getRevisionManual(30).catch(() => null),
+        calibracionService.getTablas().catch(() => null),
       ])
       setParams(p.filter(seMuestra).sort(porOrden))
       setHistorial(h ?? [])
       setErrorHistorial(h === null)
       setCascada(c)
       setRevision(r)
+      setTablas(t)
       setErrorCarga(false)
     } catch {
       setErrorCarga(true)
@@ -352,7 +357,7 @@ export default function AdminCalibracionPage() {
 
               <div ref={contenidoRef} className="min-w-0">
                 {vista === 'resumen' ? (
-                  <Resumen params={params} valores={valores} ultimo={ultimo} onAbrir={setAbierto} onIr={irA} />
+                  <Resumen params={params} valores={valores} tablas={tablas} ultimo={ultimo} onAbrir={setAbierto} onIr={irA} />
                 ) : vista === 'indicadores' ? (
                   <>
                     <Encabezado titulo="Indicadores de los últimos 30 días" ayuda="Cómo se están comportando las centrales y la revisión manual. Sirven para decidir si conviene mover un valor." />
@@ -364,7 +369,7 @@ export default function AdminCalibracionPage() {
                     <Historial historial={historial} params={params} error={errorHistorial} onReintentar={reintentar} />
                   </>
                 ) : (
-                  <Seccion id={vista} params={params} valores={valores} fila={fila} onAbrir={setAbierto} onIr={irA} />
+                  <Seccion id={vista} params={params} valores={valores} tablas={tablas} fila={fila} onAbrir={setAbierto} onIr={irA} />
                 )}
               </div>
             </div>
@@ -409,6 +414,7 @@ function Seccion({
   id,
   params,
   valores,
+  tablas,
   fila,
   onAbrir,
   onIr,
@@ -416,6 +422,7 @@ function Seccion({
   id: SeccionId
   params: IParametroCalibracion[]
   valores: Valores
+  tablas: ITablasPuntaje | null
   fila: (p: IParametroCalibracion) => ReactNode
   onAbrir: (clave: string) => void
   onIr: (v: SeccionId) => void
@@ -473,7 +480,7 @@ function Seccion({
               <IconChevronDown size={18} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
             </summary>
             <div className="border-t border-gray-100 px-4 py-4 sm:px-5">
-              <ComoSeCalculaA5D valores={valores} />
+              <ComoSeCalculaA5D valores={valores} tablas={tablas} />
             </div>
           </details>
         )}
