@@ -1,5 +1,5 @@
 /**
- * Lista de acreedores — Adenda 5 definitiva §3.
+ * Lista de acreedores — Adenda 5 §3.
  *
  * Cada obligación que reportan las centrales se clasifica por su acreedor
  * (financiera, telefonía o comercio y otros sectores), no por el sector que
@@ -86,7 +86,7 @@ function DialogoClasificar({
       isOpen
       onClose={guardando ? () => {} : onClose}
       title={nuevo ? 'Agregar un acreedor' : 'Clasificar acreedor'}
-      description="La clasificación aplica a las evaluaciones con las reglas de la Adenda 5 definitiva, desde que se encienda; las ya decididas no cambian."
+      description="La clasificación aplica a las evaluaciones con las reglas de la Adenda 5, desde que se encienda; las ya decididas no cambian."
       size="md"
       footer={
         <ModalAcciones>
@@ -252,7 +252,7 @@ export default function AcreedoresPage() {
       )}
       <PageHeader
         title="Lista de acreedores"
-        subtitle="Cómo se clasifica cada acreedor que reportan las centrales: financiero, telefonía o comercio y otros sectores. Aplica a las evaluaciones con las reglas de la Adenda 5 definitiva. Mientras un acreedor esté pendiente, las evaluaciones lo clasifican por el sector que reporta la central."
+        subtitle="Cómo se clasifica cada acreedor que reportan las centrales: financiero, telefonía o comercio y otros sectores. Aplica a las evaluaciones con las reglas de la Adenda 5. Mientras un acreedor esté pendiente, las evaluaciones lo clasifican por el sector que reporta la central."
         actions={
           puedeEditar ? (
             <button type="button" onClick={() => setAgregando(true)} className={botonModal('primary')}>

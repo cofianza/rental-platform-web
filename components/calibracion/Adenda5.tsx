@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Piezas del panel para la Adenda 5 definitiva: el aviso de que sus valores
+ * Piezas del panel para la Adenda 5: el aviso de que sus valores
  * aplican al encenderla, la tabla de anclajes del score (7 filas, cada número
  * abre su diálogo), el resumen de las bandas de mora y la lista corta de
  * valores de otras secciones que también usa.
@@ -23,14 +23,14 @@ import {
   type Valores,
 } from './parametros'
 
-/** Arriba de cada sección de la Adenda 5 definitiva mientras esté apagada. */
+/** Arriba de cada sección de la Adenda 5 mientras esté apagada. */
 export function AvisoA5d({ onIr }: { onIr?: (v: SeccionId) => void }) {
   return (
     <div className="flex items-start gap-2.5 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900">
       <IconInfo size={18} className="mt-0.5 shrink-0 text-primary-700" />
       <div className="min-w-0">
         <p>
-          <span className="font-semibold">Aplican al encender la Adenda 5 definitiva.</span> Hoy no cambian ningún resultado: se pueden revisar y
+          <span className="font-semibold">Aplican al encender la Adenda 5.</span> Hoy no cambian ningún resultado: se pueden revisar y
           dejar listos.
         </p>
         {onIr && (
@@ -271,7 +271,7 @@ export function Relacionados({
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-gray-900">{m.nombre}</span>
-                  {m.conA5d && <span className="mt-0.5 block text-xs text-gray-600">Con la Adenda 5 definitiva: {m.conA5d}.</span>}
+                  {m.conA5d && <span className="mt-0.5 block text-xs text-gray-600">Con la Adenda 5: {m.conA5d}.</span>}
                 </span>
                 <span className="shrink-0 text-sm font-bold tabular-nums text-gray-900">{conUnidad(p.valor, p)}</span>
               </button>

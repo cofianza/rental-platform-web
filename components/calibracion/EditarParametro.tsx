@@ -73,9 +73,9 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
   const a5dPendiente = meta.rige === 'a5d' && !a5d
   const porQueNoAplica =
     a5dPendiente
-      ? 'Aplica al encender la Adenda 5 definitiva: hoy no cambia ningún resultado.'
+      ? 'Aplica al encender la Adenda 5: hoy no cambia ningún resultado.'
       : meta.saleConA5d && a5d
-        ? `Dejó de aplicar con la Adenda 5 definitiva: ${meta.saleConA5d}.`
+        ? `Dejó de aplicar con la Adenda 5: ${meta.saleConA5d}.`
         : `Hoy no cambia ningún resultado${meta.notaRige ? `: ${meta.notaRige}` : ''}.`
 
   function validar(): string | null {
@@ -115,12 +115,12 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
   const cuandoAplica = aplicaHoy
     ? 'Aplica desde ya a lo que se procese de aquí en adelante.'
     : a5dPendiente
-      ? 'Queda guardado. Aplica cuando se encienda la Adenda 5 definitiva.'
+      ? 'Queda guardado. Aplica cuando se encienda la Adenda 5.'
       : 'Queda guardado para cuando aplique: hoy no cambia ningún resultado.'
   // Hasta que la plataforma tenga completo el motor nuevo, el API manda el interruptor fijo en apagado.
   const a5dNoDisponible = p.clave === 'ADENDA5_DEF' && fijo && p.valor !== 1
   const bloqueo = a5dNoDisponible
-    ? 'Todavía no se puede encender: falta completar el motor nuevo de la Adenda 5 definitiva.'
+    ? 'Todavía no se puede encender: falta completar el motor nuevo de la Adenda 5.'
     : !fijo
       ? 'Solo la Gerencia General puede cambiar este valor.'
       : meta.rige === 'nunca'
@@ -135,12 +135,12 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
         {meta.nota && <p className="text-gray-600">{meta.nota}</p>}
         {notasA5d && meta.saleConA5d && !a5d && (
           <p className="text-gray-600">
-            <span className="font-semibold">Deja de aplicar con la Adenda 5 definitiva:</span> {meta.saleConA5d}.
+            <span className="font-semibold">Deja de aplicar con la Adenda 5:</span> {meta.saleConA5d}.
           </p>
         )}
         {notasA5d && meta.conA5d && (
           <p className="text-gray-600">
-            <span className="font-semibold">Con la Adenda 5 definitiva:</span> {meta.conA5d}.
+            <span className="font-semibold">Con la Adenda 5:</span> {meta.conA5d}.
           </p>
         )}
         {aplicaHoy && meta.notaRige && (

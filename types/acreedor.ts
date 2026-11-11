@@ -1,5 +1,5 @@
 /**
- * Lista de acreedores (Adenda 5 definitiva §3): cómo se clasifica cada
+ * Lista de acreedores (Adenda 5 §3): cómo se clasifica cada
  * acreedor que reportan las centrales. Solo la ve Cofianza. Las reglas de
  * clasificación viven en el API; aquí solo los nombres para mostrar.
  */

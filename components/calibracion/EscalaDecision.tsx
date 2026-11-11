@@ -41,7 +41,7 @@ export const ESCALA_CLAVES = [
   'UMBRAL_CASCADA_APROBACION',
   'UMBRAL_SCORE_RECHAZO',
   'UMBRAL_SCORE_REVISION',
-  // Adenda 5 definitiva
+  // Adenda 5
   'UMBRAL_APROBADO',
   'PISO_SEGUNDO_FIRMANTE',
   'SCORE_MINIMO_SOLO',
@@ -182,7 +182,7 @@ function tramosScore(v: Valores): Tramo[] {
   ]
 }
 
-// ── Adenda 5 definitiva ─────────────────────────────────────────────────────
+// ── Adenda 5 ─────────────────────────────────────────────────────
 
 /** Puntaje de la persona: rechazo bajo el piso, segundo firmante hasta el umbral, aprobada desde él. */
 function tramosA5dPuntaje(v: Valores): Tramo[] {
@@ -263,7 +263,7 @@ function tramosA5dScore(v: Valores): Tramo[] {
 const CLAVES_A5D_PUNTAJE = ['UMBRAL_APROBADO', 'PISO_SEGUNDO_FIRMANTE']
 const CLAVES_A5D_SCORE = ['SCORE_MINIMO_SOLO', 'VIA_RAPIDA_SCORE']
 
-/** La escala de la Adenda 5 definitiva, con sus valores (vigentes o los que aplicarán al encenderla). */
+/** La escala de la Adenda 5, con sus valores (vigentes o los que aplicarán al encenderla). */
 export function EscalaA5D({ valores, onAbrir }: { valores: Valores; onAbrir: (clave: string) => void }) {
   return (
     <div className="space-y-8">
@@ -401,9 +401,9 @@ function Barra({ titulo, tramos, min, max, resaltar, onAbrir, decimales }: Barra
 export function EscalaPuntaje({ valores, resaltar }: { valores: Valores; resaltar: string }) {
   const a5d = valores.ADENDA5_DEF === 1
   if (CLAVES_A5D_PUNTAJE.includes(resaltar))
-    return <Barra titulo="Puntaje de la persona (Adenda 5 definitiva)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} resaltar={resaltar} decimales />
+    return <Barra titulo="Puntaje de la persona (Adenda 5)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} resaltar={resaltar} decimales />
   if (CLAVES_A5D_SCORE.includes(resaltar) || (a5d && resaltar === 'UMBRAL_SCORE_RECHAZO'))
-    return <Barra titulo="Puntaje de la central (Adenda 5 definitiva)" tramos={tramosA5dScore(valores)} min={SCORE_MIN} max={SCORE_MAX} resaltar={resaltar} />
+    return <Barra titulo="Puntaje de la central (Adenda 5)" tramos={tramosA5dScore(valores)} min={SCORE_MIN} max={SCORE_MAX} resaltar={resaltar} />
   if (resaltar.startsWith('UMBRAL_CASCADA_'))
     return <Barra titulo="Consulta a la segunda central" tramos={tramosCentrales(valores)} min={0} max={100} resaltar={resaltar} decimales />
   if (resaltar.startsWith('UMBRAL_SCORE_'))

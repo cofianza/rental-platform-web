@@ -45,7 +45,7 @@ export type SeccionId =
   | 'contratos'
   | 'migracion'
   | 'otros'
-  // Adenda 5 definitiva: un grupo propio en el menú.
+  // Adenda 5: un grupo propio en el menú.
   | 'a5d_motor'
   | 'a5d_score'
   | 'a5d_segundo'
@@ -57,7 +57,7 @@ export type SeccionId =
  * Cuándo el valor cambia algún resultado: siempre, solo con un paquete de
  * reglas encendido (o apagado), nunca (retirado) o en parte (`notaRige` dice
  * dónde). Con lo que no rige hoy, la sección lo pliega al final. 'a5d' = solo
- * con la Adenda 5 definitiva encendida (ADENDA5_DEF).
+ * con la Adenda 5 encendida (ADENDA5_DEF).
  */
 export type Rige = 'siempre' | 'v2' | 'sin_v2' | 'a4' | 'v2_a4' | 'a5d' | 'nunca' | 'parcial'
 
@@ -89,11 +89,11 @@ export interface MetaParametro {
   /** Valores admitidos cuando no es un rango (se eligen con botones). */
   opciones?: number[]
   /**
-   * Rige hoy y deja de aplicar al encender la Adenda 5 definitiva: qué lo
+   * Rige hoy y deja de aplicar al encender la Adenda 5: qué lo
    * reemplaza. No se oculta mientras esté apagada.
    */
   saleConA5d?: string
-  /** Sigue rigiendo con la Adenda 5 definitiva, pero cambia lo que hace: cómo. */
+  /** Sigue rigiendo con la Adenda 5, pero cambia lo que hace: cómo. */
   conA5d?: string
 }
 
@@ -101,13 +101,13 @@ export interface Seccion {
   id: SeccionId
   titulo: string
   ayuda: string
-  /** 'a5d': va en el grupo «Adenda 5 definitiva» del menú. */
+  /** 'a5d': va en el grupo «Adenda 5» del menú. */
   grupo?: 'a5d'
   /** Valores de otras secciones que también usa esta (se listan al final, en corto). */
   relacionados?: { titulo: string; claves: string[] }
 }
 
-const TAMBIEN_A5D = 'Siguen como están y también rigen con la Adenda 5 definitiva (se cambian en su sección)'
+const TAMBIEN_A5D = 'Siguen como están y también rigen con la Adenda 5 (se cambian en su sección)'
 
 export const SECCIONES: Seccion[] = [
   {
@@ -143,7 +143,7 @@ export const SECCIONES: Seccion[] = [
     id: 'a5d_motor',
     grupo: 'a5d',
     titulo: 'Interruptor y motor',
-    ayuda: 'El interruptor de la Adenda 5 definitiva y cómo decide sobre cada persona: aprobada, aprobada con segundo firmante o rechazada.',
+    ayuda: 'El interruptor de la Adenda 5 y cómo decide sobre cada persona: aprobada, aprobada con segundo firmante o rechazada.',
     relacionados: {
       titulo: TAMBIEN_A5D,
       claves: [
@@ -205,7 +205,7 @@ export const SECCIONES: Seccion[] = [
 ]
 
 /** El título con su grupo, para donde la sección se nombra sola (búsqueda, encabezado). */
-export const tituloSeccion = (s: Seccion) => (s.grupo === 'a5d' ? `Adenda 5 definitiva · ${s.titulo}` : s.titulo)
+export const tituloSeccion = (s: Seccion) => (s.grupo === 'a5d' ? `Adenda 5 · ${s.titulo}` : s.titulo)
 export const grupoDe = (id: string) => SECCIONES.find((s) => s.id === id)?.grupo
 
 // es-CO: coma decimal y punto de miles («1,15», «3.000.000»).
@@ -219,10 +219,10 @@ const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', '
 
 const DECISION = { matriz: true } as const
 
-// ── Adenda 5 definitiva ───────────────────────────────────────────────────
+// ── Adenda 5 ───────────────────────────────────────────────────
 // Todos aplican solo con ADENDA5_DEF encendido (rige 'a5d'), salvo el propio
 // interruptor. Mientras esté apagado, sus secciones los muestran como «aplica
-// al encender la Adenda 5 definitiva» y no los pliegan. Los textos siguen las
+// al encender la Adenda 5» y no los pliegan. Los textos siguen las
 // descripciones del API (src/lib/calibracion.ts).
 
 /** 0,20 → «0,20»: las bandas se escriben con dos decimales, como en la adenda. */
@@ -287,12 +287,12 @@ function metaAnclas(): Record<string, MetaParametro> {
 const META_A5D: Record<string, MetaParametro> = {
   // ── Interruptor y motor ───────────────────────────────────────────────────
   ADENDA5_DEF: {
-    nombre: 'Reglas de decisión con segundo firmante (Adenda 5 definitiva)',
+    nombre: 'Reglas de decisión con segundo firmante (Adenda 5)',
     seccion: 'a5d_motor',
     sub: 'Interruptor',
     unidad: 'onoff',
     queHace:
-      'Encendido: rige la Adenda 5 definitiva. Cada estudio sale aprobado, aprobado con segundo firmante o rechazado, y la revisión manual deja de ser una salida del motor. El analista sale del flujo normal y atiende apelaciones y excepciones de tope; las verificaciones de cumplimiento (identidad o biometría, posible homónimo en listas y la consulta de antecedentes cuando no responde) siguen como hoy. Apagado: se decide como hoy.',
+      'Encendido: rige la Adenda 5. Cada estudio sale aprobado, aprobado con segundo firmante o rechazado, y la revisión manual deja de ser una salida del motor. El analista sale del flujo normal y atiende apelaciones y excepciones de tope; las verificaciones de cumplimiento (identidad o biometría, posible homónimo en listas y la consulta de antecedentes cuando no responde) siguen como hoy. Apagado: se decide como hoy.',
     // Las cifras salen del panel: si la Gerencia mueve un valor, el texto lo sigue.
     excepciones: (v) => [
       `La tabla de ${v.UMBRAL_APROBACION_AUTOMATICA} y ${v.UMBRAL_ZONA_GRIS} (aprobar solo, zona gris y «Está cerca») → deja de aplicar: deciden el puntaje para aprobar, el puntaje mínimo en la central para ir sin segundo firmante y el piso para pedir segundo firmante.`,
@@ -383,7 +383,7 @@ const META_A5D: Record<string, MetaParametro> = {
     unidad: 'pct',
     queHace:
       'Parte máxima del ingreso ajustado que pueden llevarse las cuotas de la persona, con la de la fianza. Por encima, con ingreso verificado, el estudio se rechaza; sin ingreso verificado no rechaza: el endeudamiento se puntúa por cómo paga la persona.',
-    nota: 'Hoy la plataforma usa un 65 % fijo; este valor lo usa al encender la Adenda 5 definitiva.',
+    nota: 'Hoy la plataforma usa un 65 % fijo; este valor lo usa al encender la Adenda 5.',
     ejemplo: (v) => `Con ${fmt(v.DTI_MAXIMO)} % y un ingreso verificado de $3.000.000: cuotas por más de ${pesos(30_000 * v.DTI_MAXIMO)} al mes rechazan.`,
     rige: 'a5d',
     motivo: true,
@@ -396,7 +396,7 @@ const META_A5D: Record<string, MetaParametro> = {
     unidad: 'pct',
     queHace:
       'Fija el canon máximo: este porcentaje del ingreso ajustado para canon del titular. Si el canon pedido lo supera, el estudio no se rechaza ni va a un analista: se aprueba «hasta canon de» ese valor. El ingreso del segundo firmante no lo aumenta.',
-    nota: 'Hoy la plataforma usa un 40 % fijo; este valor lo usa al encender la Adenda 5 definitiva.',
+    nota: 'Hoy la plataforma usa un 40 % fijo; este valor lo usa al encender la Adenda 5.',
     ejemplo: (v) => `Con ${fmt(v.CANON_INGRESO_MAXIMO)} % y un ingreso ajustado de $2.500.000: se aprueba hasta un canon de ${pesos(25_000 * v.CANON_INGRESO_MAXIMO)}.`,
     rige: 'a5d',
     ...DECISION,
@@ -741,7 +741,7 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Paquete de reglas',
     unidad: 'onoff',
     queHace: 'Encendido: el ingreso estimado se ajusta aparte para el canon y para las deudas, el coarrendatario suma puntos e ingreso, y a quien casi aprueba se le ofrece presentar uno («Está cerca»). Apagado: se decide como antes.',
-    nota: 'No se puede apagar mientras estén encendidas las reglas de capacidad de pago (Adenda 4) o la Adenda 5 definitiva.',
+    nota: 'No se puede apagar mientras estén encendidas las reglas de capacidad de pago (Adenda 4) o la Adenda 5.',
     rige: 'siempre',
     motivo: true,
     ...DECISION,
@@ -951,7 +951,7 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Paquete de reglas',
     unidad: 'onoff',
     queHace: 'Encendido: sin ingreso comprobado con documentos, un endeudamiento alto o un canon alto frente al ingreso ya no rechazan solos (van a un analista o piden coarrendatario) y el endeudamiento se puntúa por cómo paga la persona. Apagado: se decide como antes.',
-    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) encendidas. No se puede apagar mientras esté encendida la Adenda 5 definitiva.',
+    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) encendidas. No se puede apagar mientras esté encendida la Adenda 5.',
     rige: 'siempre',
     motivo: true,
     ...DECISION,
@@ -1379,7 +1379,7 @@ export const META: Record<string, MetaParametro> = {
     rige: 'siempre',
   },
 
-  // La Adenda 5 definitiva va al final: su grupo cierra el menú.
+  // La Adenda 5 va al final: su grupo cierra el menú.
   ...META_A5D,
 }
 
@@ -1392,7 +1392,7 @@ function tarifaEjemplo(pct: number, iva: number): string {
  * Valores de reglas reemplazadas que ya no deciden nada. Si un API anterior
  * los sigue listando, la pantalla no los muestra (ni siquiera en «Otros»,
  * donde saldrían con su clave y editables): la escalera de mora vigente y el
- * paz y salvo de la Adenda 5 anterior, que reemplazó la Adenda 5 definitiva.
+ * paz y salvo de la Adenda 5 anterior, que reemplazó la Adenda 5.
  * MIN_OBLIGACIONES_FINANCIERAS_AL_DIA no está: la definitiva lo reutiliza.
  */
 const RETIRADOS = new Set(['ADENDA5', 'FACTOR_MORA_TOLERADA', 'FACTOR_MORA_RECHAZO', 'DIAS_PLAZO_PAZ_Y_SALVO'])
@@ -1417,9 +1417,9 @@ const ORDEN = Object.keys(META)
 const posicion = (clave: string) => (ORDEN.includes(clave) ? ORDEN.indexOf(clave) : ORDEN.length)
 export const porOrden = (a: { clave: string }, b: { clave: string }) => posicion(a.clave) - posicion(b.clave)
 
-/** ¿Está encendida la Adenda 5 definitiva? */
+/** ¿Está encendida la Adenda 5? */
 export const a5dEncendida = (v: Valores) => v.ADENDA5_DEF === 1
-/** ¿El API ya trae la Adenda 5 definitiva? Uno anterior no la lista: entonces sus notas no se muestran. */
+/** ¿El API ya trae la Adenda 5? Uno anterior no la lista: entonces sus notas no se muestran. */
 export const a5dDisponible = (v: Valores) => typeof v.ADENDA5_DEF === 'number'
 
 /**
@@ -1500,7 +1500,7 @@ export const humanizar = (texto: string) =>
     .replace(new RegExp(`\\b${MES_APAGADO}\\b`, 'g'), '«Sin activar»')
 
 /**
- * Las reglas de coherencia del API para la Adenda 5 definitiva, antes de
+ * Las reglas de coherencia del API para la Adenda 5, antes de
  * enviar: así el error sale al escribir y no después de guardar. El API las
  * vuelve a validar (src/lib/calibracion.ts, validarCoherencia). Devuelve el
  * motivo, o null si el valor nuevo cuadra con los demás.
@@ -1531,8 +1531,8 @@ export function coherenciaA5d(clave: string, nuevo: number, v: Valores): string 
     }
   }
   if (clave === 'ADENDA5_DEF' && nuevo === 1 && (c.ADENDA3_V2 !== 1 || c.ADENDA4 !== 1))
-    return 'La Adenda 5 definitiva se enciende sobre las reglas de coarrendatarios e ingreso (Adenda 3) y las de capacidad de pago (Adenda 4): encienda primero esas.'
+    return 'La Adenda 5 se enciende sobre las reglas de coarrendatarios e ingreso (Adenda 3) y las de capacidad de pago (Adenda 4): encienda primero esas.'
   if ((clave === 'ADENDA3_V2' || clave === 'ADENDA4') && nuevo !== 1 && c.ADENDA5_DEF === 1)
-    return 'No se puede apagar mientras esté encendida la Adenda 5 definitiva: apague primero esa.'
+    return 'No se puede apagar mientras esté encendida la Adenda 5: apague primero esa.'
   return null
 }

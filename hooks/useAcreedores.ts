@@ -1,7 +1,7 @@
 'use client'
 
 /**
- * Lista de acreedores (Adenda 5 definitiva §3): carga con filtros y
+ * Lista de acreedores (Adenda 5 §3): carga con filtros y
  * clasificación. Solo Cofianza; el API decide quién puede escribir.
  */
 import { useCallback, useEffect, useState } from 'react'
