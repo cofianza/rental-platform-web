@@ -307,7 +307,7 @@ const META_A5D: Record<string, MetaParametro> = {
       'Las dos tarifas mensuales y la prima que baja con coarrendatario → una sola tarifa mensual y una sola prima de vinculación.',
     ],
     etiquetaExcepciones: ['cambio al encenderla', 'cambios al encenderla'],
-    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) y las de capacidad de pago (Adenda 4) encendidas; mientras esté encendida, esas dos no se pueden apagar. Se podrá encender cuando la plataforma tenga completo el motor nuevo; hasta entonces el panel no deja encenderla.',
+    nota: 'Solo se puede encender con las reglas de coarrendatarios e ingreso (Adenda 3) y las de capacidad de pago (Adenda 4) encendidas; mientras esté encendida, esas dos no se pueden apagar. Además exige que el servidor tenga encendido el vencimiento del plazo del segundo firmante.',
     rige: 'siempre',
     motivo: true,
     ...DECISION,
