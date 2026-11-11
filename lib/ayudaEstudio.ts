@@ -20,7 +20,7 @@ export const AYUDA = {
   evaluaciones:
     'Las consultas a las centrales de riesgo de este estudio: la del titular y, si hay, la del coarrendatario. Cada persona se consulta apenas autoriza.',
   coarrendatario:
-    'Persona que vive con el titular y firma el contrato como arrendataria (no es fiador). Si califica, suma puntos e ingreso al titular y el estudio se decide con los dos. Un coarrendatario va incluido en el precio.',
+    'Segundo firmante del estudio. No es fiador ni necesita finca raíz: firma el contrato como coarrendatario y responde solidariamente, junto con el titular, por todas sus obligaciones. Si califica, suma puntos e ingreso al titular y el estudio se decide con los dos. Un coarrendatario va incluido en el precio.',
   pago:
     'Quién cubre el estudio: un cupo del paquete de la inmobiliaria o el prospecto con el enlace de pago. Sin pago no se consulta a las centrales.',
   // El propietario no tiene paquetes de cupos: paga él con Mercado Pago o le envía el cobro al prospecto.

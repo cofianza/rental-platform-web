@@ -113,6 +113,10 @@ export function CoarrendatarioInviteForm({
   personaNueva = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
+  // Qué es el coarrendatario (revisión 11-nov): no «firma como arrendatario» ni es por fuerza quien vive en el inmueble.
+  const noEsFiador = esGestor
+    ? 'No es fiador ni necesita finca raíz: firma el contrato como coarrendatario y responde solidariamente, junto con el titular, por todas sus obligaciones.'
+    : 'No es fiador ni necesita finca raíz: firma el contrato como coarrendatario y responde solidariamente, junto con usted, por todas las obligaciones del contrato.'
   // Cofianza (también con «ver como» apagado) conserva su texto y su botón de siempre.
   const interno = esRolInterno(useUsuarioVista()?.rol)
   // Opcional para quien gestiona salvo con la condición: no compite con lo que sí le toca.
@@ -217,7 +221,7 @@ export function CoarrendatarioInviteForm({
             {personaNueva ? (
               <>
                 Escriba los datos de la persona que entra como segundo firmante. Le enviaremos una invitación a su correo y a su
-                WhatsApp para que acepte y autorice su evaluación. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                WhatsApp para que acepte y autorice su evaluación. <strong>{noEsFiador}</strong>
               </>
             ) : conCondicion ? (
               // Adenda 3 V2 §6.9: el texto literal, sin «fiador» ni «codeudor» y sin
@@ -227,41 +231,38 @@ export function CoarrendatarioInviteForm({
             ) : aprobado ? (
               <>
                 {esGestor ? 'El estudio quedó aprobado y el solicitante puede firmar solo. ' : 'Su estudio fue aprobado y puede firmar solo. '}
-                {beneficioPrima ? 'Si antes del contrato suma como ' : 'Antes del contrato puede sumar como '}
-                <strong>coarrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}
+                {beneficioPrima ? 'Si antes del contrato suma un ' : 'Antes del contrato puede sumar un '}
+                <strong>coarrendatario</strong>
                 {beneficioPrima ? `, ${beneficioPrima}` : ''}; la evaluación del coarrendatario no tiene costo adicional.{' '}
-                No necesita finca raíz. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                <strong>{noEsFiador}</strong>
               </>
             ) : esGestor && antesDeLaDecision ? (
               <>
-                Puede agregar a la persona con quien vivirá el solicitante como <strong>coarrendatario</strong>. Cada uno
-                se consulta apenas autoriza (con el estudio pagado), y el estudio se decide con los dos. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                Puede agregar un <strong>coarrendatario</strong> al estudio. Cada uno se consulta apenas autoriza (con el
+                estudio pagado), y el estudio se decide con los dos. <strong>{noEsFiador}</strong>
               </>
             ) : esGestor && condicionGestor && !interno ? (
               <>
                 Para seguir con el estudio en el plazo falta un <strong>coarrendatario</strong>. La persona puede agregarlo desde su
-                enlace, o usted puede invitar aquí a quien vivirá con el solicitante: se evalúa a ambos y los respaldamos
-                juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                enlace, o usted puede invitarlo aquí: se evalúa a ambos y el estudio se decide con los dos.{' '}
+                <strong>{noEsFiador}</strong>
               </>
             ) : esGestor && interno ? (
               <>
-                El estudio quedó condicionado. Puede invitar a la persona con quien vivirá el
-                solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
-                respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                El estudio quedó condicionado. Puede invitar un <strong>coarrendatario</strong>: se evalúa a ambos y el
+                estudio se decide con los dos. <strong>{noEsFiador}</strong>
               </>
             ) : esGestor ? (
               <>
                 El estudio está en revisión de Cofianza y no tiene que hacer nada para que avance. Si quiere reforzar el
-                caso, puede invitar a la persona con quien vivirá el
-                solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
-                respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                caso, puede invitar un <strong>coarrendatario</strong>: se evalúa a ambos y el estudio se decide con los
+                dos. <strong>{noEsFiador}</strong>
               </>
             ) : (
               <>
                 Su estudio está en revisión con un analista de Cofianza; no tiene que hacer
-                nada para que avance. Si quiere reforzar su caso, invite a la persona con quien va a
-                vivir como <strong>coarrendatario</strong>: los dos toman el arriendo y los respaldamos
-                juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                nada para que avance. Si quiere reforzar su caso, invite un <strong>coarrendatario</strong>: se evalúa a
+                los dos y el estudio se decide con ambos. <strong>{noEsFiador}</strong>
               </>
             )}
           </p>

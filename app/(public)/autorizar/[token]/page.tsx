@@ -1369,7 +1369,7 @@ export default function AutorizarPage() {
                   Alineado con la plantilla de WhatsApp que ya está en producción
                   (CORR §6). */}
               <p className="mt-2 rounded-lg border border-primary-200 bg-primary-50 p-3 text-xs leading-relaxed text-primary-800">
-                Un coarrendatario <strong>no necesita tener finca raíz</strong>. No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente. Respondemos por los dos como un solo arrendatario.
+                Un coarrendatario <strong>no es fiador ni necesita tener finca raíz</strong>: firma el contrato como coarrendatario y responde solidariamente, junto con usted, por todas las obligaciones del contrato.
               </p>
 
               {presentacion === 'acompanado' && (

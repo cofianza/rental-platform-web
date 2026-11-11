@@ -466,8 +466,8 @@ export default function CoarrendatarioPublicPage() {
             <ul className="list-disc pl-5 space-y-1">
               <li>Consultamos su historial en las centrales de riesgo para evaluarlo junto con {titular}. Para usted no tiene costo.</li>
               <li>
-                Si el arriendo se aprueba, usted firma el contrato como arrendatario, junto con {titular}, y los dos responden
-                por el pago completo del canon.
+                Si el arriendo se aprueba, usted firma el contrato como coarrendatario y responde solidariamente, junto
+                con {titular}, por todas las obligaciones del contrato.
               </li>
               <li>No es fiador ni necesita tener finca raíz.</li>
               <li>Su información se trata conforme a la <Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="underline">política de tratamiento de datos</Link>.</li>

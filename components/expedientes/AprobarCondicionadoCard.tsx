@@ -208,8 +208,9 @@ export function AprobarCondicionadoCard({
               titulo={esCofianza ? 'La inmobiliaria o el prospecto invitan al coarrendatario' : 'La persona lo agrega desde su enlace, o usted lo invita (en el recuadro de abajo)'}
             >
               <p>
-                Es la persona con quien vivirá el solicitante. No necesita finca raíz: basta con que tenga ingresos
-                propios. Se le hace su propia evaluación, y el enlace de su invitación vence con la condición.
+                Es el segundo firmante: no es fiador ni necesita finca raíz (basta con que tenga ingresos propios), firma
+                el contrato como coarrendatario y responde solidariamente, junto con el titular, por todas sus
+                obligaciones. Se le hace su propia evaluación, y el enlace de su invitación vence con la condición.
               </p>
             </Paso>
             <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
@@ -471,8 +472,9 @@ export function AprobarCondicionadoCard({
           <div>
             <p className="font-medium text-gray-900">Sumar un coarrendatario (en el recuadro de abajo)</p>
             <p className="mt-0.5">
-              Es la persona con quien vivirá el solicitante: se le hace su propia evaluación y el analista decide con
-              los dos resultados. Si el coarrendatario tiene un impedimento que no admite excepciones (por
+              Es el segundo firmante: firma el contrato como coarrendatario y responde solidariamente, junto con el
+              titular, por todas sus obligaciones. Se le hace su propia evaluación y el analista decide con los dos
+              resultados. Si el coarrendatario tiene un impedimento que no admite excepciones (por
               ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
             </p>
           </div>
