@@ -20,7 +20,7 @@ There is **no `typecheck` script and no test runner** in the web app. `tsc --noE
 **Routing.** App Router with three route groups under [app/](app/):
 - `(auth)` — login, registro, recuperar/restablecer contraseña, verificar email. Centered layout, no sidebar.
 - `(dashboard)` — protected app (dashboard, inmuebles, expedientes, citas, contratos, estudios, facturacion, plantillas-contrato, bitacora, reportes, usuarios, configuracion, admin, etc.). Sidebar + header layout.
-- `(public)` — token-gated public flows accessed by external actors (coarrendatario, autorizar, estudio, firma, invitacion, pago, verificar). No login required, secured by signed/opaque URL tokens issued by the API.
+- `(public)` — token-gated public flows accessed by external actors (coarrendatario, autorizar, estudio, invitacion, pago, verificar, among others; contracts are signed on the external signature platform, not on a page here). No login required, secured by signed/opaque URL tokens issued by the API.
 
 Plus top-level public pages: landing [page.tsx](app/page.tsx), `/vitrina`, `/inmueble`, `/privacidad`, `/terminos`.
 
