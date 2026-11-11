@@ -295,7 +295,7 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
           </div>
         )}
 
-        {p.advertencia && (
+        {p.advertencia && humanizar(p.advertencia) && (
           <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
             <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
             <span>
@@ -307,8 +307,8 @@ export function EditarParametro({ p, valores, params, historial, onClose, onGuar
           <p className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
             <IconAlertTriangle size={14} className="mt-0.5 shrink-0" />
             <span>
-              Este valor cambia resultados de la plataforma (qué se aprueba o se rechaza, o hasta qué canon llega la cobertura): antes de
-              guardarlo, pida a Tecnología que valide la matriz de casos de prueba y confirme que ningún caso crítico cambia de resultado.
+              Antes de guardar, pida a Tecnología que pruebe los casos de referencia para confirmar que ningún resultado importante cambia. El
+              panel no lo bloquea.
             </span>
           </p>
         )}

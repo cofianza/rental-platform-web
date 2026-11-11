@@ -8,7 +8,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
-import { fmt, metaDe, type Valores } from './parametros'
+import type { IParametroCalibracion } from '@/services/calibracionService'
+import { fmt, metaDe, verboParametro, type Valores } from './parametros'
 
 type Tono = 'rojo' | 'naranja' | 'ambar' | 'verde' | 'gris'
 interface Tramo {
@@ -264,11 +265,11 @@ const CLAVES_A5D_PUNTAJE = ['UMBRAL_APROBADO', 'PISO_SEGUNDO_FIRMANTE']
 const CLAVES_A5D_SCORE = ['SCORE_MINIMO_SOLO', 'VIA_RAPIDA_SCORE']
 
 /** La escala de la Adenda 5, con sus valores (vigentes o los que aplicarán al encenderla). */
-export function EscalaA5D({ valores, onAbrir }: { valores: Valores; onAbrir: (clave: string) => void }) {
+export function EscalaA5D({ valores, onAbrir, params }: { valores: Valores; onAbrir: (clave: string) => void; params?: IParametroCalibracion[] }) {
   return (
     <div className="space-y-8">
       <div>
-        <Barra titulo="1. Puntaje de la persona (0 a 100)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} onAbrir={onAbrir} decimales />
+        <Barra titulo="1. Puntaje de la persona (0 a 100)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} onAbrir={onAbrir} params={params} decimales />
         <p className="mt-3 max-w-prose text-xs text-gray-600">
           Antes que este puntaje mandan las reglas de rechazo (por ejemplo, una mora financiera vigente o una mora no financiera por encima de
           la banda). Con dos personas, el titular es la de mayor puntaje entre las no rechazadas.
@@ -280,6 +281,7 @@ export function EscalaA5D({ valores, onAbrir }: { valores: Valores; onAbrir: (cl
         min={SCORE_MIN}
         max={SCORE_MAX}
         onAbrir={onAbrir}
+        params={params}
       />
     </div>
   )
@@ -292,6 +294,8 @@ interface BarraProps {
   max: number
   resaltar?: string
   onAbrir?: (clave: string) => void
+  /** Para decir «Ver» o «Cambiar» según el permiso de quien mira. */
+  params?: IParametroCalibracion[]
   /** El puntaje de 0 a 100 trae decimales: el tramo se escribe «70 a 84,9». */
   decimales?: boolean
 }
@@ -310,7 +314,7 @@ function useAncho<T extends HTMLElement>() {
   return [ref, ancho] as const
 }
 
-function Barra({ titulo, tramos, min, max, resaltar, onAbrir, decimales }: BarraProps) {
+function Barra({ titulo, tramos, min, max, resaltar, onAbrir, params, decimales }: BarraProps) {
   const [ref, anchoPx] = useAncho<HTMLDivElement>()
   const total = max + 1 - min
   const ancho = (t: Tramo) => `${(Math.max(0, Math.min(t.hasta, max + 1) - Math.max(t.desde, min)) / total) * 100}%`
@@ -357,7 +361,7 @@ function Barra({ titulo, tramos, min, max, resaltar, onAbrir, decimales }: Barra
                 <button
                   type="button"
                   onClick={() => onAbrir!(t.clave!)}
-                  aria-label={`Cambiar: ${meta.nombre} (${numero})`}
+                  aria-label={`${verboParametro(params?.find((p) => p.clave === t.clave))}: ${meta.nombre} (${numero})`}
                   className="group flex h-11 min-w-11 flex-col items-center justify-start rounded-md"
                 >
                   <span aria-hidden className="h-1.5 w-px bg-gray-400" />
@@ -411,11 +415,11 @@ export function EscalaPuntaje({ valores, resaltar }: { valores: Valores; resalta
   return <Barra titulo="Puntaje del solicitante" tramos={tramosPuntaje(valores)} min={0} max={100} resaltar={resaltar} decimales />
 }
 
-export function EscalaDecision({ valores, onAbrir }: { valores: Valores; onAbrir: (clave: string) => void }) {
+export function EscalaDecision({ valores, onAbrir, params }: { valores: Valores; onAbrir: (clave: string) => void; params?: IParametroCalibracion[] }) {
   return (
     <div className="space-y-8">
       <div>
-        <Barra titulo="1. Puntaje del solicitante (0 a 100)" tramos={tramosPuntaje(valores)} min={0} max={100} onAbrir={onAbrir} decimales />
+        <Barra titulo="1. Puntaje del solicitante (0 a 100)" tramos={tramosPuntaje(valores)} min={0} max={100} onAbrir={onAbrir} params={params} decimales />
         <p className="mt-3 max-w-prose text-xs text-gray-600">
           Antes que este puntaje mandan las reglas que rechazan siempre (por ejemplo, una mora actual) y el puntaje que reporta la
           central (barra 3).
@@ -427,6 +431,7 @@ export function EscalaDecision({ valores, onAbrir }: { valores: Valores; onAbrir
         min={0}
         max={100}
         onAbrir={onAbrir}
+        params={params}
         decimales
       />
       <Barra
@@ -435,6 +440,7 @@ export function EscalaDecision({ valores, onAbrir }: { valores: Valores; onAbrir
         min={SCORE_MIN}
         max={SCORE_MAX}
         onAbrir={onAbrir}
+        params={params}
       />
     </div>
   )
