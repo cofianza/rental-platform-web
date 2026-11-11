@@ -190,9 +190,8 @@ export function GenerarContratoModal({
               <span>{noDisponible.mensaje}</span>
             </div>
           ) : (
-            <ContratoSegundoFirmanteAviso
-              mensaje={noDisponible.codigo === 'CONTRATO_REQUIERE_COARRENDATARIO' ? undefined : noDisponible.mensaje}
-            />
+            // El mensaje de la API: también lo ve una inmobiliaria, no solo el propietario.
+            <ContratoSegundoFirmanteAviso codigo={noDisponible.codigo} mensaje={noDisponible.mensaje} />
           ))}
         {canonBloqueo && (
           <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">

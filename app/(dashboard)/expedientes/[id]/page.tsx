@@ -1161,6 +1161,7 @@ function ExpedienteDetalleContenido() {
                       // estudio del coarrendatario: se recarga.
                       onEstudioCompletado={fetchExpediente}
                       conCondicion={!!condicionCoa}
+                      pideSegundoFirmante={esEsperaDePersona(etapa, !!condicionCoa)}
                     />
                   ),
                   visita: expediente.inmueble ? (
@@ -1410,6 +1411,7 @@ function ExpedienteDetalleContenido() {
                   userRol={user?.rol}
                   onEstudioCompletado={fetchExpediente}
                   conCondicion={!!condicionCoa}
+                  pideSegundoFirmante={esEsperaDePersona(etapa, !!condicionCoa)}
                 />
               </>
             )}
@@ -1427,6 +1429,7 @@ function ExpedienteDetalleContenido() {
               inmuebleReservadoPorOtro={reservadoPorOtro}
               conComision={!!expediente.inmueble?.inmobiliaria_id}
               esperaSegundoFirmante={etapa === 'espera_coarrendatario' || esEsperaDePersona(etapa, !!condicionCoa)}
+              canalPropietario={!!expediente.inmueble && !expediente.inmueble.inmobiliaria_id}
               onContratoActualizado={handleContratoActualizado}
             />
           </div>

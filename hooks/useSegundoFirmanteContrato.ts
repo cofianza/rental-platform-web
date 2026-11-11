@@ -1,42 +1,65 @@
 'use client'
 
 /**
- * ¿El estudio tiene segundo firmante (coarrendatario) que el contrato anterior
- * no incluye? Ese contrato (GenerarContratoModal: el del propietario directo, o
- * el de antes del asistente V3) no lo imprime ni lo hace firmar, y la API lo
- * rechaza (CONTRATO_REQUIERE_COARRENDATARIO, COARRENDATARIO_PENDIENTE). Con esto
- * la web no ofrece «Generar contrato» para que la API diga que no.
+ * ¿El contrato anterior (GenerarContratoModal: el del propietario directo, o el
+ * de antes del asistente V3) se puede hacer en este estudio? Lo dice la API en
+ * la ventana del coarrendatario (`contrato_anterior_bloqueado`): con un
+ * coarrendatario vinculado, o con un titular de la decisión que no es el
+ * solicitante, ese contrato no sirve. Con esto la web no ofrece «Generar
+ * contrato» para que la API diga que no.
  *
- * Cuenta la invitación viva y el coarrendatario que aceptó, salvo si su
- * evaluación terminó rechazada (la API arma el contrato sin él). La API sigue
- * siendo la puerta: si la lectura falla, se ofrece el botón como antes.
+ * Con un API anterior (sin el campo) se deduce del coarrendatario: cuenta el que
+ * aceptó, salvo si su evaluación terminó rechazada. Una invitación sin responder
+ * no cuenta (D2, 11-nov: en el canal del propietario ya no se puede aceptar y la
+ * API no la toma en cuenta). La API sigue siendo la puerta: si la lectura falla,
+ * se ofrece el botón como antes.
  */
 
 import { useEffect, useState } from 'react'
 import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrendatarioService'
 
-export function tieneSegundoFirmante(coa: ICoarrendatario | null): boolean {
+export interface ContratoAnteriorBloqueado {
+  codigo: string
+  /** Vacío si lo dedujo la web (API anterior): el aviso usa su texto. */
+  motivo: string
+}
+
+/** Respaldo con un API anterior: ¿el coarrendatario cuenta para el contrato? */
+export function coarrendatarioCuenta(coa: ICoarrendatario | null): boolean {
   if (!coa) return false
-  if (coa.estado === 'pendiente_aceptacion') return new Date(coa.token_expiracion) > new Date()
   if (coa.estado === 'aceptado') return true
   if (coa.estado === 'estudio_completado') return coa.estudio?.resultado !== 'rechazado'
   return false
 }
 
-/** null = todavía no se sabe (o no aplica); `version` vuelve a leer. */
-export function useSegundoFirmanteContrato(expedienteId: string, aplica: boolean, version?: unknown): boolean | null {
-  const [lectura, setLectura] = useState<{ clave: string; valor: boolean } | null>(null)
+async function leer(expedienteId: string): Promise<ContratoAnteriorBloqueado | null> {
+  const ventana = await coarrendatarioService.getVentana(expedienteId).catch(() => null)
+  if (ventana && ventana.contrato_anterior_bloqueado !== undefined) return ventana.contrato_anterior_bloqueado
+  const coa = await coarrendatarioService.getDelExpediente(expedienteId)
+  return coarrendatarioCuenta(coa) ? { codigo: 'CONTRATO_REQUIERE_COARRENDATARIO', motivo: '' } : null
+}
+
+/**
+ * undefined = todavía no se sabe (o no aplica); null = se puede generar; si no, por qué no.
+ * `version` vuelve a leer.
+ */
+export function useSegundoFirmanteContrato(
+  expedienteId: string,
+  aplica: boolean,
+  version?: unknown,
+): ContratoAnteriorBloqueado | null | undefined {
+  const [lectura, setLectura] = useState<{ clave: string; valor: ContratoAnteriorBloqueado | null } | null>(null)
   const clave = `${expedienteId}:${String(version ?? '')}`
   useEffect(() => {
     if (!aplica) return
     let vivo = true
-    coarrendatarioService.getDelExpediente(expedienteId).then(
-      (coa) => { if (vivo) setLectura({ clave, valor: tieneSegundoFirmante(coa) }) },
-      () => { if (vivo) setLectura({ clave, valor: false }) },
+    leer(expedienteId).then(
+      (valor) => { if (vivo) setLectura({ clave, valor }) },
+      () => { if (vivo) setLectura({ clave, valor: null }) },
     )
     return () => { vivo = false }
   }, [expedienteId, aplica, clave])
-  if (!aplica) return null
+  if (!aplica) return undefined
   // Mientras llega la lectura nueva se conserva la anterior del mismo estudio (sin parpadeo).
-  return lectura && lectura.clave.startsWith(`${expedienteId}:`) ? lectura.valor : null
+  return lectura && lectura.clave.startsWith(`${expedienteId}:`) ? lectura.valor : undefined
 }

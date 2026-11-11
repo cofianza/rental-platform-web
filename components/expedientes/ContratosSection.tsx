@@ -3,7 +3,7 @@
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -29,8 +29,10 @@ import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
-import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
+import { BloqueosContrato, bloqueoDeEvaluacion, frenosDelContrato } from '@/components/contratos/v3/BloqueosContrato'
 import { ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
+import { CanalCofianza } from './ContactoCofianzaInline'
+import { contratoV3Service } from '@/services/contratoV3Service'
 import { useSegundoFirmanteContrato } from '@/hooks/useSegundoFirmanteContrato'
 import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
@@ -89,6 +91,8 @@ interface ContratosSectionProps {
   conComision?: boolean
   /** El estudio espera al segundo firmante («aprobado con segundo firmante», o su autorización): aún no hay contrato. */
   esperaSegundoFirmante?: boolean
+  /** Inmueble sin inmobiliaria (propietario directo): ahí todavía no se puede sumar un segundo firmante. */
+  canalPropietario?: boolean
 }
 
 export function ContratosSection({
@@ -100,6 +104,7 @@ export function ContratosSection({
   inmuebleReservadoPorOtro,
   conComision,
   esperaSegundoFirmante = false,
+  canalPropietario = false,
 }: ContratosSectionProps) {
   const { user } = useAuth()
   // Con «ver como», el rol simulado: el proveedor de firma y su costo son de Cofianza.
@@ -191,9 +196,26 @@ export function ContratosSection({
     fetchContratos()
   }, [fetchContratos])
 
-  // Contrato anterior con segundo firmante: no lo incluye y la API lo rechazaría; lo genera Cofianza.
+  // Contrato anterior: la API dice (I1) si lo rechazaría en este estudio (coarrendatario vinculado o titular
+  // distinto del solicitante). undefined mientras se lee: ni el botón ni «Pulse Generar contrato».
   const puedeGenerarAnterior = canGenerarAnterior && expedienteAprobado && !sinInmueble && !contratosV3
-  const conSegundoFirmante = useSegundoFirmanteContrato(expedienteId, puedeGenerarAnterior, contratos.length)
+  const anteriorBloqueado = useSegundoFirmanteContrato(expedienteId, puedeGenerarAnterior, contratos.length)
+
+  // Asistente V3: lo que impide crear el contrato (segundo firmante, titular, evaluación que ya no sirve).
+  // Con algo de eso no se ofrece «Crear contrato» como si se pudiera. undefined = sin leer (o no aplica).
+  const ofreceCrearV3 = canCreate && expedienteAprobado && !sinInmueble && !!contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro
+  const [frenosV3, setFrenosV3] = useState<{ expedienteId: string; bloqueos: Bloqueo[] } | null>(null)
+  useEffect(() => {
+    if (!ofreceCrearV3) return
+    let vivo = true
+    contratoV3Service.obtener(expedienteId).then(
+      (e) => { if (vivo) setFrenosV3({ expedienteId, bloqueos: frenosDelContrato(e.bloqueos) }) },
+      // Sin poder leer el asistente se ofrece como antes: él muestra los bloqueos al entrar.
+      () => { if (vivo) setFrenosV3({ expedienteId, bloqueos: [] }) },
+    )
+    return () => { vivo = false }
+  }, [ofreceCrearV3, expedienteId, contratos.length])
+  const frenan = frenosV3?.expedienteId === expedienteId ? frenosV3.bloqueos : undefined
 
   // Auto-abrir el panel de firma cuando hay un contrato en firma, para que el
   // progreso de firmantes quede visible sin tener que buscar el botón. Solo una
@@ -466,6 +488,44 @@ export function ContratosSection({
   }
 
   const enFirma = contratos.filter((c) => c.estado === 'pendiente_firma').length
+
+  // Qué dice la pestaña sin contratos: lo que falta, quién lo hace y, si no se puede desde aquí, por qué.
+  const textoVacio: ReactNode = !expedienteAprobado
+    ? esperaSegundoFirmante
+      ? canalPropietario
+        ? interno
+          ? 'En este inmueble todavía no se puede sumar un segundo firmante.'
+          : (
+              <>
+                En este inmueble todavía no se puede sumar un segundo firmante. Escríbanos <CanalCofianza /> y le indicamos
+                cómo continuar.
+              </>
+            )
+        : 'El contrato se podrá crear cuando el coarrendatario termine su evaluación y el estudio quede aprobado.'
+      : 'El contrato se podrá generar cuando el estudio del arrendatario esté aprobado.'
+    : sinInmueble
+      ? 'El estudio está aprobado sin propiedad. Vincule el inmueble antes de generar el contrato.'
+      : soloLectura
+        ? 'Lo crea alguien de su equipo con permiso de edición.'
+        : contratosV3
+          ? canCreate
+            ? inmuebleReservadoPorOtro
+              ? 'El inmueble está reservado para el contrato de otro estudio. Si ese contrato se cancela, podrá crear el de este.'
+              : frenan === undefined
+                ? 'Revisando si el contrato se puede crear…'
+                : frenan.length > 0
+                  ? 'Primero resuelva lo pendiente de arriba; después podrá crear el contrato.'
+                  : 'Pulse «Crear contrato» para abrir el asistente.'
+            : 'Lo crea la inmobiliaria con el asistente de contratos, ahora que el estudio fue aprobado.'
+          : puedeGenerarAnterior
+            ? anteriorBloqueado === undefined
+              ? 'Revisando si el contrato se puede generar…'
+              : anteriorBloqueado
+                ? interno
+                  ? 'Se gestiona fuera de la plataforma.'
+                  : 'Vea arriba cómo continuar.'
+                : 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
+            : 'El contrato se generará cuando el propietario lo emita, ahora que el estudio fue aprobado.'
   const contratoFirmas = contratos.find((c) => c.id === firmaContratoId)
 
   return (
@@ -480,7 +540,7 @@ export function ContratosSection({
               {enFirma > 0 && (
                 <>
                   {' · '}
-                  <span className="font-medium text-blue-800">
+                  <span className="font-medium text-purple-700">
                     <span className="tabular-nums">{enFirma}</span> en firma
                   </span>
                 </>
@@ -488,13 +548,13 @@ export function ContratosSection({
             </p>
           )}
         </div>
-        {canCreate && expedienteAprobado && !sinInmueble && contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro && (
+        {ofreceCrearV3 && frenan?.length === 0 && (
           <Link href={rutaAsistente} className={buttonClasses('primary', 'md', 'min-h-10 shrink-0')}>
             <IconPlus size={16} />
             Crear contrato
           </Link>
         )}
-        {puedeGenerarAnterior && conSegundoFirmante === false && (
+        {puedeGenerarAnterior && anteriorBloqueado === null && (
           <button type="button" onClick={() => setGenerarOpen(true)} className={buttonClasses('primary', 'md', 'min-h-10 shrink-0')}>
             <IconPlus size={16} />
             Generar contrato
@@ -513,8 +573,18 @@ export function ContratosSection({
         />
       )}
 
-      {puedeGenerarAnterior && conSegundoFirmante && contratos.every((c) => c.estado === 'cancelado') && (
-        <ContratoSegundoFirmanteAviso />
+      {puedeGenerarAnterior && anteriorBloqueado && contratos.every((c) => c.estado === 'cancelado') && (
+        <ContratoSegundoFirmanteAviso codigo={anteriorBloqueado.codigo} mensaje={anteriorBloqueado.motivo} />
+      )}
+
+      {ofreceCrearV3 && frenan && frenan.length > 0 && (
+        <BloqueosContrato
+          bloqueos={frenan}
+          para="crear el contrato"
+          expedienteId={expedienteId}
+          puedeEditar={puedeEditar}
+          enElEstudio
+        />
       )}
 
       {contratos.length === 0 ? (
@@ -523,27 +593,7 @@ export function ContratosSection({
             <IconFileText size={20} />
           </span>
           <p className="mt-3 text-sm font-semibold text-gray-900">Este estudio todavía no tiene contrato</p>
-          <p className="mt-1 max-w-md text-sm text-gray-600">
-            {!expedienteAprobado
-              ? esperaSegundoFirmante
-                ? 'El contrato se podrá crear cuando el segundo firmante complete su evaluación y quede aprobado.'
-                : 'El contrato se podrá generar cuando el estudio del arrendatario esté aprobado.'
-              : sinInmueble
-                ? 'El estudio está aprobado sin propiedad. Vincule el inmueble antes de generar el contrato.'
-                : soloLectura
-                  ? 'Lo crea alguien de su equipo con permiso de edición.'
-                  : contratosV3
-                    ? canCreate
-                      ? inmuebleReservadoPorOtro
-                        ? 'El inmueble está reservado para el contrato de otro estudio. Si ese contrato se cancela, podrá crear el de este.'
-                        : 'Pulse «Crear contrato» para abrir el asistente.'
-                      : 'Lo crea la inmobiliaria con el asistente de contratos, ahora que el estudio fue aprobado.'
-                    : puedeGenerarAnterior
-                      ? conSegundoFirmante
-                        ? 'Lo genera Cofianza: escríbanos por el canal de arriba.'
-                        : 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
-                      : 'El contrato se generará cuando el propietario lo emita, ahora que el estudio fue aprobado.'}
-          </p>
+          <p className="mt-1 max-w-md text-sm text-gray-600">{textoVacio}</p>
         </div>
       ) : (
         <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">

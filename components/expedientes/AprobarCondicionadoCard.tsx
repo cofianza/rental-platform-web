@@ -46,6 +46,9 @@ import { SoportesCondicionadoSection } from './SoportesCondicionadoSection'
 import { DocumentosConsultados } from './DocumentosConsultados'
 import { EvaluacionRevisionManual, evaluacionCompleta, type EvaluacionParcial } from './EvaluacionRevisionManual'
 import { CondicionAdicional } from './CondicionAdicional'
+import { coarrendatarioService } from '@/services/coarrendatarioService'
+import { CanalCofianza } from './ContactoCofianzaInline'
+import { sinEscribanos } from './ContratoSegundoFirmanteAviso'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -165,8 +168,52 @@ export function AprobarCondicionadoCard({
     return () => { cancel = true }
   }, [esCofianza, expedienteEstado, condicion, expedienteId, versionBloqueo])
   const esDueno = userRol === 'propietario' || userRol === 'inmobiliaria'
+  // Canal del propietario directo con la condición de segundo firmante: no se puede sumar (opción a, 11-nov).
+  // El motivo lo da la ventana de la API; sin él, el texto de abajo.
+  const sinSegundoFirmante = !!canalPropietario && !!condicion
+  const [motivoCanal, setMotivoCanal] = useState<string | null>(null)
+  useEffect(() => {
+    if (!sinSegundoFirmante) return
+    let cancel = false
+    coarrendatarioService.getVentana(expedienteId).then(
+      (v) => { if (!cancel && v.puede_invitar === false && v.motivo) setMotivoCanal(v.motivo) },
+      () => {},
+    )
+    return () => { cancel = true }
+  }, [sinSegundoFirmante, expedienteId])
 
   if (expedienteEstado !== 'condicionado' || !(esCofianza || esDueno)) return null
+
+  if (condicion && sinSegundoFirmante) {
+    const motivo = (motivoCanal && sinEscribanos(motivoCanal)) || 'En este inmueble todavía no se puede sumar un segundo firmante.'
+    return (
+      <TarjetaSiguientePaso
+        tono="revision"
+        icono={<IconShieldCheck size={18} />}
+        titulo={
+          <span className="inline-flex items-center gap-1">
+            {condicion.obligatoria ? 'Requiere coarrendatario: qué sigue' : 'Aprobado con condición: qué sigue'}
+            <InfoTip texto={AYUDA.condicionado} lado="derecha" />
+          </span>
+        }
+        descripcion={
+          // A Cofianza no se le dice «Escríbanos» (D4).
+          esCofianza ? (
+            motivo
+          ) : (
+            <>
+              {motivo} Escríbanos <CanalCofianza /> y le indicamos cómo continuar.
+            </>
+          )
+        }
+        pie={
+          esCofianza
+            ? 'Mientras la condición esté vigente no se puede aprobar el estudio a mano. Para no aprobarlo, use «Cambiar estado», arriba.'
+            : undefined
+        }
+      />
+    )
+  }
 
   if (condicion) {
     // Sin un coarrendatario que la resuelva (al vencer o porque el evaluado no
@@ -208,9 +255,9 @@ export function AprobarCondicionadoCard({
               titulo={esCofianza ? 'La inmobiliaria o el prospecto invitan al coarrendatario' : 'La persona lo agrega desde su enlace, o usted lo invita (en el recuadro de abajo)'}
             >
               <p>
-                Es el segundo firmante: no es fiador ni necesita finca raíz (basta con que tenga ingresos propios), firma
-                el contrato como coarrendatario y responde solidariamente, junto con el titular, por todas sus
-                obligaciones. Se le hace su propia evaluación, y el enlace de su invitación vence con la condición.
+                Es el segundo firmante. No es fiador ni necesita finca raíz: firma el contrato con el titular y los dos
+                responden solidariamente por todas las obligaciones del contrato. Se le hace su propia evaluación, y el
+                enlace de su invitación vence con la condición.
               </p>
             </Paso>
             <Paso n={2} titulo="Cuando el coarrendatario termine su evaluación">
@@ -472,8 +519,8 @@ export function AprobarCondicionadoCard({
           <div>
             <p className="font-medium text-gray-900">Sumar un coarrendatario (en el recuadro de abajo)</p>
             <p className="mt-0.5">
-              Es el segundo firmante: firma el contrato como coarrendatario y responde solidariamente, junto con el
-              titular, por todas sus obligaciones. Se le hace su propia evaluación y el analista decide con los dos
+              Es el segundo firmante: firma el contrato con el titular y los dos responden solidariamente por todas las
+              obligaciones del contrato. Se le hace su propia evaluación y el analista decide con los dos
               resultados. Si el coarrendatario tiene un impedimento que no admite excepciones (por
               ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
             </p>

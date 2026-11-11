@@ -64,6 +64,11 @@ export interface IVentanaCoarrendatario {
   motivo: string | null
   /** Por qué no se puede invitar (p. ej. COARRENDATARIO_CANAL_PROPIETARIO); null si se puede. Ausente en un API anterior. */
   codigo?: string | null
+  /**
+   * El contrato de propietarios (flujo anterior) rechazaría este estudio: coarrendatario vinculado, o el
+   * titular de la decisión no es el solicitante. null = se puede generar; ausente = un API anterior.
+   */
+  contrato_anterior_bloqueado?: { codigo: string; motivo: string } | null
   /** Lo que las tarjetas dicen de la prima con coarrendatario: el texto lo manda la API; null = no hay beneficio (ausente en un API anterior). */
   beneficio_prima?: IBeneficioPrima | null
   /** Si cargar a la persona es directo o pasa por un cambio de persona (lo dice la API; ausente en un API anterior). */

@@ -21,6 +21,7 @@ import { estudioService } from '@/services/estudioService'
 import { ApiClientError } from '@/lib/api'
 import { useReevaluarCanon } from '@/hooks/useReevaluarCanon'
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
@@ -76,6 +77,19 @@ export const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']
 
 /** Del segundo firmante y del titular de la decisión: frenan el contrato hasta que se resuelvan en el estudio. */
 export const DE_LAS_PARTES = ['COARRENDATARIO_PENDIENTE', 'COARRENDATARIO_SIN_EVALUAR', 'TITULAR_NO_DISPONIBLE']
+
+/**
+ * Lo que impide crear el contrato V3 y se ve desde el estudio: del segundo firmante y del titular, y la
+ * evaluación que ya no sirve (con su certificado). Mientras haya algo, no se ofrece «Crear contrato».
+ */
+export function frenosDelContrato(bloqueos: Bloqueo[]): Bloqueo[] {
+  const pideEvaluacion = bloqueos.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
+  return bloqueos.filter(
+    (b) =>
+      DE_LAS_PARTES.includes(b.codigo) ||
+      (pideEvaluacion && (SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo))),
+  )
+}
 
 /** Los resuelve Cofianza: se dice el canal (su mensaje ya dice «Escríbanos»). */
 const ESCRIBANOS = ['TITULAR_NO_DISPONIBLE', 'TARIFA_NO_SOPORTADA', 'COARRENDATARIO_RECHAZADO']
@@ -263,9 +277,11 @@ export function BloqueosContrato({
               </Link>
             )
           }
+          // A Cofianza no se le dice «Escríbanos» (lo resuelve ella).
+          if (esRolInterno(rol)) return null
           return (
             <p className="text-xs text-gray-600">
-              Escríbanos <CanalCofianza />.
+              Escríbanos <CanalCofianza /> y le indicamos cómo continuar.
             </p>
           )
         }
