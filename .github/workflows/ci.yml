@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint-and-build:
-    name: Typecheck & Build
+    name: Lint, Typecheck, Tests & Build
     runs-on: ubuntu-latest
 
     strategy:
@@ -28,8 +28,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Sin --max-warnings: los avisos no frenan el CI, los errores sí.
+      - name: Run ESLint
+        run: npm run lint
+
       - name: Run TypeScript typecheck
         run: npx tsc --noEmit
+
+      # tsx no es dependencia del proyecto; se fija la mayor para que el CI sea estable.
+      - name: Run unit tests
+        run: npx --yes tsx@4 --test lib/*.test.ts
 
       - name: Build project
         run: npm run build
