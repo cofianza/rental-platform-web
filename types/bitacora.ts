@@ -31,7 +31,9 @@ export interface IAuditLogsMeta {
 export interface IAuditLogsResponse {
   success: boolean
   data: IAuditLog[]
-  meta: IAuditLogsMeta
+  meta?: IAuditLogsMeta
+  /** Formato anterior de la API; ver lib/paginacion. */
+  pagination?: IAuditLogsMeta
 }
 
 export interface IAuditStats {

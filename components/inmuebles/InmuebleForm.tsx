@@ -32,6 +32,7 @@ import type {
 import { FOTO_LIMITS } from '@/types/inmueble'
 // No importamos IUserProfile ya que solo usamos el ID del propietario
 import { cn } from '@/lib/utils'
+import { leerErrorDeFormulario } from '@/lib/erroresApi'
 import { useAuthStore } from '@/stores/auth.store'
 
 // ── Sección y campo ─────────────────────────────────────────
@@ -228,23 +229,11 @@ interface FormData {
   matricula_inmobiliaria: string
 }
 
-interface FormErrors {
-  codigo?: string
-  direccion?: string
-  ciudad?: string
-  departamento?: string
-  tipo?: string
-  estrato?: string
-  valor_arriendo?: string
-  propietario_id?: string
-  foto_fachada_url?: string
-  area_m2?: string
-  habitaciones?: string
-  banos?: string
-  parqueaderos?: string
-  valor_comercial?: string
-  administracion?: string
-}
+// Cualquier campo del formulario puede traer un error (también los que valida solo la API).
+/** Máximo que acepta la API para «Piso / interior». */
+const PISO_MAX = 10
+
+type FormErrors = Partial<Record<keyof FormData, string>>
 
 const initialFormData: FormData = {
   codigo: '',
@@ -500,6 +489,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     if (formData.parqueaderos && Number(formData.parqueaderos) > 99) {
       newErrors.parqueaderos = 'Máximo 99 parqueaderos'
     }
+    if (formData.piso.trim().length > PISO_MAX) {
+      newErrors.piso = `Máximo ${PISO_MAX} caracteres (ej.: 5 o Apto 501)`
+    }
 
     setErrors(newErrors)
     return Object.keys(newErrors)
@@ -635,35 +627,24 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       router.push(returnTo ?? rutaListado)
     } catch (err: unknown) {
       console.error('Error saving inmueble:', err)
-      // Caso especifico: codigo duplicado para el mismo propietario. Asi el
-      // mensaje queda visible en el input + toast, no perdido en un toast generico.
-      const apiError = err as {
-        code?: string
-        message?: string
-        response?: { data?: { errorCode?: string; message?: string; details?: Array<{ field: string; message: string }> } }
-      }
-      const errorCode = apiError?.code || apiError?.response?.data?.errorCode
-      if (errorCode === 'CODIGO_DUPLICADO') {
-        const msg = apiError?.message || apiError?.response?.data?.message || 'Ese código ya está en uso en otro de sus inmuebles.'
+      // apiClient lanza ApiClientError (code, message y details directos, sin
+      // `.response` de axios): antes todo 400 caía en el aviso genérico y el
+      // usuario no sabía qué campo corregir.
+      const { code, mensaje, porCampo } = leerErrorDeFormulario(err, Object.keys(initialFormData))
+      if (code === 'CODIGO_DUPLICADO') {
+        // Caso especifico: codigo duplicado para el mismo propietario. Asi el
+        // mensaje queda visible en el input + toast, no perdido en un toast generico.
+        const msg = mensaje || 'Ese código ya está en uso en otro de sus inmuebles.'
         setErrors((prev) => ({ ...prev, codigo: msg }))
         toast.error(msg)
         return
       }
 
-      const details = apiError?.response?.data?.details
-      if (details && details.length > 0) {
-        // Mostrar errores por campo del backend
-        const backendErrors: FormErrors = {}
-        for (const d of details) {
-          if (d.field in backendErrors || d.field === 'codigo' || d.field === 'direccion' || d.field === 'ciudad' || d.field === 'tipo' || d.field === 'area_m2' || d.field === 'valor_arriendo' || d.field === 'valor_comercial' || d.field === 'administracion' || d.field === 'habitaciones' || d.field === 'banos' || d.field === 'parqueaderos') {
-            backendErrors[d.field as keyof FormErrors] = d.message
-          }
-        }
-        setErrors((prev) => ({ ...prev, ...backendErrors }))
-        toast.error(details.map((d) => d.message).join('. '))
-      } else {
-        toast.error(mode === 'create' ? INMUEBLE_MESSAGES.CREATE_ERROR : INMUEBLE_MESSAGES.UPDATE_ERROR)
+      if (Object.keys(porCampo).length > 0) {
+        setErrors((prev) => ({ ...prev, ...porCampo }))
+        scrollToFirstError(formRef.current)
       }
+      toast.error(mensaje || (mode === 'create' ? INMUEBLE_MESSAGES.CREATE_ERROR : INMUEBLE_MESSAGES.UPDATE_ERROR))
     } finally {
       setIsSubmitting(false)
     }
@@ -898,15 +879,17 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               />
             </Campo>
 
-            <Campo id="piso" label="Piso / interior">
+            <Campo id="piso" label="Piso / interior" error={errors.piso}>
               <input
                 type="text"
                 id="piso"
                 value={formData.piso}
                 onChange={(e) => handleChange('piso', e.target.value)}
                 disabled={isSubmitting}
-                placeholder="Ej: Piso 5, Apto 501"
-                className={inputClasses(false)}
+                maxLength={PISO_MAX}
+                placeholder="Ej: 5 o Apto 501"
+                aria-invalid={!!errors.piso}
+                className={inputClasses(!!errors.piso)}
               />
             </Campo>
           </div>

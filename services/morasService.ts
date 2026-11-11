@@ -3,6 +3,7 @@
 // ============================================
 
 import { apiClient } from '@/lib/api'
+import { leerPaginacion } from '@/lib/paginacion'
 import type { EstadoDiferidos } from '@/types/migracion'
 
 export type MoraEstado = 'fase_1' | 'fase_2' | 'fase_3' | 'pagada' | 'cancelada'
@@ -126,11 +127,12 @@ class MorasService {
     const qs = params.toString()
     const res = (await apiClient.get(`${this.base}${qs ? `?${qs}` : ''}`)) as unknown as {
       data: IMoraTicket[]
-      pagination?: PaginationMeta
     }
+    // La API manda la paginación en `meta`; antes se leía `pagination` y el total
+    // siempre era 0, así que nunca salía «Mostrando X de Y».
     return {
       data: res.data ?? [],
-      pagination: res.pagination ?? { page: 1, limit: 50, total: 0, totalPages: 0 },
+      pagination: leerPaginacion(res, query.limit ?? 50),
     }
   }
 
