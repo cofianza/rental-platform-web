@@ -28,10 +28,12 @@ export const documento = (tipo: string, numero: string) =>
 
 /**
  * Compuerta temporal del API (RUTA_B_FIRMA_ENABLED, contrato.rutaBFirmaHabilitada): la Ruta B no
- * sale a firma hasta la prueba con Auco; ubicar las firmas sí se puede. Mismo texto del API (firma/reglas.ts).
+ * sale a firma hasta la prueba con el proveedor de firma; ubicar las firmas sí se puede. Cofianza
+ * (`interno`) lee el texto del API (firma/reglas.ts), con el nombre del proveedor; la inmobiliaria,
+ * «la plataforma de firma».
  */
-export const RUTA_B_FIRMA_NO_HABILITADA =
-  'La firma de la Ruta B se habilita después de la prueba con Auco. Por ahora use la Ruta A.'
+export const rutaBFirmaNoHabilitada = (interno: boolean) =>
+  `La firma de la Ruta B se habilita después de la prueba con ${interno ? 'Auco' : 'la plataforma de firma'}. Por ahora use la Ruta A.`
 
 /** "2,5" — porcentajes es-CO con hasta dos decimales (como el contrato). */
 export const porcentaje = (n: number) => n.toLocaleString('es-CO', { maximumFractionDigits: 2 })

@@ -236,6 +236,8 @@ export interface IContratoTransitionInput {
 // ============================================================
 
 export interface IContratoListItem extends IContrato {
+  /** Quien figura como arrendatario en el contrato (Adenda 5: puede no ser el solicitante). null o ausente = el solicitante. */
+  arrendatario_contrato_nombre?: string | null
   expedientes?: {
     numero: string
     inmuebles?: { codigo?: string | null; direccion: string; ciudad: string } | null

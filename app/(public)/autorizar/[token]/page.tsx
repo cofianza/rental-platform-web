@@ -388,7 +388,9 @@ export default function AutorizarPage() {
   // la identidad, lo laboral y el ingreso. Ahora hay dos defensas: este chequeo
   // en el campo (el prospecto ve el dedazo y lo corrige) y `.catch(undefined)`
   // por campo en perfilProspectoSchema (un campo malo se cae solo).
-  async function guardarPerfilYSeguir(sinCoarrendatario = false) {
+  async function guardarPerfilYSeguir(sinCoarrendatarioPedido = false) {
+    // I2: sin segundo firmante en este estudio, los datos del coarrendatario no se piden ni se envían.
+    const sinCoarrendatario = sinCoarrendatarioPedido || data?.admite_segundo_firmante === false
     if (presentacion === 'acompanado' && coaEmail.trim() && !EMAIL_RE.test(coaEmail.trim()) && !sinCoarrendatario) {
       setCoaEmailError(true)
       return
@@ -1365,14 +1367,23 @@ export default function AutorizarPage() {
                 })}
               </div>
 
-              {/* El mensaje que rompe la objeción más frecuente del mercado (§8.3).
-                  Alineado con la plantilla de WhatsApp que ya está en producción
-                  (CORR §6). */}
-              <p className="mt-2 rounded-lg border border-primary-200 bg-primary-50 p-3 text-xs leading-relaxed text-primary-800">
-                Un coarrendatario <strong>no necesita tener finca raíz</strong>. No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente. Respondemos por los dos como un solo arrendatario.
-              </p>
+              {/* El mensaje que rompe la objeción más frecuente del mercado (§8.3), con el papel del
+                  coarrendatario en términos neutrales (D3, 11-nov): con la Adenda 5 cualquiera de los dos
+                  puede quedar como arrendatario del contrato. La plantilla de WhatsApp no se toca aquí. Sin
+                  segundo firmante en este estudio (I2) no se habla del coarrendatario ni se piden sus datos. */}
+              {data?.admite_segundo_firmante !== false && (
+                <p className="mt-2 rounded-lg border border-primary-200 bg-primary-50 p-3 text-xs leading-relaxed text-primary-800">
+                  Un coarrendatario <strong>no es fiador ni necesita tener finca raíz</strong>: firma el contrato con usted y los dos responden solidariamente por todas las obligaciones del contrato.
+                </p>
+              )}
 
-              {presentacion === 'acompanado' && (
+              {presentacion === 'acompanado' && data?.admite_segundo_firmante === false && (
+                <p className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs leading-relaxed text-gray-600">
+                  Para este inmueble el estudio se hace solo con sus datos: no hace falta que nos deje los de la otra persona.
+                </p>
+              )}
+
+              {presentacion === 'acompanado' && data?.admite_segundo_firmante !== false && (
                 <div className="mt-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
                   {/* La promesa anterior ("tú no tienes que repetir nada") no
                       era verificable: si el estudio queda condicionado, la card

@@ -26,7 +26,7 @@ import {
   IconRotateCw,
   IconUpload,
 } from '@/components/icons'
-import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
+import { etiquetaContrato, formatDate, formatDateTime, tonoContrato } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { VerificacionIdentidadFirma } from '@/components/expedientes/VerificacionIdentidadFirma'
 import { CobroTarifaContrato } from '@/components/contratos/CobroTarifaContrato'
@@ -42,12 +42,6 @@ import { ROL_FIRMANTE, VisorDocumentos, useVisor, type DocVisor } from './Paso5N
 
 type Firmante = NonNullable<EnvioV3['sobre']>['firmantes'][number]
 
-const INSIGNIA: Record<EnvioV3['estado'], string> = {
-  pendiente_firma: 'border-purple-300 bg-purple-100 text-purple-700',
-  firma_incompleta: 'border-red-300 bg-red-100 text-red-700',
-  vigente: 'border-green-300 bg-green-100 text-green-700',
-  finalizado: 'border-gray-300 bg-gray-100 text-gray-700',
-}
 
 /** Lo que acepta el API para archivos del contrato (middleware uploadDoc). */
 const TIPOS_ACTA = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
@@ -225,7 +219,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         <div className="min-w-0">
           <h1 className="flex flex-wrap items-center gap-x-3 gap-y-1 text-2xl font-bold text-gray-900 md:text-3xl">
             <span>Contrato N° {e.numero}</span>
-            <span className={cn('rounded-full border px-2.5 py-0.5 text-sm font-semibold', INSIGNIA[e.estado])}>
+            <span className={cn('rounded-full border px-2.5 py-0.5 text-sm font-semibold', tonoContrato(e.estado, true))}>
               {etiquetaContrato(e.estado, true)}
             </span>
           </h1>

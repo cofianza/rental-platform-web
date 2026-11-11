@@ -263,6 +263,18 @@ export default function CargarDocumentosPage() {
           />
         )}
 
+        {/* I3: el estudio pide segundo firmante pero aquí no se puede sumar: se dice por qué (la página
+            quedaba vacía bajo «Está cerca»), con el canal de Cofianza. */}
+        {ctx.motivo_sin_segundo_firmante && !ctx.coarrendatario?.puede_invitar && !ctx.coarrendatario?.invitado && (
+          <div role="status" className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 sm:p-5">
+            <p className="flex items-start gap-3">
+              <IconUsers size={20} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
+              <span className="min-w-0">{ctx.motivo_sin_segundo_firmante}</span>
+            </p>
+            <ContactoCofianza />
+          </div>
+        )}
+
         {ctx.coarrendatario?.invitado && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
             <IconUsers size={20} className="text-amber-700 shrink-0 mt-0.5" />

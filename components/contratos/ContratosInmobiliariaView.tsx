@@ -18,8 +18,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { contratoService, type IContratosStats } from '@/services/contratoService'
-import type { IContratoListItem, IContratoMeta, IContratoListFilters, EstadoContrato } from '@/types/contrato'
-import { etiquetaContrato, formatCurrency, formatDate, formatDateTime, rutaContrato } from '@/lib/constants'
+import type { IContratoListItem, IContratoMeta, IContratoListFilters } from '@/types/contrato'
+import { ESTADOS_CONTRATO, type EstadoContratoKey, etiquetaContrato, formatCurrency, formatDate, formatDateTime, rutaContrato } from '@/lib/constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
@@ -38,6 +38,8 @@ import {
 // ── Helpers de presentación ──
 
 function arrendatario(c: IContratoListItem): string {
+  // Adenda 5: el contrato va a nombre del titular de la decisión, que puede no ser el solicitante.
+  if (c.arrendatario_contrato_nombre?.trim()) return c.arrendatario_contrato_nombre.trim()
   const s = c.expedientes?.solicitantes
   const nombre = s ? `${s.nombre ?? ''} ${s.apellido ?? ''}`.trim() : ''
   return nombre || '—'
@@ -74,46 +76,16 @@ function Arrendatario({ c }: { c: IContratoListItem }) {
   )
 }
 
-// ── Badges tipo pill con bdot (override visual: pendiente_firma en azul para
-// igualar el mockup; el label sale de etiquetaContrato) ─────────────────────
-
-type BadgeKind = 'pendiente' | 'firma' | 'incompleta' | 'activo' | 'finalizado' | 'cancelado'
-
-const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
-  pendiente: { wrap: 'bg-coral-50 text-coral-700', dot: 'bg-coral-500' },
-  firma: { wrap: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600 animate-pulse' },
-  // V3: la firma venció o la rechazaron; la fianza no opera hasta reenviarla.
-  incompleta: { wrap: 'bg-red-50 text-red-700', dot: 'bg-red-600' },
-  activo: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600' },
-  finalizado: { wrap: 'bg-gray-50 text-gray-600 border border-gray-200', dot: 'bg-gray-400' },
-  cancelado: { wrap: 'bg-red-50 text-red-500', dot: 'bg-red-500' },
-}
-
-function badgeKind(estado: EstadoContrato): BadgeKind {
-  switch (estado) {
-    case 'borrador':
-      return 'pendiente'
-    case 'pendiente_firma':
-      return 'firma'
-    case 'firma_incompleta':
-      return 'incompleta'
-    case 'firmado':
-    case 'vigente':
-      return 'activo'
-    case 'cancelado':
-      return 'cancelado'
-    default:
-      return 'finalizado'
-  }
-}
+// ── Badges tipo pill con bdot: el color de cada estado sale de ESTADOS_CONTRATO
+// (una sola fuente); el label, de etiquetaContrato ─────────────────────────
 
 function EstadoBadge({ c }: { c: IContratoListItem }) {
-  const bs = BADGE_STYLE[badgeKind(c.estado)]
+  const conf = ESTADOS_CONTRATO[c.estado as EstadoContratoKey] ?? ESTADOS_CONTRATO.borrador
   const label = etiquetaContrato(c.estado, !!c.destinacion)
   return (
     <>
-      <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold', bs.wrap)}>
-        <span className={cn('h-1.5 w-1.5 rounded-full', bs.dot)} />
+      <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold', conf.bgColor, conf.textColor)}>
+        <span className={cn('h-1.5 w-1.5 rounded-full', conf.dotColor, c.estado === 'pendiente_firma' && 'animate-pulse')} />
         {label}
       </span>
       {c.origen === 'migracion' && (
@@ -321,13 +293,13 @@ export function ContratosInmobiliariaView() {
           label="En proceso de firma"
           // Sin stats (fallo o cargando), «—»: un 0 contradecía los paneles de abajo.
           value={stats ? stats.en_proceso_firma + (stats.por_estado.firma_incompleta ?? 0) : '—'}
-          color="text-blue-600"
+          color={ESTADOS_CONTRATO.pendiente_firma.textColor}
           sub="Esperando firmas o por reenviar"
         />
         <StatCard
           label="Activos"
           value={stats?.activos ?? '—'}
-          color="text-primary-600"
+          color={ESTADOS_CONTRATO.vigente.textColor}
           sub="Contratos vigentes"
         />
       </div>
@@ -336,7 +308,8 @@ export function ContratosInmobiliariaView() {
           No son contratos, por eso ninguna consulta de esta pestaña los veía. */}
       <Panel
         title="Estudios aprobados sin contrato"
-        dot="bg-coral-500"
+        // Colores de ESTADOS_CONTRATO (una sola fuente): lo que todavía no se envía a firma, el gris del borrador.
+        dot={ESTADOS_CONTRATO.borrador.dotColor}
         subtitle="Genere el contrato desde el estudio"
       >
         {loadingSinContrato ? (
@@ -399,7 +372,7 @@ export function ContratosInmobiliariaView() {
 
       {/* Borradores YA generados: aquí la acción no es generar (el contrato
           existe), sino revisarlo y mandarlo a firma. */}
-      <Panel title="Borradores por enviar a firma" dot="bg-coral-500" subtitle="Contratos generados que faltan revisar o enviar">
+      <Panel title="Borradores por enviar a firma" dot={ESTADOS_CONTRATO.borrador.dotColor} subtitle="Contratos generados que faltan revisar o enviar">
         {pendientes.data.length === 0 ? (
           <EmptyRow texto="No hay contratos en borrador." />
         ) : (
@@ -443,7 +416,7 @@ export function ContratosInmobiliariaView() {
       </Panel>
 
       {/* En proceso de firma (pendiente_firma y, en V3, firma_incompleta) */}
-      <Panel title="En proceso de firma" dot="bg-blue-600" subtitle="Esperando firmas o por reenviar (firma incompleta)">
+      <Panel title="En proceso de firma" dot={ESTADOS_CONTRATO.pendiente_firma.dotColor} subtitle="Esperando firmas o por reenviar (firma incompleta)">
         {enFirma.data.length === 0 ? (
           <EmptyRow texto="Ningún contrato en proceso de firma." />
         ) : (
@@ -476,7 +449,7 @@ export function ContratosInmobiliariaView() {
       </Panel>
 
       {/* Contratos activos (firmado / vigente) */}
-      <Panel title="Contratos activos" dot="bg-primary-600" subtitle="Contratos vigentes">
+      <Panel title="Contratos activos" dot={ESTADOS_CONTRATO.vigente.dotColor} subtitle="Contratos vigentes">
         {activos.data.length === 0 ? (
           <EmptyRow texto="Sin contratos activos." />
         ) : (

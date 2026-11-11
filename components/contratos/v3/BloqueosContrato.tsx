@@ -12,14 +12,18 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconAlertTriangle, IconArrowRight, IconInfo, IconLoader } from '@/components/icons'
+import { IconAlertTriangle, IconArrowRight, IconInfo, IconLoader, IconRefresh } from '@/components/icons'
 import { Button } from '@/components/ui/Button'
 import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudioNuevo'
+import { PagarConsultaAdicional } from '@/components/expedientes/PagarConsultaAdicional'
+import { CanalCofianza } from '@/components/expedientes/ContactoCofianzaInline'
 import { estudioService } from '@/services/estudioService'
 import { ApiClientError } from '@/lib/api'
+import { useReevaluarCanon } from '@/hooks/useReevaluarCanon'
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
-import { CONTACTO_COFIANZA } from '@/lib/constants'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
+import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
 
 interface Props {
@@ -41,8 +45,12 @@ interface Props {
   conBorrador?: boolean
   /** Si llega, los ítems con paso muestran "Ir al paso N". */
   onIrPaso?: (paso: NumeroPaso) => void
-  /** Tras emitir o regenerar el CRC aquí mismo: recarga el estado del asistente. */
+  /** Tras emitir o regenerar el CRC, o evaluar de nuevo el canon, aquí mismo: recarga el estado del asistente. */
   onCambio?: () => void
+  /** Ya está en el detalle del estudio: «Ir al estudio» no llevaría a ningún lado. */
+  enElEstudio?: boolean
+  /** resumen.canon.evaluadoA5D: la reevaluación del canon solo se ofrece en un estudio evaluado con la Adenda 5. */
+  evaluadoA5D?: boolean
 }
 
 const enlace = 'inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'
@@ -69,6 +77,25 @@ export function bloqueoDeEvaluacion(err: unknown): Bloqueo | null {
 /** Del certificado de la evaluación actual: la nueva emite el suyo sola, así que no son un punto aparte. */
 export const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']
 
+/** Del segundo firmante y del titular de la decisión: frenan el contrato hasta que se resuelvan en el estudio. */
+export const DE_LAS_PARTES = ['COARRENDATARIO_PENDIENTE', 'COARRENDATARIO_SIN_EVALUAR', 'TITULAR_NO_DISPONIBLE']
+
+/**
+ * Lo que impide crear el contrato V3 y se ve desde el estudio: del segundo firmante y del titular, y la
+ * evaluación que ya no sirve (con su certificado). Mientras haya algo, no se ofrece «Crear contrato».
+ */
+export function frenosDelContrato(bloqueos: Bloqueo[]): Bloqueo[] {
+  const pideEvaluacion = bloqueos.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
+  return bloqueos.filter(
+    (b) =>
+      DE_LAS_PARTES.includes(b.codigo) ||
+      (pideEvaluacion && (SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo))),
+  )
+}
+
+/** Los resuelve Cofianza: se dice el canal (su mensaje ya dice «Escríbanos»). */
+const ESCRIBANOS = ['TITULAR_NO_DISPONIBLE', 'TARIFA_NO_SOPORTADA', 'COARRENDATARIO_RECHAZADO']
+
 interface Punto {
   key: string
   texto: string
@@ -83,8 +110,12 @@ interface Punto {
   esFaltante?: boolean
 }
 
+/** Adenda 5 §14: evaluar de nuevo con el canon del inmueble (I4: además, solo si el estudio se evaluó con ella). */
+const ofreceReevaluar = (b: Bloqueo, evaluadoA5D: boolean | undefined) =>
+  b.accion === 'reevaluar_canon' && !!b.puedeReevaluar && evaluadoA5D !== false
+
 /** Los bloqueos que resuelve una misma evaluación nueva se juntan en el lugar del primero. */
-function puntosDe(bloqueos: Bloqueo[]): Punto[] {
+function puntosDe(bloqueos: Bloqueo[], evaluadoA5D?: boolean): Punto[] {
   const evaluacion = bloqueos.filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
   const juntos = evaluacion.length
     ? bloqueos.filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo))
@@ -99,7 +130,11 @@ function puntosDe(bloqueos: Bloqueo[]): Punto[] {
         // Bajar el canon se hace en el paso 1; conservarlo pide evaluar de nuevo sobre el canon nuevo del inmueble.
         nota: CANON_PIDE_EVALUACION.includes(b.codigo)
           ? 'Si necesita este canon, primero actualice el canon del inmueble y luego cree el estudio nuevo.'
-          : undefined,
+          : ofreceReevaluar(b, evaluadoA5D)
+            ? b.reevaluacionConCosto
+              ? 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio: como el reporte ya venció, es una consulta adicional.'
+              : 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio, sin costo.'
+            : undefined,
         bloqueo: b,
         paso: b.paso,
       })
@@ -133,11 +168,13 @@ export function BloqueosContrato({
   conBorrador,
   onIrPaso,
   onCambio,
+  enElEstudio = false,
+  evaluadoA5D,
 }: Props) {
   const user = useUsuarioVista()
   const rol = user?.rol
   const puntos: Punto[] = [
-    ...puntosDe(bloqueos),
+    ...puntosDe(bloqueos, evaluadoA5D),
     ...faltantes.map((f, i) => ({ key: `falta-${f.paso}-${i}`, texto: f.mensaje, paso: f.paso, esFaltante: true })),
   ]
   if (puntos.length === 0) return null
@@ -156,6 +193,31 @@ export function BloqueosContrato({
           <Link href={`/configuracion/datos-contrato?returnTo=${volverAqui}`} className={enlace}>
             Completar Datos para contrato <IconArrowRight size={12} />
           </Link>
+        )
+      }
+      case 'reevaluar_canon': {
+        // Adenda 5 §14: el canon pactado supera el aprobado. Se pacta uno menor en el paso 1 o, si la API lo
+        // ofrece (puedeReevaluar), se actualiza el canon del inmueble y se evalúa de nuevo: sin costo, o con
+        // una consulta adicional si el reporte venció (reevaluacionConCosto). Sin esa salida, editar el canon
+        // del inmueble no sirve de nada aquí: solo queda pactar uno menor.
+        const inmueble = b.inmuebleId ?? inmuebleId
+        if (!ofreceReevaluar(b, evaluadoA5D) || !puedeEditar || !inmueble) return null
+        return (
+          <>
+            {inmuebleAccesible && (
+              <Link href={`/inmuebles/${inmueble}/editar?returnTo=${volverAqui}`} className={enlace}>
+                Editar el canon del inmueble <IconArrowRight size={12} />
+              </Link>
+            )}
+            {b.estudioId && (
+              <ReevaluarCanon
+                estudioId={b.estudioId}
+                inmuebleId={inmueble}
+                conCosto={!!b.reevaluacionConCosto}
+                onCambio={onCambio}
+              />
+            )}
+          </>
         )
       }
       case 'estudio':
@@ -188,19 +250,17 @@ export function BloqueosContrato({
           if (puedeEditar) {
             return (
               <p className="text-xs text-gray-600">
-                Escríbanos para emitir el certificado de esta evaluación: por{' '}
-                <a href={`https://wa.me/${CONTACTO_COFIANZA.whatsapp}`} target="_blank" rel="noopener noreferrer" className="font-semibold text-primary-700 hover:underline">
-                  WhatsApp {CONTACTO_COFIANZA.whatsappVisible}
-                </a>{' '}
-                o a{' '}
-                <a href={`mailto:${CONTACTO_COFIANZA.email}`} className="font-semibold text-primary-700 hover:underline">
-                  {CONTACTO_COFIANZA.email}
-                </a>
-                .
+                Escríbanos para emitir el certificado de esta evaluación: <CanalCofianza />.
               </p>
             )
           }
           return <p className="text-xs text-gray-600">Lo emite quien administra este estudio.</p>
+        }
+        // Lo del segundo firmante se sigue en su tarjeta, en el resumen del estudio.
+        if (enElEstudio) {
+          return DE_LAS_PARTES.includes(b.codigo) ? (
+            <p className="text-xs text-gray-600">Su avance se ve en la tarjeta del coarrendatario de este estudio.</p>
+          ) : null
         }
         return (
           <Link href={`/expedientes/${expedienteId}`} className={enlace}>
@@ -225,6 +285,23 @@ export function BloqueosContrato({
           </p>
         )
       default:
+        if (ESCRIBANOS.includes(b.codigo)) {
+          // TITULAR_NO_DISPONIBLE por otro contrato del estudio: se cancela en su pestaña Contratos.
+          if (!/Escr[ií]banos/i.test(b.mensaje)) {
+            return enElEstudio ? null : (
+              <Link href={`/expedientes/${expedienteId}`} className={enlace}>
+                Ir al estudio <IconArrowRight size={12} />
+              </Link>
+            )
+          }
+          // A Cofianza no se le dice «Escríbanos» (lo resuelve ella).
+          if (esRolInterno(rol)) return null
+          return (
+            <p className="text-xs text-gray-600">
+              Escríbanos <CanalCofianza /> y le indicamos cómo continuar.
+            </p>
+          )
+        }
         return null
     }
   }
@@ -336,5 +413,62 @@ export function AvisosContrato({ avisos, tono = 'info' }: { avisos: string[]; to
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * Adenda 5 §14: evalúa de nuevo el estudio con el canon actual del inmueble (lo decide la API). Sin costo, o
+ * con una consulta adicional (`conCosto`): la API responde 402 con el valor y se ofrece pagarla aquí mismo.
+ * Si la API responde que no, su mensaje queda a la vista.
+ */
+function ReevaluarCanon({
+  estudioId,
+  inmuebleId,
+  conCosto,
+  onCambio,
+}: {
+  estudioId: string
+  inmuebleId: string
+  conCosto: boolean
+  onCambio?: () => void
+}) {
+  const { reevaluar, evaluando } = useReevaluarCanon(onCambio)
+  const [respuesta, setRespuesta] = useState<{
+    mensaje: string
+    reintentar: boolean
+    consultaAdicional: IValorConsultaAdicional | null
+  } | null>(null)
+  const evaluar = async () => setRespuesta(await reevaluar(estudioId, inmuebleId))
+  return (
+    <div className="w-full space-y-2">
+      {(!respuesta || respuesta.reintentar) && (
+        <Button
+          variante="secondary"
+          className="min-h-10"
+          onClick={() => void evaluar()}
+          disabled={evaluando}
+          aria-busy={evaluando || undefined}
+        >
+          {evaluando ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
+          {evaluando ? 'Evaluando…' : conCosto ? 'Evaluar de nuevo (consulta adicional)' : 'Evaluar de nuevo sin costo'}
+        </Button>
+      )}
+      {respuesta && (
+        <p role="alert" className="text-xs text-amber-900">
+          {respuesta.mensaje}
+        </p>
+      )}
+      {respuesta?.consultaAdicional && (
+        <PagarConsultaAdicional
+          estudioId={estudioId}
+          inmuebleId={inmuebleId}
+          valor={respuesta.consultaAdicional}
+          onSinCobro={() => {
+            setRespuesta(null)
+            onCambio?.()
+          }}
+        />
+      )}
+    </div>
   )
 }

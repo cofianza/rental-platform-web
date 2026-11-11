@@ -18,6 +18,7 @@ import { IconLoader, IconFileText, IconAlertTriangle, IconRefresh } from '@/comp
 import { ApiClientError } from '@/lib/api'
 import { useReevaluarCanon } from '@/hooks/useReevaluarCanon'
 import { PagarConsultaAdicional } from './PagarConsultaAdicional'
+import { CODIGOS_CONTRATO_POR_COFIANZA, ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
 import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import { contratoService } from '@/services/contratoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
@@ -74,6 +75,9 @@ export function GenerarContratoModal({
     consultaAdicional?: IValorConsultaAdicional | null
   } | null>(null)
   const { reevaluar, evaluando } = useReevaluarCanon()
+  // Este contrato no se puede hacer aquí (segundo firmante, titular distinto del solicitante, invitación
+  // pendiente): el motivo queda a la vista, no en un toast de 4 s, y no se ofrece generar otra vez.
+  const [noDisponible, setNoDisponible] = useState<{ codigo: string; mensaje: string } | null>(null)
 
   async function handleReevaluar() {
     if (!canonBloqueo?.estudioId || !canonBloqueo.inmuebleId) return
@@ -85,6 +89,7 @@ export function GenerarContratoModal({
   useEffect(() => {
     if (isOpen) {
       setCanonBloqueo(null)
+      setNoDisponible(null)
       setFechaInicio(hoyBogota())
       setDuracionMeses('12')
       setModalidad('plena')
@@ -125,6 +130,10 @@ export function GenerarContratoModal({
         })
         return
       }
+      if (err instanceof ApiClientError && (CODIGOS_CONTRATO_POR_COFIANZA.includes(err.code ?? '') || err.code === 'COARRENDATARIO_PENDIENTE')) {
+        setNoDisponible({ codigo: err.code ?? '', mensaje: err.message })
+        return
+      }
       toast.error(err instanceof Error ? err.message : 'Error al generar el contrato')
     } finally {
       setGenerating(false)
@@ -136,7 +145,7 @@ export function GenerarContratoModal({
     onClose()
   }
 
-  const puedeGenerar = !generating && !evaluando && fechaCompleta(fechaInicio) && !!duracionMeses && !comisionInvalida
+  const puedeGenerar = !generating && !evaluando && !noDisponible && fechaCompleta(fechaInicio) && !!duracionMeses && !comisionInvalida
 
   if (!isOpen) return null
 
@@ -174,6 +183,16 @@ export function GenerarContratoModal({
         }}
         className="space-y-5"
       >
+        {noDisponible &&
+          (noDisponible.codigo === 'COARRENDATARIO_PENDIENTE' ? (
+            <div role="alert" className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              <IconAlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <span>{noDisponible.mensaje}</span>
+            </div>
+          ) : (
+            // El mensaje de la API: también lo ve una inmobiliaria, no solo el propietario.
+            <ContratoSegundoFirmanteAviso codigo={noDisponible.codigo} mensaje={noDisponible.mensaje} />
+          ))}
         {canonBloqueo && (
           <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             <p className="flex gap-2">

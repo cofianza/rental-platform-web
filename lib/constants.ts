@@ -438,27 +438,42 @@ export type EstadoContratoKey =
   | 'finalizado'
   | 'cancelado'
 
-export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
+/** Estado de contrato: además del color de la pastilla, el del punto (listas con «•»). */
+export interface EstadoContratoConfig extends EstadoConfig {
+  dotColor: string
+}
+
+/**
+ * Configuración visual de los estados de contrato. Es la ÚNICA fuente del color
+ * de cada estado (lista de contratos, pestaña Contratos del estudio, detalle,
+ * asistente V3): «Vigente / Fianza activa» siempre en verde y «En firma» en
+ * morado. El verde queda para el contrato que ya opera; lo anterior a la
+ * firma, en gris o ámbar.
+ */
+export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoContratoConfig> = {
   borrador: {
     label: 'Borrador',
     color: 'gray',
     bgColor: 'bg-gray-100',
     textColor: 'text-gray-700',
     borderColor: 'border-gray-300',
+    dotColor: 'bg-gray-400',
   },
   en_revision: {
     label: 'En revisión',
     color: 'amber',
     bgColor: 'bg-amber-100',
-    textColor: 'text-amber-700',
+    textColor: 'text-amber-800',
     borderColor: 'border-amber-300',
+    dotColor: 'bg-amber-500',
   },
   aprobado: {
     label: 'Aprobado',
-    color: 'green',
-    bgColor: 'bg-green-100',
-    textColor: 'text-green-700',
-    borderColor: 'border-green-300',
+    color: 'amber',
+    bgColor: 'bg-amber-100',
+    textColor: 'text-amber-800',
+    borderColor: 'border-amber-300',
+    dotColor: 'bg-amber-500',
   },
   pendiente_firma: {
     label: 'Enviado a Firma',
@@ -466,6 +481,7 @@ export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
     bgColor: 'bg-purple-100',
     textColor: 'text-purple-700',
     borderColor: 'border-purple-300',
+    dotColor: 'bg-purple-600',
   },
   firma_incompleta: {
     label: 'Firma incompleta',
@@ -473,20 +489,23 @@ export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
     bgColor: 'bg-red-100',
     textColor: 'text-red-700',
     borderColor: 'border-red-300',
+    dotColor: 'bg-red-600',
   },
   firmado: {
     label: 'Firmado',
-    color: 'teal',
-    bgColor: 'bg-teal-100',
-    textColor: 'text-teal-700',
-    borderColor: 'border-teal-300',
+    color: 'green',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-700',
+    borderColor: 'border-green-300',
+    dotColor: 'bg-green-600',
   },
   vigente: {
     label: 'Vigente',
-    color: 'blue',
-    bgColor: 'bg-blue-100',
-    textColor: 'text-blue-700',
-    borderColor: 'border-blue-300',
+    color: 'green',
+    bgColor: 'bg-green-100',
+    textColor: 'text-green-700',
+    borderColor: 'border-green-300',
+    dotColor: 'bg-green-600',
   },
   finalizado: {
     label: 'Finalizado',
@@ -494,6 +513,7 @@ export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
     bgColor: 'bg-slate-100',
     textColor: 'text-slate-700',
     borderColor: 'border-slate-300',
+    dotColor: 'bg-slate-400',
   },
   cancelado: {
     label: 'Cancelado',
@@ -501,7 +521,14 @@ export const ESTADOS_CONTRATO: Record<EstadoContratoKey, EstadoConfig> = {
     bgColor: 'bg-red-100',
     textColor: 'text-red-700',
     borderColor: 'border-red-300',
+    dotColor: 'bg-red-500',
   },
+}
+
+/** Clases de la pastilla de un estado de contrato (fondo + texto; con `borde`, también el borde). */
+export function tonoContrato(estado: string, borde = false): string {
+  const c = ESTADOS_CONTRATO[estado as EstadoContratoKey] ?? ESTADOS_CONTRATO.borrador
+  return borde ? `${c.borderColor} ${c.bgColor} ${c.textColor}` : `${c.bgColor} ${c.textColor}`
 }
 
 /** Contratos V3 (destinacion no nula): los estados se nombran por la fianza (§11 del módulo). */

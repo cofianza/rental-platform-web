@@ -1,5 +1,7 @@
 'use client'
 
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import {
@@ -28,6 +30,8 @@ interface ContratoFirmadoSectionProps {
 
 export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: ContratoFirmadoSectionProps) {
   const { user } = useAuth()
+  // Cofianza lee el nombre del proveedor de firma; la inmobiliaria y el propietario, «la plataforma de firma».
+  const interno = esRolInterno(useUsuarioVista()?.rol)
   const canManage = user?.rol === 'administrador' || user?.rol === 'operador_analista'
   const isAdmin = user?.rol === 'administrador'
 
@@ -143,7 +147,7 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
                 <IconCheck size={18} className="text-green-600 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-green-900">
-                    Contrato firmado electrónicamente con Auco
+                    {interno ? 'Contrato firmado electrónicamente con Auco' : 'Contrato firmado electrónicamente en la plataforma de firma'}
                   </p>
                   <p className="text-xs text-green-700 mt-1">
                     El documento con los acuses de firma está listo para descargar.
@@ -161,7 +165,9 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
                 <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-amber-900">
-                    Contrato firmado sin documento de Auco (p. ej. en papel)
+                    {interno
+                      ? 'Contrato firmado sin documento de Auco (p. ej. en papel)'
+                      : 'Contrato firmado sin el documento de la plataforma de firma (p. ej. en papel)'}
                   </p>
                   <p className="text-xs text-amber-700 mt-1">
                     La descarga entrega el contrato generado, sin firmas.

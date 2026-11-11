@@ -21,6 +21,11 @@ export interface ContextoCargaDocumentos {
   puede_subir: boolean
   /** Adenda 3 §6: aprobado con condición de coarrendatario; null = no se pudo leer (ausente en un API anterior). */
   condicion_coarrendatario?: boolean | null
+  /**
+   * Por qué este estudio no puede sumar segundo firmante (canal del propietario directo); null = sí puede o no
+   * aplica; ausente = un API anterior. Se muestra en lugar del formulario de invitación.
+   */
+  motivo_sin_segundo_firmante?: string | null
   /** Plazo de la condición (ISO), sin el puntaje (ausente en un API anterior: no se muestra fecha). */
   condicion_vence_en?: string | null
   /** Adenda 3 V2 §6.7: ingreso adicional que necesitan entre los dos; null si la condición es solo por puntaje. */

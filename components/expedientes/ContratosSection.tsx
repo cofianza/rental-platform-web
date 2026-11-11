@@ -3,7 +3,7 @@
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactNode } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import {
@@ -29,12 +29,16 @@ import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
-import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
+import { BloqueosContrato, bloqueoDeEvaluacion, frenosDelContrato } from '@/components/contratos/v3/BloqueosContrato'
+import { ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
+import { CanalCofianza } from './ContactoCofianzaInline'
+import { contratoV3Service } from '@/services/contratoV3Service'
+import { useSegundoFirmanteContrato } from '@/hooks/useSegundoFirmanteContrato'
 import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
+import { etiquetaContrato, formatDate, formatDateTime, tonoContrato } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
@@ -47,18 +51,18 @@ const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 // dentro del componente) porque también decide qué acciones ve el dueño.
 const ESTADOS_PRE_FIRMA: EstadoContrato[] = ['borrador', 'en_revision', 'aprobado']
 
-// Marca de cada estado: círculo + pastilla, con la misma paleta corta que
-// Documentos (gris, ámbar, azul, verde, rojo). Antes eran nueve colores.
-const MARCA_CONTRATO: Record<EstadoContrato, { circulo: string; chip: string; icono: React.ReactNode }> = {
-  borrador: { circulo: 'bg-gray-100 text-gray-600', chip: 'bg-gray-100 text-gray-700', icono: <IconFileText size={16} /> },
-  en_revision: { circulo: 'bg-amber-100 text-amber-800', chip: 'bg-amber-100 text-amber-900', icono: <IconClock size={16} /> },
-  aprobado: { circulo: 'bg-amber-100 text-amber-800', chip: 'bg-amber-100 text-amber-900', icono: <IconCheck size={16} /> },
-  pendiente_firma: { circulo: 'bg-blue-100 text-blue-700', chip: 'bg-blue-100 text-blue-800', icono: <IconPencil size={16} /> },
-  firma_incompleta: { circulo: 'bg-red-100 text-red-700', chip: 'bg-red-100 text-red-800', icono: <IconAlertTriangle size={16} /> },
-  firmado: { circulo: 'bg-green-100 text-green-700', chip: 'bg-green-100 text-green-800', icono: <IconCheck size={16} /> },
-  vigente: { circulo: 'bg-green-100 text-green-700', chip: 'bg-green-100 text-green-800', icono: <IconShieldCheck size={16} /> },
-  finalizado: { circulo: 'bg-gray-100 text-gray-600', chip: 'bg-gray-100 text-gray-700', icono: <IconHistory size={16} /> },
-  cancelado: { circulo: 'bg-gray-100 text-gray-500', chip: 'bg-gray-100 text-gray-700', icono: <IconX size={16} /> },
+// Marca de cada estado: círculo + pastilla. El color sale de ESTADOS_CONTRATO
+// (una sola fuente: «Fianza activa» en verde, «En firma» en morado); aquí solo el ícono.
+const ICONO_CONTRATO: Record<EstadoContrato, React.ReactNode> = {
+  borrador: <IconFileText size={16} />,
+  en_revision: <IconClock size={16} />,
+  aprobado: <IconCheck size={16} />,
+  pendiente_firma: <IconPencil size={16} />,
+  firma_incompleta: <IconAlertTriangle size={16} />,
+  firmado: <IconCheck size={16} />,
+  vigente: <IconShieldCheck size={16} />,
+  finalizado: <IconHistory size={16} />,
+  cancelado: <IconX size={16} />,
 }
 
 // El mismo botón de fila que Documentos: 40 px de alto, con texto.
@@ -85,6 +89,10 @@ interface ContratosSectionProps {
   inmuebleReservadoPorOtro?: boolean
   /** Inmueble de una inmobiliaria: el modal pide su comisión (P12). */
   conComision?: boolean
+  /** El estudio espera al segundo firmante («aprobado con segundo firmante», o su autorización): aún no hay contrato. */
+  esperaSegundoFirmante?: boolean
+  /** Inmueble sin inmobiliaria (propietario directo): ahí todavía no se puede sumar un segundo firmante. */
+  canalPropietario?: boolean
 }
 
 export function ContratosSection({
@@ -95,6 +103,8 @@ export function ContratosSection({
   sinInmueble = false,
   inmuebleReservadoPorOtro,
   conComision,
+  esperaSegundoFirmante = false,
+  canalPropietario = false,
 }: ContratosSectionProps) {
   const { user } = useAuth()
   // Con «ver como», el rol simulado: el proveedor de firma y su costo son de Cofianza.
@@ -144,6 +154,11 @@ export function ContratosSection({
       user?.rol === 'inmobiliaria'
     )
   const canRegenerate = canCreate || (puedeEditar && user?.rol === 'propietario')
+  // El contrato anterior también lo genera el propietario del inmueble (POST /generar lo admite por rol
+  // y la API verifica que el estudio sea suyo); el asistente V3, no (su roleGuard no lo incluye).
+  const canGenerarAnterior = canRegenerate
+  // Miembro de solo lectura de la inmobiliaria: no crea, pero sí se le dice quién lo hace.
+  const soloLectura = user?.rol === 'inmobiliaria' && !puedeEditar
   // Dueño del inmueble (propietario o inmobiliaria): su único paso siguiente en
   // un borrador es "Enviar a firma"; el resto de iconos solo le añaden ruido.
   const esDuenio = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
@@ -180,6 +195,27 @@ export function ContratosSection({
   useEffect(() => {
     fetchContratos()
   }, [fetchContratos])
+
+  // Contrato anterior: la API dice (I1) si lo rechazaría en este estudio (coarrendatario vinculado o titular
+  // distinto del solicitante). undefined mientras se lee: ni el botón ni «Pulse Generar contrato».
+  const puedeGenerarAnterior = canGenerarAnterior && expedienteAprobado && !sinInmueble && !contratosV3
+  const anteriorBloqueado = useSegundoFirmanteContrato(expedienteId, puedeGenerarAnterior, contratos.length)
+
+  // Asistente V3: lo que impide crear el contrato (segundo firmante, titular, evaluación que ya no sirve).
+  // Con algo de eso no se ofrece «Crear contrato» como si se pudiera. undefined = sin leer (o no aplica).
+  const ofreceCrearV3 = canCreate && expedienteAprobado && !sinInmueble && !!contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro
+  const [frenosV3, setFrenosV3] = useState<{ expedienteId: string; bloqueos: Bloqueo[] } | null>(null)
+  useEffect(() => {
+    if (!ofreceCrearV3) return
+    let vivo = true
+    contratoV3Service.obtener(expedienteId).then(
+      (e) => { if (vivo) setFrenosV3({ expedienteId, bloqueos: frenosDelContrato(e.bloqueos) }) },
+      // Sin poder leer el asistente se ofrece como antes: él muestra los bloqueos al entrar.
+      () => { if (vivo) setFrenosV3({ expedienteId, bloqueos: [] }) },
+    )
+    return () => { vivo = false }
+  }, [ofreceCrearV3, expedienteId, contratos.length])
+  const frenan = frenosV3?.expedienteId === expedienteId ? frenosV3.bloqueos : undefined
 
   // Auto-abrir el panel de firma cuando hay un contrato en firma, para que el
   // progreso de firmantes quede visible sin tener que buscar el botón. Solo una
@@ -452,6 +488,44 @@ export function ContratosSection({
   }
 
   const enFirma = contratos.filter((c) => c.estado === 'pendiente_firma').length
+
+  // Qué dice la pestaña sin contratos: lo que falta, quién lo hace y, si no se puede desde aquí, por qué.
+  const textoVacio: ReactNode = !expedienteAprobado
+    ? esperaSegundoFirmante
+      ? canalPropietario
+        ? interno
+          ? 'En este inmueble todavía no se puede sumar un segundo firmante.'
+          : (
+              <>
+                En este inmueble todavía no se puede sumar un segundo firmante. Escríbanos <CanalCofianza /> y le indicamos
+                cómo continuar.
+              </>
+            )
+        : 'El contrato se podrá crear cuando el coarrendatario termine su evaluación y el estudio quede aprobado.'
+      : 'El contrato se podrá generar cuando el estudio del arrendatario esté aprobado.'
+    : sinInmueble
+      ? 'El estudio está aprobado sin propiedad. Vincule el inmueble antes de generar el contrato.'
+      : soloLectura
+        ? 'Lo crea alguien de su equipo con permiso de edición.'
+        : contratosV3
+          ? canCreate
+            ? inmuebleReservadoPorOtro
+              ? 'El inmueble está reservado para el contrato de otro estudio. Si ese contrato se cancela, podrá crear el de este.'
+              : frenan === undefined
+                ? 'Revisando si el contrato se puede crear…'
+                : frenan.length > 0
+                  ? 'Primero resuelva lo pendiente de arriba; después podrá crear el contrato.'
+                  : 'Pulse «Crear contrato» para abrir el asistente.'
+            : 'Lo crea la inmobiliaria con el asistente de contratos, ahora que el estudio fue aprobado.'
+          : puedeGenerarAnterior
+            ? anteriorBloqueado === undefined
+              ? 'Revisando si el contrato se puede generar…'
+              : anteriorBloqueado
+                ? interno
+                  ? 'Se gestiona fuera de la plataforma.'
+                  : 'Vea arriba cómo continuar.'
+                : 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
+            : 'El contrato se generará cuando el propietario lo emita, ahora que el estudio fue aprobado.'
   const contratoFirmas = contratos.find((c) => c.id === firmaContratoId)
 
   return (
@@ -466,7 +540,7 @@ export function ContratosSection({
               {enFirma > 0 && (
                 <>
                   {' · '}
-                  <span className="font-medium text-blue-800">
+                  <span className="font-medium text-purple-700">
                     <span className="tabular-nums">{enFirma}</span> en firma
                   </span>
                 </>
@@ -474,13 +548,13 @@ export function ContratosSection({
             </p>
           )}
         </div>
-        {canCreate && expedienteAprobado && !sinInmueble && contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro && (
+        {ofreceCrearV3 && frenan?.length === 0 && (
           <Link href={rutaAsistente} className={buttonClasses('primary', 'md', 'min-h-10 shrink-0')}>
             <IconPlus size={16} />
             Crear contrato
           </Link>
         )}
-        {canCreate && expedienteAprobado && !sinInmueble && !contratosV3 && (
+        {puedeGenerarAnterior && anteriorBloqueado === null && (
           <button type="button" onClick={() => setGenerarOpen(true)} className={buttonClasses('primary', 'md', 'min-h-10 shrink-0')}>
             <IconPlus size={16} />
             Generar contrato
@@ -495,6 +569,21 @@ export function ContratosSection({
           expedienteId={expedienteId}
           puedeEditar={puedeEditar}
           conBorrador
+          enElEstudio
+        />
+      )}
+
+      {puedeGenerarAnterior && anteriorBloqueado && contratos.every((c) => c.estado === 'cancelado') && (
+        <ContratoSegundoFirmanteAviso codigo={anteriorBloqueado.codigo} mensaje={anteriorBloqueado.motivo} />
+      )}
+
+      {ofreceCrearV3 && frenan && frenan.length > 0 && (
+        <BloqueosContrato
+          bloqueos={frenan}
+          para="crear el contrato"
+          expedienteId={expedienteId}
+          puedeEditar={puedeEditar}
+          enElEstudio
         />
       )}
 
@@ -504,31 +593,21 @@ export function ContratosSection({
             <IconFileText size={20} />
           </span>
           <p className="mt-3 text-sm font-semibold text-gray-900">Este estudio todavía no tiene contrato</p>
-          <p className="mt-1 max-w-md text-sm text-gray-600">
-            {!expedienteAprobado
-              ? 'El contrato se podrá generar cuando el estudio del arrendatario esté aprobado.'
-              : sinInmueble
-                ? 'El estudio está aprobado sin propiedad. Vincule el inmueble antes de generar el contrato.'
-                : canCreate && contratosV3
-                  ? 'Pulse «Crear contrato» para abrir el asistente.'
-                  : canCreate
-                    ? 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
-                    : 'El contrato se generará cuando el propietario lo emita, ahora que el estudio fue aprobado.'}
-          </p>
+          <p className="mt-1 max-w-md text-sm text-gray-600">{textoVacio}</p>
         </div>
       ) : (
         <ul className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
           {contratos.map((c) => {
             // /contratos/:id de una fila V3 redirige al asistente: vamos directo.
             const esV3 = !!c.destinacion
-            const marca = MARCA_CONTRATO[c.estado] ?? MARCA_CONTRATO.borrador
+            const marca = { tono: tonoContrato(c.estado), icono: ICONO_CONTRATO[c.estado] ?? ICONO_CONTRATO.borrador }
             const titulo = esV3 ? `Contrato ${c.numero ?? ''}`.trim() : `Contrato · versión ${c.version}`
             const generado = c.fecha_generacion ?? c.created_at
             return (
               <li key={c.id} className={cn('flex gap-3 px-4 py-4 sm:px-5', firmaContratoId === c.id && 'bg-primary-50/40')}>
                 <span
                   aria-hidden="true"
-                  className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', marca.circulo)}
+                  className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', marca.tono)}
                 >
                   {marca.icono}
                 </span>
@@ -544,7 +623,7 @@ export function ContratosSection({
                           {titulo}
                         </Link>
                       </h4>
-                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', marca.chip)}>
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', marca.tono)}>
                         {etiquetaContrato(c.estado, esV3)}
                       </span>
                     </div>

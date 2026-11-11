@@ -25,7 +25,9 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { contratoService } from '@/services/contratoService'
 import { contratoV3Service } from '@/services/contratoV3Service'
-import { BloqueosContrato, DEL_CRC, SOLO_NUEVA_EVALUACION } from '@/components/contratos/v3/BloqueosContrato'
+import { BloqueosContrato, frenosDelContrato } from '@/components/contratos/v3/BloqueosContrato'
+import { useSegundoFirmanteContrato } from '@/hooks/useSegundoFirmanteContrato'
+import { ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
@@ -67,9 +69,10 @@ export function AccionContratoPendienteCard({
   // necesita saber si es su borrador para ofrecer "Continuar".
   const [activo, setActivo] = useState<IContrato | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  // Bloqueos del asistente que solo se resuelven evaluando de nuevo: el mismo
-  // veredicto del API (no se recalcula aquí la vigencia, que es calibrable).
-  const [evaluacionVencida, setEvaluacionVencida] = useState<Bloqueo[]>([])
+  // Lo que impide crear el contrato (frenosDelContrato): la evaluación que solo se resuelve evaluando de
+  // nuevo (el mismo veredicto del API: no se recalcula aquí la vigencia, que es calibrable) y lo del segundo
+  // firmante o del titular de la decisión. Mientras siga, la tarjeta no ofrece crear el contrato.
+  const [frenan, setFrenan] = useState<Bloqueo[]>([])
   // El contrato del estudio que reservó el inmueble ya se firmó (INMUEBLE_ARRENDADO): no se libera al cancelar.
   const [arrendado, setArrendado] = useState<{ estudioId?: string; canonEvaluado: number | null; inmuebleId?: string } | null>(null)
   const [reasignar, setReasignar] = useState(false)
@@ -95,9 +98,7 @@ export function AccionContratoPendienteCard({
       ])
       const activos = (res.data || []).filter((c) => c.estado !== 'cancelado')
       setActivo(activos[0] ?? null)
-      setEvaluacionVencida(
-        (estadoV3?.bloqueos ?? []).filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo)),
-      )
+      setFrenan(frenosDelContrato(estadoV3?.bloqueos ?? []))
       const b = estadoV3?.bloqueos.find((x) => x.codigo === 'INMUEBLE_ARRENDADO')
       setArrendado(
         b
@@ -116,6 +117,21 @@ export function AccionContratoPendienteCard({
   }, [expedienteId, puedeCrearV3, expedienteEstado])
 
   useEffect(() => { fetchContratos() }, [fetchContratos, version])
+
+  // Flujo anterior (el contrato del propietario directo): no incluye al segundo firmante.
+  const puedeGenerar =
+    !contratosV3 && (
+      userRol === 'administrador' ||
+      userRol === 'operador_analista' ||
+      userRol === 'inmobiliaria' ||
+      userRol === 'propietario'
+    )
+  // I1: la API dice si el contrato de propietarios rechazaría este estudio (y por qué).
+  const contratoAnteriorBloqueado = useSegundoFirmanteContrato(
+    expedienteId,
+    !!puedeGenerar && expedienteEstado === 'aprobado' && !loading && !activo,
+    version,
+  )
 
   // Solo relevante cuando el expediente está APROBADO y no hay contrato aún.
   // En 'condicionado' se muestra AprobarCondicionadoCard, no este card.
@@ -178,14 +194,15 @@ export function AccionContratoPendienteCard({
   }
 
   // Sin borrador (con borrador, «Continuar» lleva al asistente, que trae la misma acción).
-  const pideEvaluacion = evaluacionVencida.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
-  if (puedeCrearV3 && pideEvaluacion && !borradorV3) {
+  // Con lo que frena el contrato a la vista no se dice «crear el contrato» como si se pudiera.
+  if (puedeCrearV3 && frenan.length > 0 && !borradorV3) {
     return (
       <BloqueosContrato
-        bloqueos={evaluacionVencida}
+        bloqueos={frenan}
         para="crear el contrato"
         expedienteId={expedienteId}
         puedeEditar={puedeEditar}
+        enElEstudio
       />
     )
   }
@@ -208,14 +225,6 @@ export function AccionContratoPendienteCard({
     )
   }
 
-  const puedeGenerar =
-    !contratosV3 && (
-      userRol === 'administrador' ||
-      userRol === 'operador_analista' ||
-      userRol === 'inmobiliaria' ||
-      userRol === 'propietario'
-    )
-
   if (puedeGenerar && vencidaAlGenerar) {
     return (
       <BloqueosContrato
@@ -223,6 +232,20 @@ export function AccionContratoPendienteCard({
         para="generar el contrato"
         expedienteId={expedienteId}
         puedeEditar={puedeEditar}
+        enElEstudio
+      />
+    )
+  }
+
+  // El contrato anterior no se puede hacer en este estudio (coarrendatario vinculado o titular distinto del
+  // solicitante): la API lo rechazaría. Se dice por qué y cómo seguir (D1; a Cofianza, D4).
+  if (puedeGenerar && contratoAnteriorBloqueado === undefined) return null
+  if (puedeGenerar && contratoAnteriorBloqueado) {
+    return (
+      <ContratoSegundoFirmanteAviso
+        titulo="El contrato de este estudio no se genera desde aquí"
+        codigo={contratoAnteriorBloqueado.codigo}
+        mensaje={contratoAnteriorBloqueado.motivo}
       />
     )
   }

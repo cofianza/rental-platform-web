@@ -86,6 +86,12 @@ interface CoarrendatarioInviteFormProps {
 
 type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email' | 'telefono'
 
+/**
+ * La API no deja invitar en este estudio (p. ej. propietario directo, COARRENDATARIO_CANAL_PROPIETARIO):
+ * su motivo queda a la vista en lugar del formulario, no en un toast de 4 s.
+ */
+const SIN_INVITACION = ['COARRENDATARIO_CANAL_PROPIETARIO']
+
 // Errores de la API que van junto a un campo (UX #4): el correo, el WhatsApp o
 // el documento del titular. El mensaje no trae el dato del titular.
 const CAMPO_DEL_ERROR: Record<string, Campo> = {
@@ -107,6 +113,11 @@ export function CoarrendatarioInviteForm({
   personaNueva = false,
 }: CoarrendatarioInviteFormProps) {
   const esGestor = audience === 'gestor'
+  // Qué es el coarrendatario (revisión 11-nov, D3): texto neutral, porque con la Adenda 5 el invitado puede quedar
+  // como arrendatario del contrato; tampoco es por fuerza quien vive en el inmueble.
+  const noEsFiador = esGestor
+    ? 'No es fiador ni necesita finca raíz: firma el contrato con el titular y los dos responden solidariamente por todas las obligaciones del contrato.'
+    : 'No es fiador ni necesita finca raíz: firma el contrato con usted y los dos responden solidariamente por todas las obligaciones del contrato.'
   // Cofianza (también con «ver como» apagado) conserva su texto y su botón de siempre.
   const interno = esRolInterno(useUsuarioVista()?.rol)
   // Opcional para quien gestiona salvo con la condición: no compite con lo que sí le toca.
@@ -130,6 +141,7 @@ export function CoarrendatarioInviteForm({
   // Con datos precargados abrimos el formulario de una: esconderlo tras
   // "Agregar coarrendatario" ocultaria justo la prueba de que ya los tenemos.
   const [showForm, setShowForm] = useState(!!initial)
+  const [noSePuede, setNoSePuede] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [nombre, setNombre] = useState(initial?.nombre ?? '')
   const [apellido, setApellido] = useState(initial?.apellido ?? '')
@@ -172,8 +184,12 @@ export function CoarrendatarioInviteForm({
       setNombre(''); setApellido(''); setNumDoc(''); setEmail(''); setTelefono('')
       onInvited?.()
     } catch (err) {
-      const campo = CAMPO_DEL_ERROR[(err as { code?: string })?.code ?? '']
-      if (campo && err instanceof Error) {
+      const codigo = (err as { code?: string })?.code ?? ''
+      const campo = CAMPO_DEL_ERROR[codigo]
+      if (SIN_INVITACION.includes(codigo) && err instanceof Error) {
+        setNoSePuede(err.message)
+        setShowForm(false)
+      } else if (campo && err instanceof Error) {
         setErrores({ [campo]: err.message })
         document.getElementById(idDe(campo))?.focus()
       } else {
@@ -206,7 +222,7 @@ export function CoarrendatarioInviteForm({
             {personaNueva ? (
               <>
                 Escriba los datos de la persona que entra como segundo firmante. Le enviaremos una invitación a su correo y a su
-                WhatsApp para que acepte y autorice su evaluación. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                WhatsApp para que acepte y autorice su evaluación. <strong>{noEsFiador}</strong>
               </>
             ) : conCondicion ? (
               // Adenda 3 V2 §6.9: el texto literal, sin «fiador» ni «codeudor» y sin
@@ -216,41 +232,38 @@ export function CoarrendatarioInviteForm({
             ) : aprobado ? (
               <>
                 {esGestor ? 'El estudio quedó aprobado y el solicitante puede firmar solo. ' : 'Su estudio fue aprobado y puede firmar solo. '}
-                {beneficioPrima ? 'Si antes del contrato suma como ' : 'Antes del contrato puede sumar como '}
-                <strong>coarrendatario</strong> a la persona con quien {esGestor ? 'vivirá' : 'va a vivir'}
+                {beneficioPrima ? 'Si antes del contrato suma a un ' : 'Antes del contrato puede sumar a un '}
+                <strong>coarrendatario</strong>
                 {beneficioPrima ? `, ${beneficioPrima}` : ''}; la evaluación del coarrendatario no tiene costo adicional.{' '}
-                No necesita finca raíz. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                <strong>{noEsFiador}</strong>
               </>
             ) : esGestor && antesDeLaDecision ? (
               <>
-                Puede agregar a la persona con quien vivirá el solicitante como <strong>coarrendatario</strong>. Cada uno
-                se consulta apenas autoriza (con el estudio pagado), y el estudio se decide con los dos. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                Puede agregar a un <strong>coarrendatario</strong> al estudio. Cada uno se consulta apenas autoriza (con el
+                estudio pagado), y el estudio se decide con los dos. <strong>{noEsFiador}</strong>
               </>
             ) : esGestor && condicionGestor && !interno ? (
               <>
                 Para seguir con el estudio en el plazo falta un <strong>coarrendatario</strong>. La persona puede agregarlo desde su
-                enlace, o usted puede invitar aquí a quien vivirá con el solicitante: se evalúa a ambos y los respaldamos
-                juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                enlace, o usted puede invitarlo aquí: se evalúa a ambos y el estudio se decide con los dos.{' '}
+                <strong>{noEsFiador}</strong>
               </>
             ) : esGestor && interno ? (
               <>
-                El estudio quedó condicionado. Puede invitar a la persona con quien vivirá el
-                solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
-                respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                El estudio quedó condicionado. Puede invitar a un <strong>coarrendatario</strong>: se evalúa a ambos y el
+                estudio se decide con los dos. <strong>{noEsFiador}</strong>
               </>
             ) : esGestor ? (
               <>
                 El estudio está en revisión de Cofianza y no tiene que hacer nada para que avance. Si quiere reforzar el
-                caso, puede invitar a la persona con quien vivirá el
-                solicitante como <strong>coarrendatario</strong>: se evalúa a ambos y los
-                respaldamos juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                caso, puede invitar a un <strong>coarrendatario</strong>: se evalúa a ambos y el estudio se decide con los
+                dos. <strong>{noEsFiador}</strong>
               </>
             ) : (
               <>
                 Su estudio está en revisión con un analista de Cofianza; no tiene que hacer
-                nada para que avance. Si quiere reforzar su caso, invite a la persona con quien va a
-                vivir como <strong>coarrendatario</strong>: los dos toman el arriendo y los respaldamos
-                juntos como un solo arrendatario. <strong>No es fiador: firma el contrato como arrendatario, junto con el titular, y responde solidariamente.</strong>
+                nada para que avance. Si quiere reforzar su caso, invite a un <strong>coarrendatario</strong>: se evalúa a
+                los dos y el estudio se decide con ambos. <strong>{noEsFiador}</strong>
               </>
             )}
           </p>
@@ -286,7 +299,12 @@ export function CoarrendatarioInviteForm({
         </div>
       </div>
 
-      {!showForm ? (
+      {noSePuede ? (
+        <p role="alert" className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
+          <span>{noSePuede}</span>
+        </p>
+      ) : !showForm ? (
         <button
           type="button"
           onClick={() => setShowForm(true)}

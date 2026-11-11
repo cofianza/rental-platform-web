@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { SkeletonDetail } from '@/components/ui/Skeleton'
-import { etiquetaContrato } from '@/lib/constants'
+import { etiquetaContrato, tonoContrato } from '@/lib/constants'
 import { dashboardService, type PerfilDetalle } from '@/services/dashboardService'
 import {
   money,
@@ -14,7 +14,6 @@ import {
   KpiRow,
   Tabla,
   Td,
-  type ChipTone,
 } from '@/components/dashboard/secciones/_shared'
 import {
   IconHome,
@@ -24,18 +23,6 @@ import {
   IconBank,
   IconMail,
 } from '@/components/icons'
-
-const ESTADO_CONTRATO_TONE: Record<string, ChipTone> = {
-  vigente: 'green',
-  firmado: 'blue',
-  aprobado: 'green',
-  finalizado: 'gray',
-  cancelado: 'red',
-  borrador: 'gray',
-  pendiente_firma: 'yellow',
-  firma_incompleta: 'red',
-  en_revision: 'yellow',
-}
 
 const esZonaRiesgo = (mes: number) => mes >= 8 && mes <= 14
 
@@ -211,7 +198,10 @@ export function PerfilDetalleModal({
                       <Chip tone={esZonaRiesgo(c.mes) ? 'risk' : 'gray'}>M{c.mes}</Chip>
                     </Td>
                     <Td>
-                      <Chip tone={ESTADO_CONTRATO_TONE[c.estado] ?? 'gray'}>{etiquetaContrato(c.estado, false)}</Chip>
+                      {/* El color del estado sale de ESTADOS_CONTRATO (una sola fuente), con la forma del Chip. */}
+                      <span className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold ${tonoContrato(c.estado)}`}>
+                        {etiquetaContrato(c.estado, false)}
+                      </span>
                     </Td>
                     <Td>
                       {c.pago === 'mora' ? <Chip tone="red">Mora</Chip> : <Chip tone="green">Al día</Chip>}

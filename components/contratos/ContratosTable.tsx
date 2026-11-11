@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { IconEye, IconDownload, IconArrowRight, IconLoader, IconChevronLeft, IconChevronRight, IconRefresh } from '@/components/icons'
-import { ESTADOS_CONTRATO, type EstadoContratoKey, formatDateTime, rutaContrato } from '@/lib/constants'
+import { ESTADOS_CONTRATO, type EstadoContratoKey, etiquetaContrato, formatDateTime, rutaContrato } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { ContratoTransicionModal } from '@/components/expedientes/ContratoTransicionModal'
 import { RegenerarContratoModal } from './RegenerarContratoModal'
@@ -176,7 +176,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config?.bgColor || 'bg-gray-100'} ${config?.textColor || 'text-gray-700'}`}>
-                        {config?.label || c.estado}
+                        {etiquetaContrato(c.estado, !!c.destinacion)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -258,7 +258,7 @@ export function ContratosTable({ contratos, meta, filters, onPageChange, onRefet
               <div className="flex items-start justify-between mb-2">
                 <p className="text-sm font-medium text-gray-900">{c.nombre_archivo || 'contrato.pdf'}</p>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${config?.bgColor || 'bg-gray-100'} ${config?.textColor || 'text-gray-700'}`}>
-                  {config?.label || c.estado}
+                  {etiquetaContrato(c.estado, !!c.destinacion)}
                 </span>
               </div>
               {expediente && (

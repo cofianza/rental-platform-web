@@ -32,10 +32,11 @@ import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvita
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { IconEye, IconLoader, IconRefresh, IconUsers } from '@/components/icons'
+import { IconEye, IconInfo, IconLoader, IconRefresh, IconUsers } from '@/components/icons'
 import { TarjetaSiguientePaso, SeccionPaso, type TonoPaso } from './TarjetaSiguientePaso'
 import { textoVisible, esRolInterno, tipoFallo } from './textoVisible'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
+import { sinEscribanos } from './ContratoSegundoFirmanteAviso'
 
 interface CoarrendatarioPropietarioCardProps {
   expedienteId: string
@@ -50,6 +51,8 @@ interface CoarrendatarioPropietarioCardProps {
   onEstudioCompletado?: () => void
   /** Aprobado con la condición de sumar un coarrendatario: invitarlo es lo que falta (botón principal). */
   conCondicion?: boolean
+  /** El estudio espera un segundo firmante («aprobado con segundo firmante» o la condición de coarrendatario). */
+  pideSegundoFirmante?: boolean
 }
 
 /** Antes de que se decida al titular (Adenda 3 V2 §6.1). */
@@ -71,6 +74,7 @@ export function CoarrendatarioPropietarioCard({
   userRol,
   onEstudioCompletado,
   conCondicion = false,
+  pideSegundoFirmante = false,
 }: CoarrendatarioPropietarioCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -155,6 +159,14 @@ export function CoarrendatarioPropietarioCard({
     userRol === 'administrador' ||
     userRol === 'operador_analista'
 
+  // Canal del propietario directo: el motivo de la API. A Cofianza, sin «Escríbanos» (D4, 11-nov).
+  const motivoCanal =
+    ventana?.puede_invitar === false && ventana.codigo === 'COARRENDATARIO_CANAL_PROPIETARIO' && ventana.motivo
+      ? esRolInterno(userRol)
+        ? sinEscribanos(ventana.motivo)
+        : ventana.motivo
+      : null
+
   if (loading || ventana === undefined) return null
   if (!esRolValido) return null
   // Aparece de la fase 'condicionado' en adelante y, con el coarrendatario desde
@@ -191,6 +203,19 @@ export function CoarrendatarioPropietarioCard({
     // La API indica que cargar a esta persona pasa por un cambio de persona: se hace desde la
     // tarjeta de la evaluación («Personas del estudio»), donde se avisa el valor antes de confirmar.
     if (ventana?.cobra_consulta_adicional) return null
+    // Propietario directo: la API no abre el segundo firmante (su contrato todavía no lo incluye). Se dice por
+    // qué solo donde el estudio lo pide («aprobado con segundo firmante» o la condición), no en todo aprobado.
+    if (motivoCanal && pideSegundoFirmante) {
+      return (
+        <div role="status" className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 sm:p-5">
+          <IconInfo size={18} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="font-semibold text-gray-900">Segundo firmante (coarrendatario)</p>
+            <p className="mt-0.5">{motivoCanal}</p>
+          </div>
+        </div>
+      )
+    }
     if (!(ventana?.puede_invitar ?? expedienteEstado === 'condicionado') || !puedeEditar) return null
     return (
       <CoarrendatarioInviteForm
@@ -256,6 +281,15 @@ export function CoarrendatarioPropietarioCard({
           )
         }
       >
+        {/* Canal del propietario directo con un coarrendatario todavía en curso: la invitación ya no se puede
+            aceptar y su evaluación no entra al contrato. Se dice por qué. */}
+        {motivoCanal && coarrendatarioEnCurso(coa) && (
+          <div role="status" className="flex items-start gap-2 border-b border-gray-100 px-4 py-3 text-sm text-gray-700 sm:px-5">
+            <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
+            <span>{motivoCanal}</span>
+          </div>
+        )}
+
         {/* Datos del invitado */}
         <div className="px-4 py-4 sm:px-5">
           <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
@@ -438,6 +472,12 @@ function resultadoEvaluacion(estudio: NonNullable<ICoarrendatario['estudio']>): 
 }
 
 /** El enlace de la invitación expira (7 días); reenviarla renueva la fecha. */
+/** Invitación viva o evaluación sin terminar. */
+function coarrendatarioEnCurso(coa: ICoarrendatario): boolean {
+  if (coa.estado === 'pendiente_aceptacion') return !invitacionVencida(coa)
+  return coa.estado === 'aceptado' && coa.estudio?.estado !== 'completado'
+}
+
 function invitacionVencida(coa: ICoarrendatario): boolean {
   return coa.estado === 'pendiente_aceptacion' && new Date(coa.token_expiracion) < new Date()
 }

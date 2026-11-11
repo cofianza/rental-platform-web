@@ -59,6 +59,7 @@ import type {
   Paso5,
 } from '@/types/contratoV3'
 import type { ParteFirma } from '@/components/contratos/v3/UbicarFirmas'
+import { ROL_FIRMANTE } from '@/components/contratos/v3/Paso5Notificaciones'
 import { formatNumeroEstudio } from '@/lib/utils'
 
 // Mismo roleGuard que el GET del API; propietario y solicitante no llegan aquí.
@@ -230,6 +231,7 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
         esTitular={esTitular}
         puedeEditar={editable}
         onCambio={v3.recargar}
+        evaluadoA5D={resumen?.canon.evaluadoA5D}
       />
       <AvisosContrato avisos={avisos} />
       {resumen && (
@@ -287,7 +289,7 @@ function Asistente({
   const rol = useAuthStore((s) => s.user?.rol)
   // Cofianza lee el proveedor de firma y su costo; la inmobiliaria y el propietario, «firma electrónica».
   const interno = esRolInterno(rol)
-  const porFirma = interno ? 'por Auco (WhatsApp)' : 'por WhatsApp para la firma electrónica'
+  const enlaceFirma = interno ? 'el enlace de Auco para firmar' : 'el enlace para firmar'
   const bloqueadoPorPerfil = miembroDebeCompletarPerfil(useAuthStore((s) => s.user))
   // Adenda 1 de contratos, resp. 14: el exceso de cláusulas lo autoriza solo la Gerencia General.
   const esGerencia = useAuthStore((s) => s.user?.es_gerencia_general === true)
@@ -312,6 +314,8 @@ function Asistente({
   const hayCambios = sucios.length > 0 || borradorFirmas !== null
   const [confirmarCancelar, setConfirmarCancelar] = useState(false)
   const [confirmarEnvio, setConfirmarEnvio] = useState(false)
+  // Ruta B con un arrendatario que no es el solicitante: quien envía confirma que su PDF lo nombra a él.
+  const [confirmaArrendatario, setConfirmaArrendatario] = useState(false)
   // Si el aviso de responsabilidad cambia (409 AVISO_CAMBIADO y recarga), hay que leerlo y aceptarlo de nuevo.
   const [avisoLeido, setAvisoLeido] = useState(adicionales.aviso.version)
   if (avisoLeido !== adicionales.aviso.version) {
@@ -485,6 +489,9 @@ function Asistente({
 
   const enviarAFirma = async () => {
     if (!contrato.documento) return
+    // Ruta B con otro arrendatario que el solicitante: sin la casilla marcada no sale.
+    // La casilla se limpia al cerrar el diálogo (onClose), cuando termina el envío: no durante «Procesando…».
+    if (rutaB && resumen?.arrendatarioEsSolicitante === false && !confirmaArrendatario) return
     const ok = await v3.enviar({
       generacion: contrato.documento.generacion,
       propioSha256: rutaB ? contrato.propio?.sha256 : undefined,
@@ -503,15 +510,18 @@ function Asistente({
   // legal por la inmobiliaria. Los celulares son los del paso 5 guardado (a donde va el WhatsApp).
   const c5 = guardados[5]?.contactos
   const ordenFirma = [
-    { nombre: resumen?.arrendatario.nombre ?? 'Arrendatario', celular: c5?.arrendatario.telefono },
+    { rol: ROL_FIRMANTE.arrendatario, nombre: resumen?.arrendatario.nombre ?? 'Arrendatario', celular: c5?.arrendatario.telefono },
     ...(resumen?.coarrendatario
-      ? [{ nombre: resumen.coarrendatario.nombre, celular: c5?.coarrendatario?.telefono }]
+      ? [{ rol: ROL_FIRMANTE.coarrendatario, nombre: resumen.coarrendatario.nombre, celular: c5?.coarrendatario?.telefono }]
       : []),
     {
+      rol: 'Arrendador',
       nombre: `${resumen?.arrendador.representanteLegal ?? 'Representante legal'} por ${resumen?.arrendador.razonSocial ?? 'la inmobiliaria'}`,
       celular: c5?.arrendador.telefono,
     },
   ]
+  // Ausente (un API anterior) = el solicitante: no se pide la casilla.
+  const pideConfirmarArrendatario = rutaB && resumen?.arrendatarioEsSolicitante === false
   const crc = resumen?.fianza?.crc
   // Ruta B: las mismas partes, para ubicar sus firmas sobre el contrato de la inmobiliaria.
   const partesFirma: ParteFirma[] = [
@@ -607,6 +617,7 @@ function Asistente({
         conBorrador
         onIrPaso={irA}
         onCambio={v3.recargar}
+        evaluadoA5D={resumen?.canon.evaluadoA5D}
       />
       <AvisosContrato avisos={avisos} />
       {/* Textos sin aprobar previstos con lo guardado; con el documento ya generado los muestra la vista previa. */}
@@ -630,6 +641,7 @@ function Asistente({
         puedeEditar={editable}
         conBorrador
         onCambio={v3.recargar}
+        evaluadoA5D={resumen?.canon.evaluadoA5D}
       />
 
       <fieldset
@@ -737,19 +749,25 @@ function Asistente({
 
       <ConfirmDialog
         isOpen={confirmarEnvio}
-        onClose={() => setConfirmarEnvio(false)}
+        onClose={() => {
+          setConfirmarEnvio(false)
+          setConfirmaArrendatario(false)
+        }}
         onConfirm={enviarAFirma}
         title="¿Enviar el contrato a firma?"
+        confirmDisabled={pideConfirmarArrendatario && !confirmaArrendatario}
         message={
           <div className="space-y-3">
+            {resumen?.avisoPartes && <Aviso tono="aviso">{resumen.avisoPartes}</Aviso>}
             <p>
               {contrato.biometriaFirma
-                ? `Primero les llega por correo un enlace para verificar su identidad al arrendatario y, si hay, al coarrendatario. Cuando todos terminen, sale ${porFirma} para firmar en este orden, una parte a la vez:`
-                : `Se enviará ${porFirma} para firmar en este orden, una parte a la vez:`}
+                ? `Primero les llega por correo un enlace para verificar su identidad al arrendatario y, si hay, al coarrendatario. Cuando todos terminen, cada parte recibirá por WhatsApp ${enlaceFirma}, en este orden y una a la vez:`
+                : `Cada parte recibirá por WhatsApp ${enlaceFirma}, en este orden y una a la vez:`}
             </p>
             <ol className="list-decimal space-y-1 pl-5">
               {ordenFirma.map((f, i) => (
-                <li key={i}>
+                <li key={i} className="break-words">
+                  <span className="text-gray-600">{f.rol}: </span>
                   <span className="font-medium text-gray-900">{f.nombre}</span>
                   {f.celular && ` (${f.celular})`}
                 </li>
@@ -760,6 +778,24 @@ function Asistente({
               {rutaB &&
                 ' El PDF de la inmobiliaria va sin modificaciones, seguido de una página divisoria y del Anexo de condiciones. Cada parte firma donde usted ubicó su firma en el contrato de la inmobiliaria y sobre su línea en el Anexo.'}
             </p>
+            {pideConfirmarArrendatario && (
+              <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                {/* Foco inicial aquí: el botón de enviar empieza deshabilitado hasta marcarla. */}
+                <input
+                  type="checkbox"
+                  autoFocus
+                  checked={confirmaArrendatario}
+                  onChange={(e) => setConfirmaArrendatario(e.target.checked)}
+                  disabled={accion === 'enviar'}
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span>
+                  Confirmo que el contrato cargado nombra a{' '}
+                  <span className="font-semibold">{resumen?.arrendatario.nombre ?? 'la persona del resumen'}</span> como
+                  arrendatario.
+                </span>
+              </label>
+            )}
             <p className="font-medium text-gray-900">
               Después de enviarlo, el contrato no se puede editar.{interno ? ' Cada envío consume un crédito de firma.' : ''}
             </p>
