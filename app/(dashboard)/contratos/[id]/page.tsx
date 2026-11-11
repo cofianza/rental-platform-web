@@ -1,6 +1,8 @@
 'use client'
 
 import { motivoRevision } from '@/services/migracionService'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -78,6 +80,8 @@ export default function ContratoDetallePage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const { user } = useAuth()
+  // Cofianza lee el nombre del proveedor de firma; la inmobiliaria y el propietario, «la plataforma de firma».
+  const interno = esRolInterno(useUsuarioVista()?.rol)
 
   const [contrato, setContrato] = useState<IContrato | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -574,7 +578,9 @@ export default function ContratoDetallePage() {
             <div className="flex items-center px-4 py-2.5 border-b border-gray-200 bg-gray-50/70">
               <div className="inline-flex items-center gap-0.5 rounded-lg bg-gray-100 p-0.5">
                 <button
+                  type="button"
                   onClick={() => setVista('pdf')}
+                  aria-pressed={vista === 'pdf'}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                     vista === 'pdf'
                       ? 'bg-white text-gray-900 shadow-sm'
@@ -585,7 +591,9 @@ export default function ContratoDetallePage() {
                   PDF
                 </button>
                 <button
+                  type="button"
                   onClick={() => setVista('verificacion')}
+                  aria-pressed={vista === 'verificacion'}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 ${
                     vista === 'verificacion'
                       ? 'bg-white text-gray-900 shadow-sm'
@@ -604,7 +612,7 @@ export default function ContratoDetallePage() {
                 <IconAlertTriangle size={15} className="shrink-0 mt-px" />
                 <span>
                   Contrato con acuses de firma electrónica adjuntos. El documento con las firmas
-                  estampadas de Auco aún no está disponible — se intentará traer de nuevo al recargar.
+                  estampadas {interno ? 'de Auco' : 'de la plataforma de firma'} aún no está disponible — se intentará traer de nuevo al recargar.
                 </span>
               </div>
             ) : (
@@ -612,10 +620,10 @@ export default function ContratoDetallePage() {
                 <IconFileCheck size={15} className="shrink-0" />
                 <span>
                   {esMigrado
-                    ? `Acta de Migración${contrato.migracion?.lote ? ` del lote ${contrato.migracion.lote.numero}` : ''}, firmada en Auco: incluye a todos los contratos del lote.`
+                    ? `Acta de Migración${contrato.migracion?.lote ? ` del lote ${contrato.migracion.lote.numero}` : ''}, firmada en ${interno ? 'Auco' : 'la plataforma de firma'}: incluye a todos los contratos del lote.`
                     : previewFuente === 'manual'
                       ? 'Documento firmado subido a la plataforma (p. ej. el escaneado de un contrato en papel).'
-                      : 'Documento firmado (con firmas y acuses de Auco) — el mismo que recibe el cliente.'}
+                      : `Documento firmado (con firmas y acuses de ${interno ? 'Auco' : 'la plataforma de firma'}) — el mismo que recibe el cliente.`}
                 </span>
               </div>
             )
