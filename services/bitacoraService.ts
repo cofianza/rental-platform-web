@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api'
+import { leerPaginacion } from '@/lib/paginacion'
 import type {
   IAuditLogFilters,
   IAuditLogsResponse,
@@ -33,14 +34,11 @@ class BitacoraService {
       `/audit-logs${queryString}`,
     )) as unknown as IAuditLogsResponse
 
+    // `meta` o `pagination`: la API vieja mandaba `pagination` y la pantalla
+    // mostraba «0 registros» sin paginación (sirve con las dos).
     return {
       data: response.data || [],
-      meta: {
-        total: response.meta?.total ?? 0,
-        page: Number(response.meta?.page) || 1,
-        limit: Number(response.meta?.limit) || 10,
-        totalPages: response.meta?.totalPages ?? 0,
-      },
+      meta: leerPaginacion(response, filters.limit ?? 10),
     }
   }
 

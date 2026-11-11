@@ -119,6 +119,15 @@ export function PropertyGrid() {
     try {
       const result = await getPublicProperties(buildQuery())
       if (n !== peticionRef.current) return
+      // Enlace viejo (`?page=9`) cuando ya hay menos inmuebles: la API devuelve la
+      // página vacía con el total; se salta a la última página que sí existe.
+      if (result.data.length === 0 && result.meta.totalPages > 0 && page > result.meta.totalPages) {
+        // La petición queda «vieja»: el finally no apaga la carga y el skeleton
+        // sigue hasta la respuesta de la página buena (sin parpadeo de «vacío»).
+        peticionRef.current++
+        setPage(result.meta.totalPages)
+        return
+      }
       setProperties(result.data)
       setTotal(result.meta.total)
       setTotalPages(result.meta.totalPages)
@@ -132,7 +141,7 @@ export function PropertyGrid() {
     } finally {
       if (n === peticionRef.current) setLoading(false)
     }
-  }, [buildQuery, hasActiveFilters])
+  }, [buildQuery, hasActiveFilters, page])
 
   // ── Sync URL ────────────────────────────────
 
