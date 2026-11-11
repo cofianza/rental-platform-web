@@ -29,6 +29,7 @@ import SlotSelector, {
   formatFechaCompleta,
 } from '@/components/citas/SlotSelector'
 import { formatNumeroEstudio } from '@/lib/utils'
+import { esSolicitudNoDisponible, TEXTO_SOLICITUD_NO_DISPONIBLE } from '@/lib/vitrinaInteres'
 
 type Variant = 'primary' | 'sticky'
 
@@ -175,7 +176,11 @@ export function MeInteresaCTA({ inmuebleId, variant = 'primary', resumen }: MeIn
       }
     } catch (interesError: unknown) {
       const errObj = interesError as { code?: string; statusCode?: number; message?: string }
-      if (errObj.code === 'EXPEDIENTE_ALREADY_EXISTS' || errObj.statusCode === 409) {
+      if (esSolicitudNoDisponible(interesError)) {
+        // No hay un estudio suyo que mostrar: un texto neutro, sin «Ver mi estudio».
+        toast.error(TEXTO_SOLICITUD_NO_DISPONIBLE)
+        setShowModal(false)
+      } else if (errObj.code === 'EXPEDIENTE_ALREADY_EXISTS' || errObj.statusCode === 409) {
         toast.error('Ya tiene un estudio activo sobre este inmueble.')
         // Refrescar el check para que la card se re-renderize en modo "Ver mi estudio".
         const refreshed = await expedienteService

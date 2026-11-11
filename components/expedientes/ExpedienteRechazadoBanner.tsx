@@ -32,6 +32,7 @@ import { TarjetaSiguientePaso } from './TarjetaSiguientePaso'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import type { IEstudioHistorial } from '@/types/estudio'
 import { ESTUDIO_NUEVO, MAX_REEVALUACIONES, plazoEfectivoApelacion, reporteQueLimita } from './ReEvaluacionSection'
+import { vigenciaDesdeLaConsulta } from '@/lib/vigenciaReporte'
 
 interface ExpedienteRechazadoBannerProps {
   motivo?: string | null
@@ -147,7 +148,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, ap
       {apelacion !== undefined && (
         <div className="px-4 py-4 sm:px-5">
           {onReevaluar ? (
-            <ApelacionCofianza a={apelacion && leerApelacion(apelacion)} onReevaluar={onReevaluar} />
+            <ApelacionCofianza a={apelacion && leerApelacion(apelacion)} vigencia={vigenciaDesdeLaConsulta(apelacion?.dias_vigencia_reporte)} onReevaluar={onReevaluar} />
           ) : (
             <ApelacionGestor a={apelacion && leerApelacion(apelacion)} />
           )}
@@ -162,15 +163,18 @@ const BOTON = buttonClasses('secondary', 'md', 'mt-3 min-h-10')
 const RECARGUE = 'Recargue la página en unos segundos.'
 const YA_NO_ADMITE = `Este resultado ya no admite apelación. ${ESTUDIO_NUEVO}`
 
-/** Analista o administrador. Sin historial (no se pudo leer), la oferta de siempre: el detalle dice el plazo exacto. */
-function ApelacionCofianza({ a, onReevaluar }: { a: Apelacion | null; onReevaluar: () => void }) {
+/**
+ * Analista o administrador. Sin historial (no se pudo leer), la oferta de siempre: el detalle dice el plazo exacto.
+ * `vigencia`: « (N días desde la consulta)» con los días que manda la API; sin el dato, el texto de siempre (30).
+ */
+function ApelacionCofianza({ a, vigencia, onReevaluar }: { a: Apelacion | null; vigencia: string; onReevaluar: () => void }) {
   if (!a || a.estado === 'abierta' || a.estado === 'plazo_vencido') {
     const texto = a?.estado === 'plazo_vencido'
       ? `Venció el plazo para apelar${a.fecha ? ` (${formatDate(a.fecha)})` : ''}. ${ESTUDIO_NUEVO} Si el solicitante apeló a tiempo por correo u otro canal, registre la fecha en que lo hizo.`
       : `${a?.radicada ? 'La apelación se radicó a tiempo.' : '¿Llegaron documentos que cambian el resultado, por ejemplo el ingreso real del solicitante?'} ${
           a?.fecha
             ? `Se puede reevaluar con el reporte de la central de esta decisión hasta el ${formatDate(a.fecha)}.`
-            : 'Se puede reevaluar dentro de los 15 días hábiles siguientes a esta decisión, mientras siga vigente el reporte de la central (30 días desde la consulta).'
+            : `Se puede reevaluar dentro de los 15 días hábiles siguientes a esta decisión, mientras siga vigente el reporte de la central${vigencia}.`
         }`
     return (
       <div>
@@ -181,7 +185,7 @@ function ApelacionCofianza({ a, onReevaluar }: { a: Apelacion | null; onReevalua
       </div>
     )
   }
-  const vencio = `El reporte de la central venció${a.fecha ? ` el ${formatDate(a.fecha)}` : ''} (30 días desde la consulta)`
+  const vencio = `El reporte de la central venció${a.fecha ? ` el ${formatDate(a.fecha)}` : ''}${vigencia}`
   const texto = {
     actualizando: `La reevaluación se registró y el estudio se está actualizando. ${RECARGUE}`,
     cancelada: `La reevaluación se canceló: la apelación quedó cerrada sin cambiar el resultado. ${ESTUDIO_NUEVO}`,

@@ -12,6 +12,8 @@ export type CoarrendatarioEstado =
   | 'aceptado'
   | 'rechazado_invitacion'
   | 'estudio_completado'
+  /** Salió del estudio (cambio de persona). Su enlace público ya no sirve: la API responde 410. */
+  | 'retirado'
 
 export interface ICoarrendatarioEstudio {
   id: string

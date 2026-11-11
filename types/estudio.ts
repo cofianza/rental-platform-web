@@ -360,10 +360,12 @@ export interface IEstudioHistorial {
   fecha_radicacion_apelacion?: string | null
   /**
    * 'AAAA-MM-DD': último día en que el reporte de la central (la consulta del estudio original)
-   * sirve para decidir la apelación (Política §8: 30 días desde la consulta). Pasado ese día
-   * la reevaluación ya no se puede registrar.
+   * sirve para decidir la apelación (los días de `dias_vigencia_reporte` desde la consulta). Pasado
+   * ese día la reevaluación ya no se puede registrar.
    */
   reporte_vence_el?: string | null
+  /** Días que sirve el reporte desde la consulta, como los calcula la API. Ausente en una API anterior: no se muestra la cifra. */
+  dias_vigencia_reporte?: number | null
   /**
    * Adenda 4 V3 §15: vencido el reporte, Cofianza vuelve a consultar la central
    * una vez por estudio, sin cobro ni cupo. Mientras esté disponible, el reporte
