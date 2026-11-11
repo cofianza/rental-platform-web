@@ -452,11 +452,14 @@ export function ReEvaluacionSection({
                 <span className="truncate max-w-[200px]">{selectedFile.name}</span>
                 <span className="text-gray-500">({formatFileSize(selectedFile.size)})</span>
                 <button
+                  type="button"
                   onClick={() => {
                     setSelectedFile(null)
                     if (fileInputRef.current) fileInputRef.current.value = ''
                   }}
-                  className="text-gray-500 hover:text-gray-600"
+                  aria-label="Quitar archivo"
+                  title="Quitar archivo"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center text-gray-500 hover:text-gray-600"
                 >
                   <IconTrash size={14} />
                 </button>

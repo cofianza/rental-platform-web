@@ -446,6 +446,7 @@ export function Step1InmuebleSelection({
               value={searchTerm}
               onChange={handleSearchChange}
               placeholder={WIZARD_MESSAGES.SEARCH_INMUEBLE_PLACEHOLDER}
+              aria-label="Buscar inmueble"
               className={cn(
                 'block w-full rounded-lg border py-3 pl-10 pr-4 text-base sm:text-sm',
                 'focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-500',
@@ -624,7 +625,9 @@ export function Step1InmuebleSelection({
               <button
                 type="button"
                 onClick={handleClearSelection}
-                className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+                aria-label="Quitar inmueble seleccionado"
+                title="Quitar inmueble seleccionado"
+                className="absolute top-3 right-3 inline-flex min-h-10 min-w-10 items-center justify-center p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
               >
                 <IconX size={16} className="text-gray-600" />
               </button>

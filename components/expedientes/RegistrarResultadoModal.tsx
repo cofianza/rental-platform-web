@@ -121,7 +121,7 @@ export function RegistrarResultadoModal({
       return 'Las condiciones deben tener al menos 10 caracteres'
     }
     if (score && (Number(score) < 0 || Number(score) > 999 || !Number.isInteger(Number(score)))) {
-      return 'El score debe ser un número entero entre 0 y 999'
+      return 'El puntaje de la central debe ser un número entero entre 0 y 999'
     }
     return null
   }
@@ -323,7 +323,7 @@ export function RegistrarResultadoModal({
           {/* Score */}
           <div>
             <label htmlFor="registrar-resultado-modal-score-opcional-0-999" className="block text-sm font-medium text-gray-700 mb-1">
-              Score <span className="text-gray-500">(opcional, 0-999)</span>
+              Puntaje de la central <span className="text-gray-500">(opcional, 0-999)</span>
             </label>
             <input id="registrar-resultado-modal-score-opcional-0-999"
               type="number"

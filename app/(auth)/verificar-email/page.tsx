@@ -142,7 +142,7 @@ function VerifyEmailContent() {
                 },
                 {
                   titulo: 'Estudia al candidato',
-                  detalle: 'El candidato paga su estudio de crédito y recibe el resultado (aprobado, condicionado o no aprobable por ahora) casi al instante.',
+                  detalle: 'El candidato paga su estudio y recibe el resultado de la evaluación crediticia (aprobado, condicionado o no aprobable por ahora) en minutos; si el caso necesita la revisión de un analista, puede tardar un poco más.',
                 },
                 {
                   titulo: 'Genera y firman el contrato',

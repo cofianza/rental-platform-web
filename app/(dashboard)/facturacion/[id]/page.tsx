@@ -173,7 +173,9 @@ export default function FacturaDetallePage() {
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 min-w-0">
           <Link
             href="/facturacion"
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Volver a facturación"
+            title="Volver a facturación"
+            className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <IconArrowLeft size={20} />
           </Link>

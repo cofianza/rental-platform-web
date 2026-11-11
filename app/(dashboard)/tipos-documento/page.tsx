@@ -426,9 +426,12 @@ function TiposDocumentoContent() {
             </div>
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={pagination.page <= 1}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Página anterior"
+                title="Página anterior"
+                className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <IconChevronLeft size={20} />
               </button>
@@ -436,9 +439,12 @@ function TiposDocumentoContent() {
                 {pagination.page} / {pagination.totalPages}
               </span>
               <button
+                type="button"
                 onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                 disabled={pagination.page >= pagination.totalPages}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                aria-label="Página siguiente"
+                title="Página siguiente"
+                className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <IconChevronRight size={20} />
               </button>

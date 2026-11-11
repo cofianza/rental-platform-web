@@ -634,6 +634,7 @@ export function Step2Solicitante({
             value={searchNumDoc}
             onChange={(e) => setSearchNumDoc(e.target.value)}
             placeholder="Número de documento"
+            aria-label="Número de documento"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()

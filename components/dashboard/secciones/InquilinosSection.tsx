@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { dashboardService, type InquilinoRow } from '@/services/dashboardService'
+import { dashboardService, type InquilinoRow, type TonoFicha } from '@/services/dashboardService'
 import {
   IconUsers,
   IconAlertTriangle,
@@ -47,14 +47,11 @@ const resultadoTone = (resultado: string | null): ChipTone => {
   }
 }
 
-// Puntaje de la central (0-999): solo el color de la ficha, sin cifras de corte en el texto (X9).
-const scoreTone = (score: number): ChipTone =>
-  score >= 600 ? 'green' : score >= 450 ? 'yellow' : 'red'
-
-// Carga del arriendo sobre los ingresos declarados del inquilino (canon/ingresos × 100).
-const cargaPct = (canon: number, ingresos: number | null) =>
-  ingresos && ingresos > 0 ? Math.round((canon / ingresos) * 100) : null
-const cargaTone = (pct: number): ChipTone => (pct > 40 ? 'red' : pct > 30 ? 'yellow' : 'green')
+// El color de las fichas (puntaje de la central y carga del arriendo) lo decide
+// el API con los cortes del panel y del motor: aquí no se escriben cortes (M-3).
+// Un API anterior no manda el tono: la ficha queda en gris.
+const TONO: Record<TonoFicha, ChipTone> = { verde: 'green', amarillo: 'yellow', rojo: 'red' }
+const tono = (t: TonoFicha | null | undefined): ChipTone => (t ? TONO[t] : 'gray')
 
 // Campo etiqueta/valor para la ficha de detalle expandible.
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
@@ -270,7 +267,7 @@ export function InquilinosSection() {
         >
           {filtrados.map((r) => {
             const abierto = expanded === r.contratoId
-            const carga = cargaPct(r.canon, r.ingresos)
+            const carga = r.cargaPct ?? null
             return (
               <Fragment key={r.contratoId}>
                 <tr>
@@ -290,7 +287,7 @@ export function InquilinosSection() {
                   <Td>{r.cedula ?? '—'}</Td>
                   <Td>{r.inmueble}</Td>
                   <Td>{money(r.canon)}</Td>
-                  <Td>{r.score != null ? <Chip tone={scoreTone(r.score)}>{r.score}</Chip> : '—'}</Td>
+                  <Td>{r.score != null ? <Chip tone={tono(r.scoreTono)}>{r.score}</Chip> : '—'}</Td>
                   <Td>
                     {r.resultado ? (
                       <Chip tone={resultadoTone(r.resultado)}>{capitalizar(r.resultado)}</Chip>
@@ -356,7 +353,7 @@ export function InquilinosSection() {
                         <Campo label="Actividad económica">{r.actividadEconomica ?? '—'}</Campo>
                         <Campo label="Ingresos declarados">{r.ingresos != null ? money(r.ingresos) : '—'}</Campo>
                         <Campo label="Carga sobre ingreso declarado">
-                          {carga != null ? <Chip tone={cargaTone(carga)}>{carga}%</Chip> : '—'}
+                          {carga != null ? <Chip tone={tono(r.cargaTono)}>{carga}%</Chip> : '—'}
                         </Campo>
                         <Campo label="Vence">{fechaCorta(r.fechaFin)}</Campo>
                       </div>

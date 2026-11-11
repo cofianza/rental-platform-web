@@ -1741,7 +1741,8 @@ export default function AutorizarPage() {
             rows={3}
             onChange={(e) => setReporteDetalle(e.target.value)}
             placeholder="¿Quiere contarnos algo más? (opcional)"
-            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+            aria-label="Detalle adicional (opcional)"
+            className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
           />
           {reporteError && (
             <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{reporteError}</div>

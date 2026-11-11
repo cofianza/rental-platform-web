@@ -601,7 +601,10 @@ export function GaleriaSection({ inmuebleId, canEdit = false, onFachadaChange }:
                   onClick={() =>
                     setUploadingFiles((prev) => prev.filter((u) => u.id !== uf.id))
                   }
-                  className="p-1 text-gray-500 hover:text-gray-600"
+                  type="button"
+                  aria-label="Descartar archivo con error"
+                  title="Descartar archivo con error"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center p-1 text-gray-500 hover:text-gray-600"
                 >
                   <IconX size={16} />
                 </button>

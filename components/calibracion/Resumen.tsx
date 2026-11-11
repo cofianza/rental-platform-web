@@ -7,7 +7,7 @@
  * de consulta: va al final y plegada.
  */
 
-import type { IHistorialCalibracion, IParametroCalibracion } from '@/services/calibracionService'
+import type { IHistorialCalibracion, IParametroCalibracion, ITablasPuntaje } from '@/services/calibracionService'
 import { IconAlertTriangle, IconArrowRight, IconChevronDown, IconLock, IconPencil } from '@/components/icons'
 import { EscalaA5D, EscalaDecision } from './EscalaDecision'
 import { ComoSeCalcula, ComoSeCalculaA5D } from './ComoSeCalcula'
@@ -17,6 +17,7 @@ import { a5dEncendida, conUnidad, metaDe, rigeHoy, type SeccionId, type Valores 
 interface Props {
   params: IParametroCalibracion[]
   valores: Valores
+  tablas: ITablasPuntaje | null
   ultimo: Map<string, IHistorialCalibracion>
   onAbrir: (clave: string) => void
   onIr: (v: SeccionId) => void
@@ -75,7 +76,7 @@ function Tarjeta({
   )
 }
 
-export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
+export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Props) {
   const a5d = a5dEncendida(valores)
   // La Adenda 5 solo si el API la trae: con uno anterior, el resumen queda como estaba.
   const hayA5d = params.some((p) => p.clave === 'ADENDA5_DEF')
@@ -200,12 +201,12 @@ export function Resumen({ params, valores, ultimo, onAbrir, onIr }: Props) {
         titulo="Cómo se calcula el puntaje del solicitante"
         ayuda={
           a5d
-            ? 'La fórmula de la Adenda 5 definitiva: nueve factores que suman hasta 119 puntos y se llevan a una escala de 0 a 100.'
+            ? 'La fórmula de la Adenda 5 definitiva: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
             : 'La fórmula de la Política: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
         }
         plegable
       >
-        <div className="px-4 py-4 sm:px-5">{a5d ? <ComoSeCalculaA5D valores={valores} /> : <ComoSeCalcula valores={valores} />}</div>
+        <div className="px-4 py-4 sm:px-5">{a5d ? <ComoSeCalculaA5D valores={valores} tablas={tablas} /> : <ComoSeCalcula valores={valores} tablas={tablas} />}</div>
       </Tarjeta>
     </div>
   )

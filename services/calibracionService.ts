@@ -76,6 +76,31 @@ export interface IRevisionManual {
   }
 }
 
+/** Fila de una tabla de puntos: `corte` es la cota inferior (V1, V8) o la superior inclusiva (V2, V3). */
+export interface IFilaTabla {
+  corte: number
+  puntos: number
+}
+
+/**
+ * Las tablas de puntos del motor (M-3). Viven solo en el API: la web las pide
+ * aquí y las pinta, sin copias escritas a mano.
+ */
+export interface ITablasPuntaje {
+  maximos: Record<'V1' | 'V2' | 'V3' | 'V4' | 'V5' | 'V6' | 'V7' | 'V8' | 'V9', number>
+  divisor: number
+  fuera_de_alcance: string[]
+  v1: IFilaTabla[]
+  v2: IFilaTabla[]
+  v2_maximo: number
+  v3: IFilaTabla[]
+  v3_maximo: number
+  v5: { financiero: number; real_o_cooperativo: number }
+  v6: { sin_mora: number; sin_historial: number; mora_mayor_30d: number; ventana_meses: number }
+  v8: IFilaTabla[]
+  a5d: { mora_en_banda: number }
+}
+
 export const calibracionService = {
   async listar(): Promise<IParametroCalibracion[]> {
     const res = await apiClient.get<IParametroCalibracion[]>('/admin/calibracion')
@@ -87,6 +112,10 @@ export const calibracionService = {
   },
   async actualizar(clave: string, valor: number, motivo?: string): Promise<IParametroCalibracion> {
     const res = await apiClient.patch<IParametroCalibracion>(`/admin/calibracion/${clave}`, { valor, motivo })
+    return res.data
+  },
+  async getTablas(): Promise<ITablasPuntaje> {
+    const res = await apiClient.get<ITablasPuntaje>('/admin/calibracion/tablas')
     return res.data
   },
   async getCascada(dias = 30): Promise<ICascadaCentrales> {

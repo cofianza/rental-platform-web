@@ -42,12 +42,16 @@ export function ContratosFilters({
           value={filters.search || ''}
           onChange={(e) => onFilterChange({ search: e.target.value || undefined })}
           placeholder="Buscar por arrendatario, cédula, dirección, código o N° de contrato…"
-          className="w-full pl-9 pr-8 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          aria-label="Buscar contratos"
+          className="w-full pl-9 pr-10 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         />
         {filters.search && (
           <button
+            type="button"
             onClick={() => onFilterChange({ search: undefined })}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            aria-label="Limpiar búsqueda"
+            title="Limpiar búsqueda"
+            className="absolute inset-y-0 right-0 flex min-w-10 items-center justify-center"
           >
             <IconX size={14} className="text-gray-500 hover:text-gray-600" />
           </button>

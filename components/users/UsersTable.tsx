@@ -189,19 +189,25 @@ export function UsersTable({
                   href={`/usuarios/${user.id}`}
                   title="Ver perfil"
                   aria-label="Ver perfil"
-                  className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                 >
                   <IconEye size={18} />
                 </Link>
                 <button
+                  type="button"
                   onClick={() => onEdit(user)}
-                  className="p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+                  aria-label="Editar usuario"
+                  title="Editar usuario"
+                  className="inline-flex min-h-10 min-w-10 items-center justify-center p-1.5 text-gray-500 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                 >
                   <IconEdit size={18} />
                 </button>
                 <button
+                  type="button"
                   onClick={() => onToggleStatus(user)}
-                  className={`p-1.5 rounded transition-colors ${
+                  aria-label={user.estado === 'activo' ? 'Desactivar usuario' : 'Activar usuario'}
+                  title={user.estado === 'activo' ? 'Desactivar usuario' : 'Activar usuario'}
+                  className={`inline-flex min-h-10 min-w-10 items-center justify-center p-1.5 rounded transition-colors ${
                     user.estado === 'activo'
                       ? 'text-gray-500 hover:text-red-600 hover:bg-red-50'
                       : 'text-gray-500 hover:text-green-600 hover:bg-green-50'
@@ -212,8 +218,9 @@ export function UsersTable({
                 {onResetPassword && (
                   <button
                     onClick={() => onResetPassword(user)}
-                    className="p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                    className="inline-flex min-h-10 min-w-10 items-center justify-center p-1.5 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
                     title="Restablecer contraseña"
+                    aria-label="Restablecer contraseña"
                   >
                     <IconLock size={18} />
                   </button>
@@ -221,8 +228,9 @@ export function UsersTable({
                 {onDelete && (
                   <button
                     onClick={() => onDelete(user)}
-                    className="p-1.5 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                    className="inline-flex min-h-10 min-w-10 items-center justify-center p-1.5 text-gray-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                     title="Eliminar usuario"
+                    aria-label="Eliminar usuario"
                   >
                     <IconTrash size={18} />
                   </button>

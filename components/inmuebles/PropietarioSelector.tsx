@@ -170,7 +170,9 @@ export function PropietarioSelector({
             <button
               type="button"
               onClick={handleClear}
-              className="p-1 hover:bg-gray-100 rounded"
+              aria-label="Quitar propietario"
+              title="Quitar propietario"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center p-1 hover:bg-gray-100 rounded"
             >
               <IconX size={16} className="text-gray-500" />
             </button>
