@@ -165,7 +165,7 @@ const YA_NO_ADMITE = `Este resultado ya no admite apelación. ${ESTUDIO_NUEVO}`
 
 /**
  * Analista o administrador. Sin historial (no se pudo leer), la oferta de siempre: el detalle dice el plazo exacto.
- * `vigencia`: « (N días desde la consulta)» con los días que manda la API, o vacío sin el dato.
+ * `vigencia`: « (N días desde la consulta)» con los días que manda la API; sin el dato, el texto de siempre (30).
  */
 function ApelacionCofianza({ a, vigencia, onReevaluar }: { a: Apelacion | null; vigencia: string; onReevaluar: () => void }) {
   if (!a || a.estado === 'abierta' || a.estado === 'plazo_vencido') {
