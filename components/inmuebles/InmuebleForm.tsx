@@ -490,7 +490,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       newErrors.parqueaderos = 'Máximo 99 parqueaderos'
     }
     if (formData.piso.trim().length > PISO_MAX) {
-      newErrors.piso = `Máximo ${PISO_MAX} caracteres (ej.: 5 o Apto 501)`
+      newErrors.piso = `Máximo ${PISO_MAX} caracteres (Ej: 5 o Apto 501)`
     }
 
     setErrors(newErrors)
