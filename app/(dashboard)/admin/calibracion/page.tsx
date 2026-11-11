@@ -38,6 +38,7 @@ import {
   type ITablasPuntaje,
 } from '@/services/calibracionService'
 import Link from 'next/link'
+import { toast } from 'sonner'
 import { IconBank, IconLock, IconSearch, IconChevronDown, IconRefresh, IconX } from '@/components/icons'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { cn } from '@/lib/utils'
@@ -45,7 +46,7 @@ import { EditarParametro } from '@/components/calibracion/EditarParametro'
 import { Historial } from '@/components/calibracion/Historial'
 import { Indicadores } from '@/components/calibracion/Indicadores'
 import { ParametroFila } from '@/components/calibracion/ParametroFila'
-import { Resumen } from '@/components/calibracion/Resumen'
+import { NotaPrima, Resumen } from '@/components/calibracion/Resumen'
 import { AvisoA5d, BandasMora, previaA5d, Relacionados, TablaAnclajes } from '@/components/calibracion/Adenda5'
 import { EscalaA5D } from '@/components/calibracion/EscalaDecision'
 import { ComoSeCalculaA5D } from '@/components/calibracion/ComoSeCalcula'
@@ -131,6 +132,22 @@ export default function AdminCalibracionPage() {
     window.history.replaceState(null, '', `#${v}`)
     window.scrollTo({ top: 0 })
     requestAnimationFrame(() => contenidoRef.current?.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true }))
+  }
+  // Indicadores y tablas de puntos son informativos: si fallaron, se vuelven a pedir sin recargar el panel.
+  // Solo se pide lo que faltó; si vuelve a fallar, se avisa.
+  const reintentarIndicadores = async () => {
+    const [c, r] = await Promise.all([
+      cascada ?? calibracionService.getCascada(30).catch(() => null),
+      revision ?? calibracionService.getRevisionManual(30).catch(() => null),
+    ])
+    setCascada(c)
+    setRevision(r)
+    if (!c || !r) toast.error('No se pudieron cargar los indicadores. Intente de nuevo en un momento.')
+  }
+  const reintentarTablas = async () => {
+    const t = await calibracionService.getTablas().catch(() => null)
+    setTablas(t)
+    if (!t) toast.error('No se pudieron cargar las tablas de puntos. Intente de nuevo en un momento.')
   }
   const reintentar = () => {
     setLoading(true)
@@ -357,11 +374,11 @@ export default function AdminCalibracionPage() {
 
               <div ref={contenidoRef} className="min-w-0">
                 {vista === 'resumen' ? (
-                  <Resumen params={params} valores={valores} tablas={tablas} ultimo={ultimo} onAbrir={setAbierto} onIr={irA} />
+                  <Resumen params={params} valores={valores} tablas={tablas} ultimo={ultimo} onAbrir={setAbierto} onIr={irA} onReintentarTablas={reintentarTablas} />
                 ) : vista === 'indicadores' ? (
                   <>
                     <Encabezado titulo="Indicadores de los últimos 30 días" ayuda="Cómo se están comportando las centrales y la revisión manual. Sirven para decidir si conviene mover un valor." />
-                    <Indicadores cascada={cascada} revision={revision} />
+                    <Indicadores cascada={cascada} revision={revision} onReintentar={reintentarIndicadores} />
                   </>
                 ) : vista === 'historial' ? (
                   <>
@@ -369,7 +386,7 @@ export default function AdminCalibracionPage() {
                     <Historial historial={historial} params={params} error={errorHistorial} onReintentar={reintentar} />
                   </>
                 ) : (
-                  <Seccion id={vista} params={params} valores={valores} tablas={tablas} fila={fila} onAbrir={setAbierto} onIr={irA} />
+                  <Seccion id={vista} params={params} valores={valores} tablas={tablas} fila={fila} onAbrir={setAbierto} onIr={irA} onReintentarTablas={reintentarTablas} />
                 )}
               </div>
             </div>
@@ -418,6 +435,7 @@ function Seccion({
   fila,
   onAbrir,
   onIr,
+  onReintentarTablas,
 }: {
   id: SeccionId
   params: IParametroCalibracion[]
@@ -426,6 +444,7 @@ function Seccion({
   fila: (p: IParametroCalibracion) => ReactNode
   onAbrir: (clave: string) => void
   onIr: (v: SeccionId) => void
+  onReintentarTablas: () => Promise<void>
 }) {
   const s = SECCIONES.find((x) => x.id === id)!
   const propios = params.filter((p) => metaDe(p.clave).seccion === id)
@@ -447,11 +466,12 @@ function Seccion({
           </h3>
           <p className="mt-0.5 max-w-prose text-sm text-gray-600">Con los valores de esta sección. Toque un número para cambiarlo.</p>
           <div className="mt-4">
-            <EscalaA5D valores={valores} onAbrir={onAbrir} />
+            <EscalaA5D valores={valores} onAbrir={onAbrir} params={params} />
           </div>
         </section>
       )}
       {id === 'a5d_mora' && <BandasMora valores={valores} />}
+      {id === 'precios' && !a5dEncendida(valores) && <NotaPrima />}
     </>
   )
 
@@ -480,7 +500,7 @@ function Seccion({
               <IconChevronDown size={18} className="shrink-0 text-gray-500 transition-transform group-open:rotate-180 motion-reduce:transition-none" />
             </summary>
             <div className="border-t border-gray-100 px-4 py-4 sm:px-5">
-              <ComoSeCalculaA5D valores={valores} tablas={tablas} />
+              <ComoSeCalculaA5D valores={valores} tablas={tablas} onReintentar={onReintentarTablas} />
             </div>
           </details>
         )}

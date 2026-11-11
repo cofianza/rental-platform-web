@@ -137,7 +137,7 @@ export function ParametroFila({ p, valores, ultimo, onAbrir }: Props) {
             <span className="font-semibold">Cuándo aplica:</span> {meta.notaRige}.
           </p>
         )}
-        {p.advertencia && (
+        {p.advertencia && humanizar(p.advertencia) && (
           <p className="mt-1.5 flex items-start gap-1.5 text-xs text-amber-800">
             <IconAlertTriangle size={13} className="mt-0.5 shrink-0" />
             <span>{humanizar(p.advertencia)}</span>

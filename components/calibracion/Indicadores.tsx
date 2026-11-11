@@ -6,6 +6,7 @@
 
 import type { ICascadaCentrales, IRevisionManual } from '@/services/calibracionService'
 import { formatDate } from '@/lib/constants'
+import { BotonReintentar } from './BotonReintentar'
 
 const pct = (n: number, total: number) => (total > 0 ? `${Math.round((n / total) * 100)} %` : '—')
 const num = (n: number) => n.toLocaleString('es-CO')
@@ -30,8 +31,21 @@ function Bloque({ titulo, ayuda, children }: { titulo: string; ayuda: string; ch
   )
 }
 
-export function Indicadores({ cascada, revision }: { cascada: ICascadaCentrales | null; revision: IRevisionManual | null }) {
-  const sinCargar = <p className="text-sm text-gray-500">No se pudo cargar este resumen.</p>
+export function Indicadores({
+  cascada,
+  revision,
+  onReintentar,
+}: {
+  cascada: ICascadaCentrales | null
+  revision: IRevisionManual | null
+  onReintentar?: () => Promise<void>
+}) {
+  const sinCargar = (
+    <div className="flex flex-wrap items-center gap-3">
+      <p className="text-sm text-gray-600">No se pudo cargar este resumen.</p>
+      {onReintentar && <BotonReintentar onReintentar={onReintentar} />}
+    </div>
+  )
   return (
     <div className="space-y-4">
       <Bloque titulo="Consultas a las centrales de riesgo" ayuda="Cuántos estudios se decidieron con una sola central y cuántos necesitaron las dos.">

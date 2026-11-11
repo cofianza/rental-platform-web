@@ -17,6 +17,7 @@ import {
   textoPuntajeCentral,
 } from '@/lib/tablasPuntaje'
 import { anclajes, fmt, puntosDeScore, type Valores } from './parametros'
+import { BotonReintentar } from './BotonReintentar'
 
 interface Factor {
   nombre: string
@@ -96,8 +97,13 @@ function conclusionEjemplo(v: Valores, puntaje: number): string {
 }
 
 /** Sin las tablas del API no hay qué mostrar: se dice, sin inventar cifras. */
-export function SinTablas() {
-  return <p className="text-sm text-gray-600">No se pudieron cargar las tablas de puntos. Recargue la página para intentarlo de nuevo.</p>
+export function SinTablas({ onReintentar }: { onReintentar?: () => Promise<void> }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <p className="text-sm text-gray-600">No se pudieron cargar las tablas de puntos.</p>
+      {onReintentar && <BotonReintentar onReintentar={onReintentar} />}
+    </div>
+  )
 }
 
 /** La lista de factores, igual en las dos versiones: una lista y no una tabla, para que quepa en el celular. */
@@ -182,10 +188,10 @@ function factoresA5d(v: Valores, tb: ITablasPuntaje): Factor[] {
 /** El caso 2 de la adenda (score 660, lo demás completo), con los valores del panel. */
 const SCORE_EJEMPLO = 660
 
-export function ComoSeCalculaA5D({ valores, tablas }: { valores: Valores; tablas: ITablasPuntaje | null }) {
+export function ComoSeCalculaA5D({ valores, tablas, onReintentar }: { valores: Valores; tablas: ITablasPuntaje | null; onReintentar?: () => Promise<void> }) {
   const t = anclajes(valores)
   if (!t) return null
-  if (!tablas) return <SinTablas />
+  if (!tablas) return <SinTablas onReintentar={onReintentar} />
   const v1 = puntosDeScore(t, SCORE_EJEMPLO)
   // Lo demás completo; sin acreditar, las variables sin fuente (seguridad social, estabilidad y arriendos) no suman.
   const divisor = tablas.divisor
@@ -223,8 +229,8 @@ export function ComoSeCalculaA5D({ valores, tablas }: { valores: Valores; tablas
   )
 }
 
-export function ComoSeCalcula({ valores, tablas }: { valores: Valores; tablas: ITablasPuntaje | null }) {
-  if (!tablas) return <SinTablas />
+export function ComoSeCalcula({ valores, tablas, onReintentar }: { valores: Valores; tablas: ITablasPuntaje | null; onReintentar?: () => Promise<void> }) {
+  if (!tablas) return <SinTablas onReintentar={onReintentar} />
   const ej = ejemplo(tablas)
   const max = alcanzable(tablas)
   const sinIngreso = max - tablas.maximos.V2 - tablas.maximos.V3

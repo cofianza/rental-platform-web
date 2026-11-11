@@ -22,6 +22,7 @@ import { SkeletonTable } from '@/components/ui/Skeleton'
 import { IconArrowLeft, IconLoader, IconLock, IconPlus, IconRefresh, IconSearch } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { useAcreedores } from '@/hooks/useAcreedores'
+import { calibracionService } from '@/services/calibracionService'
 import { formatDate } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import {
@@ -91,7 +92,7 @@ function DialogoClasificar({
       footer={
         <ModalAcciones>
           <button type="button" onClick={onClose} disabled={guardando} className={botonModal('secondary')}>
-            Volver
+            Cancelar
           </button>
           <button type="button" onClick={guardar} disabled={!valido || guardando} aria-busy={guardando || undefined} className={botonModal('primary')}>
             {guardando && <IconLoader size={16} className="animate-spin" />}
@@ -196,6 +197,31 @@ export default function AcreedoresPage() {
   const [agregando, setAgregando] = useState(false)
   const idBusqueda = useId()
   const idCentral = useId()
+  // Si la Adenda 5 está encendida: lo lee la calibración, que solo puede leer un
+  // administrador. null = no se sabe (gerencia, o la lectura falló): se dice condicionado.
+  // 'cargando': el administrador todavía no lo sabe; no se muestra nada para que el texto no salte.
+  const [a5d, setA5d] = useState<boolean | null | 'cargando'>('cargando')
+  useEffect(() => {
+    let vivo = true
+    if (!puedeEditar) {
+      queueMicrotask(() => vivo && setA5d(null))
+      return () => {
+        vivo = false
+      }
+    }
+    calibracionService
+      .listar()
+      .then((ps) => {
+        const p = ps.find((x) => x.clave === 'ADENDA5_DEF')
+        if (vivo) setA5d(p ? p.valor === 1 : null)
+      })
+      .catch(() => vivo && setA5d(null))
+    return () => {
+      vivo = false
+    }
+  }, [puedeEditar])
+  const avisoApagada =
+    a5d === true || a5d === 'cargando' ? '' : a5d === false ? ' Hoy no cambia ningún resultado: aplica al encender la Adenda 5.' : ' Mientras la Adenda 5 esté apagada no cambia ningún resultado.'
 
   // La búsqueda se manda al dejar de escribir.
   useEffect(() => {
@@ -252,7 +278,7 @@ export default function AcreedoresPage() {
       )}
       <PageHeader
         title="Lista de acreedores"
-        subtitle="Cómo se clasifica cada acreedor que reportan las centrales: financiero, telefonía o comercio y otros sectores. Aplica a las evaluaciones con las reglas de la Adenda 5. Mientras un acreedor esté pendiente, las evaluaciones lo clasifican por el sector que reporta la central."
+        subtitle={`Cómo se clasifica cada acreedor que reportan las centrales: financiero, telefonía o comercio y otros sectores. Aplica a las evaluaciones con las reglas de la Adenda 5. Mientras un acreedor esté pendiente, las evaluaciones lo clasifican por el sector que reporta la central.${avisoApagada}`}
         actions={
           puedeEditar ? (
             <button type="button" onClick={() => setAgregando(true)} className={botonModal('primary')}>
@@ -341,7 +367,12 @@ export default function AcreedoresPage() {
           {q
             ? `Ningún acreedor coincide con «${q}».`
             : estado === 'pendiente'
-              ? `No hay acreedores pendientes de clasificar${central ? ` en ${NOMBRE_CENTRAL[central]}` : ''}.`
+              ? `No hay acreedores pendientes de clasificar${central ? ` en ${NOMBRE_CENTRAL[central]}` : ''}.${
+                  // Con la adenda apagada solo los registra el modo sombra (SOMBRA_A5D_ENABLED), si está encendido.
+                  a5d === true || a5d === 'cargando'
+                    ? ''
+                    : ' Mientras la Adenda 5 esté apagada, los acreedores pendientes solo llegan si Tecnología tiene encendido su modo de prueba; mientras tanto, las decisiones no los usan.'
+                }`
               : `Todavía no hay acreedores clasificados${central ? ` en ${NOMBRE_CENTRAL[central]}` : ''}.`}
         </p>
       ) : (

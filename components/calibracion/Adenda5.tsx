@@ -19,6 +19,7 @@ import {
   metaDe,
   N_ANCLAJES,
   puntosDeScore,
+  verboParametro,
   type SeccionId,
   type Valores,
 } from './parametros'
@@ -49,7 +50,7 @@ export function AvisoA5d({ onIr }: { onIr?: (v: SeccionId) => void }) {
 }
 
 /** Para el número tocable: «Ver» si este usuario no puede cambiarlo. */
-const verbo = (p?: IParametroCalibracion) => (p && (p.editable === false || p.min === p.max) ? 'Ver' : 'Cambiar')
+const verbo = verboParametro
 
 /**
  * La tabla que convierte el score en puntos. Con `onAbrir`, cada número abre
@@ -100,7 +101,7 @@ export function TablaAnclajes({
         >
           {texto}
         </button>
-        {inicial && <span className="mt-0.5 text-[11px] text-gray-500">Valor inicial: {inicial}</span>}
+        {inicial && <span className="mt-0.5 text-xs text-gray-600">Valor inicial: {inicial}</span>}
       </span>
     )
   }

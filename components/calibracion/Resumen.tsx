@@ -8,11 +8,11 @@
  */
 
 import type { IHistorialCalibracion, IParametroCalibracion, ITablasPuntaje } from '@/services/calibracionService'
-import { IconAlertTriangle, IconArrowRight, IconChevronDown, IconLock, IconPencil } from '@/components/icons'
+import { IconArrowRight, IconChevronDown, IconInfo, IconLock, IconPencil } from '@/components/icons'
 import { EscalaA5D, EscalaDecision } from './EscalaDecision'
 import { ComoSeCalcula, ComoSeCalculaA5D } from './ComoSeCalcula'
 import { ParametroFila } from './ParametroFila'
-import { a5dEncendida, conUnidad, metaDe, rigeHoy, type SeccionId, type Valores } from './parametros'
+import { a5dEncendida, conUnidad, metaDe, NOTA_PRIMA_HOY, rigeHoy, type SeccionId, type Valores } from './parametros'
 
 interface Props {
   params: IParametroCalibracion[]
@@ -21,6 +21,8 @@ interface Props {
   ultimo: Map<string, IHistorialCalibracion>
   onAbrir: (clave: string) => void
   onIr: (v: SeccionId) => void
+  /** Vuelve a pedir las tablas de puntos si no cargaron. */
+  onReintentarTablas?: () => Promise<void>
 }
 
 const REGLAS = ['ADENDA3_V2', 'ADENDA4', 'ADENDA5_DEF']
@@ -76,7 +78,17 @@ function Tarjeta({
   )
 }
 
-export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Props) {
+/** La prima de hoy no se calibra aquí: se dice para que nadie la busque en el panel. */
+export function NotaPrima({ className = '' }: { className?: string }) {
+  return (
+    <p className={`flex items-start gap-2 rounded-lg bg-gray-50 p-3 text-sm text-gray-700 ${className}`}>
+      <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
+      <span>{NOTA_PRIMA_HOY}</span>
+    </p>
+  )
+}
+
+export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr, onReintentarTablas }: Props) {
   const a5d = a5dEncendida(valores)
   // La Adenda 5 solo si el API la trae: con uno anterior, el resumen queda como estaba.
   const hayA5d = params.some((p) => p.clave === 'ADENDA5_DEF')
@@ -128,7 +140,7 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
         <h2 id="antes-de-cambiar" tabIndex={-1} className="text-sm font-semibold text-gray-900 focus:outline-none">
           Antes de cambiar un valor
         </h2>
-        <ul className="mt-2 grid gap-x-6 gap-y-2 text-sm text-gray-700 xl:grid-cols-3">
+        <ul className="mt-2 grid gap-x-6 gap-y-2 text-sm text-gray-700 xl:grid-cols-2">
           <li className="flex items-start gap-2">
             <IconPencil size={16} className="mt-0.5 shrink-0 text-primary-700" />
             <span>Toque un valor para ver qué hace y cambiarlo. El cambio aplica de inmediato a lo que se procese después.</span>
@@ -140,10 +152,6 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
               valor se indica si usted puede cambiarlo.
             </span>
           </li>
-          <li className="flex items-start gap-2">
-            <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
-            <span>Antes de mover un puntaje o un tope, Tecnología debe validar la matriz de casos de prueba.</span>
-          </li>
         </ul>
       </section>
 
@@ -154,7 +162,7 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
           accion={verTodo('a5d_motor', 'Ver el motor de la Adenda 5')}
         >
           <div className="px-4 py-4 sm:px-5">
-            <EscalaA5D valores={valores} onAbrir={onAbrir} />
+            <EscalaA5D valores={valores} onAbrir={onAbrir} params={params} />
           </div>
         </Tarjeta>
       ) : (
@@ -164,13 +172,13 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
           accion={verTodo('aprobacion', 'Ver todos los puntajes')}
         >
           <div className="px-4 py-4 sm:px-5">
-            <EscalaDecision valores={valores} onAbrir={onAbrir} />
+            <EscalaDecision valores={valores} onAbrir={onAbrir} params={params} />
           </div>
         </Tarjeta>
       )}
 
       <Tarjeta
-        titulo="Reglas encendidas"
+        titulo="Paquetes de reglas"
         ayuda="Paquetes de reglas que se encienden o apagan completos."
         accion={hayA5d ? verTodo('a5d_motor', 'Ver la Adenda 5') : undefined}
       >
@@ -183,6 +191,7 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
 
       <Tarjeta titulo="Lo que se cobra" accion={verTodo('precios', 'Ver precios y cobros')}>
         <ul className="grid gap-3 p-4 sm:grid-cols-2 sm:p-5 xl:grid-cols-4">{de(a5d ? COBROS_A5D : COBROS).map(cifra)}</ul>
+        {!a5d && <NotaPrima className="mx-4 mb-4 sm:mx-5 sm:mb-5" />}
       </Tarjeta>
 
       <Tarjeta
@@ -202,11 +211,15 @@ export function Resumen({ params, valores, tablas, ultimo, onAbrir, onIr }: Prop
         ayuda={
           a5d
             ? 'La fórmula de la Adenda 5: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
-            : 'La fórmula de la Política: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
+            : 'La fórmula de hoy: nueve factores que suman puntos y se llevan a una escala de 0 a 100.'
         }
         plegable
       >
-        <div className="px-4 py-4 sm:px-5">{a5d ? <ComoSeCalculaA5D valores={valores} tablas={tablas} /> : <ComoSeCalcula valores={valores} tablas={tablas} />}</div>
+        <div className="px-4 py-4 sm:px-5">{a5d ? (
+            <ComoSeCalculaA5D valores={valores} tablas={tablas} onReintentar={onReintentarTablas} />
+          ) : (
+            <ComoSeCalcula valores={valores} tablas={tablas} onReintentar={onReintentarTablas} />
+          )}</div>
       </Tarjeta>
     </div>
   )
