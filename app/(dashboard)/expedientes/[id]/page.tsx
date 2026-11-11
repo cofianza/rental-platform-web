@@ -1426,6 +1426,7 @@ function ExpedienteDetalleContenido() {
               sinInmueble={!expediente.inmueble}
               inmuebleReservadoPorOtro={reservadoPorOtro}
               conComision={!!expediente.inmueble?.inmobiliaria_id}
+              esperaSegundoFirmante={etapa === 'espera_coarrendatario' || esEsperaDePersona(etapa, !!condicionCoa)}
               onContratoActualizado={handleContratoActualizado}
             />
           </div>

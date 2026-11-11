@@ -86,6 +86,12 @@ interface CoarrendatarioInviteFormProps {
 
 type Campo = 'nombre' | 'apellido' | 'numDoc' | 'email' | 'telefono'
 
+/**
+ * La API no deja invitar en este estudio (p. ej. propietario directo, COARRENDATARIO_CANAL_PROPIETARIO):
+ * su motivo queda a la vista en lugar del formulario, no en un toast de 4 s.
+ */
+const SIN_INVITACION = ['COARRENDATARIO_CANAL_PROPIETARIO']
+
 // Errores de la API que van junto a un campo (UX #4): el correo, el WhatsApp o
 // el documento del titular. El mensaje no trae el dato del titular.
 const CAMPO_DEL_ERROR: Record<string, Campo> = {
@@ -130,6 +136,7 @@ export function CoarrendatarioInviteForm({
   // Con datos precargados abrimos el formulario de una: esconderlo tras
   // "Agregar coarrendatario" ocultaria justo la prueba de que ya los tenemos.
   const [showForm, setShowForm] = useState(!!initial)
+  const [noSePuede, setNoSePuede] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [nombre, setNombre] = useState(initial?.nombre ?? '')
   const [apellido, setApellido] = useState(initial?.apellido ?? '')
@@ -172,8 +179,12 @@ export function CoarrendatarioInviteForm({
       setNombre(''); setApellido(''); setNumDoc(''); setEmail(''); setTelefono('')
       onInvited?.()
     } catch (err) {
-      const campo = CAMPO_DEL_ERROR[(err as { code?: string })?.code ?? '']
-      if (campo && err instanceof Error) {
+      const codigo = (err as { code?: string })?.code ?? ''
+      const campo = CAMPO_DEL_ERROR[codigo]
+      if (SIN_INVITACION.includes(codigo) && err instanceof Error) {
+        setNoSePuede(err.message)
+        setShowForm(false)
+      } else if (campo && err instanceof Error) {
         setErrores({ [campo]: err.message })
         document.getElementById(idDe(campo))?.focus()
       } else {
@@ -286,7 +297,12 @@ export function CoarrendatarioInviteForm({
         </div>
       </div>
 
-      {!showForm ? (
+      {noSePuede ? (
+        <p role="alert" className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <IconAlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" aria-hidden="true" />
+          <span>{noSePuede}</span>
+        </p>
+      ) : !showForm ? (
         <button
           type="button"
           onClick={() => setShowForm(true)}

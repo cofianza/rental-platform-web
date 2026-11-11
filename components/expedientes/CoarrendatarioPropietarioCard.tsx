@@ -32,7 +32,7 @@ import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvita
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
-import { IconEye, IconLoader, IconRefresh, IconUsers } from '@/components/icons'
+import { IconEye, IconInfo, IconLoader, IconRefresh, IconUsers } from '@/components/icons'
 import { TarjetaSiguientePaso, SeccionPaso, type TonoPaso } from './TarjetaSiguientePaso'
 import { textoVisible, esRolInterno, tipoFallo } from './textoVisible'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
@@ -191,6 +191,24 @@ export function CoarrendatarioPropietarioCard({
     // La API indica que cargar a esta persona pasa por un cambio de persona: se hace desde la
     // tarjeta de la evaluación («Personas del estudio»), donde se avisa el valor antes de confirmar.
     if (ventana?.cobra_consulta_adicional) return null
+    // Propietario directo: la API no abre el segundo firmante (su contrato todavía no lo incluye). Se dice por
+    // qué en vez de no mostrar nada, donde el formulario saldría (en revisión o aprobado).
+    if (
+      ventana?.puede_invitar === false &&
+      ventana.codigo === 'COARRENDATARIO_CANAL_PROPIETARIO' &&
+      ventana.motivo &&
+      (expedienteEstado === 'condicionado' || expedienteEstado === 'aprobado')
+    ) {
+      return (
+        <div role="status" className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-700 sm:p-5">
+          <IconInfo size={18} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
+          <div className="min-w-0">
+            <p className="font-semibold text-gray-900">Segundo firmante (coarrendatario)</p>
+            <p className="mt-0.5">{ventana.motivo}</p>
+          </div>
+        </div>
+      )
+    }
     if (!(ventana?.puede_invitar ?? expedienteEstado === 'condicionado') || !puedeEditar) return null
     return (
       <CoarrendatarioInviteForm

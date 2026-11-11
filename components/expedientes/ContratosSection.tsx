@@ -30,6 +30,8 @@ import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
 import { BloqueosContrato, bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
+import { ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
+import { useSegundoFirmanteContrato } from '@/hooks/useSegundoFirmanteContrato'
 import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
@@ -85,6 +87,8 @@ interface ContratosSectionProps {
   inmuebleReservadoPorOtro?: boolean
   /** Inmueble de una inmobiliaria: el modal pide su comisión (P12). */
   conComision?: boolean
+  /** El estudio espera al segundo firmante («aprobado con segundo firmante», o su autorización): aún no hay contrato. */
+  esperaSegundoFirmante?: boolean
 }
 
 export function ContratosSection({
@@ -95,6 +99,7 @@ export function ContratosSection({
   sinInmueble = false,
   inmuebleReservadoPorOtro,
   conComision,
+  esperaSegundoFirmante = false,
 }: ContratosSectionProps) {
   const { user } = useAuth()
   // Con «ver como», el rol simulado: el proveedor de firma y su costo son de Cofianza.
@@ -144,6 +149,11 @@ export function ContratosSection({
       user?.rol === 'inmobiliaria'
     )
   const canRegenerate = canCreate || (puedeEditar && user?.rol === 'propietario')
+  // El contrato anterior también lo genera el propietario del inmueble (POST /generar lo admite por rol
+  // y la API verifica que el estudio sea suyo); el asistente V3, no (su roleGuard no lo incluye).
+  const canGenerarAnterior = canRegenerate
+  // Miembro de solo lectura de la inmobiliaria: no crea, pero sí se le dice quién lo hace.
+  const soloLectura = user?.rol === 'inmobiliaria' && !puedeEditar
   // Dueño del inmueble (propietario o inmobiliaria): su único paso siguiente en
   // un borrador es "Enviar a firma"; el resto de iconos solo le añaden ruido.
   const esDuenio = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
@@ -180,6 +190,10 @@ export function ContratosSection({
   useEffect(() => {
     fetchContratos()
   }, [fetchContratos])
+
+  // Contrato anterior con segundo firmante: no lo incluye y la API lo rechazaría; lo genera Cofianza.
+  const puedeGenerarAnterior = canGenerarAnterior && expedienteAprobado && !sinInmueble && !contratosV3
+  const conSegundoFirmante = useSegundoFirmanteContrato(expedienteId, puedeGenerarAnterior, contratos.length)
 
   // Auto-abrir el panel de firma cuando hay un contrato en firma, para que el
   // progreso de firmantes quede visible sin tener que buscar el botón. Solo una
@@ -480,7 +494,7 @@ export function ContratosSection({
             Crear contrato
           </Link>
         )}
-        {canCreate && expedienteAprobado && !sinInmueble && !contratosV3 && (
+        {puedeGenerarAnterior && conSegundoFirmante === false && (
           <button type="button" onClick={() => setGenerarOpen(true)} className={buttonClasses('primary', 'md', 'min-h-10 shrink-0')}>
             <IconPlus size={16} />
             Generar contrato
@@ -495,7 +509,12 @@ export function ContratosSection({
           expedienteId={expedienteId}
           puedeEditar={puedeEditar}
           conBorrador
+          enElEstudio
         />
+      )}
+
+      {puedeGenerarAnterior && conSegundoFirmante && contratos.every((c) => c.estado === 'cancelado') && (
+        <ContratoSegundoFirmanteAviso />
       )}
 
       {contratos.length === 0 ? (
@@ -506,14 +525,24 @@ export function ContratosSection({
           <p className="mt-3 text-sm font-semibold text-gray-900">Este estudio todavía no tiene contrato</p>
           <p className="mt-1 max-w-md text-sm text-gray-600">
             {!expedienteAprobado
-              ? 'El contrato se podrá generar cuando el estudio del arrendatario esté aprobado.'
+              ? esperaSegundoFirmante
+                ? 'El contrato se podrá crear cuando el segundo firmante complete su evaluación y quede aprobado.'
+                : 'El contrato se podrá generar cuando el estudio del arrendatario esté aprobado.'
               : sinInmueble
                 ? 'El estudio está aprobado sin propiedad. Vincule el inmueble antes de generar el contrato.'
-                : canCreate && contratosV3
-                  ? 'Pulse «Crear contrato» para abrir el asistente.'
-                  : canCreate
-                    ? 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
-                    : 'El contrato se generará cuando el propietario lo emita, ahora que el estudio fue aprobado.'}
+                : soloLectura
+                  ? 'Lo crea alguien de su equipo con permiso de edición.'
+                  : contratosV3
+                    ? canCreate
+                      ? inmuebleReservadoPorOtro
+                        ? 'El inmueble está reservado para el contrato de otro estudio. Si ese contrato se cancela, podrá crear el de este.'
+                        : 'Pulse «Crear contrato» para abrir el asistente.'
+                      : 'Lo crea la inmobiliaria con el asistente de contratos, ahora que el estudio fue aprobado.'
+                    : puedeGenerarAnterior
+                      ? conSegundoFirmante
+                        ? 'Lo genera Cofianza: escríbanos por el canal de arriba.'
+                        : 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
+                      : 'El contrato se generará cuando el propietario lo emita, ahora que el estudio fue aprobado.'}
           </p>
         </div>
       ) : (
