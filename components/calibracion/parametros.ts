@@ -561,7 +561,7 @@ const META_A5D: Record<string, MetaParametro> = {
     sub: 'Consulta adicional',
     unidad: 'dias',
     queHace:
-      'Días desde la consulta a la central en que su resultado se reutiliza sin consultar de nuevo: se conserva a la persona que ya pasó cuando se sustituye a la otra, y un inmueble de canon mayor se reevalúa sin cobro. Vencidos, la nueva consulta se cobra como consulta adicional.',
+      'Días desde la consulta a la central en que su resultado se reutiliza sin consultar de nuevo: se conserva a la persona que ya pasó cuando se sustituye a la otra, y un inmueble de canon mayor se reevalúa sin cobro. Vencidos, la nueva consulta se cobra como consulta adicional. También fija hasta cuándo sirve el reporte para decidir una apelación.',
     ejemplo: (v) =>
       `Con ${v.DIAS_VIGENCIA_REPORTE}: si a los ${v.DIAS_VIGENCIA_REPORTE + 5} días de la consulta se cambia a la otra persona, quien ya pasó se consulta de nuevo y se cobra.`,
     rige: 'a5d',
@@ -1052,6 +1052,7 @@ export const META: Record<string, MetaParametro> = {
     queHace: 'Si Cofianza repite a su costo la consulta a la central (1) o no (0) cuando, al responder la primera apelación de un estudio, el reporte ya venció (30 días). Una apelación posterior nunca la tiene. En 0, esa apelación se cierra.',
     rige: 'siempre',
     opciones: [0, 1],
+    conA5d: 'el reporte vence a los «Días que se reutiliza el reporte de la central», no a los 30 días',
   },
 
   // ── Precios y cobros ──────────────────────────────────────────────────────
