@@ -2,6 +2,7 @@
  * Asistente de contratos V3 (Entrega 3) — copia LITERAL de
  * rental-platform-api/src/modules/contratos/v3/asistente.types.ts.
  * Si cambia allá, se copia aquí tal cual: la web no consume los tipos del API.
+ * Excepción: los campos nuevos van opcionales aquí, para no romper con un API anterior.
  */
 
 export type NumeroPaso = 1 | 2 | 3 | 4 | 5;
@@ -23,9 +24,13 @@ export type GuardarPasoBody =
 export interface Bloqueo {
   codigo: string; mensaje: string;
   paso?: NumeroPaso;                                   // se pinta arriba de ese paso
-  accion?: 'datos_contrato' | 'estudio' | 'inmueble';
+  accion?: 'datos_contrato' | 'estudio' | 'inmueble' | 'reevaluar_canon';
   detalle?: string[];
   estudioId?: string;                                  // la evaluación sobre la que se actúa (emitir el CRC, reasignarla)
+  /** Con accion 'reevaluar_canon': el inmueble cuyo canon se evalúa de nuevo. Opcional: un API anterior no lo manda. */
+  inmuebleId?: string;
+  /** Con accion 'reevaluar_canon': la API ofrece evaluar de nuevo sin costo (Adenda 5 §14). */
+  puedeReevaluar?: boolean;
 }
 export interface EstadoAsistente {
   habilitado: boolean;
@@ -44,7 +49,15 @@ export interface EstadoAsistente {
       /** Presente cuando las condiciones no dependen de la ruta de aprobación (lo decide la API). */
       precioUnico?: true;
       crc: { codigo: string; fechaEmision: string; vigenteHasta: string } | null };
-    canon: { evaluadoCop: number | null; maximoSinNuevaEvaluacionCop: number | null };
+    canon: { evaluadoCop: number | null; maximoSinNuevaEvaluacionCop: number | null;
+      /** Adenda 5: el canon hasta el que está aprobado el estudio (la leyenda «hasta»); null = sin leyenda. Opcional: un API anterior no lo manda. */
+      hastaCanonCop?: number | null;
+      /** El estudio se evaluó con la Adenda 5: el canon aprobado es el techo, sin tolerancia ni relación canon/ingreso. */
+      evaluadoA5D?: boolean };
+    /** Aviso sobre quién figura como arrendatario y coarrendatario (p. ej. el titular de la decisión no es el solicitante). */
+    avisoPartes?: string | null;
+    /** false = el arrendatario del contrato no es quien solicitó el estudio. Ausente = un API anterior (se trata como true). */
+    arrendatarioEsSolicitante?: boolean;
   };
   contrato: null | {
     id: string; numero: string; estado: 'borrador';

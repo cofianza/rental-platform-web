@@ -26,3 +26,22 @@ export function ContactoCofianzaInline() {
     </>
   )
 }
+
+/**
+ * El canal de Cofianza para completar una frase («Escríbanos … »): «por WhatsApp
+ * (+57 …) o a correo», con enlaces. `className` = el estilo de los enlaces.
+ */
+export function CanalCofianza({ className = 'font-semibold text-primary-700 hover:underline' }: { className?: string }) {
+  return (
+    <>
+      por{' '}
+      <a href={`https://wa.me/${CONTACTO_COFIANZA.whatsapp}`} target="_blank" rel="noopener noreferrer" className={className}>
+        WhatsApp {CONTACTO_COFIANZA.whatsappVisible}
+      </a>{' '}
+      o a{' '}
+      <a href={`mailto:${CONTACTO_COFIANZA.email}`} className={className}>
+        {CONTACTO_COFIANZA.email}
+      </a>
+    </>
+  )
+}
