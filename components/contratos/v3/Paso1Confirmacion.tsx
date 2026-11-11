@@ -57,6 +57,12 @@ export function textoCanonAprobado(canon: Resumen['canon']): string | null {
     : null
 }
 
+/** Solo la cifra del canon del estudio (resumen previo): con la Adenda 5, el «hasta» si lo tiene. */
+export function cifraCanonEstudio(canon: Resumen['canon']): number | null {
+  if (canon.evaluadoA5D && canon.hastaCanonCop != null) return canon.hastaCanonCop
+  return canon.evaluadoCop
+}
+
 const VIA_LABEL: Record<NonNullable<NonNullable<Resumen['fianza']>['via']>, string> = {
   automatica: 'Aprobación automática',
   condicionada_coarrendatario: 'Aprobación con coarrendatario',
@@ -82,7 +88,7 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
   const { arrendador: a, arrendatario, coarrendatario, inmueble, fianza } = resumen
   const returnTo = encodeURIComponent(`/expedientes/${expedienteId}/contrato`)
   const tomadoDelEstudio = 'Tomados del estudio evaluado; no se pueden cambiar.'
-  const canonAprobado = textoCanonAprobado(resumen.canon)
+  const canonEstudio = cifraCanonEstudio(resumen.canon)
 
   return (
     <div className="space-y-4">
@@ -156,7 +162,7 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
         {canon ?? (
           <>
             <Dato label="Canon registrado" valor={formatCurrency(inmueble.canonRegistroCop)} />
-            {canonAprobado && <Dato label="Canon del estudio" valor={canonAprobado} ancho />}
+            {canonEstudio !== null && <Dato label="Canon del estudio" valor={formatCurrency(canonEstudio)} />}
           </>
         )}
       </Tarjeta>

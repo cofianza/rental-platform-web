@@ -231,6 +231,7 @@ function PreIniciar({ estado, expedienteId, editable, esTitular, inmuebleAccesib
         esTitular={esTitular}
         puedeEditar={editable}
         onCambio={v3.recargar}
+        evaluadoA5D={resumen?.canon.evaluadoA5D}
       />
       <AvisosContrato avisos={avisos} />
       {resumen && (
@@ -489,8 +490,8 @@ function Asistente({
   const enviarAFirma = async () => {
     if (!contrato.documento) return
     // Ruta B con otro arrendatario que el solicitante: sin la casilla marcada no sale.
+    // La casilla se limpia al cerrar el diálogo (onClose), cuando termina el envío: no durante «Procesando…».
     if (rutaB && resumen?.arrendatarioEsSolicitante === false && !confirmaArrendatario) return
-    setConfirmaArrendatario(false)
     const ok = await v3.enviar({
       generacion: contrato.documento.generacion,
       propioSha256: rutaB ? contrato.propio?.sha256 : undefined,
@@ -616,6 +617,7 @@ function Asistente({
         conBorrador
         onIrPaso={irA}
         onCambio={v3.recargar}
+        evaluadoA5D={resumen?.canon.evaluadoA5D}
       />
       <AvisosContrato avisos={avisos} />
       {/* Textos sin aprobar previstos con lo guardado; con el documento ya generado los muestra la vista previa. */}
@@ -639,6 +641,7 @@ function Asistente({
         puedeEditar={editable}
         conBorrador
         onCambio={v3.recargar}
+        evaluadoA5D={resumen?.canon.evaluadoA5D}
       />
 
       <fieldset
@@ -777,14 +780,17 @@ function Asistente({
             </p>
             {pideConfirmarArrendatario && (
               <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                {/* Foco inicial aquí: el botón de enviar empieza deshabilitado hasta marcarla. */}
                 <input
                   type="checkbox"
+                  autoFocus
                   checked={confirmaArrendatario}
                   onChange={(e) => setConfirmaArrendatario(e.target.checked)}
+                  disabled={accion === 'enviar'}
                   className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                 />
                 <span>
-                  Confirmo que el contrato que subí nombra a{' '}
+                  Confirmo que el contrato cargado nombra a{' '}
                   <span className="font-semibold">{resumen?.arrendatario.nombre ?? 'la persona del resumen'}</span> como
                   arrendatario.
                 </span>

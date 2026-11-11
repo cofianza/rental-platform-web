@@ -49,6 +49,8 @@ interface Props {
   onCambio?: () => void
   /** Ya está en el detalle del estudio: «Ir al estudio» no llevaría a ningún lado. */
   enElEstudio?: boolean
+  /** resumen.canon.evaluadoA5D: la reevaluación del canon solo se ofrece en un estudio evaluado con la Adenda 5. */
+  evaluadoA5D?: boolean
 }
 
 const enlace = 'inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'
@@ -108,8 +110,12 @@ interface Punto {
   esFaltante?: boolean
 }
 
+/** Adenda 5 §14: evaluar de nuevo con el canon del inmueble (I4: además, solo si el estudio se evaluó con ella). */
+const ofreceReevaluar = (b: Bloqueo, evaluadoA5D: boolean | undefined) =>
+  b.accion === 'reevaluar_canon' && !!b.puedeReevaluar && evaluadoA5D !== false
+
 /** Los bloqueos que resuelve una misma evaluación nueva se juntan en el lugar del primero. */
-function puntosDe(bloqueos: Bloqueo[]): Punto[] {
+function puntosDe(bloqueos: Bloqueo[], evaluadoA5D?: boolean): Punto[] {
   const evaluacion = bloqueos.filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
   const juntos = evaluacion.length
     ? bloqueos.filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo))
@@ -124,8 +130,10 @@ function puntosDe(bloqueos: Bloqueo[]): Punto[] {
         // Bajar el canon se hace en el paso 1; conservarlo pide evaluar de nuevo sobre el canon nuevo del inmueble.
         nota: CANON_PIDE_EVALUACION.includes(b.codigo)
           ? 'Si necesita este canon, primero actualice el canon del inmueble y luego cree el estudio nuevo.'
-          : b.accion === 'reevaluar_canon' && b.puedeReevaluar
-            ? 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio, sin costo.'
+          : ofreceReevaluar(b, evaluadoA5D)
+            ? b.reevaluacionConCosto
+              ? 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio: como el reporte ya venció, es una consulta adicional.'
+              : 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio, sin costo.'
             : undefined,
         bloqueo: b,
         paso: b.paso,
@@ -161,11 +169,12 @@ export function BloqueosContrato({
   onIrPaso,
   onCambio,
   enElEstudio = false,
+  evaluadoA5D,
 }: Props) {
   const user = useUsuarioVista()
   const rol = user?.rol
   const puntos: Punto[] = [
-    ...puntosDe(bloqueos),
+    ...puntosDe(bloqueos, evaluadoA5D),
     ...faltantes.map((f, i) => ({ key: `falta-${f.paso}-${i}`, texto: f.mensaje, paso: f.paso, esFaltante: true })),
   ]
   if (puntos.length === 0) return null
@@ -187,18 +196,26 @@ export function BloqueosContrato({
         )
       }
       case 'reevaluar_canon': {
-        // Adenda 5 §14: el canon pactado supera el aprobado. Se pacta uno menor en el paso 1 o, si el canon
-        // del inmueble cambió, la API ofrece evaluar de nuevo sin costo (puedeReevaluar).
+        // Adenda 5 §14: el canon pactado supera el aprobado. Se pacta uno menor en el paso 1 o, si la API lo
+        // ofrece (puedeReevaluar), se actualiza el canon del inmueble y se evalúa de nuevo: sin costo, o con
+        // una consulta adicional si el reporte venció (reevaluacionConCosto). Sin esa salida, editar el canon
+        // del inmueble no sirve de nada aquí: solo queda pactar uno menor.
         const inmueble = b.inmuebleId ?? inmuebleId
+        if (!ofreceReevaluar(b, evaluadoA5D) || !puedeEditar || !inmueble) return null
         return (
           <>
-            {puedeEditar && inmueble && inmuebleAccesible && (
+            {inmuebleAccesible && (
               <Link href={`/inmuebles/${inmueble}/editar?returnTo=${volverAqui}`} className={enlace}>
                 Editar el canon del inmueble <IconArrowRight size={12} />
               </Link>
             )}
-            {puedeEditar && b.puedeReevaluar && b.estudioId && inmueble && (
-              <ReevaluarCanon estudioId={b.estudioId} inmuebleId={inmueble} onCambio={onCambio} />
+            {b.estudioId && (
+              <ReevaluarCanon
+                estudioId={b.estudioId}
+                inmuebleId={inmueble}
+                conCosto={!!b.reevaluacionConCosto}
+                onCambio={onCambio}
+              />
             )}
           </>
         )
@@ -400,10 +417,21 @@ export function AvisosContrato({ avisos, tono = 'info' }: { avisos: string[]; to
 }
 
 /**
- * Adenda 5 §14: evalúa de nuevo el estudio con el canon actual del inmueble, sin costo (lo decide la API).
- * Si la API responde que no (o cotiza una consulta adicional), su mensaje queda a la vista.
+ * Adenda 5 §14: evalúa de nuevo el estudio con el canon actual del inmueble (lo decide la API). Sin costo, o
+ * con una consulta adicional (`conCosto`): la API responde 402 con el valor y se ofrece pagarla aquí mismo.
+ * Si la API responde que no, su mensaje queda a la vista.
  */
-function ReevaluarCanon({ estudioId, inmuebleId, onCambio }: { estudioId: string; inmuebleId: string; onCambio?: () => void }) {
+function ReevaluarCanon({
+  estudioId,
+  inmuebleId,
+  conCosto,
+  onCambio,
+}: {
+  estudioId: string
+  inmuebleId: string
+  conCosto: boolean
+  onCambio?: () => void
+}) {
   const { reevaluar, evaluando } = useReevaluarCanon(onCambio)
   const [respuesta, setRespuesta] = useState<{
     mensaje: string
@@ -414,9 +442,15 @@ function ReevaluarCanon({ estudioId, inmuebleId, onCambio }: { estudioId: string
   return (
     <div className="w-full space-y-2">
       {(!respuesta || respuesta.reintentar) && (
-        <Button tamano="sm" variante="secondary" onClick={() => void evaluar()} disabled={evaluando} aria-busy={evaluando || undefined}>
-          {evaluando ? <IconLoader size={14} className="animate-spin" /> : <IconRefresh size={14} />}
-          {evaluando ? 'Evaluando…' : 'Evaluar de nuevo sin costo'}
+        <Button
+          variante="secondary"
+          className="min-h-10"
+          onClick={() => void evaluar()}
+          disabled={evaluando}
+          aria-busy={evaluando || undefined}
+        >
+          {evaluando ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
+          {evaluando ? 'Evaluando…' : conCosto ? 'Evaluar de nuevo (consulta adicional)' : 'Evaluar de nuevo sin costo'}
         </Button>
       )}
       {respuesta && (

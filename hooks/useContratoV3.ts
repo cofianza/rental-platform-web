@@ -16,6 +16,7 @@ import { contratoService } from '@/services/contratoService'
 import { contratoV3Service, fallasDe, type EnviarBody, type FallaFirmante } from '@/services/contratoV3Service'
 import { estudioService } from '@/services/estudioService'
 import { hallazgosDe } from '@/services/clausulasService'
+import { MENSAJE_NO_ES_CELULAR, noEsCelularColombiano } from '@/lib/telefono'
 import type { EstadoContrato } from '@/types/contrato'
 import type {
   Contacto,
@@ -417,7 +418,14 @@ function contacto(c: Borrador<Contacto> | null | undefined, ruta: string, errore
   const tel = (c?.telefono ?? '').replace(/[\s()-]/g, '')
   poner(
     'telefono',
-    !tel || /^\+\d{1,4}$/.test(tel) ? MSG_OBLIGATORIO : /^\+?\d{7,15}$/.test(tel) ? null : 'Celular inválido',
+    !tel || /^\+\d{1,4}$/.test(tel)
+      ? MSG_OBLIGATORIO
+      : !/^\+?\d{7,15}$/.test(tel)
+        ? 'Celular inválido'
+        : // Revisión del 11-nov: un fijo de Colombia pasaba como celular (mismo criterio que el API).
+          noEsCelularColombiano(tel)
+          ? MENSAJE_NO_ES_CELULAR
+          : null,
   )
 }
 

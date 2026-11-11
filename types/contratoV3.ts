@@ -29,8 +29,10 @@ export interface Bloqueo {
   estudioId?: string;                                  // la evaluación sobre la que se actúa (emitir el CRC, reasignarla)
   /** Con accion 'reevaluar_canon': el inmueble cuyo canon se evalúa de nuevo. Opcional: un API anterior no lo manda. */
   inmuebleId?: string;
-  /** Con accion 'reevaluar_canon': la API ofrece evaluar de nuevo sin costo (Adenda 5 §14). */
+  /** Con accion 'reevaluar_canon': la API ofrece evaluar de nuevo con el canon del inmueble (Adenda 5 §14). */
   puedeReevaluar?: boolean;
+  /** Con puedeReevaluar: el reporte venció y evaluar de nuevo es una consulta adicional (402 REQUIERE_CONSULTA_ADICIONAL). */
+  reevaluacionConCosto?: boolean;
 }
 export interface EstadoAsistente {
   habilitado: boolean;
