@@ -18,8 +18,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { contratoService, type IContratosStats } from '@/services/contratoService'
-import type { IContratoListItem, IContratoMeta, IContratoListFilters, EstadoContrato } from '@/types/contrato'
-import { etiquetaContrato, formatCurrency, formatDate, formatDateTime, rutaContrato } from '@/lib/constants'
+import type { IContratoListItem, IContratoMeta, IContratoListFilters } from '@/types/contrato'
+import { ESTADOS_CONTRATO, type EstadoContratoKey, etiquetaContrato, formatCurrency, formatDate, formatDateTime, rutaContrato } from '@/lib/constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
@@ -76,46 +76,16 @@ function Arrendatario({ c }: { c: IContratoListItem }) {
   )
 }
 
-// ── Badges tipo pill con bdot (override visual: pendiente_firma en azul para
-// igualar el mockup; el label sale de etiquetaContrato) ─────────────────────
-
-type BadgeKind = 'pendiente' | 'firma' | 'incompleta' | 'activo' | 'finalizado' | 'cancelado'
-
-const BADGE_STYLE: Record<BadgeKind, { wrap: string; dot: string }> = {
-  pendiente: { wrap: 'bg-coral-50 text-coral-700', dot: 'bg-coral-500' },
-  firma: { wrap: 'bg-blue-50 text-blue-600', dot: 'bg-blue-600 animate-pulse' },
-  // V3: la firma venció o la rechazaron; la fianza no opera hasta reenviarla.
-  incompleta: { wrap: 'bg-red-50 text-red-700', dot: 'bg-red-600' },
-  activo: { wrap: 'bg-primary-50 text-primary-700', dot: 'bg-primary-600' },
-  finalizado: { wrap: 'bg-gray-50 text-gray-600 border border-gray-200', dot: 'bg-gray-400' },
-  cancelado: { wrap: 'bg-red-50 text-red-500', dot: 'bg-red-500' },
-}
-
-function badgeKind(estado: EstadoContrato): BadgeKind {
-  switch (estado) {
-    case 'borrador':
-      return 'pendiente'
-    case 'pendiente_firma':
-      return 'firma'
-    case 'firma_incompleta':
-      return 'incompleta'
-    case 'firmado':
-    case 'vigente':
-      return 'activo'
-    case 'cancelado':
-      return 'cancelado'
-    default:
-      return 'finalizado'
-  }
-}
+// ── Badges tipo pill con bdot: el color de cada estado sale de ESTADOS_CONTRATO
+// (una sola fuente); el label, de etiquetaContrato ─────────────────────────
 
 function EstadoBadge({ c }: { c: IContratoListItem }) {
-  const bs = BADGE_STYLE[badgeKind(c.estado)]
+  const conf = ESTADOS_CONTRATO[c.estado as EstadoContratoKey] ?? ESTADOS_CONTRATO.borrador
   const label = etiquetaContrato(c.estado, !!c.destinacion)
   return (
     <>
-      <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold', bs.wrap)}>
-        <span className={cn('h-1.5 w-1.5 rounded-full', bs.dot)} />
+      <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold', conf.bgColor, conf.textColor)}>
+        <span className={cn('h-1.5 w-1.5 rounded-full', conf.dotColor, c.estado === 'pendiente_firma' && 'animate-pulse')} />
         {label}
       </span>
       {c.origen === 'migracion' && (

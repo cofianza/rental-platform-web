@@ -36,7 +36,7 @@ import { contratoService } from '@/services/contratoService'
 import { buttonClasses } from '@/components/ui/Button'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { etiquetaContrato, formatDate, formatDateTime } from '@/lib/constants'
+import { etiquetaContrato, formatDate, formatDateTime, tonoContrato } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
@@ -49,18 +49,18 @@ const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
 // dentro del componente) porque también decide qué acciones ve el dueño.
 const ESTADOS_PRE_FIRMA: EstadoContrato[] = ['borrador', 'en_revision', 'aprobado']
 
-// Marca de cada estado: círculo + pastilla, con la misma paleta corta que
-// Documentos (gris, ámbar, azul, verde, rojo). Antes eran nueve colores.
-const MARCA_CONTRATO: Record<EstadoContrato, { circulo: string; chip: string; icono: React.ReactNode }> = {
-  borrador: { circulo: 'bg-gray-100 text-gray-600', chip: 'bg-gray-100 text-gray-700', icono: <IconFileText size={16} /> },
-  en_revision: { circulo: 'bg-amber-100 text-amber-800', chip: 'bg-amber-100 text-amber-900', icono: <IconClock size={16} /> },
-  aprobado: { circulo: 'bg-amber-100 text-amber-800', chip: 'bg-amber-100 text-amber-900', icono: <IconCheck size={16} /> },
-  pendiente_firma: { circulo: 'bg-blue-100 text-blue-700', chip: 'bg-blue-100 text-blue-800', icono: <IconPencil size={16} /> },
-  firma_incompleta: { circulo: 'bg-red-100 text-red-700', chip: 'bg-red-100 text-red-800', icono: <IconAlertTriangle size={16} /> },
-  firmado: { circulo: 'bg-green-100 text-green-700', chip: 'bg-green-100 text-green-800', icono: <IconCheck size={16} /> },
-  vigente: { circulo: 'bg-green-100 text-green-700', chip: 'bg-green-100 text-green-800', icono: <IconShieldCheck size={16} /> },
-  finalizado: { circulo: 'bg-gray-100 text-gray-600', chip: 'bg-gray-100 text-gray-700', icono: <IconHistory size={16} /> },
-  cancelado: { circulo: 'bg-gray-100 text-gray-500', chip: 'bg-gray-100 text-gray-700', icono: <IconX size={16} /> },
+// Marca de cada estado: círculo + pastilla. El color sale de ESTADOS_CONTRATO
+// (una sola fuente: «Fianza activa» en verde, «En firma» en morado); aquí solo el ícono.
+const ICONO_CONTRATO: Record<EstadoContrato, React.ReactNode> = {
+  borrador: <IconFileText size={16} />,
+  en_revision: <IconClock size={16} />,
+  aprobado: <IconCheck size={16} />,
+  pendiente_firma: <IconPencil size={16} />,
+  firma_incompleta: <IconAlertTriangle size={16} />,
+  firmado: <IconCheck size={16} />,
+  vigente: <IconShieldCheck size={16} />,
+  finalizado: <IconHistory size={16} />,
+  cancelado: <IconX size={16} />,
 }
 
 // El mismo botón de fila que Documentos: 40 px de alto, con texto.
@@ -550,14 +550,14 @@ export function ContratosSection({
           {contratos.map((c) => {
             // /contratos/:id de una fila V3 redirige al asistente: vamos directo.
             const esV3 = !!c.destinacion
-            const marca = MARCA_CONTRATO[c.estado] ?? MARCA_CONTRATO.borrador
+            const marca = { tono: tonoContrato(c.estado), icono: ICONO_CONTRATO[c.estado] ?? ICONO_CONTRATO.borrador }
             const titulo = esV3 ? `Contrato ${c.numero ?? ''}`.trim() : `Contrato · versión ${c.version}`
             const generado = c.fecha_generacion ?? c.created_at
             return (
               <li key={c.id} className={cn('flex gap-3 px-4 py-4 sm:px-5', firmaContratoId === c.id && 'bg-primary-50/40')}>
                 <span
                   aria-hidden="true"
-                  className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', marca.circulo)}
+                  className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', marca.tono)}
                 >
                   {marca.icono}
                 </span>
@@ -573,7 +573,7 @@ export function ContratosSection({
                           {titulo}
                         </Link>
                       </h4>
-                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', marca.chip)}>
+                      <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', marca.tono)}>
                         {etiquetaContrato(c.estado, esV3)}
                       </span>
                     </div>
