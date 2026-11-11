@@ -34,7 +34,7 @@ import { contratoService } from '@/services/contratoService'
 import type { Borrador, ErroresPaso, useContratoV3 } from '@/hooks/useContratoV3'
 import type { Contacto, EstadoAsistente, MarcaFirma, NumeroPaso, Paso5 } from '@/types/contratoV3'
 import { AvisosContrato, BloqueosContrato } from './BloqueosContrato'
-import { Aviso, Campo, EncabezadoPaso, RUTA_B_FIRMA_NO_HABILITADA } from './campos'
+import { Aviso, Campo, EncabezadoPaso, rutaBFirmaNoHabilitada } from './campos'
 import type { ParteFirma } from './UbicarFirmas'
 
 const PdfViewer = dynamic(() => import('@/components/ui/PdfViewer').then((m) => ({ default: m.PdfViewer })), {
@@ -58,7 +58,8 @@ export function Paso5Notificaciones({ value, onChange, errores, conCoarrendatari
   const partes: { clave: Parte; titulo: string }[] = [
     { clave: 'arrendador', titulo: 'Arrendador' },
     { clave: 'arrendatario', titulo: 'Arrendatario' },
-    ...(conCoarrendatario ? [{ clave: 'coarrendatario' as const, titulo: 'Coarrendatario' }] : []),
+    // «Segundo firmante» es como se le dice en el estudio; el contrato lo nombra coarrendatario (solo en pantalla).
+    ...(conCoarrendatario ? [{ clave: 'coarrendatario' as const, titulo: 'Coarrendatario (segundo firmante)' }] : []),
   ]
 
   const poner = (parte: Parte, patch: Borrador<Contacto>) =>
@@ -141,7 +142,7 @@ const MAX_BYTES_PROPIO = 6 * 1024 * 1024
 
 export const ROL_FIRMANTE: Record<string, string> = {
   arrendatario: 'Arrendatario',
-  coarrendatario: 'Coarrendatario',
+  coarrendatario: 'Coarrendatario (segundo firmante)',
   arrendador: 'Arrendador (representante legal)',
 }
 
@@ -255,7 +256,7 @@ export function VistaPreviaContrato({
               : rutaB && propio && !propio.firmasCompletas
                 ? `Ubique en el contrato de la inmobiliaria dónde firma: ${(propio.partesSinFirma ?? []).join(', ')}.`
                 : rutaB && contrato.rutaBFirmaHabilitada === false
-                  ? RUTA_B_FIRMA_NO_HABILITADA
+                  ? rutaBFirmaNoHabilitada(interno)
                   : null)
 
   return (
@@ -336,7 +337,7 @@ export function VistaPreviaContrato({
             <h3 className="text-sm font-semibold text-gray-900">Contrato de la inmobiliaria (PDF)</h3>
           </div>
           {/* Compuerta del API: se puede cargar el PDF y ubicar las firmas, pero todavía no enviar. */}
-          {contrato.rutaBFirmaHabilitada === false && <Aviso tono="aviso">{RUTA_B_FIRMA_NO_HABILITADA}</Aviso>}
+          {contrato.rutaBFirmaHabilitada === false && <Aviso tono="aviso">{rutaBFirmaNoHabilitada(interno)}</Aviso>}
           {propio ? (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">

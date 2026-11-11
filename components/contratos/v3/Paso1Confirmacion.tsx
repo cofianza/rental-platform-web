@@ -9,6 +9,8 @@
 
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import { useUsuarioVista } from '@/components/expedientes/VerComo'
+import { esRolInterno } from '@/components/expedientes/textoVisible'
 import {
   IconArrowRight,
   IconBuilding2,
@@ -28,13 +30,32 @@ import {
   Dato,
   EncabezadoPaso,
   OpcionTarjeta,
-  RUTA_B_FIRMA_NO_HABILITADA,
   Tarjeta,
   documento,
   porcentaje,
+  rutaBFirmaNoHabilitada,
 } from './campos'
 
 type Resumen = NonNullable<EstadoAsistente['resumen']>
+
+/**
+ * Hasta qué canon cubre el estudio. Con la Adenda 5 (evaluadoA5D) el canon aprobado es el techo: sin
+ * tolerancia ni relación canon/ingreso, y con la leyenda «hasta» (hastaCanonCop) si la tiene. Sin ella,
+ * el texto de antes. null = la API no mandó con qué decirlo.
+ */
+export function textoCanonAprobado(canon: Resumen['canon']): string | null {
+  if (canon.evaluadoA5D) {
+    if (canon.hastaCanonCop != null) {
+      return `El estudio está aprobado hasta un canon de ${formatCurrency(canon.hastaCanonCop)}. Pacte un canon igual o menor.`
+    }
+    return canon.evaluadoCop != null
+      ? `Canon aprobado: ${formatCurrency(canon.evaluadoCop)}. Pacte un canon igual o menor.`
+      : null
+  }
+  return canon.evaluadoCop !== null && canon.maximoSinNuevaEvaluacionCop !== null
+    ? `Canon evaluado: ${formatCurrency(canon.evaluadoCop)}. Hasta ${formatCurrency(canon.maximoSinNuevaEvaluacionCop)} sin nueva evaluación, sujeto a la relación canon/ingreso.`
+    : null
+}
 
 const VIA_LABEL: Record<NonNullable<NonNullable<Resumen['fianza']>['via']>, string> = {
   automatica: 'Aprobación automática',
@@ -61,6 +82,7 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
   const { arrendador: a, arrendatario, coarrendatario, inmueble, fianza } = resumen
   const returnTo = encodeURIComponent(`/expedientes/${expedienteId}/contrato`)
   const tomadoDelEstudio = 'Tomados del estudio evaluado; no se pueden cambiar.'
+  const canonAprobado = textoCanonAprobado(resumen.canon)
 
   return (
     <div className="space-y-4">
@@ -98,13 +120,16 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
         <Dato label="NIT / C.C. del titular" valor={a.cuenta.nit} />
       </Tarjeta>
 
+      {/* Quién figura en el contrato (p. ej. el titular de la decisión no es quien solicitó el estudio). */}
+      {resumen.avisoPartes && <Aviso tono="aviso">{resumen.avisoPartes}</Aviso>}
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Tarjeta titulo="Arrendatario" icono={IconUser} pie={tomadoDelEstudio}>
           <Dato label="Nombre" valor={arrendatario.nombre} ancho />
           <Dato label="Documento" valor={documento(arrendatario.tipoDocumento, arrendatario.numeroDocumento)} ancho />
         </Tarjeta>
         {coarrendatario && (
-          <Tarjeta titulo="Coarrendatario" icono={IconUsers} pie={tomadoDelEstudio}>
+          <Tarjeta titulo="Coarrendatario (segundo firmante)" icono={IconUsers} pie={tomadoDelEstudio}>
             <Dato label="Nombre" valor={coarrendatario.nombre} ancho />
             <Dato label="Documento" valor={documento(coarrendatario.tipoDocumento, coarrendatario.numeroDocumento)} ancho />
           </Tarjeta>
@@ -128,7 +153,12 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
         <Dato label="Dirección" valor={inmueble.direccion} />
         <Dato label="Municipio" valor={inmueble.municipio} />
         {inmueble.codigo && <Dato label="Código" valor={inmueble.codigo} />}
-        {canon ?? <Dato label="Canon registrado" valor={formatCurrency(inmueble.canonRegistroCop)} />}
+        {canon ?? (
+          <>
+            <Dato label="Canon registrado" valor={formatCurrency(inmueble.canonRegistroCop)} />
+            {canonAprobado && <Dato label="Canon del estudio" valor={canonAprobado} ancho />}
+          </>
+        )}
       </Tarjeta>
 
       <Tarjeta
@@ -192,8 +222,7 @@ export function Paso1Confirmacion({
   modalidadConvenio,
   rutaBFirmaHabilitada,
 }: Paso1Props) {
-  const evaluadoCop = resumen?.canon.evaluadoCop ?? null
-  const maximo = resumen?.canon.maximoSinNuevaEvaluacionCop ?? null
+  const interno = esRolInterno(useUsuarioVista()?.rol)
 
   const canon = (
     <div className="sm:col-span-2">
@@ -203,11 +232,7 @@ export function Paso1Confirmacion({
         value={value.canonCop}
         onChange={(canonCop) => onChange({ ...value, canonCop })}
         error={errores.canonCop}
-        help={
-          evaluadoCop !== null && maximo !== null
-            ? `Canon evaluado: ${formatCurrency(evaluadoCop)}. Hasta ${formatCurrency(maximo)} sin nueva evaluación, sujeto a la relación canon/ingreso.`
-            : undefined
-        }
+        help={(resumen && textoCanonAprobado(resumen.canon)) ?? undefined}
       />
     </div>
   )
@@ -247,7 +272,7 @@ export function Paso1Confirmacion({
           icono={IconScrollText}
         />
         {errores.ruta && <p className="text-xs text-red-600">{errores.ruta}</p>}
-        {value.ruta === 'B' && rutaBFirmaHabilitada === false && <Aviso tono="aviso">{RUTA_B_FIRMA_NO_HABILITADA}</Aviso>}
+        {value.ruta === 'B' && rutaBFirmaHabilitada === false && <Aviso tono="aviso">{rutaBFirmaNoHabilitada(interno)}</Aviso>}
       </fieldset>
 
       <fieldset className="space-y-2.5">

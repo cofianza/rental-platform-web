@@ -38,6 +38,8 @@ import {
 // ── Helpers de presentación ──
 
 function arrendatario(c: IContratoListItem): string {
+  // Adenda 5: el contrato va a nombre del titular de la decisión, que puede no ser el solicitante.
+  if (c.arrendatario_contrato_nombre?.trim()) return c.arrendatario_contrato_nombre.trim()
   const s = c.expedientes?.solicitantes
   const nombre = s ? `${s.nombre ?? ''} ${s.apellido ?? ''}`.trim() : ''
   return nombre || '—'
