@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# wasm de MediaPipe: lo copia scripts/copiar-mediapipe.mjs desde node_modules
+/public/mediapipe/wasm/

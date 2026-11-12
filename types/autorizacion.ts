@@ -196,12 +196,28 @@ export type EstadoBiometria =
   | 'omitida'
   | 'desactivada'
 
+/** Una de las dos fotos del cotejo. */
+export type FotoBiometria = 'documento' | 'selfie'
+
+/** Por qué no quedó limpio un cotejo, en lo que la persona puede corregir (nunca el porcentaje). */
+export type CausaBiometria = 'sin_rostro' | 'similitud_baja' | 'documento' | 'tecnico' | 'no_aplica'
+
 export interface IBiometriaResponse {
   estado: EstadoBiometria
   /** Solo viene cuando `verificada`: es un parámetro del control antifraude. */
   similitud?: number | null
   umbral?: number
+  /** Todo en un párrafo (para pantallas que no leen `titulo`/`indicacion`). */
   motivo?: string | null
+  /** Qué falló, en una línea. Ausente en APIs anteriores a la clasificación. */
+  titulo?: string | null
+  /** Qué hacer para el siguiente intento. */
+  indicacion?: string | null
+  causa?: CausaBiometria | null
+  /** Fotos que hay que tomar de nuevo antes de otro cotejo. Ausente = la selfie (como antes). */
+  repetir?: FotoBiometria[]
+  /** Cotejos que le quedan al enlace. 0 = ya no puede reintentar; null = no se sabe. */
+  intentos_restantes?: number | null
   guardado?: boolean
 }
 
