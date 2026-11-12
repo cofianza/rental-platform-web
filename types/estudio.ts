@@ -64,12 +64,39 @@ export interface IMarcaEstudio {
   ayuda: string
 }
 
+/** Adenda 5 §19: dónde quedó la consulta a TransUnion por el saldo que se reintenta. */
+export type DestinoReintentoSaldo = 'decision' | 'apelacion' | 'reconsulta'
+
+/**
+ * Adenda 5 §19: si aplica «Reintentar consulta de TransUnion». Solo la reciben
+ * administrador y operador analista en el detalle (nunca en «ver como»); sin
+ * nada que reintentar, la API no la envía.
+ */
+export interface IReintentoSaldoTransUnion {
+  aplica: boolean
+  destino: DestinoReintentoSaldo
+  /** Solo con `aplica: false`: por qué todavía no se puede (reintento en curso, falta el documento). */
+  motivo?: string
+}
+
+/** Respuesta de POST /estudios/:id/saldo-transunion. `mensaje` lo redacta la API para el analista. */
+export interface IReintentoSaldoTransUnionResultado {
+  destino: DestinoReintentoSaldo
+  resultado: 'obtenida' | 'sin_saldo' | 'no_respondio'
+  completadas: number
+  decision_con_saldo: 'aprobado' | 'aprobado_segundo_firmante' | 'rechazado' | null
+  resumen: string
+  mensaje: string
+}
+
 export interface IEstudio extends IDesenlaceEstudio {
   id: string
   /** Solo Cofianza, en el detalle: reclamos en trámite que reporta la central. */
   reclamos_en_tramite?: number
   /** Solo Cofianza, en el detalle. */
   restitucion?: IMarcaEstudio
+  /** Solo administrador y operador analista, en el detalle. */
+  reintento_saldo_transunion?: IReintentoSaldoTransUnion
   expediente_id?: string
   tipo: TipoEstudio
   proveedor: ProveedorEstudio

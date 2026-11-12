@@ -19,6 +19,7 @@ import { DataCreditoReportDetail } from '@/components/estudios/DataCreditoReport
 import { ReporteBuroErrorBoundary } from '@/components/estudios/ReporteBuroErrorBoundary'
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import { ListasPorConfirmar } from '@/components/estudios/ListasPorConfirmar'
+import { ReintentoSaldoTransUnion } from '@/components/estudios/ReintentoSaldoTransUnion'
 import type { IEstudio, IEstudioHistorial, IEndeudamientoMotor } from '@/types/estudio'
 
 /** La API agrega `nota_interna`, `version_politica` y `listas` solo para administrador, operador y gerencia. */
@@ -199,6 +200,17 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
     }
   }, [isOpen, estudio?.id, fetchHistorial])
 
+  // Tras una acción del analista: el detalle por id, conservando la espera del
+  // coarrendatario (§12), que solo llega en el listado.
+  const estudioId = estudio?.id
+  const recargarDetalle = useCallback(() => {
+    if (!estudioId) return
+    estudioService
+      .getEstudioById(estudioId)
+      .then((full) => setEstudio((prev) => ({ ...full, espera_autorizacion: full.espera_autorizacion ?? prev?.espera_autorizacion })))
+      .catch(() => undefined)
+  }, [estudioId])
+
   if (!estudio) return null
 
   // La API no siempre envía el reporte ni la central (depende de quién mira): sin ellos esta vista muestra solo los datos de la persona.
@@ -378,6 +390,16 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   }}
                 />
               ))}
+
+            {/* Adenda 5 §19: TransUnion no entregó el saldo en mora; el analista reintenta
+                la consulta (la API solo lo manda a administrador y operador, y si aplica). */}
+            {!readOnly && estudio.reintento_saldo_transunion && (
+              <ReintentoSaldoTransUnion
+                estudioId={estudio.id}
+                reintento={estudio.reintento_saldo_transunion}
+                onHecho={recargarDetalle}
+              />
+            )}
 
             {/* Certificado */}
             {isCertificable && (
