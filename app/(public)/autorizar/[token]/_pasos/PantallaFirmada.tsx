@@ -6,7 +6,9 @@ import { enMedioDeFrase, tituloFirmado } from './textos'
 /**
  * Autorización firmada (recién firmada o al reabrir el enlace). Si el
  * prospecto paga el estudio, dice en qué va el cobro; `sinInmueble` = estudio
- * creado sin propiedad (cambia el último punto de «Qué sigue»).
+ * creado sin propiedad (cambia el último punto de «Qué sigue»). null = no se
+ * sabe: al reabrir un enlace ya firmado la API no manda los datos del estudio,
+ * y prometer el contrato a un estudio sin inmueble sería falso.
  */
 export function PantallaFirmada({
   pagoRequerido,
@@ -20,7 +22,7 @@ export function PantallaFirmada({
   pago: IPagoProspecto | null
   esperaAgotada: boolean
   quien: string
-  sinInmueble: boolean
+  sinInmueble: boolean | null
   hashDocumento: string | null
 }) {
   return (
@@ -104,9 +106,11 @@ export function PantallaFirmada({
             tardar un poco más.
           </li>
           <li>
-            {sinInmueble
-              ? 'Si se aprueba, le decimos hasta qué canon puede arrendar.'
-              : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
+            {sinInmueble === null
+              ? 'Si se aprueba, le contamos por correo los siguientes pasos.'
+              : sinInmueble
+                ? 'Si se aprueba, le decimos hasta qué canon puede arrendar.'
+                : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
           </li>
         </ol>
         <p className="mt-3 text-sm text-gray-500">Puede cerrar esta página.</p>

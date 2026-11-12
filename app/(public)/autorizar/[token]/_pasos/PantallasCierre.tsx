@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { IconAlertTriangle, IconRefresh, IconShield, IconUserX } from '@/components/icons'
 import type { MotivoReporte } from './constantes'
+import { enMedioDeFrase } from './textos'
 
 export function PantallaError({
   reintentable,
@@ -73,8 +74,8 @@ export function PantallaInactivo({ quien }: { quien: string }) {
       </div>
       <h2 className="text-xl font-extrabold text-gray-900">Este estudio ya no está activo</h2>
       <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-        No hay nada que autorizar con este enlace y no vamos a consultar sus datos con él. Si tiene dudas,
-        {quien} le puede ayudar, o escríbanos: abajo están nuestros datos.
+        No hay nada que autorizar con este enlace y no vamos a consultar sus datos con él. Si tiene dudas,{' '}
+        {enMedioDeFrase(quien)} le puede ayudar, o escríbanos: abajo están nuestros datos.
       </p>
       <p className="mt-4 text-sm text-gray-500">Puede cerrar esta página.</p>
     </div>

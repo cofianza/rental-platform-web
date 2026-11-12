@@ -102,7 +102,7 @@ export default function AutorizarPage() {
           pago={a.pago}
           esperaAgotada={a.esperaAgotada}
           quien={quien}
-          sinInmueble={!!data && data.expediente.inmueble === null}
+          sinInmueble={data ? data.expediente.inmueble === null : null}
           hashDocumento={a.hashDocumento}
         />
       </Card>

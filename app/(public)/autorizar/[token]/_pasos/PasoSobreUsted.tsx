@@ -105,8 +105,8 @@ export function PasoSobreUsted({
 
       {situacion === 'independiente' && (
         <div>
-          <p className="text-sm font-bold text-gray-900">¿Tiene RUT activo?</p>
-          <div className="mt-2 grid grid-cols-2 gap-2">
+          <p id="rut-pregunta" className="text-sm font-bold text-gray-900">¿Tiene RUT activo?</p>
+          <div role="group" aria-labelledby="rut-pregunta" className="mt-2 grid grid-cols-2 gap-2">
             {([true, false] as const).map((v) => {
               const on = tieneRut === v
               return (
@@ -368,6 +368,7 @@ export function PasoSobreUsted({
       <button
         type="button"
         onClick={onSaltar}
+        disabled={guardandoPerfil}
         className={buttonClasses('secondary', 'lg', 'w-full')}
       >
         {[situacion, presentacion, dondeLabora.trim(), ingreso, coaNombre.trim(), coaApellido.trim(), coaEmail.trim(), coaTelefono.trim()].some(Boolean)
@@ -377,7 +378,8 @@ export function PasoSobreUsted({
       <button
         type="button"
         onClick={onVolver}
-        className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600"
+        disabled={guardandoPerfil}
+        className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <IconArrowLeft size={14} /> Volver
       </button>
