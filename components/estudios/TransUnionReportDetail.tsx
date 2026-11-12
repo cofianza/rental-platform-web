@@ -20,16 +20,22 @@ interface TransUnionReportDetailProps {
 
 // ── Helpers ─────────────────────────────────────────────────
 
+// TransUnion reporta los montos en MILES de pesos (verificado contra DataCrédito
+// obligación por obligación, nov-2026; la API convierte igual: TU_MILES_A_PESOS).
+// Un negativo (-1) es «sin dato», no una deuda.
+const TU_MILES_A_PESOS = 1000
+
 function formatCOP(value: string | number | undefined): string {
   if (value === undefined || value === null || value === '') return '$0'
   const num = typeof value === 'string' ? parseInt(value, 10) : value
   if (isNaN(num)) return String(value)
+  if (num < 0) return 'Sin dato'
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(num)
+  }).format(num * TU_MILES_A_PESOS)
 }
 
 function formatDate(dateStr: string | undefined): string {
