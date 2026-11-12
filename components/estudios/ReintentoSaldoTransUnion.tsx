@@ -8,7 +8,7 @@
  * reintentar; con `aplica: false` se dice por qué todavía no.
  */
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { IconAlertTriangle, IconLoader, IconRefresh } from '@/components/icons'
 import { useReintentoSaldoTransUnion } from '@/hooks/useReintentoSaldoTransUnion'
@@ -23,10 +23,14 @@ const DONDE: Record<DestinoReintentoSaldo, string> = {
 
 /** Para qué queda el dato: el reintento no cambia el resultado del estudio. */
 const PARA_QUE: Record<DestinoReintentoSaldo, string> = {
-  decision: 'No cambia el resultado del estudio: el dato queda guardado para quien responda la apelación.',
+  decision:
+    'No cambia el resultado del estudio: el dato queda guardado para la apelación, si la persona apela a tiempo, y para las evaluaciones que se hagan después con este reporte.',
   apelacion: 'No cambia el resultado del estudio: el dato queda guardado para responder esta apelación.',
-  reconsulta: 'No cambia el resultado del estudio: el dato queda guardado para evaluar el canon mayor al cambiar el inmueble.',
+  reconsulta: 'No cambia el resultado del estudio: el dato queda guardado para evaluar el canon mayor en los próximos cambios de inmueble.',
 }
+
+const BOTON =
+  'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-amber-400 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
 
 export function ReintentoSaldoTransUnion({
   estudioId,
@@ -36,17 +40,28 @@ export function ReintentoSaldoTransUnion({
   estudioId: string
   reintento: IReintentoSaldoTransUnion
   /** Recarga el detalle (con o sin éxito): el botón refleja lo que diga la API. */
-  onHecho: () => void
+  onHecho: () => Promise<unknown> | void
 }) {
   const [confirmando, setConfirmando] = useState(false)
-  const { reintentar, reintentando } = useReintentoSaldoTransUnion(estudioId, onHecho)
+  const [actualizando, setActualizando] = useState(false)
+  const tituloId = useId()
+  const { reintentar, reintentando, ultimoError } = useReintentoSaldoTransUnion(estudioId, onHecho)
+
+  const actualizar = async () => {
+    setActualizando(true)
+    try {
+      await onHecho()
+    } finally {
+      setActualizando(false)
+    }
+  }
 
   return (
-    <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
-      <p className="flex items-start gap-2 text-sm font-semibold text-amber-900">
+    <section aria-labelledby={tituloId} className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+      <h3 id={tituloId} className="flex items-start gap-2 text-sm font-semibold text-amber-900">
         <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
         Falta el saldo en mora de TransUnion
-      </p>
+      </h3>
       <p className="text-sm text-amber-800">
         {DONDE[reintento.destino]}, una mora no financiera quedó sin su saldo porque TransUnion no respondió o no se pudo
         consultar.{reintento.aplica && ' Puede reintentar la consulta sin cobro al cliente.'}
@@ -57,17 +72,28 @@ export function ReintentoSaldoTransUnion({
           onClick={() => setConfirmando(true)}
           disabled={reintentando}
           aria-busy={reintentando}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-amber-400 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          className={BOTON}
         >
           {reintentando ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
           {reintentando ? 'Consultando TransUnion…' : 'Reintentar consulta de TransUnion'}
         </button>
       ) : (
-        reintento.motivo && (
-          <p role="status" className="text-sm font-medium text-amber-900">
-            {reintento.motivo}
-          </p>
-        )
+        <>
+          {reintento.motivo && (
+            <p role="status" className="text-sm font-medium text-amber-900">
+              {reintento.motivo}
+            </p>
+          )}
+          <button type="button" onClick={() => void actualizar()} disabled={actualizando} aria-busy={actualizando} className={BOTON}>
+            {actualizando ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
+            Actualizar
+          </button>
+        </>
+      )}
+      {ultimoError && (
+        <p role="alert" className="text-sm text-red-700">
+          {ultimoError}
+        </p>
       )}
       <ConfirmDialog
         isOpen={confirmando}
@@ -84,6 +110,6 @@ export function ReintentoSaldoTransUnion({
           </ul>
         }
       />
-    </div>
+    </section>
   )
 }

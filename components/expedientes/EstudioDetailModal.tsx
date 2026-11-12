@@ -201,14 +201,19 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
   }, [isOpen, estudio?.id, fetchHistorial])
 
   // Tras una acción del analista: el detalle por id, conservando la espera del
-  // coarrendatario (§12), que solo llega en el listado.
+  // coarrendatario (§12), que solo llega en el listado. Devuelve la promesa para
+  // que la acción espere la recarga; si entretanto se abrió otra evaluación, no la pisa.
   const estudioId = estudio?.id
-  const recargarDetalle = useCallback(() => {
+  const recargarDetalle = useCallback(async () => {
     if (!estudioId) return
-    estudioService
-      .getEstudioById(estudioId)
-      .then((full) => setEstudio((prev) => ({ ...full, espera_autorizacion: full.espera_autorizacion ?? prev?.espera_autorizacion })))
-      .catch(() => undefined)
+    try {
+      const full = await estudioService.getEstudioById(estudioId)
+      setEstudio((prev) =>
+        prev?.id === full.id ? { ...full, espera_autorizacion: full.espera_autorizacion ?? prev.espera_autorizacion } : prev,
+      )
+    } catch {
+      // Sin recarga: queda lo que se ve; el botón «Actualizar» o reabrir el detalle lo traen.
+    }
   }, [estudioId])
 
   if (!estudio) return null
