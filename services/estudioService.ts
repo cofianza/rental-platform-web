@@ -29,6 +29,7 @@ import type {
   IReasignacionEstudio,
   ICatalogoMotivos,
   IDesenlaceEstudio,
+  IReintentoSaldoTransUnionResultado,
 } from '@/types/estudio'
 
 // ============================================
@@ -185,6 +186,16 @@ export const estudioService = {
   /** Cofianza retira la marca, con su motivo; el estudio se decide de nuevo. */
   async retirarMarcaRestitucion(estudioId: string, motivo: string): Promise<IDesenlaceEstudio> {
     const res = await apiClient.delete<IDesenlaceEstudio>(`/estudios/${estudioId}/restitucion`, { body: JSON.stringify({ motivo }) })
+    return res.data
+  },
+
+  /**
+   * Adenda 5 §19: un analista reintenta UNA consulta a TransUnion por el saldo
+   * en mora que no respondió. La paga Cofianza (sin cobro al cliente) y no
+   * cambia el resultado del estudio. Cada llamada es una consulta real.
+   */
+  async reintentarSaldoTransUnion(estudioId: string): Promise<IReintentoSaldoTransUnionResultado> {
+    const res = await apiClient.post<IReintentoSaldoTransUnionResultado>(`/estudios/${estudioId}/saldo-transunion`, {})
     return res.data
   },
 
