@@ -735,8 +735,8 @@ export default function AutorizarPage() {
           </div>
           <h2 className="text-xl font-extrabold text-gray-900">Este estudio ya no está activo</h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-gray-500">
-            No hay nada que autorizar con este enlace y no vamos a consultar sus datos con él. Si tiene dudas,
-            {quien} le puede ayudar, o escríbanos: abajo están nuestros datos.
+            No hay nada que autorizar con este enlace y no vamos a consultar sus datos con él. Si tiene dudas,{' '}
+            {enMedioDeFrase(quien)} le puede ayudar, o escríbanos: abajo están nuestros datos.
           </p>
           <p className="mt-4 text-sm text-gray-500">Puede cerrar esta página.</p>
         </div>
@@ -849,9 +849,13 @@ export default function AutorizarPage() {
                 tardar un poco más.
               </li>
               <li>
-                {data && data.expediente.inmueble === null
-                  ? 'Si se aprueba, le decimos hasta qué canon puede arrendar.'
-                  : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
+                {/* Al reabrir un enlace ya firmado la API no manda el estudio: sin saber si
+                    tiene inmueble, no se promete el contrato. */}
+                {!data
+                  ? 'Si se aprueba, le contamos por correo los siguientes pasos.'
+                  : data.expediente.inmueble === null
+                    ? 'Si se aprueba, le decimos hasta qué canon puede arrendar.'
+                    : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
               </li>
             </ol>
             <p className="mt-3 text-sm text-gray-500">Puede cerrar esta página.</p>
@@ -1255,8 +1259,8 @@ export default function AutorizarPage() {
 
             {situacion === 'independiente' && (
               <div>
-                <p className="text-sm font-bold text-gray-900">¿Tiene RUT activo?</p>
-                <div className="mt-2 grid grid-cols-2 gap-2">
+                <p id="rut-pregunta" className="text-sm font-bold text-gray-900">¿Tiene RUT activo?</p>
+                <div role="group" aria-labelledby="rut-pregunta" className="mt-2 grid grid-cols-2 gap-2">
                   {([true, false] as const).map((v) => {
                     const on = tieneRut === v
                     return (
@@ -1516,6 +1520,7 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={() => irAPaso(3)}
+              disabled={guardandoPerfil}
               className={buttonClasses('secondary', 'lg', 'w-full')}
             >
               {[situacion, presentacion, dondeLabora.trim(), ingreso, coaNombre.trim(), coaApellido.trim(), coaEmail.trim(), coaTelefono.trim()].some(Boolean)
@@ -1525,7 +1530,8 @@ export default function AutorizarPage() {
             <button
               type="button"
               onClick={volverPaso}
-              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600"
+              disabled={guardandoPerfil}
+              className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <IconArrowLeft size={14} /> Volver
             </button>
@@ -1756,7 +1762,7 @@ export default function AutorizarPage() {
             className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-base text-gray-900 placeholder:text-gray-500 focus:outline-hidden focus:ring-2 focus:ring-primary-500"
           />
           {reporteError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{reporteError}</div>
+            <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{reporteError}</div>
           )}
           <button
             type="button"
