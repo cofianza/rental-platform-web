@@ -339,7 +339,7 @@ export function PasoSobreUsted({
                 </p>
                 <button
                   type="button"
-                  onClick={onSeguirSinDatos}
+                  onClick={() => onSeguirSinDatos()}
                   className="min-h-11 w-full rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100"
                 >
                   Seguir sin sus datos
@@ -351,10 +351,12 @@ export function PasoSobreUsted({
       </div>
 
       {/* Nunca deshabilitado: §8.2 es, según el propio documento, donde
-          más gente abandona. Todo aquí es opcional. */}
+          más gente abandona. Todo aquí es opcional.
+          Sin pasar el evento: guardarPerfilYSeguir(true) significa «seguir sin
+          el coarrendatario» y un evento contaría como true. */}
       <button
         type="button"
-        onClick={onContinuar}
+        onClick={() => onContinuar()}
         disabled={guardandoPerfil}
         className={buttonClasses('primary', 'lg', 'w-full')}
       >
