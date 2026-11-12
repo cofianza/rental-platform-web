@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { firmaService } from '@/services/firmaService'
 import { Ranura, nombreDocumento } from '@/components/public/CapturaBiometrica'
+import { nombreCortoDocumento } from '@/lib/biometria/calidadFoto'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import type { IVerificacionIdentidadPublica } from '@/types/firma'
@@ -49,6 +50,8 @@ export default function VerificarIdentidadPage() {
   const [selfie, setSelfie] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [aviso, setAviso] = useState('')
+  // Sin intentos o con un documento que no se puede cotejar: reintentar no cambia nada.
+  const [sinReintento, setSinReintento] = useState(false)
 
   const cargar = useCallback(() => {
     setPaso('cargando')
@@ -90,15 +93,19 @@ export default function VerificarIdentidadPage() {
       setPaso(r.completada ? 'listo' : 'fotos')
     })
 
-  // Cada cotejo se factura en Auco y la misma selfie da el mismo resultado:
-  // para reintentar se pide una nueva (como en /autorizar).
+  // Cada cotejo se factura en Auco y la misma pareja de fotos da el mismo
+  // resultado: para reintentar se pide de nuevo la que falló (la API dice
+  // cuál; una API anterior no lo dice: la selfie), como en /autorizar.
   const verificar = () =>
     ejecutar(async () => {
       if (!documento || !selfie) return
       try {
         const r = await firmaService.biometriaIdentidad(token, { documentImage: documento, photo: selfie })
         if (r.completada) return setPaso('listo')
-        setSelfie(null)
+        const repetir = r.repetir ?? ['selfie']
+        if (repetir.includes('selfie')) setSelfie(null)
+        if (repetir.includes('documento')) setDocumento(null)
+        setSinReintento(r.intentos_restantes === 0 || r.causa === 'no_aplica')
         setAviso(r.motivo || 'No pudimos confirmar su identidad con estas fotos.')
       } catch (e) {
         // Sin veredicto no se sabe si Auco cobró el cotejo.
@@ -221,31 +228,44 @@ export default function VerificarIdentidadPage() {
               valor={documento}
               onChange={setDocumento}
               disabled={enviando}
+              documentoNombre={nombreDocumento(data?.tipo_documento, 'documento')}
+              resaltada={!!aviso && !documento && !sinReintento}
             />
             <Ranura
               titulo="Selfie"
-              ayuda="Buena luz, sin gorra ni gafas oscuras"
+              ayuda="Buena luz, sin gafas ni gorra"
               icono={<IconUser size={22} />}
               capture="user"
               valor={selfie}
               onChange={setSelfie}
               disabled={enviando}
+              resaltada={!!aviso && !selfie && !sinReintento}
             />
           </div>
 
           {aviso && <Aviso texto={aviso} />}
 
-          <button
-            type="button"
-            onClick={verificar}
-            disabled={!documento || !selfie || enviando}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {enviando && <IconLoader size={20} className="animate-spin" />}
-            {enviando ? 'Verificando…' : aviso ? 'Verificar con la nueva selfie' : 'Verificar mi identidad'}
-          </button>
-          {aviso && !selfie && !enviando && (
-            <p className="-mt-2 text-center text-xs text-gray-500">Para intentar de nuevo, tome otra selfie con mejor luz.</p>
+          {!sinReintento && (
+            <button
+              type="button"
+              onClick={verificar}
+              disabled={!documento || !selfie || enviando}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary-700 px-6 py-3 text-base font-bold text-white transition-colors hover:bg-primary-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {enviando && <IconLoader size={20} className="animate-spin" />}
+              {enviando ? 'Verificando…' : aviso ? 'Verificar de nuevo' : 'Verificar mi identidad'}
+            </button>
+          )}
+          {aviso && !sinReintento && (!selfie || !documento) && !enviando && (
+            <p className="-mt-2 text-center text-xs text-gray-500">
+              Para intentar de nuevo, tome{' '}
+              {!documento && !selfie
+                ? 'las dos fotos'
+                : !documento
+                  ? `otra foto de su ${nombreCortoDocumento(nombreDocumento(data?.tipo_documento, 'documento'))}`
+                  : 'otra selfie'}
+              .
+            </p>
           )}
 
           {/* Siempre visible: nadie queda atrapado por una cámara mala o un

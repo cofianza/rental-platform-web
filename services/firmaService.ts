@@ -10,6 +10,18 @@ import type {
   IVerificacionIdentidad,
   IVerificacionIdentidadPublica,
 } from '@/types/firma'
+import type { CausaBiometria, FotoBiometria } from '@/types/autorizacion'
+
+/** Cotejo de la firma (Adenda 2 §9). Los campos opcionales faltan en APIs anteriores. */
+interface IBiometriaFirmaResponse {
+  completada: boolean
+  motivo: string | null
+  /** Fotos que hay que tomar de nuevo (ausente: la selfie). */
+  repetir?: FotoBiometria[]
+  causa?: CausaBiometria
+  /** 0 = ya no puede reintentar; null = no se sabe. */
+  intentos_restantes?: number | null
+}
 
 class FirmaService {
   async crearSolicitud(input: ICrearSolicitudFirmaInput): Promise<ISolicitudFirma & { firma_url: string }> {
@@ -115,8 +127,8 @@ class FirmaService {
   async biometriaIdentidad(
     token: string,
     input: { documentImage: string; photo: string },
-  ): Promise<{ completada: boolean; motivo: string | null }> {
-    const res = await apiClient.post<{ completada: boolean; motivo: string | null }>(
+  ): Promise<IBiometriaFirmaResponse> {
+    const res = await apiClient.post<IBiometriaFirmaResponse>(
       `/public/verificacion-identidad/${token}/biometria`,
       input,
     )
