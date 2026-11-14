@@ -19,7 +19,7 @@ import { actividadConAlerta, siguienteOrdenActividad } from '@/lib/etapaFila'
 import { direccionLegible } from '@/lib/direccionLegible'
 import type { EtapaEstudio, VistaTurno } from '@/lib/etapaEstudio'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, EXPEDIENTE_UI_MESSAGES } from './constants'
-import { formatDate } from '@/lib/constants'
+import { formatDate, formatDateTime } from '@/lib/constants'
 import { AYUDA } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import {
@@ -151,8 +151,8 @@ export function Actividad({ expediente }: { expediente: IExpediente }) {
         {d <= 0 ? 'Hoy' : d === 1 ? 'Ayer' : `Hace ${d} días`}
       </p>
       {/* Una línea, no tres («Creado» / fecha partida): la fecha completa queda en el title. */}
-      <p title={`Creado el ${formatDate(expediente.created_at)}`} className="whitespace-nowrap text-xs text-gray-500">
-        Creado {fechaCorta(expediente.created_at)}
+      <p title={`Creado el ${formatDateTime(expediente.created_at)}`} className="whitespace-nowrap text-xs text-gray-500">
+        Creado {fechaCorta(expediente.created_at)}, {horaCorta(expediente.created_at)}
       </p>
     </div>
   )
@@ -169,6 +169,13 @@ function fechaCorta(iso: string): string {
     ...(anio(f) === anio(new Date()) ? {} : { year: 'numeric' }),
     timeZone: 'America/Bogota',
   })
+}
+
+/** «5:39 p. m.» (hora de Colombia). */
+function horaCorta(iso: string): string {
+  const f = new Date(iso)
+  if (Number.isNaN(f.getTime())) return '—'
+  return f.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' })
 }
 
 const M = EXPEDIENTE_UI_MESSAGES
