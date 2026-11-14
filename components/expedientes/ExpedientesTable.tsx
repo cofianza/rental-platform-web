@@ -150,9 +150,10 @@ export function Actividad({ expediente }: { expediente: IExpediente }) {
       >
         {d <= 0 ? 'Hoy' : d === 1 ? 'Ayer' : `Hace ${d} días`}
       </p>
-      {/* Una línea, no tres («Creado» / fecha partida): la fecha completa queda en el title. */}
+      {/* La hora en su propia línea: junto a la fecha ensanchaba la columna y la tabla la cortaba. */}
       <p title={`Creado el ${formatDateTime(expediente.created_at)}`} className="whitespace-nowrap text-xs text-gray-500">
-        Creado {fechaCorta(expediente.created_at)}, {horaCorta(expediente.created_at)}
+        Creado {fechaCorta(expediente.created_at)}
+        <span className="block">{horaCorta(expediente.created_at)}</span>
       </p>
     </div>
   )
