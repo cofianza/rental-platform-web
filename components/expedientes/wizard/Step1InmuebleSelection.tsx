@@ -31,7 +31,7 @@ import {
 } from '@/components/inmuebles/constants'
 import { EstudiosActivosBadge } from '@/components/inmuebles/InmuebleBadges'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
-import { WIZARD_MESSAGES, USOS_NO_AFIANZABLES, MSG_USO_NO_AFIANZABLE } from './constants'
+import { WIZARD_MESSAGES, USOS_NO_AFIANZABLES, TIPOS_NO_AFIANZABLES, MSG_USO_NO_AFIANZABLE } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { SinInmuebleStep1 } from './SinInmuebleStep1'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -76,7 +76,7 @@ function estadoBadge(i: IInmueble) {
 // Aquí además (punto 3, 2026-09-25) un inmueble comercial o mixto no se puede
 // elegir: el estudio no nacería (409 ESTUDIO_NO_AFIANZABLE). La reasignación
 // no cambia: ahí el estudio ya existe.
-const usoNoAfianzable = (i: IInmueble) => USOS_NO_AFIANZABLES.includes(i.uso)
+const usoNoAfianzable = (i: IInmueble) => USOS_NO_AFIANZABLES.includes(i.uso) || (i.tipo != null && TIPOS_NO_AFIANZABLES.includes(i.tipo))
 const esSeleccionable = (i: IInmueble) => esSeleccionableBase(i) && !usoNoAfianzable(i)
 const motivoNoSeleccionable = (i: IInmueble) =>
   esSeleccionableBase(i) && usoNoAfianzable(i) ? MSG_USO_NO_AFIANZABLE : motivoNoSeleccionableBase(i)
