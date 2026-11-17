@@ -38,9 +38,11 @@ export const TIPO_DOCUMENTO_OPTIONS = [
 ] as const
 
 export const USOS_NO_AFIANZABLES: readonly string[] = ['comercial', 'local_comercial', 'mixto']
+// Comerciales por naturaleza aunque el uso diga vivienda (API: usoParaAfianzar en inmuebles/destinacion.ts).
+export const TIPOS_NO_AFIANZABLES: readonly string[] = ['local', 'oficina', 'bodega']
 
 export const MSG_USO_NO_AFIANZABLE =
-  'Uso comercial o mixto: los estudios de estos inmuebles están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'
+  'Locales, oficinas, bodegas e inmuebles de uso comercial o mixto: los estudios de estos inmuebles están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'
 
 export const MSG_PERSONA_JURIDICA =
   'El arrendatario es una persona jurídica o se identifica con NIT: estos estudios están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'
