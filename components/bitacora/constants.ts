@@ -92,6 +92,7 @@ export const ACTION_LABELS: Record<string, string> = {
   autorizacion_firmada: 'Autorización firmada',
   autorizacion_revocada: 'Autorización revocada',
   autorizacion_biometria: 'Cotejo biométrico',
+  biometria_evidencia_consultada: 'Consulta de la evidencia biométrica',
 
   // Calibración del modelo
   calibracion_parametro_cambiado: 'Parámetro de calibración cambiado',
@@ -383,6 +384,7 @@ export const ACTION_GROUPS: Array<{
       'autorizacion_firmada',
       'autorizacion_revocada',
       'autorizacion_biometria',
+      'biometria_evidencia_consultada',
       'calibracion_parametro_cambiado',
     ].map(toOption),
   },
