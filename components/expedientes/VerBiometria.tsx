@@ -3,11 +3,14 @@
 /**
  * «Ver biometría» en la revisión manual (Opción 1 aprobada por Gerencia).
  *
- * El analista de Cofianza ve la selfie, la cédula (frente y reverso), la
- * similitud y el motivo del cotejo sin entrar al panel de Auco. Las fotos no
- * se guardan en Cofianza: la API se las pide a Auco cuando se abre esta
- * ventana (nunca antes) y sus enlaces vencen a los 5 minutos. Al cerrar se
- * olvidan; al volver a abrir se piden de nuevo.
+ * El analista de Cofianza ve la selfie, el documento, la similitud y el motivo
+ * del cotejo sin entrar al panel de Auco. Las fotos no se guardan en Cofianza:
+ * la API se las pide a Auco cuando se abre esta ventana (nunca antes) y sus
+ * enlaces vencen a los 5 minutos. Al cerrar se olvidan; al volver a abrir se
+ * piden de nuevo.
+ *
+ * Hoy la autorización le pide a la persona UNA foto del documento (el lado con
+ * su foto): el reverso solo se muestra si Auco lo trae.
  *
  * Solo administrador y operador, nunca en «ver como» (la API también lo niega),
  * y solo si el estudio tiene un cotejo con fotos que consultar.
@@ -18,6 +21,7 @@ import {
   IconAlertTriangle,
   IconCamera,
   IconCheckCircle,
+  IconExternalLink,
   IconId,
   IconInfo,
   IconLoader,
@@ -31,14 +35,49 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { useVerComo } from '@/components/expedientes/VerComo'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useEvidenciaBiometria, useResumenBiometria } from '@/hooks/useBiometriaEvidencia'
-import type { EstadoBiometria, IIntentoBiometria, IResumenBiometriaAnalista } from '@/types/autorizacion'
+import type { IIntentoBiometria, IResumenBiometriaAnalista } from '@/types/autorizacion'
 
-const ESTADO: Record<EstadoBiometria, { texto: string; clase: string }> = {
-  verificada: { texto: 'Verificada', clase: 'bg-primary-50 text-primary-800 ring-primary-200' },
-  no_coincide: { texto: 'No coincide', clase: 'bg-red-50 text-red-800 ring-red-200' },
-  no_verificada: { texto: 'No verificada', clase: 'bg-amber-50 text-amber-900 ring-amber-200' },
-  omitida: { texto: 'No autorizada por el solicitante', clase: 'bg-gray-100 text-gray-700 ring-gray-200' },
-  desactivada: { texto: 'Desactivada', clase: 'bg-gray-100 text-gray-700 ring-gray-200' },
+const VERDE = 'bg-primary-50 text-primary-800 ring-primary-200'
+const ROJO = 'bg-red-50 text-red-800 ring-red-200'
+const AMBAR = 'bg-amber-50 text-amber-900 ring-amber-200'
+const GRIS = 'bg-gray-100 text-gray-700 ring-gray-200'
+
+/** El estado guardado, dicho como lo lee el analista. «Verificada» en verde solo si el documento también cuadró. */
+function estadoVisible(r: IResumenBiometriaAnalista): { texto: string; clase: string } {
+  switch (r.estado) {
+    case 'verificada':
+      return r.documento_coincide === true
+        ? { texto: 'Verificada', clase: VERDE }
+        : { texto: 'Rostro verificado, documento sin confirmar', clase: AMBAR }
+    case 'no_coincide':
+      return { texto: 'No coincide', clase: ROJO }
+    case 'no_verificada':
+      return { texto: 'No verificada', clase: AMBAR }
+    case 'omitida':
+      return { texto: 'No autorizada por el solicitante', clase: GRIS }
+    case 'desactivada':
+      return { texto: 'Desactivada', clase: GRIS }
+    default:
+      return { texto: String(r.estado), clase: GRIS }
+  }
+}
+
+/** Por qué no quedó verificada, en claro. El texto guardado va aparte como detalle técnico. */
+function motivoVisible(r: IResumenBiometriaAnalista): string | null {
+  switch (r.estado) {
+    case 'verificada':
+      if (r.documento_coincide === false) return 'El rostro coincide, pero el documento fotografiado no es el del solicitante.'
+      if (r.documento_coincide === null) return 'El rostro coincide, pero no se pudo leer el número del documento para compararlo.'
+      return null
+    case 'no_coincide':
+      return r.similitud != null && r.similitud < r.umbral
+        ? `La similitud quedó por debajo del mínimo (${pct(r.similitud)} frente a ${pct(r.umbral)}).`
+        : 'Auco marcó el cotejo como fallido.'
+    case 'no_verificada':
+      return 'Auco no pudo hacer el cotejo.'
+    default:
+      return null
+  }
 }
 
 const fechaHora = (iso: string | null | undefined) => {
@@ -66,7 +105,7 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
   const verComo = useVerComo()
   const habilitado = hasRole(['administrador', 'operador_analista']) && !verComo
   const { conEvidencia } = useResumenBiometria(expedienteId, habilitado)
-  const { datos, cargando, error, recibidoEn, vencido, consultar, limpiar } = useEvidenciaBiometria(expedienteId)
+  const { datos, cargando, error, reintentable, recibidoEn, vencido, consultar, limpiar } = useEvidenciaBiometria(expedienteId)
   const [abierto, setAbierto] = useState(false)
 
   if (!conEvidencia) return null
@@ -80,8 +119,9 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
     limpiar()
   }
   const venceA = datos?.vence_en_segundos && recibidoEn ? recibidoEn + datos.vence_en_segundos * 1000 : null
-  // Volver a pedir solo sirve cuando hay fotos (vencen). Sin fotos no cambia nada; con error, «Reintentar».
-  const puedeReconsultar = cargando || !!datos?.disponible
+  const hayFotos = !!datos?.disponible && datos.intentos.length > 0
+  // Volver a pedir solo sirve con fotos (vencen). Sin fotos no cambia nada; con error, «Reintentar».
+  const puedeReconsultar = cargando || hayFotos
 
   return (
     <>
@@ -94,7 +134,7 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
         isOpen={abierto}
         onClose={cerrar}
         title="Verificación biométrica del solicitante"
-        description="Lo que Auco registró al comparar el rostro del solicitante con su cédula."
+        description="Lo que Auco registró al comparar el rostro del solicitante con su documento de identidad."
         size="xl"
         closeOnBackdrop
         footer={
@@ -118,20 +158,21 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
         }
       >
         <div className="space-y-4">
-          <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-            <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
-            <span>
-              Las imágenes vienen de Auco y no se guardan en Cofianza. Los enlaces vencen a los 5 minutos: si no
-              cargan, vuelva a consultarlas.
-            </span>
-          </p>
+          {(cargando || hayFotos) && (
+            <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+              <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
+              <span>
+                Las imágenes vienen de Auco y no se guardan en Cofianza. Los enlaces vencen a los 5 minutos: si no
+                cargan, vuelva a consultarlas.
+              </span>
+            </p>
+          )}
 
           {cargando ? (
             <div role="status" className="space-y-3">
               <span className="sr-only">Consultando las fotos en Auco…</span>
               <Skeleton className="h-16 w-full" />
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <Skeleton className="h-48 w-full" />
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Skeleton className="h-48 w-full" />
                 <Skeleton className="h-48 w-full" />
               </div>
@@ -142,14 +183,16 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
               <div className="min-w-0">
                 <p className="font-semibold">No pudimos traer la verificación</p>
                 <p className="break-words">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => void consultar()}
-                  className="mt-2 inline-flex min-h-10 items-center gap-1.5 font-semibold underline"
-                >
-                  <IconRefresh size={14} />
-                  Reintentar
-                </button>
+                {reintentable && (
+                  <button
+                    type="button"
+                    onClick={() => void consultar()}
+                    className="mt-2 inline-flex min-h-10 items-center gap-1.5 font-semibold underline"
+                  >
+                    <IconRefresh size={14} />
+                    Reintentar
+                  </button>
+                )}
               </div>
             </div>
           ) : datos ? (
@@ -169,14 +212,17 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
                     </p>
                   ) : (
                     venceA && (
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm text-gray-600">
                         Consultadas a las {hora(recibidoEn!)}; los enlaces vencen a las {hora(venceA)}
                       </p>
                     )
                   )}
+                  <p className="text-sm text-gray-600">
+                    Se muestran los intentos de la verificación que quedó registrada en el estudio.
+                  </p>
                   <ol className="space-y-4">
                     {datos.intentos.map((intento) => (
-                      <Intento key={intento.numero} intento={intento} total={datos.intentos.length} />
+                      <Intento key={intento.numero} intento={intento} umbral={datos.resumen?.umbral ?? null} />
                     ))}
                   </ol>
                 </>
@@ -190,12 +236,14 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
 }
 
 function ResumenCotejo({ resumen }: { resumen: IResumenBiometriaAnalista }) {
-  const estado = ESTADO[resumen.estado] ?? { texto: resumen.estado, clase: 'bg-gray-100 text-gray-700 ring-gray-200' }
+  const estado = estadoVisible(resumen)
+  const motivo = motivoVisible(resumen)
+  const tecnico = resumen.estado !== 'omitida' && resumen.estado !== 'desactivada' ? resumen.motivo : null
   const documento =
     resumen.documento_coincide === true
-      ? 'Coincide con el del estudio'
+      ? 'Coincide con el documento del solicitante'
       : resumen.documento_coincide === false
-        ? 'No es el del estudio'
+        ? 'No coincide con el documento del solicitante'
         : 'No se pudo comparar'
   return (
     <section aria-labelledby="bio-resultado" className="rounded-lg border border-gray-200 p-3 text-sm">
@@ -229,55 +277,64 @@ function ResumenCotejo({ resumen }: { resumen: IResumenBiometriaAnalista }) {
         </div>
         {resumen.nombre_ocr && (
           <div>
-            <dt className="text-xs text-gray-500">Nombre leído de la cédula</dt>
+            <dt className="text-xs text-gray-500">Nombre leído del documento</dt>
             <dd className="break-words font-medium text-gray-900">{resumen.nombre_ocr}</dd>
           </div>
         )}
       </dl>
-      {resumen.motivo && (
+      {motivo && (
         <p className="mt-2 break-words text-gray-700">
           <span className="font-medium text-gray-900">Motivo: </span>
-          {resumen.motivo}
+          {motivo}
         </p>
       )}
+      {tecnico && <p className="mt-1 break-words text-xs text-gray-500">Detalle técnico registrado: {tecnico}</p>}
     </section>
   )
 }
 
-function Intento({ intento, total }: { intento: IIntentoBiometria; total: number }) {
+function Intento({ intento, umbral }: { intento: IIntentoBiometria; umbral: number | null }) {
+  const bajoMinimo = intento.similitud != null && umbral != null && intento.similitud < umbral
+  // Hoy se toma una sola foto del documento: el reverso solo aparece si Auco lo trae.
+  const conReverso = !!intento.cedula_reverso_url
   return (
     <li className="rounded-lg border border-gray-200 p-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        <p className="font-semibold text-gray-900">
-          Intento {intento.numero} de {total}
-        </p>
+        <p className="font-semibold text-gray-900">Intento {intento.numero}</p>
         <p className="text-gray-600">{fechaHora(intento.fecha)}</p>
         {intento.exitoso != null && (
           <span
             className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
-              intento.exitoso ? 'bg-primary-50 text-primary-800 ring-primary-200' : 'bg-red-50 text-red-800 ring-red-200'
+              intento.exitoso ? VERDE : ROJO
             }`}
           >
             {intento.exitoso ? <IconCheckCircle size={12} /> : <IconAlertTriangle size={12} />}
-            {intento.exitoso ? 'Superado' : 'No superado'}
+            {intento.exitoso ? 'Según Auco: superado' : 'Según Auco: no superado'}
           </span>
         )}
         <p className="text-gray-700">
           Similitud <span className="font-semibold text-gray-900">{pct(intento.similitud)}</span>
+          {bajoMinimo && <span className="text-red-700"> (por debajo del mínimo de {pct(umbral)})</span>}
         </p>
       </div>
-      {(intento.motivo || intento.codigos_error.length > 0) && (
-        <div className="mt-1 text-sm text-gray-700">
-          {intento.motivo && <p>{intento.motivo}</p>}
-          {intento.codigos_error.length > 0 && (
-            <p className="break-all font-mono text-xs text-gray-500">Códigos de Auco: {intento.codigos_error.join(' · ')}</p>
-          )}
-        </div>
+      {/* Con «no superado» la insignia ya lo dice: el texto solo cuando Auco dejó observaciones. */}
+      {intento.exitoso !== false && intento.motivo && <p className="mt-1 text-sm text-gray-700">{intento.motivo}</p>}
+      {intento.codigos_error.length > 0 && (
+        <p className="mt-1 break-all text-xs text-gray-500">
+          Detalle técnico de Auco: <span className="font-mono">{intento.codigos_error.join(' · ')}</span>
+        </p>
       )}
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className={`mt-3 grid grid-cols-1 gap-3 ${conReverso ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
         <Foto url={intento.selfie_url} titulo="Selfie" icono={<IconUser size={14} />} numero={intento.numero} />
-        <Foto url={intento.cedula_frente_url} titulo="Cédula (frente)" icono={<IconId size={14} />} numero={intento.numero} />
-        <Foto url={intento.cedula_reverso_url} titulo="Cédula (reverso)" icono={<IconId size={14} />} numero={intento.numero} />
+        <Foto
+          url={intento.cedula_frente_url}
+          titulo={conReverso ? 'Documento (frente)' : 'Documento'}
+          icono={<IconId size={14} />}
+          numero={intento.numero}
+        />
+        {conReverso && (
+          <Foto url={intento.cedula_reverso_url} titulo="Documento (reverso)" icono={<IconId size={14} />} numero={intento.numero} />
+        )}
       </div>
     </li>
   )
@@ -297,24 +354,30 @@ function Foto({ url, titulo, icono, numero }: { url: string | null; titulo: stri
           target="_blank"
           rel="noopener noreferrer"
           referrerPolicy="no-referrer"
-          className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+          className="relative block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
           aria-label={`${titulo} del intento ${numero}: ampliar en otra pestaña`}
         >
-          {/* URL firmada de Auco que vence en 5 minutos: <img> normal, sin el optimizador de next/image. */}
+          {/* URL firmada de Auco que vence en 5 minutos: <img> normal (sin next/image) y sin carga diferida. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={url}
             alt={`${titulo} del intento ${numero}`}
             referrerPolicy="no-referrer"
-            loading="lazy"
             onError={() => setFallo(true)}
             className="h-48 w-full rounded-lg border border-gray-200 bg-gray-50 object-contain"
           />
+          <span
+            aria-hidden="true"
+            className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded bg-white/90 px-1.5 py-0.5 text-xs font-medium text-gray-700 shadow-sm"
+          >
+            <IconExternalLink size={12} />
+            Ampliar
+          </span>
         </a>
       ) : (
         <div className="flex h-48 w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 text-center text-xs text-gray-500">
           <IconCamera size={18} />
-          {url ? 'No cargó. Puede que el enlace haya vencido: vuelva a consultar las fotos.' : 'Auco no entregó esta foto.'}
+          {url ? 'No cargó. Puede que el enlace haya vencido: vuelva a consultar las fotos.' : 'Esta foto no está disponible en Auco.'}
         </div>
       )}
     </figure>

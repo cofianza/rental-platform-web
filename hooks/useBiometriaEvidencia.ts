@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { biometriaService } from '@/services/biometriaService'
 import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
+import { ApiClientError } from '@/lib/api'
 import type { IEvidenciaBiometria } from '@/types/autorizacion'
 
 export function useResumenBiometria(expedienteId: string | undefined, habilitado: boolean) {
@@ -23,9 +24,9 @@ export function useResumenBiometria(expedienteId: string | undefined, habilitado
       .then((r) => {
         if (vivo) setConEvidencia(r.con_evidencia)
       })
-      // Sin el resumen no se ofrece el botón: la revisión sigue igual que antes.
+      // Si el resumen no cargó, el botón se ofrece igual: la consulta dice si hay fotos o no.
       .catch(() => {
-        if (vivo) setConEvidencia(false)
+        if (vivo) setConEvidencia(true)
       })
     return () => {
       vivo = false
@@ -35,10 +36,14 @@ export function useResumenBiometria(expedienteId: string | undefined, habilitado
   return { conEvidencia: habilitado && conEvidencia }
 }
 
+const ERRORES_SIN_REINTENTO = ['BIOMETRIA_EVIDENCIA_NO_ENCONTRADA', 'BIOMETRIA_PROVEEDOR_RECHAZO']
+
 export function useEvidenciaBiometria(expedienteId: string) {
   const [datos, setDatos] = useState<IEvidenciaBiometria | null>(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Auco no encontró la evidencia o rechazó la llave: reintentar no lo arregla.
+  const [reintentable, setReintentable] = useState(true)
   // Hora local en que llegaron las fotos: de ahí corren sus 5 minutos.
   const [recibidoEn, setRecibidoEn] = useState<number | null>(null)
   const [vencido, setVencido] = useState(false)
@@ -66,6 +71,7 @@ export function useEvidenciaBiometria(expedienteId: string) {
     } catch (err) {
       if (!vigente()) return
       setError(err instanceof Error && err.message ? err.message : 'No pudimos consultar la verificación biométrica.')
+      setReintentable(!(err instanceof ApiClientError && ERRORES_SIN_REINTENTO.includes(err.code ?? '')))
     } finally {
       if (vigente()) setCargando(false)
     }
@@ -81,5 +87,5 @@ export function useEvidenciaBiometria(expedienteId: string) {
     setRecibidoEn(null)
   }, [iniciar])
 
-  return { datos, cargando, error, recibidoEn, vencido, consultar, limpiar }
+  return { datos, cargando, error, reintentable, recibidoEn, vencido, consultar, limpiar }
 }

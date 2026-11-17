@@ -231,6 +231,7 @@ export const ACTION_PREFIX_COLORS: Array<[string, { bg: string; text: string }]>
   ['estudio_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
   ['certificado_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
   ['autorizacion_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
+  ['biometria_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
   ['calibracion_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
   ['contrato_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
   ['plantilla_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
