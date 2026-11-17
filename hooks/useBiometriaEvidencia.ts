@@ -24,9 +24,10 @@ export function useResumenBiometria(expedienteId: string | undefined, habilitado
       .then((r) => {
         if (vivo) setConEvidencia(r.con_evidencia)
       })
-      // Si el resumen no cargó, el botón se ofrece igual: la consulta dice si hay fotos o no.
-      .catch(() => {
-        if (vivo) setConEvidencia(true)
+      // Si el resumen no cargó (red, 5xx), el botón se ofrece igual: la consulta dice si hay fotos.
+      // Un 404 (estudio inexistente o una API sin la ruta) no lo ofrece.
+      .catch((err) => {
+        if (vivo) setConEvidencia(!(err instanceof ApiClientError && err.statusCode === 404))
       })
     return () => {
       vivo = false
