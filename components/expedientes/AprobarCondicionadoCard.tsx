@@ -107,9 +107,11 @@ export function AprobarCondicionadoCard({
   // B14: sin catálogo todavía no se decide el modo (lista o texto).
   const motivoListo = cargandoMotivos ? false : catalogo ? !errorMotivos('aprobar', motivos, catalogo) : fundamento.trim().length >= 10
   const [documentos, setDocumentos] = useState<string[]>([])
-  // La foto no coincidió o no se pudo verificar: la API pide una nota de identidad.
-  // Se descubre con su respuesta (NOTA_IDENTIDAD_REQUERIDA); desde ahí se exige aquí.
+  // La API pide explicar una verificación antes de aprobar (NOTA_IDENTIDAD_REQUERIDA): la foto del solicitante
+  // no coincidió o no se pudo verificar, o el estudio se aprueba con el segundo firmante y falta dejar constancia
+  // de la verificación de esa persona. Se descubre con su respuesta; desde ahí se exige aquí, con el motivo que dio.
   const [pideNotaIdentidad, setPideNotaIdentidad] = useState(false)
+  const [motivoNota, setMotivoNota] = useState<string | null>(null)
   const [notaIdentidad, setNotaIdentidad] = useState('')
   const faltaNotaIdentidad = pideNotaIdentidad && notaIdentidad.trim().length < 10
   // Adenda 2 §4.3: V7 y V9 con los que se recalcula el puntaje.
@@ -152,7 +154,7 @@ export function AprobarCondicionadoCard({
   if (errorFundamento) faltantes.push(errorFundamento)
   if (!evaluacion.estabilidad_laboral) faltantes.push('Elija la «Situación laboral verificada».')
   if (!evaluacion.arrendamiento_previo) faltantes.push('Elija el «Historial de arrendamiento verificado» (si no tiene, elija «Sin historial de arrendamiento previo»).')
-  if (faltaNotaIdentidad) faltantes.push('Escriba cómo verificó la identidad (mínimo 10 caracteres).')
+  if (faltaNotaIdentidad) faltantes.push('Explique cómo hizo la verificación (mínimo 10 caracteres).')
   // Lo que impide aprobar ahora (p. ej. Política §15 sin el coarrendatario de 80):
   // se dice antes del formulario, no al final después de llenarlo.
   const [bloqueo, setBloqueo] = useState<{ codigo: string; motivo: string } | null>(null)
@@ -355,8 +357,9 @@ export function AprobarCondicionadoCard({
     } catch (err) {
       if (err instanceof ApiClientError && err.code === 'NOTA_IDENTIDAD_REQUERIDA') {
         setPideNotaIdentidad(true)
-        // El texto de la API distingue «no coincidió» de «no se pudo verificar».
-        toast.error(err.message || 'La foto del solicitante no permitió verificar su identidad. Explique abajo cómo la verificó.')
+        // El texto de la API dice qué verificación falta explicar y de quién; queda junto al campo.
+        setMotivoNota(err.message || null)
+        toast.error('Falta explicar una verificación: vea «Cómo hizo la verificación».')
         return
       }
       const msg = err instanceof Error ? err.message : 'No se pudo aprobar el estudio.'
@@ -456,9 +459,12 @@ export function AprobarCondicionadoCard({
               <div role="status" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                 <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
                 <div>
-                  <p className="font-semibold">Todavía no se puede aprobar</p>
+                  {/* El solicitante no cumple y con el segundo firmante tampoco se aprueba: el mensaje ya dice qué hacer. */}
+                  <p className="font-semibold">{bloqueo.codigo === 'APROBACION_CON_SEGUNDO_NO_PROCEDE' ? 'No se puede aprobar' : 'Todavía no se puede aprobar'}</p>
                   <p>{bloqueo.motivo}</p>
-                  <p className="mt-1 text-red-700">Puede dejarlo en espera o pasarlo a «No aprobable» con «Cambiar estado».</p>
+                  {bloqueo.codigo !== 'APROBACION_CON_SEGUNDO_NO_PROCEDE' && (
+                    <p className="mt-1 text-red-700">Puede dejarlo en espera o pasarlo a «No aprobable» con «Cambiar estado».</p>
+                  )}
                 </div>
               </div>
             )}
@@ -644,18 +650,20 @@ export function AprobarCondicionadoCard({
         {pideNotaIdentidad && (
           <div>
             <label htmlFor="nota-identidad" className="block text-sm font-medium text-gray-700 mb-1">
-              Cómo verificó la identidad <span className="text-red-500">*</span>
+              Cómo hizo la verificación <span className="text-red-500" aria-hidden="true">*</span>
             </label>
-            <p className="mb-1 text-xs text-gray-600">
-              La foto del solicitante no coincidió con su documento o no permitió verificar su identidad. Explique cómo confirmó que es la misma persona.
+            <p id="nota-identidad-ayuda" className="mb-1 text-xs text-gray-600">
+              {motivoNota ?? 'Antes de aprobar, explique cómo hizo la verificación que la revisión dejó pendiente.'}
             </p>
             <textarea
               id="nota-identidad"
+              aria-describedby="nota-identidad-ayuda"
               value={notaIdentidad}
               onChange={(e) => setNotaIdentidad(e.target.value)}
               rows={2}
+              maxLength={1000}
               disabled={loading}
-              placeholder="Por ejemplo: revisé la cédula original en una videollamada (mínimo 10 caracteres)"
+              placeholder="Qué revisó o consultó y qué encontró (mínimo 10 caracteres)"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100"
             />
           </div>

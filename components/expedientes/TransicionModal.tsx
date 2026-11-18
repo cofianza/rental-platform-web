@@ -42,7 +42,7 @@ export interface TransicionModalProps {
     motivos?: IMotivosElegidos,
     /** Adenda 4 §9: al aprobar una revisión manual, exigió algo más. */
     condicionAdicional?: boolean,
-    /** Biometría «no coincide»: cómo verificó el analista la identidad. */
+    /** Cómo hizo el analista la verificación que la API pide explicar (identidad del solicitante o segundo firmante). */
     notaIdentidad?: string,
   ) => Promise<void>
   isLoading?: boolean
@@ -75,8 +75,11 @@ export function TransicionModal({
   const [evaluacion, setEvaluacion] = useState<EvaluacionParcial>({})
   const [condicionAdicional, setCondicionAdicional] = useState(false)
   const [motivos, setMotivos] = useState<IMotivosElegidos>({ motivos: [] })
-  // La foto no coincidió o no se pudo verificar: la API pide la nota (NOTA_IDENTIDAD_REQUERIDA).
+  // La API pide explicar una verificación antes de aprobar (NOTA_IDENTIDAD_REQUERIDA): la foto del solicitante
+  // no coincidió o no se pudo verificar, o el estudio se aprueba con el segundo firmante y falta su verificación.
   const [pideNotaIdentidad, setPideNotaIdentidad] = useState(false)
+  // El motivo que dio la API (qué verificación y de quién): queda junto al campo, no solo en el error del pie.
+  const [motivoNota, setMotivoNota] = useState<string | null>(null)
   const [notaIdentidad, setNotaIdentidad] = useState('')
   const { userRole } = usePermissions()
   const { catalogo, cargando: cargandoMotivos } = useMotivosDecision(userRole === 'administrador' || userRole === 'operador_analista')
@@ -97,6 +100,7 @@ export function TransicionModal({
     setEvaluacion({})
     setMotivos({ motivos: [] })
     setPideNotaIdentidad(false)
+    setMotivoNota(null)
     setNotaIdentidad('')
     setError(null)
     onClose()
@@ -171,7 +175,7 @@ export function TransicionModal({
     }
 
     if (pideEvaluacion && pideNotaIdentidad && notaIdentidad.trim().length < MIN_MOTIVO) {
-      setError(`Explique cómo verificó la identidad (mínimo ${MIN_MOTIVO} caracteres).`)
+      setError(`Explique cómo hizo la verificación (mínimo ${MIN_MOTIVO} caracteres).`)
       return
     }
 
@@ -200,8 +204,9 @@ export function TransicionModal({
     } catch (err) {
       if (err instanceof ApiClientError && err.code === 'NOTA_IDENTIDAD_REQUERIDA') {
         setPideNotaIdentidad(true)
-        // El texto de la API distingue «no coincidió» de «no se pudo verificar».
-        setError(err.message || 'La foto del solicitante no permitió verificar su identidad. Explique abajo cómo la verificó.')
+        // El texto de la API dice qué verificación falta explicar y de quién: va junto al campo; en el pie, uno corto.
+        setMotivoNota(err.message || null)
+        setError('Falta explicar una verificación: vea «Cómo hizo la verificación».')
       }
       return
     } finally {
@@ -402,12 +407,16 @@ export function TransicionModal({
         {pideEvaluacion && pideNotaIdentidad && (
           <div>
             <label htmlFor="transicion-modal-nota-identidad" className="block text-sm font-medium text-gray-700 mb-2">
-              Cómo verificó la identidad <span className="text-red-600" aria-hidden="true">*</span>
+              Cómo hizo la verificación <span className="text-red-600" aria-hidden="true">*</span>
             </label>
+            <p id="transicion-modal-nota-identidad-ayuda" className="mb-2 text-xs text-gray-600">
+              {motivoNota ?? 'Antes de aprobar, explique cómo hizo la verificación que la revisión dejó pendiente.'}
+            </p>
             <textarea id="transicion-modal-nota-identidad"
+              aria-describedby="transicion-modal-nota-identidad-ayuda"
               value={notaIdentidad}
               onChange={(e) => setNotaIdentidad(e.target.value)}
-              placeholder="Por ejemplo: revisé la cédula original en una videollamada"
+              placeholder="Qué revisó o consultó y qué encontró"
               rows={2}
               maxLength={1000}
               disabled={isLoading}
