@@ -11,10 +11,12 @@ import { useCallback, useEffect, useState } from 'react'
 import { biometriaService } from '@/services/biometriaService'
 import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
 import { ApiClientError } from '@/lib/api'
-import type { IEvidenciaBiometria } from '@/types/autorizacion'
+import type { IEvidenciaBiometria, IResumenBiometriaAnalista } from '@/types/autorizacion'
 
 export function useResumenBiometria(expedienteId: string | undefined, habilitado: boolean) {
   const [conEvidencia, setConEvidencia] = useState(false)
+  // Lo guardado del cotejo en Cofianza: se muestra aunque Auco no entregue las fotos.
+  const [resumen, setResumen] = useState<IResumenBiometriaAnalista | null>(null)
 
   useEffect(() => {
     if (!expedienteId || !habilitado) return
@@ -22,7 +24,9 @@ export function useResumenBiometria(expedienteId: string | undefined, habilitado
     biometriaService
       .getResumen(expedienteId)
       .then((r) => {
-        if (vivo) setConEvidencia(r.con_evidencia)
+        if (!vivo) return
+        setConEvidencia(r.con_evidencia)
+        setResumen(r.resumen)
       })
       // Solo si el resumen falló por red o por el servidor (5xx) se ofrece igual: la consulta dice
       // si hay fotos. Un 4xx (404 sin la ruta, 401, 403, 400) no lo ofrece.
@@ -34,7 +38,7 @@ export function useResumenBiometria(expedienteId: string | undefined, habilitado
     }
   }, [expedienteId, habilitado])
 
-  return { conEvidencia: habilitado && conEvidencia }
+  return { conEvidencia: habilitado && conEvidencia, resumen: habilitado ? resumen : null }
 }
 
 // Auco no tiene ese code (422) o rechazó la llave: reintentar no lo arregla.
