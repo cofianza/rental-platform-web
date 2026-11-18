@@ -24,10 +24,10 @@ export function useResumenBiometria(expedienteId: string | undefined, habilitado
       .then((r) => {
         if (vivo) setConEvidencia(r.con_evidencia)
       })
-      // Si el resumen no cargó (red, 5xx), el botón se ofrece igual: la consulta dice si hay fotos.
-      // Un 404 (estudio inexistente o una API sin la ruta) no lo ofrece.
+      // Solo si el resumen falló por red o por el servidor (5xx) se ofrece igual: la consulta dice
+      // si hay fotos. Un 4xx (404 sin la ruta, 401, 403, 400) no lo ofrece.
       .catch((err) => {
-        if (vivo) setConEvidencia(!(err instanceof ApiClientError && err.statusCode === 404))
+        if (vivo) setConEvidencia(err instanceof ApiClientError && (err.statusCode === 0 || err.statusCode >= 500))
       })
     return () => {
       vivo = false
@@ -37,13 +37,13 @@ export function useResumenBiometria(expedienteId: string | undefined, habilitado
   return { conEvidencia: habilitado && conEvidencia }
 }
 
-const ERRORES_SIN_REINTENTO = ['BIOMETRIA_EVIDENCIA_NO_ENCONTRADA', 'BIOMETRIA_PROVEEDOR_RECHAZO']
+// Auco no tiene ese code (422) o rechazó la llave: reintentar no lo arregla.
+const ERRORES_SIN_REINTENTO = ['BIOMETRIA_NO_ENCONTRADA_EN_AUCO', 'BIOMETRIA_PROVEEDOR_RECHAZO']
 
 export function useEvidenciaBiometria(expedienteId: string) {
   const [datos, setDatos] = useState<IEvidenciaBiometria | null>(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // Auco no encontró la evidencia o rechazó la llave: reintentar no lo arregla.
   const [reintentable, setReintentable] = useState(true)
   // Hora local en que llegaron las fotos: de ahí corren sus 5 minutos.
   const [recibidoEn, setRecibidoEn] = useState<number | null>(null)
