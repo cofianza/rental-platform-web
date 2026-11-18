@@ -218,7 +218,8 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
                     )
                   )}
                   <p className="text-sm text-gray-600">
-                    Se muestran los intentos de la verificación que quedó registrada en el estudio.
+                    Se muestra el último cotejo que hizo la persona. Si repitió las fotos, los cotejos anteriores no
+                    aparecen aquí.
                   </p>
                   <ol className="space-y-4">
                     {datos.intentos.map((intento) => (
