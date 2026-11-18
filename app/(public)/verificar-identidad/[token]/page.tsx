@@ -225,7 +225,7 @@ export default function VerificarIdentidadPage() {
             />
             <Ranura
               titulo="Selfie"
-              ayuda="Buena luz, sin gorra ni gafas oscuras"
+              ayuda="De frente, con buena luz, sin gorra ni gafas"
               icono={<IconUser size={22} />}
               capture="user"
               valor={selfie}

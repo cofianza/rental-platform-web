@@ -137,7 +137,7 @@ export function ConsejosFoto({ documentoNombre }: { documentoNombre: string }) {
   ]
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3">
-      <p className="text-sm font-semibold text-gray-900">Para que su foto pase a la primera</p>
+      <p className="text-sm font-semibold text-gray-900">Para que sus fotos pasen a la primera</p>
       <ul className="mt-2 space-y-1.5">
         {consejos.map((c) => (
           <li key={c} className="flex items-start gap-2 text-sm text-gray-600">
@@ -340,7 +340,7 @@ export function CapturaBiometrica({
             />
             <Ranura
               titulo="Selfie"
-              ayuda="Buena luz, sin gorra ni gafas oscuras"
+              ayuda="De frente, con buena luz, sin gorra ni gafas"
               icono={<IconUser size={22} />}
               capture="user"
               valor={selfie}
