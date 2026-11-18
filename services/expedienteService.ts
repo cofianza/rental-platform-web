@@ -654,7 +654,7 @@ class ExpedienteService {
       fuente_capacidad_verificada?: boolean
       /** Adenda 4 §9: aprobó exigiendo algo más (tarifa no automática). */
       condicion_adicional?: boolean
-      /** Biometría «no coincide»: cómo verificó el analista la identidad (la API la exige). */
+      /** Cómo hizo el analista la verificación que la API exige explicar (identidad del solicitante o segundo firmante). */
       nota_identidad?: string
     },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
