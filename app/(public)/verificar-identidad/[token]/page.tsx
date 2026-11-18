@@ -18,7 +18,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { firmaService } from '@/services/firmaService'
-import { Ranura, nombreDocumento } from '@/components/public/CapturaBiometrica'
+import { ConsejosFoto, Ranura, nombreDocumento } from '@/components/public/CapturaBiometrica'
 import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { esErrorTransitorio, mensajeParaProspecto } from '@/lib/errorMessages'
 import type { IVerificacionIdentidadPublica } from '@/types/firma'
@@ -212,6 +212,7 @@ export default function VerificarIdentidadPage() {
         </>
       ) : (
         <>
+          <ConsejosFoto documentoNombre={nombreDocumento(data?.tipo_documento, 'documento de identidad')} />
           <div className="space-y-3">
             <Ranura
               titulo={`Foto de su ${nombreDocumento(data?.tipo_documento, 'documento de identidad')}`}
@@ -224,7 +225,7 @@ export default function VerificarIdentidadPage() {
             />
             <Ranura
               titulo="Selfie"
-              ayuda="Buena luz, sin gorra ni gafas oscuras"
+              ayuda="De frente, con buena luz, sin gorra ni gafas"
               icono={<IconUser size={22} />}
               capture="user"
               valor={selfie}

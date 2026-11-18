@@ -121,6 +121,35 @@ export function nombreDocumento(tipo: string | null | undefined, otro = 'documen
   return TIPO_DOCUMENTO_TEXTO[(tipo ?? '').toLowerCase()] ?? otro
 }
 
+/**
+ * Consejos antes de tomar las fotos (17-nov). Atacan las causas típicas de una
+ * similitud baja en Auco (luz detrás, cara cortada o de lado, gafas, reflejo en
+ * el documento): una foto que no pasa es un cotejo cobrado y, al quinto, una
+ * revisión manual. Solo texto: no cambia el flujo ni lo que se envía.
+ */
+export function ConsejosFoto({ documentoNombre }: { documentoNombre: string }) {
+  // Mismo orden que las fotos: primero el documento, después la selfie.
+  const consejos = [
+    `En la foto de su ${documentoNombre}, que se lea todo: sin reflejos del flash ni dedos encima.`,
+    'Selfie de frente, con la cara completa y centrada.',
+    'Que la luz le dé de frente, no por detrás: no se ponga contra una ventana.',
+    'Sin gafas, gorra ni tapabocas, y con el celular a la altura de los ojos.',
+  ]
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-3">
+      <p className="text-sm font-semibold text-gray-900">Para que sus fotos pasen a la primera</p>
+      <ul className="mt-2 space-y-1.5">
+        {consejos.map((c) => (
+          <li key={c} className="flex items-start gap-2 text-sm text-gray-600">
+            <IconCheck size={14} className="mt-0.5 shrink-0 text-primary-700" aria-hidden="true" />
+            {c}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 export function Ranura({ titulo, ayuda, icono, capture, valor, onChange, disabled }: RanuraProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [cargando, setCargando] = useState(false)
@@ -294,6 +323,7 @@ export function CapturaBiometrica({
         </div>
       ) : (
         <>
+          <ConsejosFoto documentoNombre={documentoNombre} />
           <div className="space-y-3">
             <Ranura
               titulo={`Foto de su ${documentoNombre}`}
@@ -310,7 +340,7 @@ export function CapturaBiometrica({
             />
             <Ranura
               titulo="Selfie"
-              ayuda="Buena luz, sin gorra ni gafas oscuras"
+              ayuda="De frente, con buena luz, sin gorra ni gafas"
               icono={<IconUser size={22} />}
               capture="user"
               valor={selfie}
@@ -336,7 +366,7 @@ export function CapturaBiometrica({
             {enviando ? 'Verificando…' : resultado ? 'Verificar con la nueva selfie' : 'Verificar mi identidad'}
           </button>
           {resultado && !selfie && !enviando && (
-            <p className="-mt-2 text-center text-xs text-gray-500">Para intentar de nuevo, tome otra selfie con mejor luz.</p>
+            <p className="-mt-2 text-center text-xs text-gray-500">Para intentar de nuevo, tome otra selfie siguiendo los consejos de arriba.</p>
           )}
         </>
       )}
