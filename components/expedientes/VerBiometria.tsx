@@ -12,6 +12,10 @@
  * Hoy la autorización le pide a la persona UNA foto del documento (el lado con
  * su foto): el reverso solo se muestra si Auco lo trae.
  *
+ * Si la persona repitió el cotejo, «Intentos de la persona» muestra el
+ * resultado guardado de cada intento (fecha, similitud, resultado, motivo).
+ * Las fotos siguen siendo solo las del último cotejo.
+ *
  * Solo administrador y operador, nunca en «ver como» (la API también lo niega),
  * y solo si el estudio tiene un cotejo con fotos que consultar.
  */
@@ -35,15 +39,17 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { useVerComo } from '@/components/expedientes/VerComo'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useEvidenciaBiometria, useResumenBiometria } from '@/hooks/useBiometriaEvidencia'
-import type { IIntentoBiometria, IResumenBiometriaAnalista } from '@/types/autorizacion'
+import type { IIntentoBiometria, IIntentoGuardadoBiometria, IResumenBiometriaAnalista } from '@/types/autorizacion'
 
 const VERDE = 'bg-primary-50 text-primary-800 ring-primary-200'
 const ROJO = 'bg-red-50 text-red-800 ring-red-200'
 const AMBAR = 'bg-amber-50 text-amber-900 ring-amber-200'
 const GRIS = 'bg-gray-100 text-gray-700 ring-gray-200'
 
+type ResultadoCotejo = Pick<IResumenBiometriaAnalista, 'estado' | 'documento_coincide'>
+
 /** El estado guardado, dicho como lo lee el analista. «Verificada» en verde solo si el documento también cuadró. */
-function estadoVisible(r: IResumenBiometriaAnalista): { texto: string; clase: string } {
+function estadoVisible(r: ResultadoCotejo): { texto: string; clase: string } {
   switch (r.estado) {
     case 'verificada':
       return r.documento_coincide === true
@@ -122,6 +128,13 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
   const hayFotos = !!datos?.disponible && datos.intentos.length > 0
   // El resultado guardado en Cofianza no depende de Auco: se muestra siempre, también si Auco falla.
   const resumen = datos?.resumen ?? resumenGuardado
+  const historial = resumen?.historial ?? []
+  // Un solo intento (o un cotejo de antes, sin historial): la lista no agrega nada al resultado.
+  const conHistorial = historial.length > 1
+  // El resultado de arriba (y sus fotos) es el veredicto conservado, que no siempre es el último intento.
+  const numeroDelResultado = conHistorial
+    ? (historial.find((h) => h.verificado_en === resumen?.verificado_en)?.numero ?? null)
+    : null
   // Volver a pedir solo sirve con fotos (vencen). Sin fotos no cambia nada; con error, «Reintentar».
   const puedeReconsultar = cargando || hayFotos
 
@@ -161,6 +174,7 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
       >
         <div className="space-y-4">
           {resumen && <ResumenCotejo resumen={resumen} />}
+          {conHistorial && <IntentosGuardados historial={historial} numeroDelResultado={numeroDelResultado} />}
 
           {(cargando || hayFotos) && (
             <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
@@ -220,12 +234,19 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
                     )
                   )}
                   <p className="text-sm text-gray-600">
-                    Se muestra el último cotejo que hizo la persona. Si repitió las fotos, los cotejos anteriores no
-                    aparecen aquí.
+                    {conHistorial
+                      ? `Las fotos son las ${numeroDelResultado ? `del intento ${numeroDelResultado}` : 'del resultado de arriba'}. Las de los demás intentos no se pueden consultar: su resultado está en «Intentos de la persona».`
+                      : 'Se muestra el último cotejo que hizo la persona. Si repitió las fotos, los cotejos anteriores no aparecen aquí.'}
                   </p>
                   <ol className="space-y-4">
                     {datos.intentos.map((intento) => (
-                      <Intento key={intento.numero} intento={intento} umbral={resumen?.umbral ?? null} />
+                      <Intento
+                        key={intento.numero}
+                        intento={intento}
+                        umbral={resumen?.umbral ?? null}
+                        // Con la lista de intentos, las fotos llevan el número de esa lista (no el de Auco, casi siempre 1).
+                        numeroVisible={datos.intentos.length === 1 ? (numeroDelResultado ?? undefined) : undefined}
+                      />
                     ))}
                   </ol>
                 </>
@@ -296,14 +317,113 @@ function ResumenCotejo({ resumen }: { resumen: IResumenBiometriaAnalista }) {
   )
 }
 
-function Intento({ intento, umbral }: { intento: IIntentoBiometria; umbral: number | null }) {
+/** Por qué no quedó bien un intento guardado, en claro. La similitud ya se muestra aparte. */
+function motivoIntento(h: IIntentoGuardadoBiometria): string | null {
+  const base = (() => {
+    switch (h.estado) {
+      case 'verificada':
+        if (h.documento_coincide === false) return 'El número leído del documento fotografiado no coincide con el del solicitante.'
+        if (h.documento_coincide === null) return 'No se pudo leer el número del documento para compararlo.'
+        return null
+      case 'no_coincide':
+        return h.similitud != null && h.similitud < h.umbral ? null : 'Auco marcó el cotejo como fallido.'
+      case 'no_verificada':
+        return 'No hubo cotejo: Auco no respondió o no pudo comparar las fotos, el documento no se podía consultar en Auco, o la persona siguió sin tomarlas.'
+      case 'omitida':
+        return 'La persona decidió continuar sin la verificación con foto.'
+      case 'desactivada':
+        return 'La verificación con foto estaba apagada en ese momento: no se hizo el cotejo.'
+      default:
+        return null
+    }
+  })()
+  // El único código de Auco conocido: no distingue un documento falso de una foto mala de uno real.
+  if (h.motivo_auco !== 'DOCUMENT_FAKE') return base
+  const documento = 'Auco no pudo validar el documento fotografiado (puede ser una foto poco nítida).'
+  return base ? `${base} Además, ${documento.charAt(0).toLowerCase()}${documento.slice(1)}` : documento
+}
+
+function IntentosGuardados({
+  historial,
+  numeroDelResultado,
+}: {
+  historial: IIntentoGuardadoBiometria[]
+  numeroDelResultado: number | null
+}) {
+  const masReciente = historial[0]?.numero
+  const guia =
+    numeroDelResultado == null
+      ? 'Las fotos son solo las del resultado de arriba.'
+      : numeroDelResultado === masReciente
+        ? `El resultado de arriba y las fotos son los del intento ${numeroDelResultado}.`
+        : `El resultado de arriba y las fotos son los del intento ${numeroDelResultado}: un intento posterior sin cotejo no reemplaza una alerta.`
+  return (
+    <section aria-labelledby="bio-intentos" className="rounded-lg border border-gray-200 p-3 text-sm">
+      <h3 id="bio-intentos" className="font-semibold text-gray-900">
+        Intentos de la persona ({historial.length})
+      </h3>
+      <p className="mt-0.5 text-xs text-gray-500">
+        Del más reciente al más antiguo. {guia}
+        {historial.length >= 10 && ' Se guardan los 10 más recientes.'}
+      </p>
+      <ol className="mt-2 divide-y divide-gray-100">
+        {historial.map((h) => {
+          const estado = estadoVisible(h)
+          const motivo = motivoIntento(h)
+          const bajoMinimo = h.similitud != null && h.similitud < h.umbral
+          return (
+            <li key={h.numero} className="py-2 first:pt-0 last:pb-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="font-medium text-gray-900">Intento {h.numero}</span>
+                <span className="text-gray-600">{fechaHora(h.verificado_en)}</span>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${estado.clase}`}>
+                  {estado.texto}
+                </span>
+              </div>
+              {h.similitud != null && (
+                <p className="mt-0.5 text-gray-700">
+                  Similitud <span className="font-semibold text-gray-900">{pct(h.similitud)}</span>{' '}
+                  {bajoMinimo ? (
+                    <span className="text-red-700">
+                      (por debajo del <span className="whitespace-nowrap">mínimo de {pct(h.umbral)})</span>
+                    </span>
+                  ) : (
+                    <span className="whitespace-nowrap text-gray-500">(mínimo {pct(h.umbral)})</span>
+                  )}
+                </p>
+              )}
+              {motivo && <p className="mt-0.5 break-words text-gray-700">{motivo}</p>}
+              {h.motivo_auco && (
+                <p className="mt-0.5 break-all text-xs text-gray-500">
+                  Detalle técnico de Auco: <span className="font-mono">{h.motivo_auco}</span>
+                </p>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
+function Intento({
+  intento,
+  umbral,
+  numeroVisible,
+}: {
+  intento: IIntentoBiometria
+  umbral: number | null
+  /** Número con que se muestra (el de «Intentos de la persona»); sin él, el que da Auco. */
+  numeroVisible?: number
+}) {
+  const numero = numeroVisible ?? intento.numero
   const bajoMinimo = intento.similitud != null && umbral != null && intento.similitud < umbral
   // Hoy se toma una sola foto del documento: el reverso solo aparece si Auco lo trae.
   const conReverso = !!intento.cedula_reverso_url
   return (
     <li className="rounded-lg border border-gray-200 p-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        <p className="font-semibold text-gray-900">Intento {intento.numero}</p>
+        <p className="font-semibold text-gray-900">Intento {numero}</p>
         <p className="text-gray-600">{fechaHora(intento.fecha)}</p>
         {intento.exitoso != null && (
           <span
@@ -328,15 +448,15 @@ function Intento({ intento, umbral }: { intento: IIntentoBiometria; umbral: numb
         </p>
       )}
       <div className={`mt-3 grid grid-cols-1 gap-3 ${conReverso ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-        <Foto url={intento.selfie_url} titulo="Selfie" icono={<IconUser size={14} />} numero={intento.numero} />
+        <Foto url={intento.selfie_url} titulo="Selfie" icono={<IconUser size={14} />} numero={numero} />
         <Foto
           url={intento.cedula_frente_url}
           titulo={conReverso ? 'Documento (frente)' : 'Documento'}
           icono={<IconId size={14} />}
-          numero={intento.numero}
+          numero={numero}
         />
         {conReverso && (
-          <Foto url={intento.cedula_reverso_url} titulo="Documento (reverso)" icono={<IconId size={14} />} numero={intento.numero} />
+          <Foto url={intento.cedula_reverso_url} titulo="Documento (reverso)" icono={<IconId size={14} />} numero={numero} />
         )}
       </div>
     </li>

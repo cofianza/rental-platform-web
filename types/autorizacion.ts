@@ -207,6 +207,19 @@ export interface IBiometriaResponse {
 
 // «Ver biometría» en la revisión manual: solo administrador y operador.
 
+/** Un intento guardado de la persona (sin fotos ni el `code` del proceso en Auco). */
+export interface IIntentoGuardadoBiometria {
+  /** Orden cronológico (1 = el primero); la lista llega del más reciente al más antiguo. */
+  numero: number
+  verificado_en: string
+  estado: EstadoBiometria
+  similitud: number | null
+  umbral: number
+  documento_coincide: boolean | null
+  /** Lo que Auco dijo del documento, como token (p. ej. «DOCUMENT_FAKE»), o null. */
+  motivo_auco: string | null
+}
+
 /** Lo guardado del último cotejo del estudio (GET /expedientes/:id/biometria). */
 export interface IResumenBiometriaAnalista {
   estado: EstadoBiometria
@@ -218,6 +231,8 @@ export interface IResumenBiometriaAnalista {
   /** Número leído del documento, enmascarado. */
   documento_ocr_masked: string | null
   nombre_ocr: string | null
+  /** Cada intento guardado. Vacío (o ausente, con una API anterior) en los cotejos de antes. */
+  historial?: IIntentoGuardadoBiometria[]
 }
 
 export interface IResumenBiometriaRespuesta {
