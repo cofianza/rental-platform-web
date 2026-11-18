@@ -104,7 +104,7 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
   const { hasRole } = usePermissions()
   const verComo = useVerComo()
   const habilitado = hasRole(['administrador', 'operador_analista']) && !verComo
-  const { conEvidencia } = useResumenBiometria(expedienteId, habilitado)
+  const { conEvidencia, resumen: resumenGuardado } = useResumenBiometria(expedienteId, habilitado)
   const { datos, cargando, error, reintentable, recibidoEn, vencido, consultar, limpiar } = useEvidenciaBiometria(expedienteId)
   const [abierto, setAbierto] = useState(false)
 
@@ -120,6 +120,8 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
   }
   const venceA = datos?.vence_en_segundos && recibidoEn ? recibidoEn + datos.vence_en_segundos * 1000 : null
   const hayFotos = !!datos?.disponible && datos.intentos.length > 0
+  // El resultado guardado en Cofianza no depende de Auco: se muestra siempre, también si Auco falla.
+  const resumen = datos?.resumen ?? resumenGuardado
   // Volver a pedir solo sirve con fotos (vencen). Sin fotos no cambia nada; con error, «Reintentar».
   const puedeReconsultar = cargando || hayFotos
 
@@ -158,6 +160,8 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
         }
       >
         <div className="space-y-4">
+          {resumen && <ResumenCotejo resumen={resumen} />}
+
           {(cargando || hayFotos) && (
             <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
               <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
@@ -171,7 +175,7 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
           {cargando ? (
             <div role="status" className="space-y-3">
               <span className="sr-only">Consultando las fotos en Auco…</span>
-              <Skeleton className="h-16 w-full" />
+              {!resumen && <Skeleton className="h-16 w-full" />}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Skeleton className="h-48 w-full" />
                 <Skeleton className="h-48 w-full" />
@@ -181,7 +185,7 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
             <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
               <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
               <div className="min-w-0">
-                <p className="font-semibold">No pudimos traer la verificación</p>
+                <p className="font-semibold">{resumen ? 'No pudimos traer las fotos de Auco' : 'No pudimos traer la verificación'}</p>
                 <p className="break-words">{error}</p>
                 {reintentable && (
                   <button
@@ -197,8 +201,6 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
             </div>
           ) : datos ? (
             <>
-              {datos.resumen && <ResumenCotejo resumen={datos.resumen} />}
-
               {!datos.disponible ? (
                 <Vacio texto={datos.motivo_no_disponible ?? 'Esta verificación no tiene fotos que consultar.'} />
               ) : datos.intentos.length === 0 ? (
@@ -223,7 +225,7 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
                   </p>
                   <ol className="space-y-4">
                     {datos.intentos.map((intento) => (
-                      <Intento key={intento.numero} intento={intento} umbral={datos.resumen?.umbral ?? null} />
+                      <Intento key={intento.numero} intento={intento} umbral={resumen?.umbral ?? null} />
                     ))}
                   </ol>
                 </>
