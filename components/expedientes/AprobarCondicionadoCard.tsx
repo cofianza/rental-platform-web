@@ -49,6 +49,7 @@ import { CondicionAdicional } from './CondicionAdicional'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
 import { CanalCofianza } from './ContactoCofianzaInline'
 import { sinEscribanos } from './ContratoSegundoFirmanteAviso'
+import { VerBiometria } from './VerBiometria'
 
 interface AprobarCondicionadoCardProps {
   expedienteId: string
@@ -484,6 +485,8 @@ export function AprobarCondicionadoCard({
                   {recordando ? 'Enviando…' : 'Enviar recordatorio al analista'}
                 </Button>
               )}
+              {/* Fotos del cotejo, pedidas a Auco al abrir (solo si las hay; nunca en «ver como»). */}
+              <VerBiometria expedienteId={expedienteId} />
             </div>
           </>
         ) : (

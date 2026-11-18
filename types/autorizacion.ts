@@ -205,6 +205,51 @@ export interface IBiometriaResponse {
   guardado?: boolean
 }
 
+// «Ver biometría» en la revisión manual: solo administrador y operador.
+
+/** Lo guardado del último cotejo del estudio (GET /expedientes/:id/biometria). */
+export interface IResumenBiometriaAnalista {
+  estado: EstadoBiometria
+  verificado_en: string
+  similitud: number | null
+  umbral: number
+  motivo: string | null
+  documento_coincide: boolean | null
+  /** Número leído del documento, enmascarado. */
+  documento_ocr_masked: string | null
+  nombre_ocr: string | null
+}
+
+export interface IResumenBiometriaRespuesta {
+  resumen: IResumenBiometriaAnalista | null
+  /** Hay fotos que pedir a Auco: se muestra «Ver biometría». */
+  con_evidencia: boolean
+}
+
+/** Un intento del cotejo. Las URLs vienen de Auco y vencen a los 5 minutos. */
+export interface IIntentoBiometria {
+  /** Orden cronológico (1 = el primero); la lista llega del más reciente al más antiguo. */
+  numero: number
+  fecha: string | null
+  exitoso: boolean | null
+  similitud: number | null
+  selfie_url: string | null
+  cedula_frente_url: string | null
+  cedula_reverso_url: string | null
+  motivo: string | null
+  codigos_error: string[]
+}
+
+/** GET /expedientes/:id/biometria/evidencia: se pide al abrir, nunca antes. */
+export interface IEvidenciaBiometria {
+  disponible: boolean
+  motivo_no_disponible: string | null
+  resumen: IResumenBiometriaAnalista | null
+  intentos: IIntentoBiometria[]
+  consultado_en: string
+  vence_en_segundos: number | null
+}
+
 export interface IEnviarEnlaceResponse {
   id: string
   estado: string

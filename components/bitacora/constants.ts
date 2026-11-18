@@ -92,6 +92,7 @@ export const ACTION_LABELS: Record<string, string> = {
   autorizacion_firmada: 'Autorización firmada',
   autorizacion_revocada: 'Autorización revocada',
   autorizacion_biometria: 'Cotejo biométrico',
+  biometria_evidencia_consultada: 'Consulta de la evidencia biométrica',
 
   // Calibración del modelo
   calibracion_parametro_cambiado: 'Parámetro de calibración cambiado',
@@ -230,6 +231,7 @@ export const ACTION_PREFIX_COLORS: Array<[string, { bg: string; text: string }]>
   ['estudio_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
   ['certificado_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
   ['autorizacion_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
+  ['biometria_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
   ['calibracion_', { bg: 'bg-purple-100', text: 'text-purple-800' }],
   ['contrato_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
   ['plantilla_', { bg: 'bg-indigo-100', text: 'text-indigo-800' }],
@@ -383,6 +385,7 @@ export const ACTION_GROUPS: Array<{
       'autorizacion_firmada',
       'autorizacion_revocada',
       'autorizacion_biometria',
+      'biometria_evidencia_consultada',
       'calibracion_parametro_cambiado',
     ].map(toOption),
   },
