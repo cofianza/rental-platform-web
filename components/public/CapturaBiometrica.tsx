@@ -234,6 +234,8 @@ interface Props {
   onResultado?: (estado: EstadoBiometria) => void
   /** Cómo se llama el documento del prospecto («cédula de ciudadanía», «pasaporte»…). */
   documentoNombre?: string
+  /** Texto 3.3-biometria: si el cotejo no confirma la identidad, Cofianza conserva las fotos (lo dice la API). */
+  conservaFotos?: boolean
 }
 
 export function CapturaBiometrica({
@@ -243,6 +245,7 @@ export function CapturaBiometrica({
   onVolver,
   onResultado,
   documentoNombre = 'documento',
+  conservaFotos = false,
 }: Props) {
   const [documento, setDocumento] = useState<string | null>(null)
   const [selfie, setSelfie] = useState<string | null>(null)
@@ -402,8 +405,9 @@ export function CapturaBiometrica({
 
       {!verificada && (
         <p className="text-center text-xs text-gray-500">
-          Su foto solo se usa para confirmar su identidad. No se guarda en Cofianza ni se comparte con la
-          inmobiliaria. No está obligado a tomarla: su estudio sigue y lo revisa una persona de nuestro equipo.
+          {conservaFotos
+            ? 'Su foto solo se usa para confirmar su identidad y no se comparte con la inmobiliaria. Si no logramos confirmarla, Cofianza guarda las fotos cifradas para que nuestro equipo revise su caso y las elimina al decidir su estudio o, a más tardar, a los 30 días. No está obligado a tomarla: su estudio sigue y lo revisa una persona de nuestro equipo.'
+            : 'Su foto solo se usa para confirmar su identidad. No se guarda en Cofianza ni se comparte con la inmobiliaria. No está obligado a tomarla: su estudio sigue y lo revisa una persona de nuestro equipo.'}
         </p>
       )}
 

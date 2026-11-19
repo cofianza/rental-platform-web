@@ -485,7 +485,7 @@ export function AprobarCondicionadoCard({
                   {recordando ? 'Enviando…' : 'Enviar recordatorio al analista'}
                 </Button>
               )}
-              {/* Fotos del cotejo, pedidas a Auco al abrir (solo si las hay; nunca en «ver como»). */}
+              {/* Resultado del cotejo y fotos guardadas de los intentos fallidos (nunca en «ver como»). */}
               <VerBiometria expedienteId={expedienteId} />
             </div>
           </>

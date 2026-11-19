@@ -1628,6 +1628,7 @@ export default function AutorizarPage() {
             token={token}
             estadoPrevio={data?.biometria?.estado ?? null}
             documentoNombre={nombreDocumento(data?.solicitante.tipo_documento)}
+            conservaFotos={!!data?.biometria?.conserva_fotos}
             onContinuar={irAFirma}
             onVolver={volverPaso}
             onResultado={(estado) =>
