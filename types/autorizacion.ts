@@ -172,6 +172,8 @@ export interface IAutorizacionPublicData {
   biometria?: {
     requerida: boolean
     estado: EstadoBiometria | null
+    /** Texto 3.3-biometria con el guardado encendido: si el cotejo falla, Cofianza conserva las fotos. */
+    conserva_fotos?: boolean
   }
   /** A1: nombre de la inmobiliaria o «El propietario del inmueble». Ausente en APIs viejas. */
   solicitado_por?: string | null
@@ -237,22 +239,26 @@ export interface IResumenBiometriaAnalista {
 
 export interface IResumenBiometriaRespuesta {
   resumen: IResumenBiometriaAnalista | null
-  /** Hay fotos que pedir a Auco: se muestra «Ver biometría». */
+  /** Hay algo que mostrar (un cotejo registrado o fotos guardadas): se muestra «Ver biometría». */
   con_evidencia: boolean
+  /** Intentos con fotos guardadas que se pueden ver (0 con el estudio decidido). Ausente con una API anterior. */
+  fotos_guardadas?: number
 }
 
-/** Un intento del cotejo. Las URLs vienen de Auco y vencen a los 5 minutos. */
-export interface IIntentoBiometria {
-  /** Orden cronológico (1 = el primero); la lista llega del más reciente al más antiguo. */
-  numero: number
-  fecha: string | null
-  exitoso: boolean | null
+/**
+ * Un intento con fotos guardadas por Cofianza (solo los que no confirmaron la
+ * identidad). Las imágenes se piden aparte, una por una, con `id`.
+ */
+export interface IIntentoConFotos {
+  id: string
+  /** El número de ese intento en `resumen.historial`, o null si no se pudo cruzar. */
+  numero: number | null
+  fecha: string
+  estado: EstadoBiometria
   similitud: number | null
-  selfie_url: string | null
-  cedula_frente_url: string | null
-  cedula_reverso_url: string | null
-  motivo: string | null
-  codigos_error: string[]
+  documento_coincide: boolean | null
+  /** Hasta cuándo se conservan como mucho (se borran antes si se decide el estudio). */
+  borrar_antes_de: string
 }
 
 /** GET /expedientes/:id/biometria/evidencia: se pide al abrir, nunca antes. */
@@ -260,10 +266,13 @@ export interface IEvidenciaBiometria {
   disponible: boolean
   motivo_no_disponible: string | null
   resumen: IResumenBiometriaAnalista | null
-  intentos: IIntentoBiometria[]
+  intentos: IIntentoConFotos[]
   consultado_en: string
-  vence_en_segundos: number | null
+  /** Días que se conservan como máximo. Ausente con una API anterior. */
+  dias_conservacion?: number
 }
+
+export type CualFotoBiometria = 'selfie' | 'documento'
 
 export interface IEnviarEnlaceResponse {
   id: string

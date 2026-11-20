@@ -1,45 +1,46 @@
 'use client'
 
 /**
- * «Ver biometría» en la revisión manual (Opción 1 aprobada por Gerencia).
+ * «Ver biometría» en la revisión manual.
  *
- * El analista de Cofianza ve la selfie, el documento, la similitud y el motivo
- * del cotejo sin entrar al panel de Auco. Las fotos no se guardan en Cofianza:
- * la API se las pide a Auco cuando se abre esta ventana (nunca antes) y sus
- * enlaces vencen a los 5 minutos. Al cerrar se olvidan; al volver a abrir se
- * piden de nuevo.
+ * El analista de Cofianza ve el resultado guardado del cotejo (similitud,
+ * documento, cada intento) y, si el cotejo no confirmó la identidad, las fotos
+ * que Cofianza conserva para esta revisión (selfie y documento de cada intento
+ * fallido). Las fotos se guardan cifradas, solo de quien autorizó con el texto
+ * que lo permite, y se eliminan al decidir el estudio o a los 30 días. Se piden
+ * al abrir esta ventana, una por una, y al cerrarla se olvidan.
  *
  * Hoy la autorización le pide a la persona UNA foto del documento (el lado con
- * su foto): el reverso solo se muestra si Auco lo trae.
+ * su foto): no hay reverso.
  *
- * Si la persona repitió el cotejo, «Intentos de la persona» muestra el
- * resultado guardado de cada intento (fecha, similitud, resultado, motivo).
- * Las fotos siguen siendo solo las del último cotejo.
- *
- * Solo administrador y operador, nunca en «ver como» (la API también lo niega),
- * y solo si el estudio tiene un cotejo con fotos que consultar.
+ * Solo administrador y operador, nunca en «ver como» (la API también lo niega).
  */
 
 import { useState, type ReactNode } from 'react'
 import {
   IconAlertTriangle,
   IconCamera,
-  IconCheckCircle,
   IconExternalLink,
   IconId,
   IconInfo,
-  IconLoader,
   IconRefresh,
   IconUser,
   IconUserCheck,
 } from '@/components/icons'
 import { Button } from '@/components/ui/Button'
 import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useVerComo } from '@/components/expedientes/VerComo'
 import { usePermissions } from '@/hooks/usePermissions'
-import { useEvidenciaBiometria, useResumenBiometria } from '@/hooks/useBiometriaEvidencia'
-import type { IIntentoBiometria, IIntentoGuardadoBiometria, IResumenBiometriaAnalista } from '@/types/autorizacion'
+import { useEvidenciaBiometria, useFotoBiometria, useResumenBiometria } from '@/hooks/useBiometriaEvidencia'
+import type {
+  CualFotoBiometria,
+  IIntentoConFotos,
+  IIntentoGuardadoBiometria,
+  IResumenBiometriaAnalista,
+} from '@/types/autorizacion'
 
 const VERDE = 'bg-primary-50 text-primary-800 ring-primary-200'
 const ROJO = 'bg-red-50 text-red-800 ring-red-200'
@@ -52,8 +53,9 @@ type ResultadoCotejo = Pick<IResumenBiometriaAnalista, 'estado' | 'documento_coi
 function estadoVisible(r: ResultadoCotejo): { texto: string; clase: string } {
   switch (r.estado) {
     case 'verificada':
-      return r.documento_coincide === true
-        ? { texto: 'Verificada', clase: VERDE }
+      if (r.documento_coincide === true) return { texto: 'Verificada', clase: VERDE }
+      return r.documento_coincide === false
+        ? { texto: 'Rostro verificado, el documento no es del solicitante', clase: ROJO }
         : { texto: 'Rostro verificado, documento sin confirmar', clase: AMBAR }
     case 'no_coincide':
       return { texto: 'No coincide', clase: ROJO }
@@ -101,8 +103,13 @@ const fechaHora = (iso: string | null | undefined) => {
       })
 }
 
-const hora = (ms: number) =>
-  new Date(ms).toLocaleTimeString('es-CO', { timeZone: 'America/Bogota', hour: '2-digit', minute: '2-digit' })
+const fecha = (iso: string | null | undefined) => {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime())
+    ? '—'
+    : d.toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'long', year: 'numeric' })
+}
 
 const pct = (n: number | null | undefined) => (n == null ? '—' : `${n.toLocaleString('es-CO', { maximumFractionDigits: 2 })} %`)
 
@@ -111,8 +118,10 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
   const verComo = useVerComo()
   const habilitado = hasRole(['administrador', 'operador_analista']) && !verComo
   const { conEvidencia, resumen: resumenGuardado } = useResumenBiometria(expedienteId, habilitado)
-  const { datos, cargando, error, reintentable, recibidoEn, vencido, consultar, limpiar } = useEvidenciaBiometria(expedienteId)
+  const { datos, cargando, error, consultar, limpiar, eliminarFotos } = useEvidenciaBiometria(expedienteId)
   const [abierto, setAbierto] = useState(false)
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
 
   if (!conEvidencia) return null
 
@@ -124,19 +133,32 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
     setAbierto(false)
     limpiar()
   }
-  const venceA = datos?.vence_en_segundos && recibidoEn ? recibidoEn + datos.vence_en_segundos * 1000 : null
-  const hayFotos = !!datos?.disponible && datos.intentos.length > 0
-  // El resultado guardado en Cofianza no depende de Auco: se muestra siempre, también si Auco falla.
+  // El resultado guardado no depende de las fotos: se muestra siempre, también si fallan.
   const resumen = datos?.resumen ?? resumenGuardado
   const historial = resumen?.historial ?? []
   // Un solo intento (o un cotejo de antes, sin historial): la lista no agrega nada al resultado.
   const conHistorial = historial.length > 1
-  // El resultado de arriba (y sus fotos) es el veredicto conservado, que no siempre es el último intento.
+  // El resultado de arriba es el veredicto conservado, que no siempre es el último intento.
   const numeroDelResultado = conHistorial
     ? (historial.find((h) => h.verificado_en === resumen?.verificado_en)?.numero ?? null)
     : null
-  // Volver a pedir solo sirve con fotos (vencen). Sin fotos no cambia nada; con error, «Reintentar».
-  const puedeReconsultar = cargando || hayFotos
+  const hayFotos = !!datos?.disponible && datos.intentos.length > 0
+  const dias = datos?.dias_conservacion ?? 30
+  // El mínimo con que se juzgó cada intento (el del panel pudo cambiar después).
+  const umbralDe = (numero: number | null) => historial.find((h) => h.numero === numero)?.umbral ?? resumen?.umbral ?? null
+
+  const eliminar = async () => {
+    setEliminando(true)
+    try {
+      const r = await eliminarFotos()
+      toast.success(r.eliminadas === 1 ? 'Se eliminó 1 intento con fotos.' : `Se eliminaron ${r.eliminadas} intentos con fotos.`)
+      setConfirmarEliminar(false)
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : 'No pudimos eliminar las fotos. Intente de nuevo.')
+    } finally {
+      setEliminando(false)
+    }
+  }
 
   return (
     <>
@@ -149,26 +171,19 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
         isOpen={abierto}
         onClose={cerrar}
         title="Verificación biométrica del solicitante"
-        description="Lo que Auco registró al comparar el rostro del solicitante con su documento de identidad."
+        description="El resultado de comparar el rostro del solicitante con su documento y, si no se confirmó la identidad, las fotos que Cofianza conserva para esta revisión."
         size="xl"
         closeOnBackdrop
         footer={
           <ModalAcciones>
-            <button type="button" onClick={cerrar} className={botonModal(puedeReconsultar ? 'secondary' : 'primary')}>
-              Cerrar
-            </button>
-            {puedeReconsultar && (
-              <button
-                type="button"
-                onClick={() => void consultar()}
-                disabled={cargando}
-                aria-busy={cargando || undefined}
-                className={botonModal('primary')}
-              >
-                {cargando ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
-                {cargando ? 'Consultando…' : 'Volver a consultar las fotos'}
+            {hayFotos && (
+              <button type="button" onClick={() => setConfirmarEliminar(true)} className={botonModal('secondary')}>
+                Eliminar fotos
               </button>
             )}
+            <button type="button" onClick={cerrar} className={botonModal('primary')}>
+              Cerrar
+            </button>
           </ModalAcciones>
         }
       >
@@ -176,32 +191,24 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
           {resumen && <ResumenCotejo resumen={resumen} />}
           {conHistorial && <IntentosGuardados historial={historial} numeroDelResultado={numeroDelResultado} />}
 
-          {(cargando || hayFotos) && (
-            <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-              <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
-              <span>
-                Las imágenes vienen de Auco y no se guardan en Cofianza. Los enlaces vencen a los 5 minutos: si no
-                cargan, vuelva a consultarlas.
-              </span>
-            </p>
-          )}
-
-          {cargando ? (
-            <div role="status" className="space-y-3">
-              <span className="sr-only">Consultando las fotos en Auco…</span>
-              {!resumen && <Skeleton className="h-16 w-full" />}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Skeleton className="h-48 w-full" />
-                <Skeleton className="h-48 w-full" />
+          <section aria-labelledby="bio-fotos" className="space-y-3">
+            <h3 id="bio-fotos" className="text-sm font-semibold text-gray-900">
+              Fotos de los intentos que no confirmaron la identidad
+            </h3>
+            {cargando ? (
+              <div role="status" className="space-y-3">
+                <span className="sr-only">Consultando las fotos guardadas…</span>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Skeleton className="h-48 w-full" />
+                  <Skeleton className="h-48 w-full" />
+                </div>
               </div>
-            </div>
-          ) : error ? (
-            <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-              <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
-              <div className="min-w-0">
-                <p className="font-semibold">{resumen ? 'No pudimos traer las fotos de Auco' : 'No pudimos traer la verificación'}</p>
-                <p className="break-words">{error}</p>
-                {reintentable && (
+            ) : error ? (
+              <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold">No pudimos traer las fotos</p>
+                  <p className="break-words">{error}</p>
                   <button
                     type="button"
                     onClick={() => void consultar()}
@@ -210,51 +217,52 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
                     <IconRefresh size={14} />
                     Reintentar
                   </button>
-                )}
+                </div>
               </div>
-            </div>
-          ) : datos ? (
-            <>
-              {!datos.disponible ? (
-                <Vacio texto={datos.motivo_no_disponible ?? 'Esta verificación no tiene fotos que consultar.'} />
-              ) : datos.intentos.length === 0 ? (
-                <Vacio texto="Auco no devolvió fotos para esta verificación." />
+            ) : datos ? (
+              !hayFotos ? (
+                <Vacio texto={datos.motivo_no_disponible ?? 'Esta verificación no tiene fotos guardadas.'} />
               ) : (
                 <>
-                  {vencido ? (
-                    <p role="status" className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                      <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
-                      Los enlaces de estas fotos ya vencieron. Use «Volver a consultar las fotos» para verlas de nuevo.
-                    </p>
-                  ) : (
-                    venceA && (
-                      <p className="text-sm text-gray-600">
-                        Consultadas a las {hora(recibidoEn!)}; los enlaces vencen a las {hora(venceA)}
-                      </p>
-                    )
-                  )}
-                  <p className="text-sm text-gray-600">
-                    {conHistorial
-                      ? `Las fotos son las ${numeroDelResultado ? `del intento ${numeroDelResultado}` : 'del resultado de arriba'}. Las de los demás intentos no se pueden consultar: su resultado está en «Intentos de la persona».`
-                      : 'Se muestra el último cotejo que hizo la persona. Si repitió las fotos, los cotejos anteriores no aparecen aquí.'}
+                  <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                    <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
+                    <span>
+                      Cofianza conserva estas fotos, cifradas, solo porque el cotejo no confirmó la identidad. Se eliminan
+                      al decidir el estudio o a los {dias} días, y cada consulta queda registrada.
+                    </span>
                   </p>
                   <ol className="space-y-4">
                     {datos.intentos.map((intento) => (
-                      <Intento
-                        key={intento.numero}
+                      <IntentoConFotos
+                        key={intento.id}
+                        expedienteId={expedienteId}
                         intento={intento}
-                        umbral={resumen?.umbral ?? null}
-                        // Con la lista de intentos, las fotos llevan el número de esa lista (no el de Auco, casi siempre 1).
-                        numeroVisible={datos.intentos.length === 1 ? (numeroDelResultado ?? undefined) : undefined}
+                        umbral={umbralDe(intento.numero)}
                       />
                     ))}
                   </ol>
                 </>
-              )}
-            </>
-          ) : null}
+              )
+            ) : null}
+          </section>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={confirmarEliminar}
+        onClose={() => setConfirmarEliminar(false)}
+        onConfirm={eliminar}
+        title="¿Eliminar las fotos guardadas?"
+        message={
+          <p>
+            Úselo cuando la persona pida la supresión de sus fotos. Se eliminan todas las fotos guardadas de este estudio
+            y no se pueden recuperar. El resultado del cotejo se conserva, y la eliminación queda en la bitácora.
+          </p>
+        }
+        confirmLabel="Eliminar fotos"
+        variant="danger"
+        isLoading={eliminando}
+      />
     </>
   )
 }
@@ -352,18 +360,16 @@ function IntentosGuardados({
 }) {
   const masReciente = historial[0]?.numero
   const guia =
-    numeroDelResultado == null
-      ? 'Las fotos son solo las del resultado de arriba.'
-      : numeroDelResultado === masReciente
-        ? `El resultado de arriba y las fotos son los del intento ${numeroDelResultado}.`
-        : `El resultado de arriba y las fotos son los del intento ${numeroDelResultado}: un intento posterior sin cotejo no reemplaza una alerta.`
+    numeroDelResultado != null && numeroDelResultado !== masReciente
+      ? ` El resultado de arriba es el del intento ${numeroDelResultado}: un intento posterior sin cotejo no reemplaza una alerta.`
+      : ''
   return (
     <section aria-labelledby="bio-intentos" className="rounded-lg border border-gray-200 p-3 text-sm">
       <h3 id="bio-intentos" className="font-semibold text-gray-900">
         Intentos de la persona ({historial.length})
       </h3>
       <p className="mt-0.5 text-xs text-gray-500">
-        Del más reciente al más antiguo. {guia}
+        Del más reciente al más antiguo.{guia}
         {historial.length >= 10 && ' Se guardan los 10 más recientes.'}
       </p>
       <ol className="mt-2 divide-y divide-gray-100">
@@ -406,89 +412,81 @@ function IntentosGuardados({
   )
 }
 
-function Intento({
+function IntentoConFotos({
+  expedienteId,
   intento,
   umbral,
-  numeroVisible,
 }: {
-  intento: IIntentoBiometria
+  expedienteId: string
+  intento: IIntentoConFotos
   umbral: number | null
-  /** Número con que se muestra (el de «Intentos de la persona»); sin él, el que da Auco. */
-  numeroVisible?: number
 }) {
-  const numero = numeroVisible ?? intento.numero
+  const estado = estadoVisible(intento)
+  const titulo = intento.numero != null ? `Intento ${intento.numero}` : 'Intento'
   const bajoMinimo = intento.similitud != null && umbral != null && intento.similitud < umbral
-  // Hoy se toma una sola foto del documento: el reverso solo aparece si Auco lo trae.
-  const conReverso = !!intento.cedula_reverso_url
   return (
     <li className="rounded-lg border border-gray-200 p-3">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-        <p className="font-semibold text-gray-900">Intento {numero}</p>
+        <p className="font-semibold text-gray-900">{titulo}</p>
         <p className="text-gray-600">{fechaHora(intento.fecha)}</p>
-        {intento.exitoso != null && (
-          <span
-            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${
-              intento.exitoso ? VERDE : ROJO
-            }`}
-          >
-            {intento.exitoso ? <IconCheckCircle size={12} /> : <IconAlertTriangle size={12} />}
-            {intento.exitoso ? 'Según Auco: superado' : 'Según Auco: no superado'}
-          </span>
-        )}
-        <p className="text-gray-700">
-          Similitud <span className="font-semibold text-gray-900">{pct(intento.similitud)}</span>
-          {bajoMinimo && <span className="text-red-700"> (por debajo del mínimo de {pct(umbral)})</span>}
-        </p>
-      </div>
-      {/* Con «no superado» la insignia ya lo dice: el texto solo cuando Auco dejó observaciones. */}
-      {intento.exitoso !== false && intento.motivo && <p className="mt-1 text-sm text-gray-700">{intento.motivo}</p>}
-      {intento.codigos_error.length > 0 && (
-        <p className="mt-1 break-all text-xs text-gray-500">
-          Detalle técnico de Auco: <span className="font-mono">{intento.codigos_error.join(' · ')}</span>
-        </p>
-      )}
-      <div className={`mt-3 grid grid-cols-1 gap-3 ${conReverso ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-        <Foto url={intento.selfie_url} titulo="Selfie" icono={<IconUser size={14} />} numero={numero} />
-        <Foto
-          url={intento.cedula_frente_url}
-          titulo={conReverso ? 'Documento (frente)' : 'Documento'}
-          icono={<IconId size={14} />}
-          numero={numero}
-        />
-        {conReverso && (
-          <Foto url={intento.cedula_reverso_url} titulo="Documento (reverso)" icono={<IconId size={14} />} numero={numero} />
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${estado.clase}`}>
+          {estado.texto}
+        </span>
+        {intento.similitud != null && (
+          <p className="text-gray-700">
+            Similitud <span className="font-semibold text-gray-900">{pct(intento.similitud)}</span>
+            {bajoMinimo && (
+              <span className="text-red-700">
+                {' '}
+                (por debajo del <span className="whitespace-nowrap">mínimo de {pct(umbral)})</span>
+              </span>
+            )}
+          </p>
         )}
       </div>
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Foto expedienteId={expedienteId} fotoId={intento.id} cual="selfie" titulo="Selfie" icono={<IconUser size={14} />} intento={titulo} />
+        <Foto expedienteId={expedienteId} fotoId={intento.id} cual="documento" titulo="Documento" icono={<IconId size={14} />} intento={titulo} />
+      </div>
+      <p className="mt-2 text-xs text-gray-500">Se conservan como máximo hasta el {fecha(intento.borrar_antes_de)}.</p>
     </li>
   )
 }
 
-function Foto({ url, titulo, icono, numero }: { url: string | null; titulo: string; icono: ReactNode; numero: number }) {
-  const [fallo, setFallo] = useState(false)
+function Foto({
+  expedienteId,
+  fotoId,
+  cual,
+  titulo,
+  icono,
+  intento,
+}: {
+  expedienteId: string
+  fotoId: string
+  cual: CualFotoBiometria
+  titulo: string
+  icono: ReactNode
+  intento: string
+}) {
+  const { url, error, reintentable, cargando, reintentar } = useFotoBiometria(expedienteId, fotoId, cual)
+  const alt = `${titulo} del ${intento.toLowerCase()}`
   return (
     <figure className="min-w-0">
       <figcaption className="mb-1 flex items-center gap-1.5 text-xs font-medium text-gray-700">
         {icono}
         {titulo}
       </figcaption>
-      {url && !fallo ? (
+      {url ? (
         <a
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          referrerPolicy="no-referrer"
           className="relative block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
-          aria-label={`${titulo} del intento ${numero}: ampliar en otra pestaña`}
+          aria-label={`${alt}: ampliar en otra pestaña`}
         >
-          {/* URL firmada de Auco que vence en 5 minutos: <img> normal (sin next/image) y sin carga diferida. */}
+          {/* Imagen local (blob:) que se revoca al cerrar: <img> normal, sin next/image. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={url}
-            alt={`${titulo} del intento ${numero}`}
-            referrerPolicy="no-referrer"
-            onError={() => setFallo(true)}
-            className="h-48 w-full rounded-lg border border-gray-200 bg-gray-50 object-contain"
-          />
+          <img src={url} alt={alt} className="h-48 w-full rounded-lg border border-gray-200 bg-gray-50 object-contain" />
           <span
             aria-hidden="true"
             className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 rounded bg-white/90 px-1.5 py-0.5 text-xs font-medium text-gray-700 shadow-sm"
@@ -497,10 +495,21 @@ function Foto({ url, titulo, icono, numero }: { url: string | null; titulo: stri
             Ampliar
           </span>
         </a>
+      ) : cargando ? (
+        <div role="status">
+          <span className="sr-only">Cargando {alt.toLowerCase()}…</span>
+          <Skeleton className="h-48 w-full" />
+        </div>
       ) : (
-        <div className="flex h-48 w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 text-center text-xs text-gray-500">
+        <div className="flex h-48 w-full flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 text-center text-xs text-gray-600">
           <IconCamera size={18} />
-          {url ? 'No cargó. Puede que el enlace haya vencido: vuelva a consultar las fotos.' : 'Esta foto no está disponible en Auco.'}
+          <span className="break-words">{error}</span>
+          {reintentable && (
+            <button type="button" onClick={reintentar} className="inline-flex min-h-10 items-center gap-1 font-semibold underline">
+              <IconRefresh size={12} />
+              Reintentar
+            </button>
+          )}
         </div>
       )}
     </figure>
