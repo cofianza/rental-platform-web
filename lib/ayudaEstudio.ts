@@ -5,6 +5,7 @@
  */
 
 import { esEtapaDeTraba, type EtapaEstudio, type VistaTurno } from './etapaEstudio'
+import { TEXTO_REAPERTURA } from './personaEstudio'
 
 export const AYUDA = {
   autorizacion:
@@ -80,6 +81,8 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   finalizado: 'El estudio terminó y queda para consulta.',
   no_aprobado: 'El estudio no quedó aprobable. Abajo están el motivo y, si aplica, cómo apelar.',
   cancelado: 'El estudio se canceló y no continúa.',
+  // Punto 5 del reporte: el mismo texto para todos (lo que falta lo hace la persona nueva).
+  reapertura: TEXTO_REAPERTURA,
 }
 
 /** Qué sigue para quien no gestiona (Cofianza, Gerencia, solo lectura). Sin texto aquí, se usa el de AYUDA_ETAPA. */

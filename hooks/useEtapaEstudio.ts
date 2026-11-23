@@ -41,6 +41,8 @@ interface ExpedienteEtapa {
   inmueble?: { id: string } | null
   /** Aprobado con algo que impide el contrato (reporte de Gerencia, 21-nov). Ausente con una API anterior. */
   traba_contrato?: { codigo: string } | null
+  /** Reabierto por un reemplazo: espera a la persona nueva (punto 5). Ausente con una API anterior. */
+  reapertura_abierta?: boolean
 }
 
 /**
@@ -70,6 +72,7 @@ export function useEtapaEstudio(
   const citaOmitida = expediente?.cita_omitida ?? false
   const tieneInmueble = !!expediente?.inmueble
   const trabaCodigo = expediente?.traba_contrato?.codigo ?? null
+  const reaperturaAbierta = !!expediente?.reapertura_abierta
 
   useEffect(() => {
     if (!id || !estado) return
@@ -113,6 +116,7 @@ export function useEtapaEstudio(
         // Con el resultado que envía la API, la etapa sale de él; sin él, del estado (como siempre).
         desenlace: titular?.desenlace ?? null,
         trabaCodigo,
+        reaperturaAbierta,
       })
       setLeida({
         etapa,
@@ -125,7 +129,7 @@ export function useEtapaEstudio(
     return () => {
       cancel = true
     }
-  }, [id, estado, pre, habilitado, rechazado, citaOmitida, tieneInmueble, trabaCodigo, conPago, version])
+  }, [id, estado, pre, habilitado, rechazado, citaOmitida, tieneInmueble, trabaCodigo, reaperturaAbierta, conPago, version])
 
   return leida
 }

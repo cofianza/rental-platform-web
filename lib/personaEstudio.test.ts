@@ -1,0 +1,251 @@
+/**
+ * Pruebas de lib/personaEstudio (la web no tiene vitest; se usa node:test). Correr con:
+ * node --import <hook que resuelve imports relativos sin extensión a .ts> --test lib/personaEstudio.test.ts
+ */
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import {
+  ROTULO_SIN_EFECTO,
+  SOLICITANTE_ANTERIOR,
+  TEXTO_CANCELAR_INVITACION_REAPERTURA,
+  TEXTO_CANCELAR_REAPERTURA,
+  TEXTO_EN_ESPERA,
+  TEXTO_ENLACE_VENCIDO_REAPERTURA,
+  TEXTO_ESTUDIO_CERRADO,
+  TEXTO_REAPERTURA,
+  TEXTO_TERMINO_SIN_APROBAR,
+  TOAST_INVITACION_CANCELADA_REAPERTURA,
+  avisoReemplazoEnRechazado,
+  cierreDelEstudio,
+  comoSePresento,
+  esSalidaDelEstudio,
+  estaCerrado,
+  estaEnVerificacion,
+  evaluacionDeOtroSolicitante,
+  fechaColombia,
+  insigniaPersona,
+  noCalificaEnRojo,
+  papelEnElEstudio,
+  personaA5dUsable,
+  rolDeclarado,
+  rotuloCoarrendatario,
+  terminoSinAprobar,
+  textoCoarrendatario,
+  textoPlazoReapertura,
+  textoVerificacionAnalista,
+  titularEstudioTerminado,
+  tonoPersonaA5d,
+  type CierreEstudio,
+} from './personaEstudio'
+import type { IPersonaA5d } from '@/types/estudio'
+
+const RESULTADOS = ['aprobado', 'rechazado', 'condicionado', 'pendiente', null, undefined]
+const TERMINADOS: CierreEstudio[] = ['no_aprobable', 'cerrado_sin_aprobar', 'cerrado']
+const PROHIBIDO = /sigue con el titular|analista|se decide con los dos/i
+
+test('en qué quedó el estudio', () => {
+  assert.equal(cierreDelEstudio('rechazado'), 'no_aprobable')
+  assert.equal(cierreDelEstudio('cerrado', 'rechazado'), 'cerrado_sin_aprobar')
+  assert.equal(cierreDelEstudio('cerrado', 'aprobado'), 'cerrado')
+  assert.equal(cierreDelEstudio('cerrado'), 'cerrado')
+  assert.equal(cierreDelEstudio('condicionado'), null)
+  assert.equal(cierreDelEstudio('en_revision'), null)
+  assert.equal(cierreDelEstudio(undefined), null)
+  assert.deepEqual(TERMINADOS.map(terminoSinAprobar), [true, true, false])
+  assert.deepEqual(TERMINADOS.map(estaCerrado), [false, true, true])
+})
+
+test('coarrendatario sin persona_a5d: con el estudio terminado nunca «sigue con el titular» ni lo «revisa un analista»', () => {
+  for (const c of TERMINADOS) for (const r of RESULTADOS) assert.doesNotMatch(textoCoarrendatario(r, c), PROHIBIDO)
+  for (const r of RESULTADOS) assert.equal(textoCoarrendatario(r, 'no_aprobable'), TEXTO_TERMINO_SIN_APROBAR)
+  // Cerrado, con cualquier estado anterior.
+  for (const r of RESULTADOS) {
+    assert.equal(textoCoarrendatario(r, 'cerrado'), TEXTO_ESTUDIO_CERRADO)
+    assert.equal(textoCoarrendatario(r, 'cerrado_sin_aprobar'), TEXTO_ESTUDIO_CERRADO)
+  }
+  assert.equal(TEXTO_TERMINO_SIN_APROBAR, 'Esta evaluación no cambia el resultado: el estudio terminó sin aprobar.')
+  assert.equal(TEXTO_ESTUDIO_CERRADO, 'El estudio se cerró: esta evaluación ya no cambia nada.')
+})
+
+test('coarrendatario sin persona_a5d, estudio en curso: los textos de la Adenda 3 V2 §7 quedan como estaban', () => {
+  assert.equal(textoCoarrendatario('aprobado', null), 'El coarrendatario es válido: suma su puntaje y su ingreso. El estudio se decide con los dos.')
+  assert.equal(textoCoarrendatario('rechazado', null), 'El coarrendatario no califica: no aporta puntos ni ingreso, y el estudio sigue con el titular.')
+  assert.equal(textoCoarrendatario('condicionado', null), 'La evaluación del coarrendatario la revisa un analista de Cofianza.')
+})
+
+test('rótulo del coarrendatario: ni «Válido» con el estudio no aprobable ni «En revisión» con el estudio terminado', () => {
+  assert.equal(rotuloCoarrendatario('aprobado', null), 'Válido')
+  assert.equal(rotuloCoarrendatario('rechazado', null), 'No califica')
+  assert.equal(rotuloCoarrendatario('condicionado', null), 'En revisión')
+  assert.equal(rotuloCoarrendatario('aprobado', 'no_aprobable'), ROTULO_SIN_EFECTO)
+  assert.equal(rotuloCoarrendatario('aprobado', 'cerrado_sin_aprobar'), ROTULO_SIN_EFECTO)
+  // Cerrado con contrato: fue válido.
+  assert.equal(rotuloCoarrendatario('aprobado', 'cerrado'), 'Válido')
+  for (const c of TERMINADOS) {
+    assert.equal(rotuloCoarrendatario('condicionado', c), ROTULO_SIN_EFECTO)
+    assert.equal(rotuloCoarrendatario('rechazado', c), 'No califica')
+  }
+  assert.equal(rotuloCoarrendatario('pendiente', null), null)
+  assert.equal(rotuloCoarrendatario(null, 'no_aprobable'), null)
+})
+
+const titular = (o: Partial<Parameters<typeof titularEstudioTerminado>[0]> = {}) => ({ estado: 'completado', resultado: 'aprobado', ...o })
+
+test('titular sin persona_a5d: sin «Aprobado» junto a «terminó sin aprobar» ni «En revisión» con el estudio cerrado', () => {
+  assert.deepEqual(titularEstudioTerminado(titular(), 'no_aprobable'), { rotulo: ROTULO_SIN_EFECTO, texto: TEXTO_TERMINO_SIN_APROBAR })
+  assert.deepEqual(titularEstudioTerminado(titular({ resultado: 'condicionado', decision_cofianza: 'aprobado' }), 'no_aprobable'), {
+    rotulo: ROTULO_SIN_EFECTO,
+    texto: TEXTO_TERMINO_SIN_APROBAR,
+  })
+  assert.deepEqual(titularEstudioTerminado(titular({ resultado: 'condicionado' }), 'no_aprobable'), { rotulo: ROTULO_SIN_EFECTO, texto: TEXTO_TERMINO_SIN_APROBAR })
+  assert.deepEqual(titularEstudioTerminado(titular({ resultado: 'condicionado' }), 'cerrado'), { rotulo: ROTULO_SIN_EFECTO, texto: TEXTO_ESTUDIO_CERRADO })
+  assert.deepEqual(titularEstudioTerminado(titular({ resultado: 'condicionado' }), 'cerrado_sin_aprobar'), { rotulo: ROTULO_SIN_EFECTO, texto: TEXTO_ESTUDIO_CERRADO })
+  assert.deepEqual(titularEstudioTerminado(titular(), 'cerrado_sin_aprobar'), { rotulo: ROTULO_SIN_EFECTO, texto: TEXTO_ESTUDIO_CERRADO })
+  // Lo de siempre: estudio en curso, cerrado con la evaluación aprobada, no aprobable, negada por el analista,
+  // con el resultado que envía la API o con la condición del coarrendatario.
+  assert.equal(titularEstudioTerminado(titular(), null), null)
+  assert.equal(titularEstudioTerminado(titular(), 'cerrado'), null)
+  assert.equal(titularEstudioTerminado(titular({ resultado: 'rechazado' }), 'no_aprobable'), null)
+  assert.equal(titularEstudioTerminado(titular({ resultado: 'condicionado', decision_cofianza: 'negado' }), 'no_aprobable'), null)
+  assert.equal(titularEstudioTerminado(titular({ desenlace: 'aprobado_segundo_firmante' }), 'no_aprobable'), null)
+  assert.equal(titularEstudioTerminado(titular({ resultado: 'condicionado', condicion_coarrendatario: { vencida: true } }), 'no_aprobable'), null)
+  assert.equal(titularEstudioTerminado(titular({ estado: 'fallido' }), 'no_aprobable'), null)
+})
+
+const persona = (o: Partial<IPersonaA5d> = {}): IPersonaA5d => ({ papel: 'titular', etiqueta: 'Titular del estudio', texto: 'TEXTO DE LA API', ...o })
+
+test('persona_a5d solo se usa completo', () => {
+  assert.equal(personaA5dUsable(undefined), null)
+  assert.equal(personaA5dUsable(null), null)
+  assert.equal(personaA5dUsable(persona({ etiqueta: '  ' })), null)
+  assert.equal(personaA5dUsable(persona({ texto: '' })), null)
+  assert.equal(personaA5dUsable({ papel: 'titular' } as IPersonaA5d), null)
+  const p = persona()
+  assert.equal(personaA5dUsable(p), p)
+})
+
+test('papel junto al nombre e insignia sin repetirlo', () => {
+  assert.equal(papelEnElEstudio(persona()), 'Titular del estudio')
+  assert.equal(papelEnElEstudio(persona({ papel: 'segundo_firmante' })), 'Segundo firmante')
+  assert.equal(papelEnElEstudio(persona({ papel: 'sin_papel' })), null)
+  assert.equal(papelEnElEstudio(persona({ papel: 'otro' as IPersonaA5d['papel'] })), null)
+  assert.equal(insigniaPersona(persona()), null)
+  assert.equal(insigniaPersona(persona({ papel: 'segundo_firmante', etiqueta: 'segundo firmante ' })), null)
+  assert.equal(insigniaPersona(persona({ papel: 'sin_papel', etiqueta: 'No pasó' })), 'No pasó')
+  assert.equal(insigniaPersona(persona({ papel: 'sin_papel', etiqueta: 'Salió del estudio' })), 'Salió del estudio')
+  assert.equal(insigniaPersona(persona({ etiqueta: 'En verificación' })), 'En verificación')
+})
+
+test('colores: sin papel en gris, rojo solo cuando hay que actuar', () => {
+  const sinPapel = (etiqueta: string, ctx = {}) => tonoPersonaA5d(persona({ papel: 'sin_papel', etiqueta }), ctx)
+  assert.equal(sinPapel('No pasó'), 'alerta')
+  // «No califica»: rojo si hay que reemplazarla; gris con el estudio aprobado (no bloquea) o cerrado.
+  assert.equal(sinPapel('No califica'), 'alerta')
+  assert.equal(sinPapel('no califica '), 'alerta')
+  assert.equal(sinPapel('No califica', { cierre: 'no_aprobable' }), 'alerta')
+  assert.equal(sinPapel('No califica', { estudioAprobado: true }), 'neutro')
+  assert.equal(sinPapel('No califica', { cierre: 'cerrado' }), 'neutro')
+  assert.equal(noCalificaEnRojo(), true)
+  assert.equal(noCalificaEnRojo({ estudioAprobado: true }), false)
+  assert.equal(noCalificaEnRojo({ cierre: 'cerrado_sin_aprobar' }), false)
+  for (const e of ['En espera', 'En verificación', 'Evaluada', 'No alcanza']) assert.equal(sinPapel(e), 'neutro', e)
+  for (const e of ['Sin efecto', 'Salió del estudio', 'Plazo vencido']) assert.equal(sinPapel(e), 'cerrada', e)
+  assert.equal(tonoPersonaA5d(persona({ papel: 'segundo_firmante', etiqueta: 'Segundo firmante' })), 'exito')
+  // Titular: lo dice el resultado de su evaluación.
+  assert.equal(tonoPersonaA5d(persona()), null)
+})
+
+test('salió del estudio y en verificación, por la etiqueta de la API', () => {
+  assert.equal(esSalidaDelEstudio(persona({ papel: 'sin_papel', etiqueta: 'Salió del estudio' })), true)
+  assert.equal(esSalidaDelEstudio(persona({ papel: 'sin_papel', etiqueta: 'salió del estudio' })), true)
+  assert.equal(esSalidaDelEstudio(persona({ papel: 'sin_papel', etiqueta: 'Sin efecto' })), false)
+  assert.equal(esSalidaDelEstudio(null), false)
+  assert.equal(estaEnVerificacion(persona({ papel: 'sin_papel', etiqueta: 'En verificación' })), true)
+  assert.equal(estaEnVerificacion(persona({ papel: 'sin_papel', etiqueta: 'En espera' })), false)
+  assert.equal(estaEnVerificacion(undefined), false)
+})
+
+test('al analista, la persona en verificación: qué hacer', () => {
+  assert.equal(
+    textoVerificacionAnalista('por_confirmar'),
+    'Coincidencia en listas restrictivas por confirmar. Ábrala en «Ver detalle» para confirmarla o descartarla antes de decidir.',
+  )
+  assert.equal(textoVerificacionAnalista(null), 'Revise el motivo y decida si lo aprueba.')
+  assert.equal(textoVerificacionAnalista('descartada'), 'Revise el motivo y decida si lo aprueba.')
+})
+
+test('cómo se presentó: solo si el papel no es el que declaró (Adenda 5 §11) o no tiene papel', () => {
+  assert.equal(comoSePresento(persona(), false), null)
+  assert.equal(comoSePresento(persona({ papel: 'segundo_firmante' }), true), null)
+  assert.equal(comoSePresento(persona(), true), 'Se presentó como coarrendatario')
+  assert.equal(comoSePresento(persona({ papel: 'segundo_firmante' }), false), 'Se presentó como solicitante')
+  assert.equal(comoSePresento(persona({ papel: 'sin_papel' }), false), 'Se presentó como solicitante')
+  assert.equal(comoSePresento(persona({ papel: 'sin_papel' }), true), 'Se presentó como coarrendatario')
+  assert.equal(rolDeclarado(false), 'Solicitante')
+  assert.equal(rolDeclarado(true), 'Coarrendatario')
+})
+
+test('evaluación de un solicitante que ya fue reemplazado', () => {
+  // Documentos ficticios.
+  assert.equal(evaluacionDeOtroSolicitante({ numero_documento: '1000000001' }, '1000000002'), true)
+  assert.equal(evaluacionDeOtroSolicitante({ numero_documento: '1.000.000.001' }, '1000000001'), false)
+  assert.equal(evaluacionDeOtroSolicitante({ numero_documento: 'ab-123' }, 'AB123'), false)
+  // Sin los dos documentos no se afirma nada.
+  assert.equal(evaluacionDeOtroSolicitante(null, '1000000002'), false)
+  assert.equal(evaluacionDeOtroSolicitante({ numero_documento: '1000000001' }, null), false)
+  assert.equal(evaluacionDeOtroSolicitante({}, undefined), false)
+  // La marca de la API manda.
+  assert.equal(evaluacionDeOtroSolicitante(null, null, { etiqueta: 'Salió del estudio' }), true)
+  assert.equal(SOLICITANTE_ANTERIOR, 'Solicitante anterior')
+})
+
+test('reemplazo en un estudio rechazado: manda el aviso de la API; el plazo, solo el que ella manda', () => {
+  const base = 'El estudio vuelve a revisión y se decide de nuevo con la persona nueva.'
+  // API anterior: sin campos ni frase.
+  assert.equal(avisoReemplazoEnRechazado({ aviso: 'AVISO' }), base)
+  // La API ya lo dice (campo o frase): no se repite.
+  assert.equal(avisoReemplazoEnRechazado({ aviso: 'AVISO', vuelve_a_revision: true }), null)
+  assert.equal(avisoReemplazoEnRechazado({ aviso: 'AVISO. Al cargar a la persona nueva, el estudio vuelve a revisión y se decide de nuevo.' }), null)
+  // Con la fecha de la API y un aviso que no la dice: se agrega; si el aviso ya dice el plazo, no.
+  const vence = '2026-12-04T17:00:00Z'
+  assert.equal(
+    avisoReemplazoEnRechazado({ aviso: 'AVISO', vuelve_a_revision: true, vence_reapertura: vence }),
+    'La persona nueva debe autorizar a más tardar el 4 de diciembre de 2026.',
+  )
+  assert.equal(avisoReemplazoEnRechazado({ aviso: 'AVISO', vence_reapertura: vence }), `${base} La persona nueva debe autorizar a más tardar el 4 de diciembre de 2026.`)
+  assert.equal(
+    avisoReemplazoEnRechazado({ aviso: 'Debe autorizar a más tardar el 4 de diciembre. El estudio vuelve a revisión.', vuelve_a_revision: true, vence_reapertura: vence }),
+    null,
+  )
+  // Nunca un plazo calculado aquí: sin la fecha de la API, ninguno.
+  assert.doesNotMatch(avisoReemplazoEnRechazado({ aviso: 'AVISO' }) ?? '', /vence|días|tardar/)
+})
+
+test('plazo de la reapertura después de cargar a la persona: la fecha de la API, en hora de Colombia', () => {
+  assert.equal(textoPlazoReapertura('2026-12-04T17:00:00Z'), 'La persona nueva debe autorizar a más tardar el 4 de diciembre de 2026.')
+  // 04:00 UTC del 5 es todavía el 4 en Colombia.
+  assert.equal(fechaColombia('2026-12-05T04:00:00Z'), '4 de diciembre de 2026')
+  assert.equal(textoPlazoReapertura(null), null)
+  assert.equal(textoPlazoReapertura('no es fecha'), null)
+})
+
+test('textos de la reapertura', () => {
+  assert.equal(
+    TEXTO_CANCELAR_REAPERTURA,
+    'El estudio vuelve a quedar no aprobable y Cofianza devuelve el pago si la consulta no se hizo. La persona anterior no vuelve al estudio.',
+  )
+  assert.equal(TEXTO_CANCELAR_INVITACION_REAPERTURA, 'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobable y Cofianza devuelve el pago.')
+  assert.equal(TOAST_INVITACION_CANCELADA_REAPERTURA, 'Invitación cancelada. El estudio volvió a no aprobable.')
+  assert.equal(TEXTO_ENLACE_VENCIDO_REAPERTURA, 'Venció el enlace: el cambio se cerró y Cofianza devolverá el pago.')
+  assert.equal(TEXTO_REAPERTURA, 'El estudio se decide de nuevo cuando la persona nueva acepte, autorice y termine su evaluación.')
+  // El texto de la evaluación en espera no repite el de la franja «Qué sigue».
+  assert.notEqual(TEXTO_EN_ESPERA, TEXTO_REAPERTURA)
+  assert.doesNotMatch(TEXTO_EN_ESPERA, /se decide de nuevo/)
+})
+
+test('ningún texto de este archivo usa «buró» ni «score»', async () => {
+  const { readFileSync } = await import('node:fs')
+  const fuente = readFileSync(new URL('./personaEstudio.ts', import.meta.url), 'utf8')
+  const cadenas = fuente.match(/'[^'\n]*'/g) ?? []
+  for (const c of cadenas) assert.doesNotMatch(c, /bur[oó]|score/i)
+})

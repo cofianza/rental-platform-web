@@ -176,3 +176,12 @@ test('reporte de Gerencia (21-nov): aprobado con traba_contrato nunca es «crear
   // El vencido no se pinta de alerta por el tiempo quieto.
   assert.equal(actividadConAlerta(vencido), false)
 })
+
+test('estudio reabierto por un reemplazo: su propia etapa en la lista', () => {
+  assert.equal(etapaDeFila(fila({ estado: 'en_revision', reapertura_abierta: true }, { estado: 'completado', resultado: 'rechazado' })), 'reapertura')
+  assert.equal(etapaDeFila(fila({ estado: 'rechazado', reapertura_abierta: true })), 'reapertura')
+  assert.equal(etapaDeFila(fila({ estado: 'cerrado', reapertura_abierta: true })), 'finalizado')
+  // Sin la marca, como siempre.
+  assert.equal(etapaDeFila(fila({ estado: 'en_revision' }, { estado: 'completado', resultado: 'rechazado' })), 'consulta')
+  assert.equal(actividadConAlerta(fila({ estado: 'en_revision', reapertura_abierta: true, depende_de: 'prospecto' }), 'reapertura'), false)
+})

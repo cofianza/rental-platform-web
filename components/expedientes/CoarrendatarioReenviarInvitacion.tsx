@@ -24,12 +24,18 @@ import {
   type IInvitarCoarrendatarioInput,
 } from '@/services/coarrendatarioService'
 import { esNombreValido, TIPO_DOC_OPTIONS } from './CoarrendatarioInviteForm'
+import { TEXTO_CANCELAR_INVITACION_REAPERTURA, TOAST_INVITACION_CANCELADA_REAPERTURA } from '@/lib/personaEstudio'
 
 interface CoarrendatarioReenviarInvitacionProps {
   expedienteId: string
   coa: ICoarrendatario
   /** Refresca la card padre tras reenviar o cancelar. */
   onCambio?: () => void
+  /**
+   * La persona entró por un cambio que reabrió el estudio no aprobable: cancelar la invitación cierra el cambio
+   * y el estudio vuelve a no aprobable (no se invita a otra persona desde aquí).
+   */
+  reaperturaAbierta?: boolean
 }
 
 const INPUT =
@@ -56,6 +62,7 @@ export function CoarrendatarioReenviarInvitacion({
   expedienteId,
   coa,
   onCambio,
+  reaperturaAbierta = false,
   embebido = false,
 }: CoarrendatarioReenviarInvitacionProps & {
   /** Dentro de una sección de otra tarjeta: sin marco propio (no una caja dentro de otra). */
@@ -120,7 +127,7 @@ export function CoarrendatarioReenviarInvitacion({
   const handleCancelar = async () => {
     try {
       await coarrendatarioService.cancelar(expedienteId)
-      toast.success('Invitación cancelada. Ya puede invitar a otra persona.')
+      toast.success(reaperturaAbierta ? TOAST_INVITACION_CANCELADA_REAPERTURA : 'Invitación cancelada. Ya puede invitar a otra persona.')
       onCambio?.()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'No se pudo cancelar la invitación')
@@ -136,7 +143,9 @@ export function CoarrendatarioReenviarInvitacion({
       <p className={embebido ? 'mb-3 text-sm font-semibold text-gray-900' : 'text-xs font-semibold text-gray-700 mb-2'}>
         {protegidos
           ? 'Esta invitación la envió quien tramita su arriendo. Si algún dato está mal, pídale que la corrija y la reenvíe, o cancélela para invitar a otra persona'
-          : '¿No le llegó o algún dato está mal? Corríjalo y reenvíe la invitación, o cancélela para invitar a otra persona'}
+          : reaperturaAbierta
+            ? '¿No le llegó o algún dato está mal? Corríjalo y reenvíe la invitación'
+            : '¿No le llegó o algún dato está mal? Corríjalo y reenvíe la invitación, o cancélela para invitar a otra persona'}
       </p>
       {!protegidos && (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
@@ -232,7 +241,9 @@ export function CoarrendatarioReenviarInvitacion({
         onClose={() => setConfirmandoCancelar(false)}
         onConfirm={handleCancelar}
         title="¿Cancelar la invitación?"
-        message={`El enlace que recibió ${coa.nombre} deja de funcionar. Después puede invitar a otra persona.`}
+        message={
+          reaperturaAbierta ? TEXTO_CANCELAR_INVITACION_REAPERTURA : `El enlace que recibió ${coa.nombre} deja de funcionar. Después puede invitar a otra persona.`
+        }
         confirmLabel="Sí, cancelarla"
         cancelLabel="Volver"
         variant="danger"

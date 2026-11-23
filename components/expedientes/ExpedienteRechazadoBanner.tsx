@@ -45,6 +45,11 @@ interface ExpedienteRechazadoBannerProps {
    * abierta y hasta cuándo. undefined = todavía no se leyó; null = no se pudo leer.
    */
   apelacion?: IEstudioHistorial | null
+  /**
+   * Quien mira es de Cofianza sin reevaluar (Gerencia): ve lo mismo que el
+   * asesor, sin la frase dirigida a él sobre los documentos.
+   */
+  interno?: boolean
 }
 
 // Neutro (P34): no culpa a la evaluación crediticia cuando pudo decidirlo un analista.
@@ -112,7 +117,7 @@ export function NotaApelacion({ className = '' }: { className?: string }) {
   )
 }
 
-export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, apelacion }: ExpedienteRechazadoBannerProps) {
+export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, apelacion, interno = false }: ExpedienteRechazadoBannerProps) {
   if (esProspecto) {
     return (
       <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
@@ -150,7 +155,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, ap
           {onReevaluar ? (
             <ApelacionCofianza a={apelacion && leerApelacion(apelacion)} vigencia={vigenciaDesdeLaConsulta(apelacion?.dias_vigencia_reporte)} onReevaluar={onReevaluar} />
           ) : (
-            <ApelacionGestor a={apelacion && leerApelacion(apelacion)} />
+            <ApelacionGestor a={apelacion && leerApelacion(apelacion)} interno={interno} />
           )}
         </div>
       )}
@@ -198,18 +203,21 @@ function ApelacionCofianza({ a, vigencia, onReevaluar }: { a: Apelacion | null; 
   return <p className="text-sm leading-relaxed text-gray-700">{texto}</p>
 }
 
-/** Inmobiliaria, propietario y Gerencia: la apelación va por correo a Cofianza. */
-function ApelacionGestor({ a }: { a: Apelacion | null }) {
+/**
+ * Inmobiliaria, propietario y Gerencia. La apelación la hace el solicitante
+ * con lo que le indica el correo con el resultado de su estudio: el detalle de
+ * sus deudas solo se le comunica a él (Adenda 5 §18). Al asesor se le dice que
+ * puede apelar y hasta cuándo, sin pedirle que reciba documentos ni remitirlo
+ * al correo de prospectos (reporte de Gerencia, punto 8).
+ */
+function ApelacionGestor({ a, interno }: { a: Apelacion | null; interno: boolean }) {
   if (!a || (a.estado === 'abierta' && !a.radicada)) {
+    const hasta = a?.fecha ? `hasta el ${formatDate(a.fecha)}` : 'dentro de los 15 días hábiles siguientes a esta decisión'
     return (
       <p className="text-sm leading-relaxed text-gray-700">
-        ¿Tiene documentos que cambian el resultado, por ejemplo el ingreso real del
-        solicitante? Puede apelar enviándolos a{' '}
-        <a href="mailto:hola@cofianza.co" className="font-medium underline">
-          hola@cofianza.co
-        </a>{' '}
-        {a?.fecha ? `a más tardar el ${formatDate(a.fecha)}` : 'dentro de los 15 días hábiles siguientes a esta decisión'}.{' '}
+        El solicitante puede apelar ante Cofianza {hasta}: el correo con el resultado de su estudio le indica cómo hacerlo.{' '}
         {a?.porReporte ? 'Cofianza la decide a más tardar ese mismo día.' : 'Cofianza responde en máximo 10 días hábiles.'}
+        {!interno && ' Usted no tiene que recibir ni enviar documentos.'}
       </p>
     )
   }
