@@ -25,6 +25,11 @@ export interface OpcionesTurno {
    * lo que se espera es el coarrendatario (lo agrega la persona o lo invita quien gestiona).
    */
   condicion?: boolean
+  /**
+   * Con `condicion`: ya hay un segundo firmante invitado que no ha respondido. A quien gestiona se le sugiere
+   * reenviarle la invitación o invitar a otra persona. Solo lo sabe el detalle (la lista no trae la invitación).
+   */
+  invitado?: boolean
 }
 
 /** «Nombre Apellido» del analista asignado si no es quien mira; null si es él o no hay. */
@@ -53,7 +58,13 @@ export function textoTurno(turno: Turno, vista: VistaTurno, o: OpcionesTurno = {
       return o.accion ? `${base}: ${o.accion}` : base
     }
     case 'prospecto':
-      return o.condicion && vista !== 'cofianza' ? 'Esperando al coarrendatario' : 'Esperando al prospecto'
+      // Reporte de Gerencia (21-nov, punto 3): aprobado con segundo firmante; nunca «crear el contrato».
+      if (o.condicion && vista !== 'cofianza') {
+        return o.invitado && vista === 'gestor'
+          ? 'Esperando al segundo firmante: reenvíele la invitación o invite a otra persona'
+          : 'Esperando al segundo firmante'
+      }
+      return 'Esperando al prospecto'
     case 'cofianza':
       // El condicionado lo decide un analista (Adenda 2 §5): no es una consulta en curso.
       // U1: al analista le toca decidir; a Gerencia, solo mirar.
@@ -77,13 +88,14 @@ export function PastillaTurno({
   analista,
   sinEjecutar,
   condicion,
+  invitado,
   className,
 }: {
   turno: Turno
   vista: VistaTurno
   className?: string
 } & OpcionesTurno) {
-  const o = { revision, accion, analista, sinEjecutar, condicion }
+  const o = { revision, accion, analista, sinEjecutar, condicion, invitado }
   return (
     <span
       className={cn(

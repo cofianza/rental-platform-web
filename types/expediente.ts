@@ -30,6 +30,31 @@ export interface IEstudioVigente extends IDesenlaceEstudio {
   coarrendatario_fallido?: boolean
 }
 
+/**
+ * Por qué un estudio aprobado y sin contrato vivo no puede pasar al contrato (reporte de Gerencia,
+ * 21-nov, puntos 1, 3 y 7). Lo calcula la API una sola vez para la lista, el encabezado y el detalle.
+ */
+export type CodigoTrabaContrato = 'vencido' | 'canon_excede' | 'coarrendatario_pendiente'
+
+export interface ITrabaContrato {
+  /** Un código que esta versión no conoce se trata como si no hubiera traba. */
+  codigo: CodigoTrabaContrato | (string & {})
+  /** Ya redactado en usted por la API: se muestra tal cual. */
+  texto: string
+  /** canon_excede: hasta qué canon quedó aprobado el estudio. Los estudios anteriores a la Adenda 5 pueden no traerlo. */
+  canon_habilitado_cop?: number
+  /** canon_excede: el resultado tiene la leyenda «hasta un canon de» (un canon mayor no se evalúa de nuevo). */
+  hasta_canon?: boolean
+  /** canon_excede sin leyenda: la API ofrece evaluar de nuevo con el canon de la propiedad. */
+  puede_reevaluar?: boolean
+  /** vencido: cuándo vence (o venció) el resultado. Con sin_margen es una fecha futura. */
+  vencio_en?: string
+  /** vencido: el resultado todavía no vence, pero ya no alcanza para firmar el contrato. */
+  sin_margen?: boolean
+  /** coarrendatario_pendiente (estudios anteriores a la Adenda 5): lo que cambia en la prima al seguir sin él. */
+  aviso_prima?: string
+}
+
 /** Filtro de la vista fusionada por el estado del estudio vigente. */
 export type EstudioFiltro =
   | 'todos'
@@ -142,6 +167,13 @@ export interface IExpediente {
    *  CONTRATOS_V3_ENABLED del API + inmueble de una inmobiliaria). Ausente o
    *  false = flujo anterior (GenerarContratoModal). */
   contratos_v3?: boolean
+  /**
+   * Lista y detalle: solo con el estudio aprobado y sin contrato vivo, lo que impide crear el contrato.
+   * null o ausente (una API anterior) = nada lo impide: la etapa sale como siempre.
+   */
+  traba_contrato?: ITrabaContrato | null
+  /** Lista y detalle, solo en estudios aprobados: hasta cuándo sirve el resultado (ISO). Ausente con una API anterior. */
+  vigencia_hasta?: string | null
   created_at: string
   updated_at: string
 }

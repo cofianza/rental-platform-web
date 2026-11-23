@@ -131,3 +131,84 @@ test('queSigue: en las etapas del resultado manda el texto de la API', () => {
   assert.match(queSigue('segundo_firmante', o), /segundo firmante/)
   assert.doesNotMatch(queSigue('decision', { ...o, textoApi: 'Texto de la API.' }), /Texto de la API/)
 })
+
+test('reporte de Gerencia (21-nov): etapas de traba, su nombre y su texto', async () => {
+  const { etiquetaTraba } = await import('./etapaEstudio')
+  assert.equal(calcularEtapa({ ...base, estado: 'aprobado', trabaCodigo: 'canon_excede' }), 'canon_excede')
+  assert.equal(calcularEtapa({ ...base, estado: 'aprobado', trabaCodigo: 'coarrendatario_pendiente' }), 'coarrendatario_pendiente')
+  assert.equal(calcularEtapa({ ...base, estado: 'aprobado', trabaCodigo: 'vencido' }), 'vencido')
+  assert.equal(calcularEtapa({ ...base, estado: 'aprobado', trabaCodigo: 'otro' }), 'contrato')
+  assert.equal(calcularEtapa({ ...base, estado: 'aprobado', trabaCodigo: 'vencido', contratosEstados: ['pendiente_firma'] }), 'firma')
+  assert.equal(turnoDeEtapa('canon_excede', false), 'gestor')
+  assert.equal(turnoDeEtapa('coarrendatario_pendiente', false), 'gestor')
+  // El vencido no es turno de nadie (la API: depende_de null, no «requiere su acción»).
+  assert.equal(turnoDeEtapa('vencido', false), null)
+  // Con la leyenda «hasta un canon»: la cifra; sin ella, canon mayor al evaluado; sin hasta_canon (API anterior) decide la cifra.
+  assert.equal(etiquetaTraba('canon_excede', { hasta_canon: true, canon_habilitado_cop: 1_250_000 }), 'Aprobado hasta un canon de $1.250.000')
+  assert.equal(etiquetaTraba('canon_excede', { hasta_canon: true }), 'Aprobado hasta un canon menor')
+  assert.equal(etiquetaTraba('canon_excede', { hasta_canon: false, canon_habilitado_cop: 1_500_000 }), 'Aprobado · canon mayor al evaluado')
+  assert.equal(etiquetaTraba('canon_excede', { canon_habilitado_cop: 1_250_000 }), 'Aprobado hasta un canon de $1.250.000')
+  // Estudios anteriores a la Adenda 5: canon_excede sin la cifra.
+  assert.equal(etiquetaTraba('canon_excede', {}), 'Aprobado · canon mayor al evaluado')
+  assert.equal(etiquetaTraba('canon_excede'), 'Aprobado · canon mayor al evaluado')
+  assert.equal(etiquetaTraba('coarrendatario_pendiente'), 'Aprobado · coarrendatario sin responder')
+  assert.equal(etiquetaTraba('vencido'), 'Resultado vencido')
+  assert.equal(etiquetaTraba('vencido', { sin_margen: true }), 'Resultado por vencer')
+  const o = { vista: 'gestor' as const, analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false }
+  // El texto de la API, tal cual, solo para el gestor que puede actuar; sin él, un respaldo que no dice «cree el contrato».
+  assert.equal(queSigue('canon_excede', { ...o, textoTraba: 'Texto de la API.' }), 'Texto de la API.')
+  assert.equal(queSigue('canon_excede', { ...o, perfilIncompleto: true, textoTraba: 'Texto de la API.' }), 'Complete su perfil para poder actuar en este estudio.')
+  for (const etapa of ['canon_excede', 'coarrendatario_pendiente', 'vencido'] as const) {
+    assert.doesNotMatch(queSigue(etapa, o), /cree el contrato aquí abajo/)
+    // Cofianza, Gerencia y solo lectura: sus propios textos, no el de la API (que le habla al gestor).
+    assert.doesNotMatch(queSigue(etapa, { ...o, vista: 'cofianza', textoTraba: 'Texto de la API.' }), /Texto de la API/)
+    assert.doesNotMatch(queSigue(etapa, { ...o, vista: 'equipo', textoTraba: 'Texto de la API.' }), /Texto de la API/)
+  }
+  assert.match(queSigue('canon_excede', { ...o, vista: 'cofianza' }), /la inmobiliaria o el propietario/)
+  assert.match(queSigue('vencido', { ...o, vista: 'equipo' }), /Alguien de su equipo con permiso de edición/)
+  // Solo lectura con el perfil incompleto: el mismo reemplazo de siempre.
+  assert.equal(queSigue('canon_excede', { ...o, vista: 'equipo', perfilIncompleto: true }), 'Complete su perfil para poder actuar en este estudio.')
+  // En las demás etapas el texto de la traba no se usa.
+  assert.doesNotMatch(queSigue('contrato', { ...o, textoTraba: 'Texto de la API.' }), /Texto de la API/)
+})
+
+test('punto 7: vencimiento del resultado en días de Colombia', async () => {
+  const { vigenciaResultado } = await import('./etapaEstudio')
+  // 23-nov-2026 10:00 en Bogotá (15:00 UTC).
+  const ahoraMs = Date.parse('2026-11-23T15:00:00Z')
+  const v = (hasta: string | null, etapa: Parameters<typeof vigenciaResultado>[0] = 'contrato') =>
+    vigenciaResultado(etapa, { hasta, ahoraMs })
+  assert.deepEqual(
+    { texto: v('2026-12-13T15:00:00Z')?.texto, tono: v('2026-12-13T15:00:00Z')?.tono },
+    { texto: 'Vence en 20 días', tono: 'gris' },
+  )
+  assert.equal(v('2026-11-30T15:00:00Z')?.texto, 'Vence en 7 días')
+  assert.equal(v('2026-11-30T15:00:00Z')?.tono, 'ambar')
+  assert.equal(v('2026-11-24T15:00:00Z')?.texto, 'Vence en 1 día')
+  // Más tarde hoy (hora de Colombia), aunque en UTC ya sea mañana.
+  assert.equal(v('2026-11-24T03:00:00Z')?.texto, 'Vence hoy')
+  assert.equal(v('2026-11-23T14:00:00Z')?.texto, 'Vencido')
+  assert.equal(v('2026-11-23T14:00:00Z')?.tono, 'rojo')
+  // Una fecha sola sirve hasta el final de ese día.
+  assert.equal(v('2026-11-23')?.texto, 'Vence hoy')
+  assert.equal(v('2026-11-22')?.texto, 'Vencido')
+  assert.equal(v('2026-11-25')?.texto, 'Vence en 2 días')
+  // Solo mientras el resultado tenga que servir para el contrato; sin fecha, nada.
+  assert.equal(v('2026-12-13T15:00:00Z', 'firma'), null)
+  assert.equal(v(null), null)
+  assert.equal(v('2026-12-13T15:00:00Z', 'canon_excede')?.texto, 'Vence en 20 días')
+  // Con la etapa «vencido»: «Vencido», en gris como la etapa (la fecha va en el title).
+  const vencido = vigenciaResultado('vencido', { hasta: null, vencioEn: '2026-11-03T15:00:00Z', ahoraMs })
+  assert.deepEqual({ texto: vencido?.texto, tono: vencido?.tono }, { texto: 'Vencido', tono: 'gris' })
+  assert.equal(vencido?.titulo, 'El resultado venció el 3 de noviembre de 2026')
+  assert.equal(vigenciaResultado('vencido', { ahoraMs })?.texto, 'Vencido')
+  // Sin margen para firmar: todavía no vence, pero nunca un plazo como si sirviera.
+  assert.equal(
+    vigenciaResultado('vencido', { vencioEn: '2026-11-28T15:00:00Z', sinMargen: true, ahoraMs })?.texto,
+    'Vence en 5 días · ya no alcanza para firmar',
+  )
+  assert.equal(vigenciaResultado('vencido', { vencioEn: '2026-11-23T20:00:00Z', sinMargen: true, ahoraMs })?.texto, 'Vence hoy · ya no alcanza para firmar')
+  // Si la fecha ya pasó, aunque llegue sin_margen, es «Vencido».
+  assert.equal(vigenciaResultado('vencido', { vencioEn: '2026-11-20T15:00:00Z', sinMargen: true, ahoraMs })?.texto, 'Vencido')
+  assert.equal(v('2026-11-30T15:00:00Z')?.titulo, 'El resultado sirve hasta el 30 de noviembre de 2026')
+})

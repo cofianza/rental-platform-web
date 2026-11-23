@@ -22,6 +22,7 @@ import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { formatNumeroEstudio } from '@/lib/utils'
+import { etapaDeTraba, etiquetaTraba } from '@/lib/etapaEstudio'
 
 /** Son acciones (confirmar, habilitar, generar): quien solo consulta no las ve. */
 export function AccionesPendientesWidget() {
@@ -136,6 +137,16 @@ function AccionesPendientes() {
           icon={<IconFolderOpen size={16} className="text-primary-600" />}
           items={data.porGenerarContrato}
           ctaLabel="Generar contrato"
+        />
+      )}
+
+      {/* Reporte de Gerencia (21-nov): aprobados que todavía no pueden pasar al contrato; sin «Generar contrato». */}
+      {data.conTrabaContrato.length > 0 && (
+        <ExpedienteSection
+          title="Aprobados con algo por resolver"
+          icon={<IconFolderOpen size={16} className="text-amber-600" />}
+          items={data.conTrabaContrato}
+          ctaLabel="Ver qué falta"
         />
       )}
     </div>
@@ -258,6 +269,8 @@ function ExpedienteSection({
 function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; ctaLabel: string }) {
   const inmueble = expediente.inmueble
   const solicitante = expediente.solicitante
+  // Aprobado con traba (canon o coarrendatario sin responder): el mismo nombre que la lista.
+  const etapaTraba = etapaDeTraba(expediente.traba_contrato?.codigo)
 
   return (
     <li>
@@ -277,7 +290,11 @@ function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; 
           <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
             {solicitante && <span className="truncate">{solicitante.nombre}</span>}
             <span>·</span>
-            <span className="text-green-700 shrink-0">Estudio aprobado</span>
+            {etapaTraba ? (
+              <span className="text-amber-800 min-w-0">{etiquetaTraba(etapaTraba, expediente.traba_contrato)}</span>
+            ) : (
+              <span className="text-green-700 shrink-0">Estudio aprobado</span>
+            )}
           </div>
         </div>
         <span className="shrink-0 px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 rounded">

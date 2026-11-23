@@ -63,12 +63,23 @@ import {
 } from '@/components/expedientes'
 import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
 import { ResumenPorEtapa, Plegable } from '@/components/expedientes/ResumenPorEtapa'
+import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudioNuevo'
 import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
 import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
-import { revisionDemorada } from '@/lib/etapaFila'
+import { ACCION_GESTOR, revisionDemorada } from '@/lib/etapaFila'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
-import { useEtapaEstudio, ETAPA_LABEL, turnoDeEtapa, esEsperaDePersona } from '@/hooks/useEtapaEstudio'
+import {
+  useEtapaEstudio,
+  ETAPA_LABEL,
+  turnoDeEtapa,
+  esEsperaDePersona,
+  esEtapaDeTraba,
+  etiquetaTraba,
+  vigenciaResultado,
+} from '@/hooks/useEtapaEstudio'
+import { VigenciaFila } from '@/components/expedientes/EstadoFila'
+import type { SalidasCanon } from '@/components/contratos/v3/BloqueosContrato'
 import { expedienteService } from '@/services/expedienteService'
 import { estudioService } from '@/services/estudioService'
 import { coarrendatarioService } from '@/services/coarrendatarioService'
@@ -166,6 +177,8 @@ function ExpedienteDetalleContenido() {
     user?.rol !== 'gerencia_consulta',
     cargas,
   )
+  // Hora fijada al montar (como la lista): el vencimiento del resultado se cuenta contra ella.
+  const [ahora] = useState(() => Date.now())
   const expedienteCargadoRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
@@ -318,6 +331,21 @@ function ExpedienteDetalleContenido() {
     return () => { cancel = true }
   }, [id, ventanaCoaAplica, estadoExpediente, actualizadoEn])
   const coarrendatarioVigente = (ventanaCoaAplica ? coaVigenteApi : null) ?? estadoExpediente === 'condicionado'
+
+  // Punto 3 del reporte de Gerencia (21-nov): esperando al segundo firmante, si ya hay uno invitado sin
+  // responder, a quien gestiona se le sugiere reenviarle la invitación o invitar a otra persona. Solo se lee en esa
+  // espera (la misma petición que la tarjeta del coarrendatario, coalescida).
+  const leerCoaInvitado = esEsperaDePersona(etapa, !!condicionCoa) && puedeEditar
+  const [coaInvitado, setCoaInvitado] = useState(false)
+  useEffect(() => {
+    if (!leerCoaInvitado) return
+    let cancel = false
+    coarrendatarioService.getDelExpediente(id).then(
+      (c) => { if (!cancel) setCoaInvitado(c?.estado === 'pendiente_aceptacion') },
+      () => { if (!cancel) setCoaInvitado(false) },
+    )
+    return () => { cancel = true }
+  }, [id, leerCoaInvitado, cargas])
 
   // Estado de modales
   const [showTransicionModal, setShowTransicionModal] = useState(false)
@@ -557,7 +585,9 @@ function ExpedienteDetalleContenido() {
 
   // Como la lista (etapaDeFila): la consulta fallida del coarrendatario va antes
   // del resultado y reintentarla es del gestor. El Resumen y la barra siguen la etapa real.
-  const coaFallidaVive = coaFallido && !!etapa && etapa !== 'firma' && etapa !== 'firma_incompleta' && etapa !== 'vigente'
+  // Con el resultado vencido ya no hay consulta que reintentar: manda el vencimiento (como la lista).
+  const coaFallidaVive =
+    coaFallido && !!etapa && etapa !== 'firma' && etapa !== 'firma_incompleta' && etapa !== 'vigente' && etapa !== 'vencido'
   const etapaTurno = coaFallidaVive ? 'fallida' : etapa
   // Un solo nombre para dónde está el estudio: el chip, la barra y el modal de cambio de estado.
   const etiquetaEtapa =
@@ -575,6 +605,9 @@ function ExpedienteDetalleContenido() {
         : etapa === 'segundo_firmante' || etapa === 'bloqueado'
           ? // El nombre del resultado lo redacta la API.
             (titularCondicionado?.desenlace_texto ?? ETAPA_LABEL[etapa])
+          : etapa && esEtapaDeTraba(etapa)
+          ? // Reporte de Gerencia (21-nov): el mismo nombre que la fila de la lista, nunca «Aprobado» a secas.
+            etiquetaTraba(etapa, expediente.traba_contrato)
           : etapa === 'decision' && condicionCoa
           ? condicionCoa.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
           : etapa
@@ -591,6 +624,47 @@ function ExpedienteDetalleContenido() {
   const transicionesModal = (transiciones ?? []).filter((t) => !((condicionCoa || etapa === 'bloqueado') && t.estado_destino === 'aprobado'))
   // Al dueño la API solo le ofrece cerrar o cancelar: el botón lo dice, y no como acción principal.
   const soloCierre = transicionesModal.every((t) => t.estado_destino === 'cerrado')
+  // Punto 7: hasta cuándo sirve el resultado (aprobado sin contrato), junto al estado del encabezado.
+  const vigencia = etapa
+    ? vigenciaResultado(etapa, {
+        hasta: expediente.vigencia_hasta,
+        vencioEn: expediente.traba_contrato?.vencio_en,
+        sinMargen: expediente.traba_contrato?.sin_margen,
+        ahoraMs: ahora,
+      })
+    : null
+  // El color del estado: con traba, ámbar (algo por resolver) o gris (vencido), no el verde de «Aprobado».
+  // Badge toma el color del estado que recibe; aquí solo se le presta el de otro (la etiqueta es la de la etapa).
+  const estadoBadge =
+    expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado'
+      ? 'rechazado'
+      : etapa === 'canon_excede' || etapa === 'coarrendatario_pendiente'
+        ? 'en_revision'
+        : etapa === 'vencido'
+          ? 'borrador'
+          : expediente.estado
+  // Punto 1: las dos salidas del canon por encima del aprobado (pactar uno menor o reasignar la evaluación).
+  const salidasCanon: Omit<SalidasCanon, 'asistenteV3'> | undefined =
+    expediente.estado === 'aprobado'
+      ? {
+          canonHabilitadoCop: expediente.traba_contrato?.canon_habilitado_cop ?? titular?.canon_habilitado_cop ?? null,
+          inmuebleId: expediente.inmueble?.id,
+          puedeReevaluar: expediente.traba_contrato?.codigo === 'canon_excede' && expediente.traba_contrato.puede_reevaluar === true,
+          // Como la tarjeta de la evaluación: se reasigna la evaluación ya ejecutada del titular.
+          estudio:
+            titular?.estado === 'completado' && !titular.condicion_coarrendatario
+              ? {
+                  id: titular.id,
+                  canonEvaluado: titular.canon_evaluado ?? null,
+                  canonHabilitado:
+                    expediente.traba_contrato?.canon_habilitado_cop ??
+                    (titular.desenlace ? (titular.canon_habilitado_cop ?? null) : undefined),
+                  hastaCanon: titular.hasta_canon === true,
+                }
+              : null,
+          onReasignado: fetchExpediente,
+        }
+      : undefined
 
   return (
     <ExpedienteRefrescoContext.Provider value={cargas}>
@@ -620,15 +694,9 @@ function ExpedienteDetalleContenido() {
               ) : (
                 // Cerrado tras "no aprobable" no es "Finalizado" (eso lee a
                 // éxito); y "Borrador" es jerga interna para el arrendatario.
-                <Badge
-                  estado={
-                    expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado'
-                      ? 'rechazado'
-                      : expediente.estado
-                  }
-                  label={etiquetaEtapa}
-                />
+                <Badge estado={estadoBadge} label={etiquetaEtapa} />
               )}
+              {vigencia && !expediente.cancelado_at && <VigenciaFila vigencia={vigencia} pastilla />}
               {isLoading && (
                 <span role="status" className="inline-flex items-center gap-1 text-xs text-gray-500">
                   <IconLoader size={14} className="animate-spin" />
@@ -808,6 +876,10 @@ function ExpedienteDetalleContenido() {
             analista: puedeAsignar,
             sinEjecutar: etapaTurno === 'sin_ejecutar',
             condicion: !!condicionCoa && esEsperaDePersona(etapaTurno, true),
+            // Ya hay un segundo firmante invitado sin responder: «reenvíele la invitación o invite a otra persona».
+            invitado: leerCoaInvitado && coaInvitado,
+            // Con traba, la misma acción que la pastilla de la lista («Su turno: ajustar el canon…»).
+            accion: turno === 'gestor' && esEtapaDeTraba(etapaTurno) ? ACCION_GESTOR[etapaTurno] : undefined,
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» y sin coral.
             tomadoPor:
               etapaTurno === 'decision' && !condicionCoa && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
@@ -849,6 +921,7 @@ function ExpedienteDetalleContenido() {
                     citaActiva,
                     perfilIncompleto: bloqueadoPorPerfil,
                     textoApi: titularCondicionado?.siguiente_accion_texto ?? null,
+                    textoTraba: expediente.traba_contrato?.texto ?? null,
                     // Propietario directo: la API no admite coarrendatario (espera el Convenio).
                   })}
                 </p>
@@ -1039,12 +1112,33 @@ function ExpedienteDetalleContenido() {
                 bloques={{
                   vincular:
                     puedeActuar && !expediente.inmueble && expediente.estado === 'aprobado' ? (
+                      etapa === 'vencido' ? (
+                        // Sin propiedad y con el resultado vencido (o sin margen para firmar), vincular ya no
+                        // lleva a un contrato: lo que sigue es un estudio nuevo.
+                        <TarjetaSiguientePaso
+                          tono="revision"
+                          icono={<IconClock size={18} />}
+                          titulo="Siguiente paso: crear un estudio nuevo"
+                          descripcion={
+                            <>
+                              <p>
+                                El resultado de este estudio ya no sirve para el contrato, así que vincular una propiedad no
+                                permitiría crearlo. Para continuar, cree un estudio nuevo.
+                              </p>
+                              <div className="mt-3">
+                                <EvaluarEnEstudioNuevo expedienteId={id} />
+                              </div>
+                            </>
+                          }
+                        />
+                      ) : (
                       <TarjetaSiguientePaso
                         tono="revision"
                         icono={<IconBuilding2 size={18} />}
                         titulo="Siguiente paso: vincular el inmueble"
                         descripcion="El estudio está aprobado sin propiedad. Cuando la persona elija el inmueble, use «Vincular inmueble» en la evaluación de abajo; después podrá generar el contrato."
                       />
+                      )
                     ) : null,
                   contrato:
                     puedeActuar && expediente.inmueble ? (
@@ -1055,6 +1149,8 @@ function ExpedienteDetalleContenido() {
                         contratosV3={expediente.contratos_v3}
                         inmuebleReservadoPorOtro={reservadoPorOtro}
                         conComision={!!expediente.inmueble?.inmobiliaria_id}
+                        traba={expediente.traba_contrato}
+                        salidasCanon={salidasCanon}
                         onGenerated={fetchExpediente}
                       />
                     ) : null,
@@ -1430,6 +1526,8 @@ function ExpedienteDetalleContenido() {
               conComision={!!expediente.inmueble?.inmobiliaria_id}
               esperaSegundoFirmante={etapa === 'espera_coarrendatario' || esEsperaDePersona(etapa, !!condicionCoa)}
               canalPropietario={!!expediente.inmueble && !expediente.inmueble.inmobiliaria_id}
+              traba={expediente.traba_contrato}
+              salidasCanon={salidasCanon}
               onContratoActualizado={handleContratoActualizado}
             />
           </div>

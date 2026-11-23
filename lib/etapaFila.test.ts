@@ -149,3 +149,30 @@ test('el desenlace no cambia las etapas que no son del condicionado', () => {
   assert.equal(etapaDeFila(fila({ estado: 'aprobado' }, { estado: 'completado', resultado: 'aprobado', desenlace: 'aprobado' })), 'contrato')
   assert.equal(etapaDeFila(fila({ estado: 'rechazado' }, { estado: 'completado', resultado: 'rechazado', desenlace: 'rechazado' })), 'no_aprobado')
 })
+
+test('reporte de Gerencia (21-nov): aprobado con traba_contrato nunca es «crear el contrato»', () => {
+  const traba = (codigo: string, extra = {}) => ({ codigo, texto: 'Texto de la API.', ...extra })
+  const canon = fila({ estado: 'aprobado', depende_de: 'gestor', traba_contrato: traba('canon_excede', { canon_habilitado_cop: 1_500_000 }) })
+  assert.equal(etapaDeFila(canon), 'canon_excede')
+  assert.equal(accionDeFila(canon, 'canon_excede'), 'ajustar el canon o reasignar el estudio')
+  // Con el coarrendatario sin responder el RPC puede decir «prospecto»: decide quien gestiona.
+  const coa = fila({ estado: 'aprobado', depende_de: 'prospecto', traba_contrato: traba('coarrendatario_pendiente') })
+  assert.equal(etapaDeFila(coa), 'coarrendatario_pendiente')
+  assert.equal(accionDeFila(coa, 'coarrendatario_pendiente'), 'esperar al coarrendatario o seguir sin él')
+  // La API pone depende_de null y requiere_accion false en el vencido: sin acción en la pastilla.
+  const vencido = fila({ estado: 'aprobado', depende_de: null, requiere_accion: false, traba_contrato: traba('vencido') })
+  assert.equal(etapaDeFila(vencido), 'vencido')
+  assert.equal(accionDeFila(vencido, 'vencido'), undefined)
+  // Por vencer sin margen para firmar: la misma etapa (cambia el nombre, no el camino).
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado', depende_de: null, traba_contrato: traba('vencido', { sin_margen: true }) })), 'vencido')
+  // Vencido manda sobre la consulta fallida del coarrendatario; las otras trabas no.
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado', depende_de: null, traba_contrato: traba('vencido') }, { coarrendatario_fallido: true })), 'vencido')
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado', traba_contrato: traba('canon_excede') }, { coarrendatario_fallido: true })), 'fallida')
+  // Sin traba, con null o con un código que esta versión no conoce: como siempre.
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado', traba_contrato: null })), 'contrato')
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado', traba_contrato: traba('otro') })), 'contrato')
+  // El contrato ya en firma manda (la API no envía traba con contrato vivo, pero por si acaso).
+  assert.equal(etapaDeFila(fila({ estado: 'aprobado', contrato_estado: 'pendiente_firma', traba_contrato: traba('vencido') })), 'firma')
+  // El vencido no se pinta de alerta por el tiempo quieto.
+  assert.equal(actividadConAlerta(vencido), false)
+})

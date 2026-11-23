@@ -29,6 +29,7 @@ import {
   IconCamera,
   IconCompare,
   IconClock,
+  IconInfo,
 } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -440,7 +441,12 @@ function DocumentoFila({
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
               <h4 className="text-sm font-semibold text-gray-900">{tipoDocumento.nombre}</h4>
               <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', marca.chip)}>
-                {estado === 'pendiente' ? 'Pendiente de revisión' : marca.label}
+                {estado === 'pendiente'
+                  ? 'Pendiente de revisión'
+                  : // Reporte de Gerencia (21-nov, punto 2): la política no exige documentos; sin cargar no es un pendiente.
+                    estado === 'sin_cargar' && !tipoDocumento.es_obligatorio
+                    ? 'Opcional'
+                    : marca.label}
               </span>
               {tipoDocumento.es_obligatorio && (
                 <span className="text-xs text-gray-500">Obligatorio</span>
@@ -1060,7 +1066,7 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
         <div className="min-w-0">
           <h3 className="text-lg font-semibold text-gray-900">Documentos del estudio</h3>
           <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600">
-            {progress.obligatoriosTotal > 0 && (
+            {progress.obligatoriosTotal > 0 ? (
               <span className={cn('inline-flex items-center gap-1', obligatoriosListos ? 'text-green-800' : 'text-gray-700')}>
                 {obligatoriosListos && <IconCheck size={16} aria-hidden="true" />}
                 <span className="font-semibold tabular-nums">
@@ -1068,10 +1074,24 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
                 </span>{' '}
                 obligatorios cargados
               </span>
+            ) : null}
+            {progress.obligatoriosTotal > 0 ? (
+              <span className="tabular-nums">
+                {progress.subidos} de {progress.total} en total
+              </span>
+            ) : (
+              // Sin obligatorios, «0 de N en total» se leía como cargas pendientes: todos son opcionales.
+              <span>
+                {progress.subidos > 0 ? (
+                  <>
+                    <span className="tabular-nums">{progress.subidos}</span>{' '}
+                    {progress.subidos === 1 ? 'documento cargado' : 'documentos cargados'} · todos son opcionales
+                  </>
+                ) : (
+                  'Todos los documentos son opcionales'
+                )}
+              </span>
             )}
-            <span className="tabular-nums">
-              {progress.subidos} de {progress.total} en total
-            </span>
             {puedeRevisar && progress.porRevisar > 0 && (
               <span className="font-medium text-amber-900">
                 <span className="tabular-nums">{progress.porRevisar}</span> por revisar
@@ -1083,6 +1103,16 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
               </span>
             )}
           </p>
+          {/* Punto 2: la identidad se valida en el flujo del prospecto, no con cargas del gestor. */}
+          {(userRole === 'inmobiliaria' || userRole === 'propietario') && (
+            <p className="mt-2 flex items-start gap-1.5 text-sm text-gray-600">
+              <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
+              <span>
+                La política no exige documentos: la persona confirma su identidad en su propio flujo de autorización. Puede
+                subir soportes de forma voluntaria.
+              </span>
+            </p>
+          )}
         </div>
 
         {/* HP-327: comparar la selfie con el documento (solo Cofianza) */}

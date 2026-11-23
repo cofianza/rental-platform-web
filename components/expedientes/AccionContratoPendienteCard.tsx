@@ -17,6 +17,10 @@
  * ya no sirve (vencida, sin canon evaluado o sin margen de CRC para firmar), en
  * vez de "Crear contrato" (que el asistente bloquearía) ofrece evaluar de nuevo
  * en un estudio nuevo; en el flujo anterior, cuando el API lo dice al generar.
+ *
+ * Reporte de Gerencia (21-nov): con `traba` (traba_contrato del estudio: canon por encima del aprobado,
+ * coarrendatario sin responder o resultado vencido) tampoco se ofrece crear el contrato, en ninguno de
+ * los dos flujos: se dice qué lo impide y cómo seguir.
  */
 
 'use client'
@@ -25,7 +29,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { contratoService } from '@/services/contratoService'
 import { contratoV3Service } from '@/services/contratoV3Service'
-import { BloqueosContrato, frenosDelContrato } from '@/components/contratos/v3/BloqueosContrato'
+import { BloqueosContrato, frenosDelContrato, type SalidasCanon } from '@/components/contratos/v3/BloqueosContrato'
 import { useSegundoFirmanteContrato } from '@/hooks/useSegundoFirmanteContrato'
 import { ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
@@ -36,6 +40,7 @@ import { Button, buttonClasses } from '@/components/ui/Button'
 import { TarjetaSiguientePaso } from './TarjetaSiguientePaso'
 import { IconAlertTriangle, IconArrowRight, IconBuilding2, IconFileText } from '@/components/icons'
 import type { IContrato } from '@/types/contrato'
+import type { ITrabaContrato } from '@/types/expediente'
 import { GenerarContratoModal } from './GenerarContratoModal'
 import { ReasignarEstudioModal } from './ReasignarEstudioModal'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
@@ -50,6 +55,10 @@ interface AccionContratoPendienteCardProps {
   inmuebleReservadoPorOtro?: boolean
   /** Inmueble de una inmobiliaria: el modal pide su comisión (P12). */
   conComision?: boolean
+  /** traba_contrato del estudio: lo que impide crear el contrato aunque el asistente no lo diga todavía. */
+  traba?: ITrabaContrato | null
+  /** Las salidas del canon por encima del aprobado (las arma el detalle con la evaluación aprobada). */
+  salidasCanon?: Omit<SalidasCanon, 'asistenteV3'>
   onGenerated?: () => void
 }
 
@@ -60,6 +69,8 @@ export function AccionContratoPendienteCard({
   contratosV3,
   inmuebleReservadoPorOtro,
   conComision,
+  traba,
+  salidasCanon,
   onGenerated,
 }: AccionContratoPendienteCardProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -70,9 +81,10 @@ export function AccionContratoPendienteCard({
   const [activo, setActivo] = useState<IContrato | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   // Lo que impide crear el contrato (frenosDelContrato): la evaluación que solo se resuelve evaluando de
-  // nuevo (el mismo veredicto del API: no se recalcula aquí la vigencia, que es calibrable) y lo del segundo
-  // firmante o del titular de la decisión. Mientras siga, la tarjeta no ofrece crear el contrato.
-  const [frenan, setFrenan] = useState<Bloqueo[]>([])
+  // nuevo (el mismo veredicto del API: no se recalcula aquí la vigencia, que es calibrable), el canon por
+  // encima del aprobado, lo del segundo firmante o del titular de la decisión y lo que dice traba_contrato.
+  // Mientras siga, la tarjeta no ofrece crear el contrato.
+  const [bloqueosV3, setBloqueosV3] = useState<Bloqueo[]>([])
   // El contrato del estudio que reservó el inmueble ya se firmó (INMUEBLE_ARRENDADO): no se libera al cancelar.
   const [arrendado, setArrendado] = useState<{ estudioId?: string; canonEvaluado: number | null; inmuebleId?: string } | null>(null)
   const [reasignar, setReasignar] = useState(false)
@@ -98,7 +110,7 @@ export function AccionContratoPendienteCard({
       ])
       const activos = (res.data || []).filter((c) => c.estado !== 'cancelado')
       setActivo(activos[0] ?? null)
-      setFrenan(frenosDelContrato(estadoV3?.bloqueos ?? []))
+      setBloqueosV3(estadoV3?.bloqueos ?? [])
       const b = estadoV3?.bloqueos.find((x) => x.codigo === 'INMUEBLE_ARRENDADO')
       setArrendado(
         b
@@ -132,6 +144,10 @@ export function AccionContratoPendienteCard({
     !!puedeGenerar && expedienteEstado === 'aprobado' && !loading && !activo,
     version,
   )
+
+  // Sin el asistente (flujo anterior, o sin poder leerlo) solo frena lo que dice traba_contrato.
+  const frenan = frenosDelContrato(bloqueosV3, traba)
+  const avisoPrima = traba?.codigo === 'coarrendatario_pendiente' ? traba.aviso_prima : undefined
 
   // Solo relevante cuando el expediente está APROBADO y no hay contrato aún.
   // En 'condicionado' se muestra AprobarCondicionadoCard, no este card.
@@ -203,6 +219,9 @@ export function AccionContratoPendienteCard({
         expedienteId={expedienteId}
         puedeEditar={puedeEditar}
         enElEstudio
+        onCambio={onGenerated}
+        salidasCanon={salidasCanon && { ...salidasCanon, asistenteV3: true }}
+        avisoPrima={avisoPrima}
       />
     )
   }
@@ -246,6 +265,22 @@ export function AccionContratoPendienteCard({
         titulo="El contrato de este estudio no se genera desde aquí"
         codigo={contratoAnteriorBloqueado.codigo}
         mensaje={contratoAnteriorBloqueado.motivo}
+      />
+    )
+  }
+
+  // Flujo anterior con traba_contrato: en vez de «Generar contrato», qué lo impide y cómo seguir.
+  if (puedeGenerar && frenan.length > 0) {
+    return (
+      <BloqueosContrato
+        bloqueos={frenan}
+        para="generar el contrato"
+        expedienteId={expedienteId}
+        puedeEditar={puedeEditar}
+        enElEstudio
+        onCambio={onGenerated}
+        salidasCanon={salidasCanon && { ...salidasCanon, asistenteV3: false }}
+        avisoPrima={avisoPrima}
       />
     )
   }

@@ -13,7 +13,7 @@ import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { useAuthStore } from '@/stores/auth.store'
 import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
-import { AYUDA_PUNTAJE, PastillaEtapa, datosEstadoFila, type DatosEstadoFila } from './EstadoFila'
+import { AYUDA_PUNTAJE, PastillaEtapa, VigenciaFila, datosEstadoFila, type DatosEstadoFila } from './EstadoFila'
 import { textoTurno, turnoPropio } from './PastillaTurno'
 import { actividadConAlerta, siguienteOrdenActividad } from '@/lib/etapaFila'
 import { direccionLegible } from '@/lib/direccionLegible'
@@ -243,6 +243,10 @@ function sinTurno(datos: DatosEstadoFila, e: IExpediente, vista: VistaTurno): st
   if (datos.etapa === 'bloqueado') return e.estudio_vigente?.siguiente_accion_texto ?? 'La operación está bloqueada: vea qué hacer en el detalle'
   // La etapa ya dice «Esperando al coarrendatario»: aquí, lo que falta.
   if (datos.etapa === 'espera_coarrendatario') return 'Esperando su autorización'
+  // Sin turno del RPC (p. ej. el vencido ya no «requiere su acción»): igual se dice cómo seguir.
+  if (datos.etapa === 'vencido') return vista === 'gestor' ? 'Para continuar, cree un estudio nuevo' : 'Para continuar hace falta un estudio nuevo'
+  if (datos.etapa === 'canon_excede') return 'Ajustar el canon o reasignar el estudio'
+  if (datos.etapa === 'coarrendatario_pendiente') return 'Esperar al coarrendatario o seguir sin él'
   return null
 }
 
@@ -283,6 +287,7 @@ function Etapa({ datos }: { datos: DatosEstadoFila }) {
   return (
     <div className="flex flex-col items-start gap-1">
       <PastillaEtapa texto={datos.texto} tono={datos.tono} ayuda={datos.ayuda} conAyuda />
+      {datos.vigencia && <VigenciaFila vigencia={datos.vigencia} />}
       {/* Qué es el puntaje: una sola vez, en la burbuja del pie. */}
       {datos.score > 0 && (
         <span className="text-xs tabular-nums text-gray-500">

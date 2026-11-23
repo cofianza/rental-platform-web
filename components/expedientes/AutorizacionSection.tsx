@@ -949,7 +949,9 @@ export function AutorizacionSection({
             )}
             {perfil.presentacion && (
               <div className="sm:col-span-2">
-                <dt className="text-xs text-gray-500">Se presenta</dt>
+                {/* Reporte de Gerencia (21-nov, punto 3): es lo que declaró al autorizar, no el estado actual
+                    del coarrendatario; «Se presenta: Solo» junto a uno invitado se leía como contradicción. */}
+                <dt className="text-xs text-gray-500">Se presentó como</dt>
                 {/* flex-wrap + min-w-0 + break-all: el correo es una palabra
                     indivisible y la celda del grid es minmax(0,1fr) — sin esto
                     un correo largo desborda la tarjeta y mete scroll horizontal
@@ -965,12 +967,9 @@ export function AutorizacionSection({
                     </span>
                   )}
                 </dd>
-                {perfil.presentacion === 'acompanado' && (
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    Es una intención, no una invitación: la invitación real se envía desde la sección
-                    Coarrendatario del estudio.
-                  </p>
-                )}
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Lo declaró al autorizar; la invitación real y su estado están en la tarjeta del coarrendatario.
+                </p>
               </div>
             )}
           </dl>

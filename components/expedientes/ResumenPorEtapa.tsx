@@ -51,6 +51,16 @@ const ORDEN: Record<EtapaEstudio, Orden> = {
   segundo_firmante: { ahora: ['decision', 'coarrendatario'], detalle: ['evaluacion'], historial: ['autorizacion', 'visita'] },
   bloqueado: { ahora: ['evaluacion', 'coarrendatario'], detalle: ['decision'], historial: ['autorizacion', 'visita'] },
   contrato: { ahora: ['vincular', 'contrato'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
+  // Aprobado con traba: la tarjeta del contrato dice qué lo impide y cómo seguir (BloqueosContrato).
+  canon_excede: { ahora: ['vincular', 'contrato'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
+  // El coarrendatario sin responder sigue vigente: su tarjeta va arriba, no en «Pasos anteriores».
+  coarrendatario_pendiente: {
+    ahora: ['vincular', 'contrato', 'coarrendatario'],
+    detalle: ['evaluacion'],
+    historial: ['autorizacion', 'visita'],
+  },
+  // Un estudio sin propiedad también puede vencer: su tarjeta de «vincular» dice cómo seguir.
+  vencido: { ahora: ['vincular', 'contrato'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   firma: { ahora: ['contratoEstado'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   firma_incompleta: { ahora: ['contratoEstado'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   vigente: { ahora: ['contratoEstado'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },

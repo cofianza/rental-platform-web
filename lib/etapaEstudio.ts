@@ -22,6 +22,10 @@ export type EtapaEstudio =
   | 'segundo_firmante'
   | 'bloqueado'
   | 'contrato'
+  // Aprobado, pero la API dice qué impide crear el contrato (traba_contrato): nunca «crear el contrato».
+  | 'canon_excede'
+  | 'coarrendatario_pendiente'
+  | 'vencido'
   | 'firma'
   | 'firma_incompleta'
   | 'vigente'
@@ -48,6 +52,10 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   segundo_firmante: 'Aprobado con segundo firmante',
   bloqueado: 'Operación bloqueada',
   contrato: 'Aprobado',
+  // Respaldo: con la leyenda «hasta un canon» etiquetaTraba pone la cifra («Aprobado hasta un canon de $X»).
+  canon_excede: 'Aprobado · canon mayor al evaluado',
+  coarrendatario_pendiente: 'Aprobado · coarrendatario sin responder',
+  vencido: 'Resultado vencido',
   firma: 'En firma',
   firma_incompleta: 'Firma incompleta',
   vigente: 'Contrato vigente',
@@ -77,6 +85,10 @@ export const PASO_DE_ETAPA: Record<EtapaEstudio, number> = {
   bloqueado: 4,
   no_aprobado: 4,
   contrato: 5,
+  canon_excede: 5,
+  coarrendatario_pendiente: 5,
+  // El resultado ya no sirve: el paso del resultado queda marcado, como el no aprobable.
+  vencido: 4,
   firma: 6,
   firma_incompleta: 6,
   vigente: PASOS_DETALLE.length,
@@ -109,6 +121,140 @@ export interface DatosEtapa {
   contratosEstados: string[]
   /** Resultado que envía la API (`desenlace`). null o ausente = la etapa sale del estado, como siempre. */
   desenlace?: string | null
+  /** traba_contrato.codigo del detalle: aprobado, pero algo impide crear el contrato. null o ausente = 'contrato'. */
+  trabaCodigo?: string | null
+}
+
+/**
+ * La etapa de un estudio aprobado con traba_contrato. null sin traba o con un código que esta
+ * versión no conoce: queda 'contrato', como siempre. Pura.
+ */
+export function etapaDeTraba(codigo: string | null | undefined): EtapaEstudio | null {
+  if (codigo === 'canon_excede' || codigo === 'coarrendatario_pendiente' || codigo === 'vencido') return codigo
+  return null
+}
+
+/** Las etapas que salen de traba_contrato. */
+export const esEtapaDeTraba = (etapa: EtapaEstudio | null | undefined): boolean =>
+  etapa === 'canon_excede' || etapa === 'coarrendatario_pendiente' || etapa === 'vencido'
+
+/** Pesos sin decimales y sin el espacio duro de Intl (como formatCurrency, sin importar constants: es pura). */
+const pesos = (cop: number) =>
+  new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    .format(cop)
+    .replace(/\u00a0/g, '')
+
+/** Con cuántos días o menos para vencer, el vencimiento del resultado se pinta de alerta. */
+export const DIAS_ALERTA_VIGENCIA = 7
+
+export interface VigenciaResultado {
+  texto: string
+  tono: 'gris' | 'ambar' | 'rojo'
+  /** La fecha exacta, para el title. */
+  titulo: string
+}
+
+const BOGOTA = 'America/Bogota'
+const SOLO_FECHA = /^\d{4}-\d{2}-\d{2}$/
+
+/** Medianoche UTC del día de calendario de Colombia en que cae el instante (una fecha sola ya es ese día). */
+function diaBogota(iso: string): number | null {
+  if (SOLO_FECHA.test(iso)) return Date.parse(iso)
+  const t = Date.parse(iso)
+  if (!Number.isFinite(t)) return null
+  return Date.parse(new Date(t).toLocaleDateString('en-CA', { timeZone: BOGOTA }))
+}
+
+/**
+ * «30 de noviembre de 2026», en hora de Colombia (una fecha sola, tal cual: en UTC no se corre de día).
+ * Con `ahoraMs`, sin el año cuando es el año en curso.
+ */
+function fechaLegible(iso: string, ahoraMs?: number): string {
+  const soloFecha = SOLO_FECHA.test(iso)
+  const timeZone = soloFecha ? 'UTC' : BOGOTA
+  const fecha = new Date(soloFecha ? Date.parse(iso) : iso)
+  const anio = (d: Date, tz: string) => d.toLocaleDateString('en-CA', { year: 'numeric', timeZone: tz })
+  const mismoAnio = ahoraMs !== undefined && anio(fecha, timeZone) === anio(new Date(ahoraMs), BOGOTA)
+  return fecha.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
+    ...(mismoAnio ? {} : { year: 'numeric' }),
+    timeZone,
+  })
+}
+
+/** Etapas en que el resultado todavía tiene que servir para el contrato. */
+const CON_VIGENCIA: EtapaEstudio[] = ['contrato', 'canon_excede', 'coarrendatario_pendiente']
+
+/** Días de calendario de Colombia que faltan hasta la fecha, y si ya pasó (una fecha sola sirve todo ese día). null sin fecha válida. */
+function plazoHasta(iso: string, ahoraMs: number): { vencido: boolean; dias: number } | null {
+  const dia = diaBogota(iso)
+  const hoy = diaBogota(new Date(ahoraMs).toISOString())
+  if (dia === null || hoy === null) return null
+  const vencido = SOLO_FECHA.test(iso) ? dia < hoy : Date.parse(iso) <= ahoraMs
+  return { vencido, dias: Math.round((dia - hoy) / 86_400_000) }
+}
+
+const venceEn = (dias: number) => (dias <= 0 ? 'Vence hoy' : `Vence en ${dias} ${dias === 1 ? 'día' : 'días'}`)
+
+/**
+ * Hasta cuándo sirve el resultado (punto 7 del reporte de Gerencia, 21-nov): «Vence en N días»,
+ * «Vence hoy» o «Vencido», en días de calendario de Colombia; ámbar con DIAS_ALERTA_VIGENCIA o
+ * menos, rojo vencido. Con la etapa 'vencido': «Vencido» (gris, como la etapa) o, si todavía no
+ * vence pero ya no alcanza para firmar (`sinMargen`), «Vence en N días · ya no alcanza para firmar»:
+ * nunca un plazo como si el resultado sirviera. null en las demás etapas (en firma o con contrato ya no
+ * aplica) o sin la fecha. Pura.
+ */
+export function vigenciaResultado(
+  etapa: EtapaEstudio,
+  o: { hasta?: string | null; vencioEn?: string | null; sinMargen?: boolean; ahoraMs: number },
+): VigenciaResultado | null {
+  if (etapa === 'vencido') {
+    const fecha = o.vencioEn ?? o.hasta
+    const plazo = fecha ? plazoHasta(fecha, o.ahoraMs) : null
+    if (fecha && plazo && o.sinMargen && !plazo.vencido) {
+      return {
+        texto: `${venceEn(plazo.dias)} · ya no alcanza para firmar`,
+        tono: 'ambar',
+        titulo: `El resultado vence el ${fechaLegible(fecha)} y ya no alcanza el tiempo para firmar el contrato`,
+      }
+    }
+    return { texto: 'Vencido', tono: 'gris', titulo: fecha && plazo ? `El resultado venció el ${fechaLegible(fecha)}` : 'El resultado venció' }
+  }
+  if (!CON_VIGENCIA.includes(etapa) || !o.hasta) return null
+  const plazo = plazoHasta(o.hasta, o.ahoraMs)
+  if (!plazo) return null
+  if (plazo.vencido) return { texto: 'Vencido', tono: 'rojo', titulo: `El resultado venció el ${fechaLegible(o.hasta)}` }
+  return {
+    texto: venceEn(plazo.dias),
+    tono: plazo.dias <= DIAS_ALERTA_VIGENCIA ? 'ambar' : 'gris',
+    titulo: `El resultado sirve hasta el ${fechaLegible(o.hasta)}`,
+  }
+}
+
+/** Lo de traba_contrato que cambia el nombre de la etapa (todo opcional: una API anterior no lo envía). */
+export interface DatosTrabaEtiqueta {
+  canon_habilitado_cop?: number | null
+  hasta_canon?: boolean
+  sin_margen?: boolean
+}
+
+/**
+ * El nombre de la etapa de traba, el mismo en la lista, el encabezado y la barra:
+ * - canon_excede con la leyenda «hasta un canon»: «Aprobado hasta un canon de $X» (sin la cifra, «Aprobado hasta un canon menor»);
+ *   sin la leyenda (canon mayor al evaluado, se puede evaluar de nuevo): «Aprobado · canon mayor al evaluado».
+ *   Sin hasta_canon (API anterior) decide la cifra.
+ * - vencido que todavía no vence pero ya no alcanza para firmar: «Resultado por vencer».
+ */
+export function etiquetaTraba(etapa: EtapaEstudio, traba?: DatosTrabaEtiqueta | null): string {
+  if (etapa === 'canon_excede') {
+    const canon = typeof traba?.canon_habilitado_cop === 'number' && traba.canon_habilitado_cop > 0 ? traba.canon_habilitado_cop : null
+    const hasta = traba?.hasta_canon ?? canon !== null
+    if (!hasta) return ETAPA_LABEL.canon_excede
+    return canon !== null ? `Aprobado hasta un canon de ${pesos(canon)}` : 'Aprobado hasta un canon menor'
+  }
+  if (etapa === 'vencido' && traba?.sin_margen) return 'Resultado por vencer'
+  return ETAPA_LABEL[etapa]
 }
 
 /**
@@ -136,7 +282,7 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
   if (d.contratosEstados.includes('pendiente_firma')) return 'firma'
   // El proceso ya cerró: nadie puede firmar, le toca actuar a la inmobiliaria.
   if (d.contratosEstados.includes('firma_incompleta')) return 'firma_incompleta'
-  if (d.estado === 'aprobado') return 'contrato'
+  if (d.estado === 'aprobado') return etapaDeTraba(d.trabaCodigo) ?? 'contrato'
   if (d.estado === 'condicionado') return etapaCondicionado(d.desenlace)
   if (d.estudioRechazado) return 'no_habilitada'
   if (!d.habilitado) return d.citaResuelta || !d.tieneInmueble ? 'habilitar' : 'visita'
@@ -176,6 +322,11 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno 
     case 'sin_ejecutar':
     case 'fallida':
     case 'contrato':
+    // Lo que impide el contrato lo resuelve quien gestiona: ajustar el canon o reasignar, o esperar al
+    // coarrendatario o seguir sin él. El vencido no es turno de nadie (la API: depende_de null, no
+    // «requiere su acción»); la franja solo dice cómo seguir.
+    case 'canon_excede':
+    case 'coarrendatario_pendiente':
     case 'firma_incompleta':
     // Quien gestiona el estudio debe retirar a la persona indicada.
     case 'bloqueado':
