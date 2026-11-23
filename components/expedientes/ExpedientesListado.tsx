@@ -12,7 +12,7 @@
 import { buttonClasses } from '@/components/ui/Button'
 import Link from 'next/link'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
 import { IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
@@ -24,6 +24,7 @@ import { ExpedientesFilters } from './ExpedientesFilters'
 import { ExpedientesTablaCofianza, ExpedientesTablaCofianzaSkeleton } from './ExpedientesTablaCofianza'
 import { EXPEDIENTE_UI_MESSAGES } from './constants'
 import { instanteBogota } from '@/lib/utils'
+import { corregirFiltroDeBandeja, estudioFiltroDeBandeja } from '@/lib/bandejaCofianza'
 
 export function ExpedientesListado() {
   const user = useAuthStore((s) => s.user)
@@ -37,6 +38,7 @@ export function ExpedientesListado() {
   const [tomandoId, setTomandoId] = useState<string | null>(null)
   const {
     expedientes,
+    filasDeLaPestana,
     meta,
     stats,
     filters,
@@ -58,11 +60,21 @@ export function ExpedientesListado() {
   const requiereAccionActivo = filters.estudio_filtro === 'requiere_accion'
   const elegirBandeja = (bandeja: Parameters<typeof setActiveBandeja>[0]) => {
     setActiveBandeja(bandeja)
-    if (requiereAccionActivo) setFilters({ estudio_filtro: 'todos', page: 1 })
+    // «En revisión de Cofianza» pide la lista con su chip (si la API lo sabe); las demás, sin chip (también
+    // quita «Turno del gestor»).
+    const filtro = estudioFiltroDeBandeja(bandeja, stats)
+    if ((filters.estudio_filtro ?? 'todos') !== filtro) setFilters({ estudio_filtro: filtro, page: 1 })
     // Adenda de precios §8.2: la cola del analista va por prioridad (la ordena
     // la API) y luego por antigüedad: lo más antiguo primero.
     if (bandeja === 'condicionado' && puedeAsignar) setFilters({ sortBy: 'created_at', sortOrder: 'asc', page: 1 })
   }
+
+  // Con la bandeja del condicionado elegida (p. ej. desde la URL) el chip sigue lo que sabe la API: con el
+  // conteo, «En revisión de Cofianza»; sin él, todo el estado condicionado («Condicionados»).
+  const filtroACorregir = corregirFiltroDeBandeja(activeBandeja, stats, filters.estudio_filtro)
+  useEffect(() => {
+    if (filtroACorregir) setFilters({ estudio_filtro: filtroACorregir, page: 1 })
+  }, [filtroACorregir, setFilters])
 
   // Estado de error
   if (error) {
@@ -88,7 +100,8 @@ export function ExpedientesListado() {
       {/* Header */}
       <PageHeader
         title="Estudios"
-        subtitle={meta ? `${meta.total} estudios` : 'Cargando...'}
+        // Mientras carga otra bandeja, no la cifra de la anterior.
+        subtitle={meta && filasDeLaPestana ? `${meta.total} estudios` : 'Cargando...'}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <ExportButton
@@ -141,17 +154,21 @@ export function ExpedientesListado() {
         </div>
 
         <div
-          className={`relative p-3 sm:p-4${isLoading && expedientes.length > 0 ? ' pointer-events-none opacity-60' : ''}`}
+          className={`relative p-3 sm:p-4${isLoading && expedientes.length > 0 && filasDeLaPestana ? ' pointer-events-none opacity-60' : ''}`}
           aria-busy={isLoading}
         >
-          {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
-          {isLoading && expedientes.length > 0 && (
+          {/* Al volver, al buscar, ordenar o pasar de página se siguen viendo las filas de antes mientras
+              llegan las nuevas. Al cambiar de bandeja no: serían de otro estado (reporte de Gerencia, punto 12). */}
+          {isLoading && expedientes.length > 0 && filasDeLaPestana && (
             <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
               <IconLoader size={12} className="animate-spin" /> Actualizando…
             </span>
           )}
-          {isLoading && expedientes.length === 0 ? (
-            <ExpedientesTablaCofianzaSkeleton count={filters.limit} />
+          {(isLoading && expedientes.length === 0) || !filasDeLaPestana ? (
+            <>
+              <span role="status" className="sr-only">Cargando estudios…</span>
+              <ExpedientesTablaCofianzaSkeleton count={filters.limit} />
+            </>
           ) : (
             <ExpedientesTablaCofianza
               expedientes={expedientes}

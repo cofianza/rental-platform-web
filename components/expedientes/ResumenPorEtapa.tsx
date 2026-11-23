@@ -2,13 +2,16 @@
  * Resumen del estudio ordenado por etapa (revisión del Resumen, 23-oct):
  * primero lo que toca ahora, después el detalle del paso actual y, plegado,
  * lo que ya pasó. Cada tarjeta se sigue ocultando sola cuando no aplica.
+ * «Pasos anteriores» solo guarda lo terminado (reporte de Gerencia, 21-nov,
+ * punto 10): el coarrendatario que sigue en curso se queda a la vista.
  */
 
 'use client'
 
-import { Fragment, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import type { EtapaEstudio } from '@/hooks/useEtapaEstudio'
 import { IconChevronDown } from '@/components/icons'
+import { cn } from '@/lib/utils'
 
 export type BloqueResumen =
   | 'vincular'
@@ -75,9 +78,27 @@ interface Props {
   /** null = la etapa se está leyendo: un esqueleto del alto de una tarjeta (sin dejar la pestaña en blanco). */
   etapa: EtapaEstudio | null
   bloques: Record<BloqueResumen, ReactNode>
+  /**
+   * El coarrendatario sigue en curso (lo avisa su tarjeta: invitación sin responder, evaluación sin
+   * terminar, en verificación o en revisión). Su tarjeta sale de «Pasos anteriores» y va con el detalle.
+   */
+  coarrendatarioVivo?: boolean
 }
 
-export function ResumenPorEtapa({ etapa, bloques }: Props) {
+/** El orden de la etapa, con el coarrendatario vivo fuera de lo que ya pasó. Pura. */
+export function ordenDelResumen(etapa: EtapaEstudio, coarrendatarioVivo = false): Orden {
+  const orden = ORDEN[etapa]
+  if (!coarrendatarioVivo || !orden.historial.includes('coarrendatario')) return orden
+  return {
+    ahora: orden.ahora,
+    detalle: ['coarrendatario', ...orden.detalle],
+    historial: orden.historial.filter((b) => b !== 'coarrendatario'),
+  }
+}
+
+export function ResumenPorEtapa({ etapa, bloques, coarrendatarioVivo = false }: Props) {
+  const [anterioresAbiertos, setAnterioresAbiertos] = useState(false)
+  const idBase = useId()
   if (!etapa) {
     return (
       <div role="status" className="animate-pulse rounded-xl border border-gray-200 bg-white p-4 sm:p-5">
@@ -93,22 +114,44 @@ export function ResumenPorEtapa({ etapa, bloques }: Props) {
       </div>
     )
   }
-  const { ahora, detalle, historial } = ORDEN[etapa]
-  const pintar = (lista: BloqueResumen[]) =>
-    lista.filter((b) => bloques[b]).map((b) => <Fragment key={b}>{bloques[b]}</Fragment>)
-  const pasado = historial.filter((b) => bloques[b])
+  const { ahora, detalle, historial } = ordenDelResumen(etapa, coarrendatarioVivo)
+  const conBloque = (lista: BloqueResumen[]) => lista.filter((b) => bloques[b])
+  const pasado = conBloque(historial)
+  const idDe = (b: BloqueResumen) => `${idBase}-${b}`
 
-  return (
-    <>
-      {pintar(ahora)}
-      {pintar(detalle)}
-      {pasado.length > 0 && (
-        <Plegable titulo="Pasos anteriores" resumen={pasado.length === 1 ? '1 paso' : `${pasado.length} pasos`}>
-          <div className="space-y-4 p-4">{pintar(pasado)}</div>
-        </Plegable>
-      )}
-    </>
-  )
+  // Una sola lista de hermanos con clave estable (no un <details> aparte): una tarjeta que cambia de grupo
+  // (el coarrendatario que termina y pasa a «Pasos anteriores», o al revés) se mueve sin volver a montarse,
+  // sin otra petición ni salto. Una tarjeta que no aplica se pinta vacía y su contenedor no ocupa lugar.
+  const items: ReactNode[] = conBloque([...ahora, ...detalle]).map((b) => (
+    <div key={b} className="empty:hidden">
+      {bloques[b]}
+    </div>
+  ))
+  if (pasado.length > 0) {
+    items.push(
+      <div key="pasos-anteriores" className="rounded-xl border border-gray-200 bg-white">
+        <button
+          type="button"
+          aria-expanded={anterioresAbiertos}
+          aria-controls={pasado.map(idDe).join(' ')}
+          onClick={() => setAnterioresAbiertos((a) => !a)}
+          className="flex min-h-12 w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:px-5"
+        >
+          <span className="font-semibold text-gray-900">Pasos anteriores</span>
+          <span className="min-w-0 flex-1 truncate text-gray-500">{pasado.length === 1 ? '1 paso' : `${pasado.length} pasos`}</span>
+          <IconChevronDown size={18} className={cn('ml-auto shrink-0 text-gray-500 transition-transform', anterioresAbiertos && 'rotate-180')} />
+        </button>
+      </div>,
+      ...pasado.map((b) => (
+        // Plegados siguen montados (como en el <details> de antes): al abrir no se vuelven a pedir.
+        <div key={b} id={idDe(b)} hidden={!anterioresAbiertos} className="empty:hidden border-l-2 border-gray-200 pl-3 sm:ml-1 sm:pl-4">
+          {bloques[b]}
+        </div>
+      )),
+    )
+  }
+
+  return <>{items}</>
 }
 
 /** Sección plegada del Resumen (pasos anteriores, datos del estudio): un solo aspecto en toda la página. */

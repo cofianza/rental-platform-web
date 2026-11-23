@@ -151,6 +151,11 @@ export interface DatosEstadoFila {
   score: number
   /** Pastilla de turno; null = no se muestra. */
   turno: ({ turno: Turno } & OpcionesTurno) | null
+  /**
+   * Debajo del turno, lo que redacta la API cuando el turno solo no lo dice: en el aprobado con segundo
+   * firmante, «Presente un segundo firmante antes del…» (con su plazo). null = nada.
+   */
+  detalleTurno: string | null
   demora: ReturnType<typeof revisionDemorada>
   /** Adenda de precios §8.2: solo Cofianza (orden interno de la cola). */
   prioridadBaja: boolean
@@ -232,11 +237,14 @@ export function datosEstadoFila(
             revision,
             analista,
             sinEjecutar: etapa === 'sin_ejecutar',
-            condicion: !!c && esEsperaDePersona(etapa, true),
+            // El aprobado con segundo firmante siempre espera a otra persona; la decisión, solo con la condición.
+            condicion: esEsperaDePersona(etapa, !!c),
             tomadoPor: revision && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
           }
         : null,
+    detalleTurno:
+      conTurno && turno && turno !== 'cofianza' && etapa === 'segundo_firmante' ? (ev?.siguiente_accion_texto ?? null) : null,
     demora,
     prioridadBaja: interno && expediente.estado === 'condicionado' && expediente.prioridad_revision === 'baja',
     vigencia: vigenciaResultado(etapa, {

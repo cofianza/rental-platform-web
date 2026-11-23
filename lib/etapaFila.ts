@@ -64,6 +64,8 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   vigente: 'cargar el acta de entrega',
   // Qué hacer exactamente lo dice el texto de la API, en el detalle.
   bloqueado: 'revisar el bloqueo en el detalle',
+  // Sin coarrendatario en curso (la API da el turno a quien gestiona): presentarlo o cambiar a la persona.
+  segundo_firmante: 'invite al segundo firmante o reemplácelo',
 }
 
 /**

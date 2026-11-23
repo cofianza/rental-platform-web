@@ -11,6 +11,9 @@
  *   (server-side, vía filters.estudio_filtro → RPC p_estudio_filtro).
  * - Los chips llevan su conteo (antes había además cuatro tarjetas que filtraban
  *   lo mismo); la tasa de aprobación y el ritmo del mes van en la frase del encabezado.
+ *   Chips y tasa usan la misma definición de cada resultado (lib/conteosEstudios,
+ *   reporte de Gerencia del 21-nov, punto 6).
+ * - Al cambiar de chip no se ven las filas del anterior mientras carga: el esqueleto (punto 12).
  * - «Qué sigue» de cada fila y el aviso de arriba dicen qué le toca a quien mira.
  * - Clic en una fila → /expedientes/[id] (donde vive el estudio completo).
  */
@@ -31,25 +34,11 @@ import { creditosEstudiosService, type ISaldoCreditos } from '@/services/credito
 import { listMiembros } from '@/services/miembrosService'
 import type { IEstudiosStats } from '@/types/estudio'
 import type { EstudioFiltro } from '@/types/expediente'
+import { chipsVisibles, textoTasaAprobacion, type ConteosEstudios } from '@/lib/conteosEstudios'
 import { ExpedientesFilters } from '@/components/expedientes/ExpedientesFilters'
 import { ExpedientesTable } from '@/components/expedientes/ExpedientesTable'
 import { ExpedientesTablaCofianzaSkeleton } from '@/components/expedientes/ExpedientesTablaCofianza'
 import { AdquirirEstudiosCredito } from './AdquirirEstudiosCredito'
-
-// En el orden del recorrido.
-// `ayuda`: qué abarca el chip cuando el nombre no basta. Antes iba en `title`, que no
-// se ve en táctil: ahora se lee debajo de los chips con el chip elegido y el lector
-// de pantalla la anuncia con el botón (aria-describedby).
-const CHIPS: { id: EstudioFiltro; label: string; ayuda?: string }[] = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'requiere_accion', label: 'Requieren su acción' },
-  { id: 'sin_estudio', label: 'Antes de la evaluación', ayuda: 'Visita pendiente o evaluación sin habilitar.' },
-  // U13: el mismo nombre que la pestaña de la lista de Cofianza.
-  { id: 'en_proceso', label: 'Antes del resultado' },
-  { id: 'condicionado', label: 'Condicionados' },
-  { id: 'aprobado', label: 'Aprobados' },
-  { id: 'rechazado', label: 'No aprobables' },
-]
 
 export function EstudiosExpedientesFusion() {
   const puedeEditar = usePuedeEditar()
@@ -57,6 +46,7 @@ export function EstudiosExpedientesFusion() {
   const esPropietario = useAuthStore((s) => s.user?.rol) === 'propietario'
   const {
     expedientes,
+    filasDeLaPestana,
     meta,
     filters,
     analistas,
@@ -78,8 +68,8 @@ export function EstudiosExpedientesFusion() {
 
   // Los chips cuentan ESTUDIOS con el mismo filtro que aplican: contadas por
   // evaluación (coarrendatarios, reevaluaciones, canceladas) decían 9 y al
-  // pulsarlas la lista traía 5.
-  const [conteos, setConteos] = useState<Partial<Record<EstudioFiltro, number>> | null>(null)
+  // pulsarlas la lista traía 5. undefined = todavía no llegan; null = no se pudieron leer.
+  const [conteos, setConteos] = useState<ConteosEstudios | null | undefined>(undefined)
   // Todos en una sola petición (antes seis). Se recalculan al montar (volver a la lista) y al recuperar la ventana: un estudio
   // movido en otra pestaña dejaba los números del aviso y de los chips viejos.
   useEffect(() => {
@@ -88,7 +78,8 @@ export function EstudiosExpedientesFusion() {
         .getConteos()
         .then(setConteos)
         // Sin conteos los chips van sin número y no sale el aviso (nunca un «0» falso).
-        .catch(() => {})
+        // Una lectura anterior que sí llegó se conserva.
+        .catch(() => setConteos((c) => c ?? null))
     void contar()
     const alVolver = () => {
       if (document.visibilityState === 'visible') void contar()
@@ -114,23 +105,25 @@ export function EstudiosExpedientesFusion() {
       .catch(() => {})
   }, [esPropietario])
 
-  // Tasa de aprobación honesta: aprobados / decididos (el condicionado aún no está decidido).
-  const aprobados = conteos?.aprobado ?? 0
-  const rechazados = conteos?.rechazado ?? 0
-  const decididos = aprobados + rechazados
-  const tasa = decididos > 0 ? Math.round((aprobados / decididos) * 1000) / 10 : null
+  // Tasa de aprobación: aprobados / decididos (lo que revisa Cofianza todavía no está decidido).
+  const textoTasa = textoTasaAprobacion(conteos)
   const activeChip: EstudioFiltro = filters.estudio_filtro ?? 'todos'
+  // Con la API nueva, los resultados de la Adenda 5 en lugar de «Condicionados».
+  const chips = chipsVisibles(conteos, activeChip, { equipo: !puedeEditar })
   const pendientes = conteos?.requiere_accion ?? 0
   // Los conteos son de toda la cartera: con búsqueda, responsable o periodo no coinciden con la lista y se ocultan.
   const conFiltros = hasActiveFilters()
   // «Todos»: el total de la lista cuando no hay chip ni filtros; se recuerda al cambiar de chip.
   const [totalTodos, setTotalTodos] = useState<number | null>(null)
-  if (activeChip === 'todos' && !conFiltros && !isLoading && meta && meta.total !== totalTodos) setTotalTodos(meta.total)
+  // Solo con las filas de «Todos» ya cargadas: con las de otro chip el total sería el de ese chip.
+  if (activeChip === 'todos' && !conFiltros && !isLoading && filasDeLaPestana && meta && meta.total !== totalTodos) setTotalTodos(meta.total)
   const conteoChip = (f: EstudioFiltro): number | undefined =>
     conFiltros ? undefined : f === 'todos' ? (totalTodos ?? conteos?.todos) : conteos?.[f]
   const elegir = (f: EstudioFiltro) => setFilters({ estudio_filtro: f, page: 1 })
   // Sin ningún estudio todavía: los chips y la barra de filtros no tienen qué filtrar.
-  const sinEstudios = !isLoading && !error && meta?.total === 0 && activeChip === 'todos' && !hasActiveFilters()
+  const sinEstudios = !isLoading && !error && filasDeLaPestana && meta?.total === 0 && activeChip === 'todos' && !hasActiveFilters()
+  // Las filas que hay son de otro chip: mientras llega el elegido, el esqueleto (nunca la lista anterior).
+  const actualizando = isLoading && expedientes.length > 0 && filasDeLaPestana
 
   // P22: lo que se puede gastar (lo que quedó en contra se resta).
   const disponibles = saldo?.saldo_efectivo ?? saldo?.saldo_total ?? 0
@@ -147,8 +140,7 @@ export function EstudiosExpedientesFusion() {
               (stats.este_mes === 1
                 ? ' Este mes se inició 1 evaluación crediticia.'
                 : ` Este mes se iniciaron ${stats.este_mes} evaluaciones crediticias.`)}
-            {tasa != null &&
-              ` Tasa de aprobación: ${tasa.toLocaleString('es-CO')} % (${aprobados} ${aprobados === 1 ? 'aprobado' : 'aprobados'} de ${decididos} ${decididos === 1 ? 'decidido' : 'decididos'}).`}
+            {textoTasa && ` ${textoTasa}`}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
@@ -208,7 +200,7 @@ export function EstudiosExpedientesFusion() {
         <div>
           <div className="-mx-4 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
             <nav aria-label="Filtrar por etapa" className="flex min-w-max gap-1 pr-6 sm:min-w-0 sm:flex-wrap sm:pr-0">
-              {CHIPS.map((c) => {
+              {chips.map((c) => {
                 const activo = activeChip === c.id
                 const n = conteoChip(c.id)
                 const turno = c.id === 'requiere_accion' && !!n && puedeEditar
@@ -228,7 +220,7 @@ export function EstudiosExpedientesFusion() {
                         : 'border-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900',
                     )}
                   >
-                    {c.id === 'requiere_accion' && !puedeEditar ? 'Requieren acción del equipo' : c.label}
+                    {c.label}
                     {n != null && (
                       <span
                         className={cn(
@@ -245,7 +237,7 @@ export function EstudiosExpedientesFusion() {
             </nav>
           </div>
           {/* Fuera del carrusel: así no la corta el desvanecido del borde derecho. */}
-          {CHIPS.filter((c) => c.ayuda).map((c) => (
+          {chips.filter((c) => c.ayuda).map((c) => (
             <p
               key={c.id}
               id={`ayuda-chip-${c.id}`}
@@ -276,11 +268,12 @@ export function EstudiosExpedientesFusion() {
         )}
 
         <div
-          className={cn('relative p-3 sm:p-4', isLoading && expedientes.length > 0 && 'pointer-events-none opacity-60')}
+          className={cn('relative p-3 sm:p-4', actualizando && 'pointer-events-none opacity-60')}
           aria-busy={isLoading}
         >
-          {/* Al volver o al filtrar se siguen viendo las filas de antes mientras llegan las nuevas. */}
-          {isLoading && expedientes.length > 0 && (
+          {/* Al volver, al buscar, ordenar o pasar de página se siguen viendo las filas de antes mientras
+              llegan las nuevas. Al cambiar de chip no: serían de otro estado (punto 12 del reporte). */}
+          {actualizando && (
             <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
               <IconLoader size={12} className="animate-spin" /> Actualizando…
             </span>
@@ -300,8 +293,11 @@ export function EstudiosExpedientesFusion() {
                 Reintentar
               </button>
             </div>
-          ) : isLoading && expedientes.length === 0 ? (
-            <ExpedientesTablaCofianzaSkeleton count={Math.min(filters.limit, 8)} />
+          ) : (isLoading && expedientes.length === 0) || !filasDeLaPestana ? (
+            <>
+              <span role="status" className="sr-only">Cargando estudios…</span>
+              <ExpedientesTablaCofianzaSkeleton count={Math.min(filters.limit, 8)} />
+            </>
           ) : (
             <ExpedientesTable
               expedientes={expedientes}

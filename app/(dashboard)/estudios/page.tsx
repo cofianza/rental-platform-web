@@ -54,6 +54,7 @@ function EstudiosContent() {
 function EstudiosAdminView() {
   const {
     estudios,
+    filasDeLaPestana,
     meta,
     filters,
     isLoading,
@@ -88,7 +89,8 @@ function EstudiosAdminView() {
     <div className="space-y-6">
       <PageHeader
         title="Evaluaciones crediticias"
-        subtitle={meta ? `${meta.total} evaluaciones` : 'Cargando...'}
+        // Mientras carga otra bandeja, no la cifra de la anterior.
+        subtitle={meta && filasDeLaPestana ? `${meta.total} evaluaciones` : 'Cargando...'}
       />
 
       <EstudiosBandejaTabs
@@ -107,18 +109,22 @@ function EstudiosAdminView() {
         />
       </div>
 
-      {/* Al filtrar o paginar se siguen viendo las filas de antes mientras llegan las nuevas. */}
+      {/* Al buscar, ordenar o paginar se siguen viendo las filas de antes mientras llegan las nuevas. Al
+          cambiar de bandeja no: serían de otro estado (reporte de Gerencia, punto 12). */}
       <div
-        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && estudios.length > 0 ? ' opacity-60 pointer-events-none' : ''}`}
+        className={`relative bg-white rounded-lg border border-gray-200 p-4${isLoading && estudios.length > 0 && filasDeLaPestana ? ' opacity-60 pointer-events-none' : ''}`}
         aria-busy={isLoading}
       >
-        {isLoading && estudios.length > 0 && (
+        {isLoading && estudios.length > 0 && filasDeLaPestana && (
           <span role="status" className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs text-gray-600 shadow-sm">
             <IconLoader size={12} className="animate-spin" /> Actualizando…
           </span>
         )}
-        {isLoading && estudios.length === 0 ? (
-          <EstudiosSkeleton count={filters.limit} />
+        {(isLoading && estudios.length === 0) || !filasDeLaPestana ? (
+          <>
+            <span role="status" className="sr-only">Cargando evaluaciones…</span>
+            <EstudiosSkeleton count={filters.limit} />
+          </>
         ) : (
           <EstudiosTable
             estudios={estudios}

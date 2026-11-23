@@ -67,7 +67,7 @@ import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudio
 import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
 import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
 import { ACCION_GESTOR, revisionDemorada } from '@/lib/etapaFila'
-import { cierreDelEstudio } from '@/lib/personaEstudio'
+import { cierreDelEstudio, coarrendatarioEnCurso } from '@/lib/personaEstudio'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import {
@@ -284,7 +284,9 @@ function ExpedienteDetalleContenido() {
   // la trae entera: se relee con cada carga del estudio (en un rechazado son
   // pocas), nunca en otro estado ni para el prospecto.
   const enRechazo = estadoExpediente === 'rechazado' && !!user && user.rol !== 'solicitante'
-  const leerApelacion = enRechazo && !!apelableId
+  // El aprobado con segundo firmante también se puede apelar: radicada, la decide Cofianza (como la lista).
+  const enSegundoFirmante = etapa === 'segundo_firmante' && !!user && user.rol !== 'solicitante'
+  const leerApelacion = (enRechazo || enSegundoFirmante) && !!apelableId
   const [apelacion, setApelacion] = useState<{ de: string; h: IEstudioHistorial | null } | null>(null)
   useEffect(() => {
     if (!leerApelacion || !apelableId) return
@@ -296,6 +298,10 @@ function ExpedienteDetalleContenido() {
     return () => { cancel = true }
   }, [leerApelacion, apelableId, cargas])
   const apelacionTitular = enRechazo && listaFallo ? null : apelacion && apelacion.de === apelableId ? apelacion.h : undefined
+  // Sin leer la apelación (o sin evaluación que apelar) no se adivina: el turno espera a saberlo.
+  const apelacionLeida = !leerApelacion || apelacion?.de === apelableId
+  const apelacionRadicada =
+    enSegundoFirmante && apelacion?.de === apelableId && !!(apelacion.h?.fecha_radicacion_apelacion || apelacion.h?.responder_hasta)
   const titularCondicionado = estadoExpediente === 'condicionado' ? titular : null
   const condicionadoSinInfo =
     estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
@@ -333,20 +339,31 @@ function ExpedienteDetalleContenido() {
   }, [id, ventanaCoaAplica, estadoExpediente, actualizadoEn])
   const coarrendatarioVigente = (ventanaCoaAplica ? coaVigenteApi : null) ?? estadoExpediente === 'condicionado'
 
-  // Punto 3 del reporte de Gerencia (21-nov): esperando al segundo firmante, si ya hay uno invitado sin
-  // responder, a quien gestiona se le sugiere reenviarle la invitación o invitar a otra persona. Solo se lee en esa
-  // espera (la misma petición que la tarjeta del coarrendatario, coalescida).
-  const leerCoaInvitado = esEsperaDePersona(etapa, !!condicionCoa) && puedeEditar
-  const [coaInvitado, setCoaInvitado] = useState(false)
+  // Esperando al segundo firmante se lee el coarrendatario (la misma petición que su tarjeta, coalescida):
+  // - punto 3 del reporte de Gerencia (21-nov): si ya hay uno invitado sin responder, a quien gestiona se le
+  //   sugiere reenviarle la invitación o invitar a otra persona;
+  // - el turno del «aprobado con segundo firmante», con el criterio de la lista (depende_de): con el
+  //   coarrendatario en curso se le espera; si no, le toca a quien gestiona invitarlo o reemplazarlo.
+  // null = sin leer (o no se pudo): sin turno, nunca uno que luego cambie. Gerencia no lee el coarrendatario
+  // (la API le responde 403): su franja dice qué sigue, sin turno.
+  const leerCoaEspera =
+    esEsperaDePersona(etapa, !!condicionCoa) &&
+    ['propietario', 'inmobiliaria', 'administrador', 'operador_analista'].includes(user?.rol ?? '')
+  const [coaEspera, setCoaEspera] = useState<{ de: string; invitado: boolean; enCurso: boolean } | null>(null)
+  // Punto 10 del reporte: el coarrendatario en curso (lo avisa su tarjeta) va en el Resumen, no en «Pasos anteriores».
+  const [coaVivo, setCoaVivo] = useState(false)
   useEffect(() => {
-    if (!leerCoaInvitado) return
+    if (!leerCoaEspera) return
     let cancel = false
     coarrendatarioService.getDelExpediente(id).then(
-      (c) => { if (!cancel) setCoaInvitado(c?.estado === 'pendiente_aceptacion') },
-      () => { if (!cancel) setCoaInvitado(false) },
+      (c) => {
+        if (!cancel) setCoaEspera({ de: id, invitado: c?.estado === 'pendiente_aceptacion', enCurso: coarrendatarioEnCurso(c) })
+      },
+      () => { if (!cancel) setCoaEspera(null) },
     )
     return () => { cancel = true }
-  }, [id, leerCoaInvitado, cargas])
+  }, [id, leerCoaEspera, cargas])
+  const coaEsperaLeida = leerCoaEspera && coaEspera?.de === id ? coaEspera : null
 
   // Estado de modales
   const [showTransicionModal, setShowTransicionModal] = useState(false)
@@ -617,7 +634,12 @@ function ExpedienteDetalleContenido() {
   // En la espera, la franja ya dice que falta el coarrendatario: «Esperando al prospecto» la contradecía.
   // Reabierto por un reemplazo, igual: la franja ya dice que se espera a la persona nueva.
   const turnoBase =
-    etapaTurno && etapaTurno !== 'espera_coarrendatario' && etapaTurno !== 'reapertura' ? turnoDeEtapa(etapaTurno, !!condicionCoa) : null
+    etapaTurno && etapaTurno !== 'espera_coarrendatario' && etapaTurno !== 'reapertura'
+      ? turnoDeEtapa(etapaTurno, !!condicionCoa, {
+          coarrendatarioEnCurso: apelacionLeida ? (coaEsperaLeida?.enCurso ?? null) : null,
+          apelacion: apelacionRadicada,
+        })
+      : null
   // La lista no le pone turno a la visita (como el RPC), pero a la inmobiliaria y al
   // propietario sí les toca: agendarla o marcarla como hecha. Sin esto la franja no decía de quién era.
   const turno = turnoBase ?? (!isInternalRole && etapaTurno === 'visita' ? 'gestor' : null)
@@ -875,14 +897,17 @@ function ExpedienteDetalleContenido() {
             Como la lista: lo propio en coral con flecha; el turno de otros, en gris. */}
         {etapaTurno && user?.rol !== 'solicitante' && (() => {
           const opcionesTurno = {
-            revision: etapaTurno === 'decision' && !condicionCoa,
+            revision: (etapaTurno === 'decision' && !condicionCoa) || (etapaTurno === 'segundo_firmante' && apelacionRadicada),
             analista: puedeAsignar,
             sinEjecutar: etapaTurno === 'sin_ejecutar',
-            condicion: !!condicionCoa && esEsperaDePersona(etapaTurno, true),
+            // El aprobado con segundo firmante siempre espera a otra persona; la decisión, solo con la condición.
+            condicion: esEsperaDePersona(etapaTurno, !!condicionCoa),
             // Ya hay un segundo firmante invitado sin responder: «reenvíele la invitación o invite a otra persona».
-            invitado: leerCoaInvitado && coaInvitado,
-            // Con traba, la misma acción que la pastilla de la lista («Su turno: ajustar el canon…»).
-            accion: turno === 'gestor' && esEtapaDeTraba(etapaTurno) ? ACCION_GESTOR[etapaTurno] : undefined,
+            invitado: puedeEditar && !!coaEsperaLeida?.invitado,
+            // Con traba o sin segundo firmante en curso, la misma acción que la pastilla de la lista
+            // («Su turno: ajustar el canon…», «Su turno: invite al segundo firmante o reemplácelo»).
+            accion:
+              turno === 'gestor' && (esEtapaDeTraba(etapaTurno) || etapaTurno === 'segundo_firmante') ? ACCION_GESTOR[etapaTurno] : undefined,
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» y sin coral.
             tomadoPor:
               etapaTurno === 'decision' && !condicionCoa && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
@@ -1113,6 +1138,7 @@ function ExpedienteDetalleContenido() {
             {user?.rol !== 'solicitante' && (
               <ResumenPorEtapa
                 etapa={etapa}
+                coarrendatarioVivo={coaVivo}
                 bloques={{
                   vincular:
                     puedeActuar && !expediente.inmueble && expediente.estado === 'aprobado' ? (
@@ -1271,6 +1297,7 @@ function ExpedienteDetalleContenido() {
                       onEstudioCompletado={fetchExpediente}
                       conCondicion={!!condicionCoa}
                       pideSegundoFirmante={esEsperaDePersona(etapa, !!condicionCoa)}
+                      onSigueVivo={setCoaVivo}
                     />
                   ),
                   visita: expediente.inmueble ? (

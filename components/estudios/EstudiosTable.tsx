@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import { useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
+import { etiquetaCondicionado } from '@/lib/etapaEstudio'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, PROVEEDOR_LABELS, ESTUDIO_UI_MESSAGES } from './constants'
 import { formatDate } from '@/lib/constants'
 import {
@@ -279,7 +280,7 @@ export function EstudiosTable({
                   <Badge estado={estudio.estado} />
                 </td>
                 <td className="px-4 py-3">
-                  <Badge estado={estudio.resultado} />
+                  <Badge estado={estudio.resultado} label={estudio.resultado === 'condicionado' ? etiquetaCondicionado(estudio) : undefined} />
                 </td>
                 <td className="px-4 py-3">
                   <ScoreBar score={estudio.score} />
@@ -366,7 +367,7 @@ export function EstudiosTable({
 
             {/* Footer */}
             <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-              <Badge estado={estudio.resultado} />
+              <Badge estado={estudio.resultado} label={estudio.resultado === 'condicionado' ? etiquetaCondicionado(estudio) : undefined} />
               <span className="text-xs text-gray-500">
                 {formatDate(estudio.created_at)}
               </span>

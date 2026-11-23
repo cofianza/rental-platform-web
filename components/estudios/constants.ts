@@ -22,7 +22,10 @@ export const ITEMS_PER_PAGE_OPTIONS = [10, 20, 50] as const
  *
  * 'condicionados' es la cola de revisión manual del §14 (y los aprobados con
  * condición): mismo estado ('completado') y resultado 'condicionado', y la API
- * deja solo los de estudios que siguen condicionados (sin decisión del analista).
+ * deja solo los de estudios que siguen condicionados (sin decisión del analista);
+ * con la Adenda 5, sin los que esperan a quien gestiona (segundo firmante,
+ * bloqueo por listas). Reporte de Gerencia (21-nov), punto 6: ya no se llama
+ * «Condicionados».
  */
 export const BANDEJAS: Array<{
   id: string
@@ -46,7 +49,7 @@ export const BANDEJAS: Array<{
   { id: 'en_proceso', label: 'En proceso', estados: ['en_proceso'] },
   {
     id: 'condicionados',
-    label: 'Condicionados',
+    label: 'En revisión de Cofianza',
     estados: ['completado'],
     resultado: 'condicionado',
   },

@@ -185,3 +185,13 @@ test('estudio reabierto por un reemplazo: su propia etapa en la lista', () => {
   assert.equal(etapaDeFila(fila({ estado: 'en_revision' }, { estado: 'completado', resultado: 'rechazado' })), 'consulta')
   assert.equal(actividadConAlerta(fila({ estado: 'en_revision', reapertura_abierta: true, depende_de: 'prospecto' }), 'reapertura'), false)
 })
+
+test('aprobado con segundo firmante sin coarrendatario en curso: «invite al segundo firmante o reemplácelo»', () => {
+  const asf = (depende_de: IExpediente['depende_de']) =>
+    fila({ estado: 'condicionado', depende_de }, { estado: 'completado', resultado: 'condicionado', desenlace: 'aprobado_segundo_firmante' })
+  assert.equal(etapaDeFila(asf('gestor')), 'segundo_firmante')
+  assert.equal(accionDeFila(asf('gestor'), 'segundo_firmante'), 'invite al segundo firmante o reemplácelo')
+  // Con el coarrendatario en curso (la API: 'prospecto') o con apelación ('cofianza'), no hay acción de quien gestiona.
+  assert.equal(accionDeFila(asf('prospecto'), 'segundo_firmante'), undefined)
+  assert.equal(accionDeFila(asf('cofianza'), 'segundo_firmante'), undefined)
+})

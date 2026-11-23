@@ -249,3 +249,44 @@ test('ningún texto de este archivo usa «buró» ni «score»', async () => {
   const cadenas = fuente.match(/'[^'\n]*'/g) ?? []
   for (const c of cadenas) assert.doesNotMatch(c, /bur[oó]|score/i)
 })
+
+test('punto 10: el coarrendatario en curso va en el Resumen; terminado, en «Pasos anteriores»', async () => {
+  const { coarrendatarioSigueVivo } = await import('./personaEstudio')
+  const vivo = (coa: Parameters<typeof coarrendatarioSigueVivo>[0], sinEfecto = false, cierre: Parameters<typeof coarrendatarioSigueVivo>[1]['cierre'] = null) =>
+    coarrendatarioSigueVivo(coa, { sinEfecto, cierre })
+  const persona = (etiqueta: string): IPersonaA5d => ({ papel: 'sin_papel', etiqueta, texto: 'Texto de prueba.' })
+  // Invitación sin responder y evaluación sin terminar (o fallida, que se reintenta).
+  assert.equal(vivo({ estado: 'pendiente_aceptacion' }), true)
+  assert.equal(vivo({ estado: 'aceptado', estudio: { estado: 'en_proceso' } }), true)
+  assert.equal(vivo({ estado: 'aceptado', estudio: { estado: 'fallido' } }), true)
+  // Terminada pero en verificación, en revisión o en espera.
+  assert.equal(vivo({ estado: 'aceptado', estudio: { estado: 'completado', persona_a5d: persona('En verificación') } }), true)
+  assert.equal(vivo({ estado: 'aceptado', estudio: { estado: 'completado', persona_a5d: persona('En espera') } }), true)
+  assert.equal(vivo({ estado: 'estudio_completado', estudio: { estado: 'completado', resultado: 'condicionado' } }), true)
+  // Terminada: válida, no califica, salió.
+  assert.equal(vivo({ estado: 'estudio_completado', estudio: { estado: 'completado', resultado: 'aprobado' } }), false)
+  assert.equal(vivo({ estado: 'estudio_completado', estudio: { estado: 'completado', resultado: 'rechazado' } }), false)
+  assert.equal(vivo({ estado: 'aceptado', estudio: { estado: 'completado', persona_a5d: { papel: 'segundo_firmante', etiqueta: 'Segundo firmante', texto: 'Queda vinculada.' } } }), false)
+  assert.equal(vivo({ estado: 'aceptado', estudio: { estado: 'completado', persona_a5d: persona('No califica') } }), false)
+  assert.equal(vivo({ estado: 'retirado' }), false)
+  assert.equal(vivo({ estado: 'rechazado_invitacion' }), false)
+  // La invitación sin efecto (el estudio se resolvió sin él) o el estudio terminado: ya pasó.
+  assert.equal(vivo({ estado: 'pendiente_aceptacion' }, true), false)
+  assert.equal(vivo({ estado: 'aceptado', estudio: { estado: 'en_proceso' } }, true), false)
+  assert.equal(vivo({ estado: 'estudio_completado', estudio: { estado: 'completado', resultado: 'condicionado' } }, false, 'no_aprobable'), false)
+  assert.equal(vivo(null), false)
+})
+
+test('coarrendatario en curso (el criterio del turno del segundo firmante): invitación vigente o evaluación sin terminar', async () => {
+  const { coarrendatarioEnCurso } = await import('./personaEstudio')
+  const ahora = Date.parse('2026-11-23T15:00:00Z')
+  assert.equal(coarrendatarioEnCurso({ estado: 'pendiente_aceptacion', token_expiracion: '2026-11-30T00:00:00Z' }, ahora), true)
+  // Vencida: reenviarla le toca a quien gestiona.
+  assert.equal(coarrendatarioEnCurso({ estado: 'pendiente_aceptacion', token_expiracion: '2026-11-20T00:00:00Z' }, ahora), false)
+  assert.equal(coarrendatarioEnCurso({ estado: 'aceptado', estudio: { estado: 'en_proceso' } }, ahora), true)
+  assert.equal(coarrendatarioEnCurso({ estado: 'aceptado', estudio: null }, ahora), true)
+  assert.equal(coarrendatarioEnCurso({ estado: 'aceptado', estudio: { estado: 'completado' } }, ahora), false)
+  assert.equal(coarrendatarioEnCurso({ estado: 'rechazado_invitacion' }, ahora), false)
+  assert.equal(coarrendatarioEnCurso({ estado: 'retirado' }, ahora), false)
+  assert.equal(coarrendatarioEnCurso(null, ahora), false)
+})

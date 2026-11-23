@@ -48,14 +48,16 @@ export function EstudiosBandejaTabs({
   return (
     <div className="space-y-4">
       {/* KPI Cards — nueva propuesta UI Gerencia (12-may-2026): Este mes /
-          Aprobados / En proceso / Rechazados. "Condicionados" se sumó porque
-          stats ya lo devolvía y es la cola que exige decisión humana (§14):
-          sin él, esos casos no se contaban en ninguna parte. */}
+          Aprobados / En proceso / Rechazados. El resultado 'condicionado' se sumó
+          porque stats ya lo devolvía y es la cola que exige decisión humana (§14):
+          sin él, esos casos no se contaban en ninguna parte. Reporte de Gerencia
+          (21-nov), punto 6: sin «Condicionados»; la API cuenta solo lo que está en
+          revisión de Cofianza (sin el segundo firmante ni el bloqueo por listas). */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         {/* «Este mes» sale solo de las estadísticas: el total del listado filtrado no es «este mes». */}
         <KPIMini label="Este mes" value={stats?.este_mes} color="bg-primary-600" />
         <KPIMini label="Aprobados" value={stats?.aprobados} color="bg-green-500" />
-        <KPIMini label="Condicionados" value={stats?.condicionados} color="bg-amber-500" />
+        <KPIMini label="En revisión de Cofianza" value={stats?.condicionados} color="bg-amber-500" />
         {/* X12: «En proceso», como la insignia del estado (incluye la espera de hasta 48 h). */}
         <KPIMini label="En proceso" value={stats?.en_proceso} color="bg-blue-500" />
         <KPIMini label="No aprobables" value={stats?.rechazados} color="bg-red-500" />

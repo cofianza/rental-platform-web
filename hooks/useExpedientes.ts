@@ -11,12 +11,18 @@ import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
 import { toast } from 'sonner'
 import { useExpedientesStore, DEFAULT_EXPEDIENTE_FILTERS } from '@/stores/expedientesStore'
 import { expedienteService } from '@/services/expedienteService'
+import { ApiClientError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IExpedienteFilters, EstadoExpediente, EstudioFiltro } from '@/types/expediente'
+import { clavePestana, soloCambioLaBusqueda } from '@/lib/filtrosExpedientes'
 
 const ESTUDIO_FILTROS: EstudioFiltro[] = [
-  'todos', 'aprobado', 'rechazado', 'condicionado', 'en_proceso', 'sin_estudio', 'requiere_accion',
+  'todos', 'aprobado', 'rechazado', 'condicionado', 'segundo_firmante', 'bloqueado', 'revision_cofianza',
+  'en_proceso', 'sin_estudio', 'requiere_accion',
 ]
+
+/** Los chips que solo acepta la API nueva (reporte de Gerencia, punto 6); `condicionado` es su unión. */
+const FILTROS_ADENDA5: EstudioFiltro[] = ['segundo_firmante', 'bloqueado', 'revision_cofianza']
 
 const DEBOUNCE_DELAY = 300
 
@@ -32,8 +38,8 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // La primera carga va sin debounce (antes esperaba 300 ms mostrando la lista vacía).
-  const primeraCargaRef = useRef(true)
+  // Los filtros de la carga anterior: solo un cambio de la búsqueda espera (debounce).
+  const filtrosPreviosRef = useRef<IExpedienteFilters | null>(null)
   const initializedRef = useRef(false)
 
   // Auth
@@ -49,6 +55,7 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   const isLoadingStats = useExpedientesStore((state) => state.isLoadingStats)
   const error = useExpedientesStore((state) => state.error)
   const selectedExpediente = useExpedientesStore((state) => state.selectedExpediente)
+  const pestanaCargada = useExpedientesStore((state) => state.pestanaCargada)
   const activeBandeja = useExpedientesStore((state) => state.activeBandeja)
   const misExpedientes = useExpedientesStore((state) => state.misExpedientes)
 
@@ -62,6 +69,7 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   const setLoadingStats = useExpedientesStore((state) => state.setLoadingStats)
   const setError = useExpedientesStore((state) => state.setError)
   const setSelectedExpediente = useExpedientesStore((state) => state.setSelectedExpediente)
+  const setPestanaCargada = useExpedientesStore((state) => state.setPestanaCargada)
   const resetFilters = useExpedientesStore((state) => state.resetFilters)
   const toggleEstadoFilter = useExpedientesStore((state) => state.toggleEstadoFilter)
   const storeSetActiveBandeja = useExpedientesStore((state) => state.setActiveBandeja)
@@ -164,6 +172,7 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   const iniciarPeticion = useUltimaPeticion()
   const fetchExpedientes = useCallback(async () => {
     const vigente = iniciarPeticion()
+    const pestana = clavePestana(filters)
     setLoading(true)
     setError(null)
 
@@ -172,15 +181,27 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
       if (!vigente()) return
       setExpedientes(response.data)
       setMeta(response.meta)
+      setPestanaCargada(pestana)
     } catch (err) {
       if (!vigente()) return
+      // Una API anterior no conoce los chips de la Adenda 5 (p. ej. llegan en la URL) y responde 400:
+      // se cae a «Condicionados», su unión, sin mostrar un error.
+      if (
+        err instanceof ApiClientError &&
+        err.statusCode === 400 &&
+        filters.estudio_filtro &&
+        FILTROS_ADENDA5.includes(filters.estudio_filtro)
+      ) {
+        setFilters({ estudio_filtro: 'condicionado', page: 1 })
+        return
+      }
       const message = err instanceof Error ? err.message : EXPEDIENTE_MESSAGES.FETCH_ERROR
       setError(message)
       toast.error(message)
     } finally {
       if (vigente()) setLoading(false)
     }
-  }, [filters, iniciarPeticion, setLoading, setError, setExpedientes, setMeta])
+  }, [filters, iniciarPeticion, setLoading, setError, setExpedientes, setMeta, setPestanaCargada, setFilters])
 
   /**
    * Carga estadísticas de expedientes
@@ -211,15 +232,19 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   }, [setAnalistas])
 
   /**
-   * Efecto para cargar expedientes cuando cambian los filtros (con debounce)
+   * Efecto para cargar expedientes cuando cambian los filtros. Solo la búsqueda espera a que se deje
+   * de escribir (debounce); el chip, la bandeja, el orden, la página y la primera carga van ya (reporte
+   * de Gerencia, punto 12: antes todo esperaba 300 ms mostrando la lista anterior).
    */
   useEffect(() => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current)
     }
 
-    const espera = primeraCargaRef.current ? 0 : DEBOUNCE_DELAY
-    primeraCargaRef.current = false
+    const espera = soloCambioLaBusqueda(filtrosPreviosRef.current, filters) ? DEBOUNCE_DELAY : 0
+    filtrosPreviosRef.current = filters
+    // También sin espera va en un temporizador: si los filtros cambian en el mismo instante (la URL al
+    // montar), la limpieza lo cancela y no sale una petición que se descartaría.
     debounceRef.current = setTimeout(() => {
       fetchExpedientes()
       updateUrl(filters)
@@ -312,9 +337,13 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
     }
   }, [misExpedientes, user, storeSetMisExpedientes, setFilters])
 
+  // Las filas son de la pestaña elegida (chip o bandeja). Si no, son de la anterior y no se muestran.
+  const filasDeLaPestana = pestanaCargada === clavePestana(filters)
+
   return {
     // Estado
     expedientes,
+    filasDeLaPestana,
     meta,
     stats,
     filters,

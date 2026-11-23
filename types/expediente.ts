@@ -55,12 +55,19 @@ export interface ITrabaContrato {
   aviso_prima?: string
 }
 
-/** Filtro de la vista fusionada por el estado del estudio vigente. */
+/**
+ * Filtro de la vista fusionada por el estado del estudio vigente. `segundo_firmante` (aprobado con
+ * segundo firmante), `bloqueado` (bloqueado por listas) y `revision_cofianza` (en revisión de Cofianza)
+ * solo los acepta la API nueva (reporte de Gerencia, 21-nov, punto 6); `condicionado` es la unión de los tres.
+ */
 export type EstudioFiltro =
   | 'todos'
   | 'aprobado'
   | 'rechazado'
   | 'condicionado'
+  | 'segundo_firmante'
+  | 'bloqueado'
+  | 'revision_cofianza'
   | 'en_proceso'
   | 'sin_estudio'
   | 'requiere_accion'
@@ -238,6 +245,12 @@ export interface IExpedientesStats {
   por_estado: Record<EstadoExpediente, number>
   /** Solo Cofianza: condicionados sin condición de coarrendatario (los decide un analista). null = no se pudo leer. */
   condicionados_por_decidir?: number | null
+  /**
+   * La bandeja «En revisión de Cofianza»: condicionados sin «aprobado con segundo firmante» ni «bloqueado por
+   * listas», con la regla del chip `revision_cofianza` (la lista se pide con estado=condicionado y ese filtro).
+   * null = la API no lo pudo saber; ausente = API anterior. En los dos casos la bandeja es «Condicionados», como antes.
+   */
+  revision_cofianza?: number | null
 }
 
 /**

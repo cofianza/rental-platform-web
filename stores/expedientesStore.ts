@@ -44,6 +44,11 @@ interface IExpedientesState {
   isLoadingStats: boolean
   error: string | null
   selectedExpediente: IExpediente | null
+  /**
+   * La pestaña (clavePestana: chip y bandeja) con que se cargaron `expedientes`. Si la elegida es otra,
+   * la lista muestra el esqueleto y no las filas de la anterior (reporte de Gerencia, punto 12).
+   */
+  pestanaCargada: string | null
 
   // Bandejas operativas
   activeBandeja: EstadoExpediente | null // null = "Todos"
@@ -64,6 +69,7 @@ interface ExpedientesActions {
   setLoadingStats: (loading: boolean) => void
   setError: (error: string | null) => void
   setSelectedExpediente: (expediente: IExpediente | null) => void
+  setPestanaCargada: (clave: string | null) => void
 
   // Actions
   resetFilters: () => void
@@ -89,6 +95,7 @@ const initialState: IExpedientesState = {
   isLoadingStats: false,
   error: null,
   selectedExpediente: null,
+  pestanaCargada: null,
   activeBandeja: null,
   misExpedientes: false,
 }
@@ -109,6 +116,7 @@ export const useExpedientesStore = create<ExpedientesStore>((set) => ({
   setLoadingStats: (isLoadingStats) => set({ isLoadingStats }),
   setError: (error) => set({ error }),
   setSelectedExpediente: (selectedExpediente) => set({ selectedExpediente }),
+  setPestanaCargada: (pestanaCargada) => set({ pestanaCargada }),
 
   // Actions
   resetFilters: () =>

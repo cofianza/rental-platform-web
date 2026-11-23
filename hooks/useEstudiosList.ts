@@ -12,6 +12,7 @@ import { useEstudiosListStore, DEFAULT_ESTUDIO_FILTERS } from '@/stores/estudios
 import { estudioService } from '@/services/estudioService'
 import { BANDEJAS } from '@/components/estudios/constants'
 import type { IEstudioFilters, EstadoEstudio } from '@/types/estudio'
+import { clavePestanaEstudios, soloCambioLaBusqueda } from '@/lib/filtrosExpedientes'
 
 const DEBOUNCE_DELAY = 300
 
@@ -20,6 +21,8 @@ export function useEstudiosList() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Los filtros de la carga anterior: solo un cambio de la búsqueda espera (debounce).
+  const filtrosPreviosRef = useRef<IEstudioFilters | null>(null)
   const initializedRef = useRef(false)
 
   // Store state
@@ -29,6 +32,7 @@ export function useEstudiosList() {
   const isLoading = useEstudiosListStore((s) => s.isLoading)
   const error = useEstudiosListStore((s) => s.error)
   const activeBandeja = useEstudiosListStore((s) => s.activeBandeja)
+  const pestanaCargada = useEstudiosListStore((s) => s.pestanaCargada)
 
   // Store actions
   const setEstudios = useEstudiosListStore((s) => s.setEstudios)
@@ -38,6 +42,7 @@ export function useEstudiosList() {
   const setError = useEstudiosListStore((s) => s.setError)
   const resetFilters = useEstudiosListStore((s) => s.resetFilters)
   const storeSetActiveBandeja = useEstudiosListStore((s) => s.setActiveBandeja)
+  const setPestanaCargada = useEstudiosListStore((s) => s.setPestanaCargada)
 
   // Sync URL params -> Store on mount
   useEffect(() => {
@@ -121,6 +126,7 @@ export function useEstudiosList() {
   const peticionRef = useRef(0)
   const fetchEstudios = useCallback(async () => {
     const n = ++peticionRef.current
+    const pestana = clavePestanaEstudios(filters)
     setLoading(true)
     setError(null)
 
@@ -129,6 +135,7 @@ export function useEstudiosList() {
       if (n !== peticionRef.current) return
       setEstudios(response.data)
       setMeta(response.pagination)
+      setPestanaCargada(pestana)
     } catch (err) {
       if (n !== peticionRef.current) return
       const message = err instanceof Error ? err.message : 'Error al cargar los estudios'
@@ -137,16 +144,20 @@ export function useEstudiosList() {
     } finally {
       if (n === peticionRef.current) setLoading(false)
     }
-  }, [filters, setLoading, setError, setEstudios, setMeta])
+  }, [filters, setLoading, setError, setEstudios, setMeta, setPestanaCargada])
 
-  // Debounced fetch on filters change
+  // Carga al cambiar los filtros. Solo la búsqueda espera a que se deje de escribir; la bandeja, el
+  // orden y la página van ya (reporte de Gerencia, punto 12). Sin espera también va en un temporizador:
+  // si los filtros cambian en el mismo instante (la URL al montar), la limpieza lo cancela.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
+    const espera = soloCambioLaBusqueda(filtrosPreviosRef.current, filters) ? DEBOUNCE_DELAY : 0
+    filtrosPreviosRef.current = filters
     debounceRef.current = setTimeout(() => {
       fetchEstudios()
       updateUrl(filters)
-    }, DEBOUNCE_DELAY)
+    }, espera)
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -199,8 +210,12 @@ export function useEstudiosList() {
     [storeSetActiveBandeja]
   )
 
+  // Las filas son de la bandeja elegida. Si no, son de la anterior y no se muestran.
+  const filasDeLaPestana = pestanaCargada === clavePestanaEstudios(filters)
+
   return {
     estudios,
+    filasDeLaPestana,
     meta,
     filters,
     isLoading,
