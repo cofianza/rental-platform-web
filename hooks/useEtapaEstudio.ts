@@ -23,6 +23,8 @@ export {
   vigenciaResultado,
   PASOS_DETALLE,
   PASO_DE_ETAPA,
+  rotuloPaso,
+  tonoDelPaso,
   turnoDeEtapa,
   esEsperaDePersona,
   type DatosEtapa,

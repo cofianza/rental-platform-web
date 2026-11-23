@@ -67,38 +67,69 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   reapertura: 'Esperando al nuevo segundo firmante',
 }
 
-/** Pasos de la barra del detalle (la lista conserva los suyos). */
-export const PASOS_DETALLE = ['Visita', 'Autorización', 'Pago', 'Evaluación', 'Resultado', 'Contrato', 'Firma'] as const
+/**
+ * Pasos de la barra del detalle (la lista conserva los suyos). Reporte de Gerencia (21-nov), punto 11:
+ * los mismos cuatro en todos los casos (la propuesta de diseño). El nombre del paso no cambia con la
+ * etapa: dónde está el estudio lo dice la insignia del encabezado. Solo el resultado se rotula
+ * «Segundo firmante» mientras el estudio espera uno (rotuloPaso).
+ */
+export const PASOS_DETALLE = ['Estudio', 'Resultado', 'Contrato', 'Firma'] as const
+
+/** Índice del paso del resultado en PASOS_DETALLE. */
+export const PASO_RESULTADO = 1
 
 /** Paso actual de la barra; PASOS_DETALLE.length = todo completo. */
 export const PASO_DE_ETAPA: Record<EtapaEstudio, number> = {
+  // Estudio: la visita, la autorización, el pago y la evaluación.
   visita: 0,
-  habilitar: 1,
-  no_habilitada: 1,
-  autorizacion: 1,
-  enlace: 1,
-  pago: 2,
-  pago_prospecto: 2,
-  consulta: 3,
-  espera_coarrendatario: 3,
-  sin_ejecutar: 3,
-  fallida: 3,
-  decision: 4,
-  segundo_firmante: 4,
-  bloqueado: 4,
-  no_aprobado: 4,
-  contrato: 5,
-  canon_excede: 5,
-  coarrendatario_pendiente: 5,
+  habilitar: 0,
+  no_habilitada: 0,
+  autorizacion: 0,
+  enlace: 0,
+  pago: 0,
+  pago_prospecto: 0,
+  consulta: 0,
+  espera_coarrendatario: 0,
+  sin_ejecutar: 0,
+  fallida: 0,
+  // Resultado: por decidir, con segundo firmante, bloqueado o no aprobable.
+  decision: PASO_RESULTADO,
+  segundo_firmante: PASO_RESULTADO,
+  bloqueado: PASO_RESULTADO,
+  no_aprobado: PASO_RESULTADO,
   // El resultado ya no sirve: el paso del resultado queda marcado, como el no aprobable.
-  vencido: 4,
-  firma: 6,
-  firma_incompleta: 6,
+  vencido: PASO_RESULTADO,
+  // Se decide de nuevo con la evaluación de la persona nueva.
+  reapertura: PASO_RESULTADO,
+  // Contrato: aprobado, también con lo que impide crearlo (canon mayor, coarrendatario sin responder).
+  contrato: 2,
+  canon_excede: 2,
+  coarrendatario_pendiente: 2,
+  firma: 3,
+  firma_incompleta: 3,
   vigente: PASOS_DETALLE.length,
   finalizado: PASOS_DETALLE.length,
   cancelado: 0,
-  // Se decide de nuevo con la evaluación de la persona nueva.
-  reapertura: 3,
+}
+
+/** Cómo se pinta el paso actual: rojo (no aprobable), gris (resultado vencido) o el de siempre. */
+export type TonoPaso = 'rojo' | 'gris' | 'normal'
+
+/** El tono del paso actual de la barra. Pura. */
+export function tonoDelPaso(etapa: EtapaEstudio): TonoPaso {
+  if (etapa === 'no_aprobado') return 'rojo'
+  if (etapa === 'vencido') return 'gris'
+  return 'normal'
+}
+
+/**
+ * El nombre de un paso de la barra: siempre el de PASOS_DETALLE, salvo el resultado mientras el estudio
+ * espera a un segundo firmante («Segundo firmante», la propuesta de Gerencia): aprobado con segundo
+ * firmante, la condición de coarrendatario de la Adenda 3 (`conCondicion`) o reabierto por un reemplazo. Pura.
+ */
+export function rotuloPaso(idx: number, etapa: EtapaEstudio | null | undefined, conCondicion = false): string {
+  if (idx === PASO_RESULTADO && etapa && (etapa === 'reapertura' || esEsperaDePersona(etapa, conCondicion))) return 'Segundo firmante'
+  return PASOS_DETALLE[idx] ?? ''
 }
 
 const CONSULTA_INICIADA = ['en_proceso', 'completado']
@@ -274,6 +305,20 @@ export function etapaCondicionado(desenlace: string | null | undefined): EtapaEs
   return 'decision'
 }
 
+/** El nombre genérico del condicionado cuando no se sabe cuál de los resultados es (punto 6: sin «Condicionado»). */
+export const ETIQUETA_CONDICIONADO = 'En revisión o con segundo firmante'
+
+/**
+ * El nombre del resultado 'condicionado' de una evaluación: con el resultado de la Adenda 5, el suyo; la
+ * del coarrendatario, «En revisión» (Adenda 3 V2 §7); sin datos, el genérico. Pura.
+ */
+export function etiquetaCondicionado(e: { desenlace?: string | null; tipo?: string | null }): string {
+  if (e.desenlace === 'aprobado_segundo_firmante') return 'Aprobado con segundo firmante'
+  if (e.desenlace === 'bloqueado_listas') return 'Bloqueado por listas'
+  if (e.tipo === 'con_coarrendatario') return 'En revisión'
+  return ETIQUETA_CONDICIONADO
+}
+
 /** Etapas en que el estudio espera a que se presente otra persona con un plazo. */
 export const esEsperaDePersona = (etapa: EtapaEstudio | null | undefined, conCondicion: boolean): boolean =>
   etapa === 'segundo_firmante' || (etapa === 'decision' && conCondicion)
@@ -318,12 +363,34 @@ export type Turno = 'gestor' | 'prospecto' | 'cofianza' | 'firmas'
 /** Quién mira: gestor = quien gestiona el estudio; cofianza = roles internos; equipo = sin edición (solo lectura). */
 export type VistaTurno = 'gestor' | 'cofianza' | 'equipo'
 
+/** Lo que decide el turno del «aprobado con segundo firmante» (todo opcional: sin leer, no hay turno). */
+export interface DatosTurnoSegundoFirmante {
+  /** El coarrendatario está en curso: invitación vigente o evaluación sin terminar. null o ausente = no se sabe todavía. */
+  coarrendatarioEnCurso?: boolean | null
+  /** Hay una apelación radicada: la decide Cofianza. */
+  apelacion?: boolean
+}
+
+/**
+ * El turno del «aprobado con segundo firmante», con el criterio de depende_de de la lista: con apelación
+ * radicada, Cofianza; con el coarrendatario en curso, se le espera; si no, quien gestiona lo invita o lo
+ * reemplaza. null mientras no se sabe si hay coarrendatario en curso. Pura.
+ */
+export function turnoSegundoFirmante(o: DatosTurnoSegundoFirmante = {}): Turno | null {
+  if (o.apelacion) return 'cofianza'
+  if (o.coarrendatarioEnCurso === true) return 'prospecto'
+  if (o.coarrendatarioEnCurso === false) return 'gestor'
+  return null
+}
+
 /**
  * Mismo criterio que depende_de del RPC de la lista (20261027000002), para que
  * lista y detalle digan lo mismo: la visita tampoco la cuenta el RPC. null = no
- * hay turno (cerrado o sin paso pendiente de alguien).
+ * hay turno (cerrado o sin paso pendiente de alguien). `segundo`: lo que decide el
+ * turno del aprobado con segundo firmante (turnoSegundoFirmante).
  */
-export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno | null {
+export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean, segundo: DatosTurnoSegundoFirmante = {}): Turno | null {
+  if (etapa === 'segundo_firmante') return turnoSegundoFirmante(segundo)
   switch (etapa) {
     case 'habilitar':
     case 'enlace':
@@ -343,7 +410,6 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno 
     case 'autorizacion':
     case 'pago_prospecto':
     case 'espera_coarrendatario':
-    case 'segundo_firmante':
     // La persona nueva acepta, autoriza y se evalúa.
     case 'reapertura':
       return 'prospecto'

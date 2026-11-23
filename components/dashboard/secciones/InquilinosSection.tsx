@@ -209,7 +209,7 @@ export function InquilinosSection() {
           options={[
             { value: 'todos', label: 'Todos' },
             { value: 'aprobado', label: 'Aprobado' },
-            { value: 'condicionado', label: 'Condicionado' },
+            { value: 'condicionado', label: 'En revisión o con segundo firmante' },
             { value: 'rechazado', label: 'No aprobable' },
           ]}
         />

@@ -28,6 +28,11 @@ interface IEstudiosListState {
   error: string | null
   /** Id de la bandeja activa (ver BANDEJAS), no un estado suelto. */
   activeBandeja: string | null
+  /**
+   * La bandeja (clavePestanaEstudios) con que se cargaron `estudios`. Si la elegida es otra, la lista
+   * muestra el esqueleto y no las filas de la anterior (reporte de Gerencia, punto 12).
+   */
+  pestanaCargada: string | null
 }
 
 interface EstudiosListActions {
@@ -38,6 +43,7 @@ interface EstudiosListActions {
   setError: (error: string | null) => void
   resetFilters: () => void
   setActiveBandeja: (bandeja: string | null) => void
+  setPestanaCargada: (clave: string | null) => void
 }
 
 type EstudiosListStore = IEstudiosListState & EstudiosListActions
@@ -49,6 +55,7 @@ const initialState: IEstudiosListState = {
   isLoading: false,
   error: null,
   activeBandeja: null,
+  pestanaCargada: null,
 }
 
 export const useEstudiosListStore = create<EstudiosListStore>((set) => ({
@@ -62,6 +69,7 @@ export const useEstudiosListStore = create<EstudiosListStore>((set) => ({
     })),
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  setPestanaCargada: (pestanaCargada) => set({ pestanaCargada }),
   resetFilters: () =>
     set({
       filters: DEFAULT_ESTUDIO_FILTERS,

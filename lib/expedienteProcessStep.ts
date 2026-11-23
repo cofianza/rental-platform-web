@@ -65,7 +65,7 @@ export function getProcessStepLabel(
   citaRealizada: boolean,
 ): string {
   if (estado === 'rechazado') return 'No aprobable'
-  if (estado === 'condicionado') return 'Condicionado'
+  if (estado === 'condicionado') return 'En revisión o con segundo firmante'
   const idx = getProcessStep(estado, citaRealizada)
   return PROCESS_STEPS[idx]?.label ?? 'Estudio'
 }

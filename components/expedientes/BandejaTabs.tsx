@@ -11,6 +11,7 @@
 
 import { ESTADOS_EXPEDIENTE, type EstadoExpediente } from '@/lib/constants'
 import type { IExpedientesStats } from '@/types/expediente'
+import { revisionCofianzaDisponible } from '@/lib/bandejaCofianza'
 import { cn } from '@/lib/utils'
 import { IconX } from '@/components/icons'
 
@@ -29,10 +30,10 @@ const BANDEJAS: Array<{
   { label: 'Antes del resultado', estado: 'borrador' },
   { label: 'En revisión', estado: 'en_revision', siHay: true },
   { label: 'Incompletos', estado: 'informacion_incompleta', siHay: true },
-  // Adenda 3 §6: los aprobados con condición también caen aquí. Sin texto de
-  // ayuda en la pestaña: con el cuarto desenlace apagado describiría un caso
-  // que no puede darse.
-  { label: 'Condicionados', estado: 'condicionado' },
+  // Reporte de Gerencia (21-nov), punto 6: «En revisión de Cofianza», con el conteo y el filtro del chip
+  // `revision_cofianza` (sin el segundo firmante ni el bloqueo por listas). Si la API no lo sabe, la bandeja
+  // vuelve a ser todo el estado condicionado y se llama «Condicionados» (ver revisionCofianzaDisponible).
+  { label: 'En revisión de Cofianza', estado: 'condicionado' },
   { label: 'Aprobados', estado: 'aprobado' },
   // U12: un no aprobable que ya se cerró pasa a «Cerrados» (el estado formal es cerrado).
   { label: 'No aprobables', estado: 'rechazado', nota: 'Los no aprobables que ya se cerraron están en «Cerrados».' },
@@ -60,18 +61,21 @@ export function BandejaTabs({
   requiereAccionActivo = false,
   mostrarToggle = true,
 }: BandejaTabsProps) {
+  const conRevision = revisionCofianzaDisponible(stats)
   const getCount = (estado: EstadoExpediente | null): number => {
     if (!stats) return 0
     if (estado === null) return stats.total
+    if (estado === 'condicionado' && conRevision) return stats.revision_cofianza ?? 0
     return stats.por_estado[estado] || 0
   }
+  const rotulo = (b: (typeof BANDEJAS)[number]) => (b.estado === 'condicionado' && !conRevision ? 'Condicionados' : b.label)
 
   return (
     <div className="space-y-4">
       {/* Tabs + Toggle */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         {/* Bandeja tabs con scroll horizontal. En móvil el borde derecho se
-            desvanece: sin esa pista, «Condicionados» cortado no parecía deslizable. */}
+            desvanece: sin esa pista, una pestaña cortada no parecía deslizable. */}
         <div className="-mx-4 flex-1 overflow-x-auto px-4 [mask-image:linear-gradient(to_right,black_calc(100%-2.5rem),transparent)] sm:mx-0 sm:px-0 sm:[mask-image:none]">
           <nav className="flex gap-1 min-w-max pr-6 sm:min-w-0 sm:flex-wrap sm:pr-0" aria-label="Bandejas">
             {/* Cofianza no tiene esa pestaña: llega al filtro por el enlace del aviso
@@ -110,7 +114,7 @@ export function BandejaTabs({
                 >
                   {/* Sin punto de color: en las inactivas era un punto gris en cada una, y el
                       color de la activa ya lo da el fondo. */}
-                  {bandeja.label}
+                  {rotulo(bandeja)}
                   <span
                     className={cn(
                       'inline-flex items-center justify-center min-w-[20px] px-1.5 py-0.5 rounded-full text-xs font-semibold tabular-nums',
@@ -123,14 +127,6 @@ export function BandejaTabs({
                   >
                     {count}
                   </span>
-                  {/* U3: cuántos de los condicionados esperan la decisión de Cofianza:
-                      es el trabajo del analista, por eso aparte y en coral. */}
-                  {bandeja.estado === 'condicionado' && !!stats?.condicionados_por_decidir && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-coral-700">
-                      <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-coral-500" />
-                      {stats.condicionados_por_decidir} por decidir
-                    </span>
-                  )}
                 </button>
               )
             })}

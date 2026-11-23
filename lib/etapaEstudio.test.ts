@@ -116,7 +116,8 @@ test('condicionado: sin desenlace, «decision» como siempre', () => {
 test('condicionado: con desenlace, su etapa y su turno', () => {
   assert.equal(calcularEtapa({ ...base, estado: 'condicionado', desenlace: 'aprobado_segundo_firmante' }), 'segundo_firmante')
   assert.equal(calcularEtapa({ ...base, estado: 'condicionado', desenlace: 'bloqueado_listas' }), 'bloqueado')
-  assert.equal(turnoDeEtapa('segundo_firmante', true), 'prospecto')
+  // El turno del aprobado con segundo firmante no es fijo: el criterio de la lista (depende_de).
+  assert.equal(turnoDeEtapa('segundo_firmante', true, { coarrendatarioEnCurso: true }), 'prospecto')
   assert.equal(turnoDeEtapa('bloqueado', false), 'gestor')
   // Fuera del condicionado el desenlace no mueve la etapa.
   assert.equal(calcularEtapa({ ...base, estado: 'aprobado', desenlace: 'aprobado' }), 'contrato')
@@ -229,4 +230,70 @@ test('estudio reabierto por un reemplazo: espera a la persona nueva, nunca «No 
   for (const vista of ['gestor', 'cofianza', 'equipo'] as const) {
     assert.equal(queSigue('reapertura', { vista, analista: vista === 'cofianza', fechaCondicion: null, esperaHasta: null, sinInmueble: false }), texto)
   }
+})
+
+test('punto 11: cuatro pasos fijos, el mismo nombre en todos los casos', async () => {
+  const { PASOS_DETALLE, PASO_DE_ETAPA, PASO_RESULTADO, rotuloPaso, tonoDelPaso, ETAPA_LABEL } = await import('./etapaEstudio')
+  type Etapa = keyof typeof PASO_DE_ETAPA
+  assert.deepEqual([...PASOS_DETALLE], ['Estudio', 'Resultado', 'Contrato', 'Firma'])
+  const paso = (e: Etapa) => PASOS_DETALLE[PASO_DE_ETAPA[e]] ?? 'completo'
+  // Visita, autorización, pago y evaluación son el paso «Estudio».
+  for (const e of ['visita', 'habilitar', 'no_habilitada', 'autorizacion', 'enlace', 'pago', 'pago_prospecto', 'consulta', 'espera_coarrendatario', 'sin_ejecutar', 'fallida'] as Etapa[]) {
+    assert.equal(paso(e), 'Estudio', e)
+  }
+  for (const e of ['decision', 'segundo_firmante', 'bloqueado', 'no_aprobado', 'vencido', 'reapertura'] as Etapa[]) {
+    assert.equal(paso(e), 'Resultado', e)
+  }
+  for (const e of ['contrato', 'canon_excede', 'coarrendatario_pendiente'] as Etapa[]) assert.equal(paso(e), 'Contrato', e)
+  for (const e of ['firma', 'firma_incompleta'] as Etapa[]) assert.equal(paso(e), 'Firma', e)
+  assert.equal(paso('vigente'), 'completo')
+  assert.equal(paso('finalizado'), 'completo')
+  // Todas las etapas tienen paso.
+  for (const e of Object.keys(ETAPA_LABEL) as Etapa[]) assert.equal(typeof PASO_DE_ETAPA[e], 'number', e)
+
+  // El nombre no cambia con la etapa: ni «Aprobado» en el contrato ni «No aprobable» en el resultado.
+  assert.equal(rotuloPaso(2, 'contrato'), 'Contrato')
+  assert.equal(rotuloPaso(2, 'no_aprobado'), 'Contrato')
+  assert.equal(rotuloPaso(PASO_RESULTADO, 'no_aprobado'), 'Resultado')
+  assert.equal(rotuloPaso(PASO_RESULTADO, 'decision'), 'Resultado')
+  // Solo el resultado, y solo mientras espera a un segundo firmante: con segundo firmante, reabierto por un
+  // reemplazo o con la condición de coarrendatario de la Adenda 3.
+  assert.equal(rotuloPaso(PASO_RESULTADO, 'segundo_firmante'), 'Segundo firmante')
+  assert.equal(rotuloPaso(PASO_RESULTADO, 'reapertura'), 'Segundo firmante')
+  assert.equal(rotuloPaso(PASO_RESULTADO, 'decision', true), 'Segundo firmante')
+  assert.equal(rotuloPaso(0, 'segundo_firmante'), 'Estudio')
+  assert.equal(rotuloPaso(PASO_RESULTADO, null), 'Resultado')
+  assert.equal(rotuloPaso(PASO_RESULTADO, 'no_aprobado', true), 'Resultado')
+
+  // El no aprobable marca el resultado en rojo; el vencido en gris; lo demás, como siempre.
+  assert.equal(tonoDelPaso('no_aprobado'), 'rojo')
+  assert.equal(tonoDelPaso('vencido'), 'gris')
+  assert.equal(tonoDelPaso('decision'), 'normal')
+  assert.equal(tonoDelPaso('contrato'), 'normal')
+})
+
+test('turno del aprobado con segundo firmante: el mismo criterio que la lista', async () => {
+  const { turnoDeEtapa, turnoSegundoFirmante } = await import('./etapaEstudio')
+  // Con apelación radicada, Cofianza (aunque haya coarrendatario en curso).
+  assert.equal(turnoSegundoFirmante({ apelacion: true, coarrendatarioEnCurso: true }), 'cofianza')
+  // Coarrendatario en curso (invitación vigente o evaluación sin terminar): se le espera.
+  assert.equal(turnoSegundoFirmante({ coarrendatarioEnCurso: true }), 'prospecto')
+  // Sin coarrendatario en curso: quien gestiona lo invita o lo reemplaza.
+  assert.equal(turnoSegundoFirmante({ coarrendatarioEnCurso: false }), 'gestor')
+  // Sin saberlo todavía: sin turno (nunca uno que luego cambie).
+  assert.equal(turnoSegundoFirmante({ coarrendatarioEnCurso: null }), null)
+  assert.equal(turnoSegundoFirmante(), null)
+  assert.equal(turnoDeEtapa('segundo_firmante', false, { coarrendatarioEnCurso: false }), 'gestor')
+  assert.equal(turnoDeEtapa('segundo_firmante', false), null)
+  // Las demás etapas no cambian.
+  assert.equal(turnoDeEtapa('decision', true, { coarrendatarioEnCurso: false }), 'prospecto')
+})
+
+test('punto 9: el nombre del condicionado según el resultado', async () => {
+  const { etiquetaCondicionado, ETIQUETA_CONDICIONADO } = await import('./etapaEstudio')
+  assert.equal(etiquetaCondicionado({ desenlace: 'aprobado_segundo_firmante' }), 'Aprobado con segundo firmante')
+  assert.equal(etiquetaCondicionado({ desenlace: 'bloqueado_listas' }), 'Bloqueado por listas')
+  assert.equal(etiquetaCondicionado({ tipo: 'con_coarrendatario' }), 'En revisión')
+  assert.equal(etiquetaCondicionado({}), 'En revisión o con segundo firmante')
+  assert.equal(ETIQUETA_CONDICIONADO, 'En revisión o con segundo firmante')
 })

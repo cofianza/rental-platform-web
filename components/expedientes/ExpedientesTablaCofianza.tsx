@@ -113,6 +113,8 @@ function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
           <span className="sr-only">Sin turno</span>
         </span>
       )}
+      {/* Lo que redacta la API cuando el turno solo no lo dice (el plazo del segundo firmante). */}
+      {datos.turno && datos.detalleTurno && <span className="text-xs text-gray-600">{datos.detalleTurno}</span>}
       {datos.demora && (
         <span
           className={cn(

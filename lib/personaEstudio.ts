@@ -264,3 +264,47 @@ export const TEXTO_CANCELAR_INVITACION_REAPERTURA =
   'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobable y Cofianza devuelve el pago.'
 export const TOAST_INVITACION_CANCELADA_REAPERTURA = 'Invitación cancelada. El estudio volvió a no aprobable.'
 export const TEXTO_ENLACE_VENCIDO_REAPERTURA = 'Venció el enlace: el cambio se cerró y Cofianza devolverá el pago.'
+
+/** Etiquetas de la API de un coarrendatario que todavía no terminó: lo verifica Cofianza, espera o debe salir. */
+const ETIQUETAS_VIVAS = ['en verificación', 'en revisión', 'en espera', 'bloquea la operación']
+
+/** Lo que hace falta del coarrendatario para saber si sigue en curso (de ICoarrendatario). */
+export interface CoarrendatarioEnResumen {
+  estado: string
+  estudio?: { estado: string; resultado?: string | null; persona_a5d?: IPersonaA5d | null } | null
+  /** Vence el enlace de la invitación. */
+  token_expiracion?: string | null
+}
+
+/**
+ * Invitación vigente o evaluación sin terminar: el criterio de la API para esperar al segundo firmante
+ * (depende_de 'prospecto'). Una invitación vencida ya no está en curso: reenviarla le toca a quien
+ * gestiona. Pura.
+ */
+export function coarrendatarioEnCurso(coa: CoarrendatarioEnResumen | null | undefined, ahoraMs: number = Date.now()): boolean {
+  if (!coa) return false
+  if (coa.estado === 'pendiente_aceptacion') {
+    const vence = coa.token_expiracion ? Date.parse(coa.token_expiracion) : NaN
+    return !(Number.isFinite(vence) && vence < ahoraMs)
+  }
+  return coa.estado === 'aceptado' && coa.estudio?.estado !== 'completado'
+}
+
+/**
+ * El coarrendatario sigue vivo, y su tarjeta va en el Resumen, no en «Pasos anteriores» (reporte de
+ * Gerencia, 21-nov, punto 10): invitación sin responder (también vencida, que se puede reenviar),
+ * evaluación sin terminar (también fallida, que se reintenta) o terminada pero en verificación, en
+ * revisión o en espera. No lo está cuando terminó (válido, no califica, salió), declinó, o la invitación
+ * ya no tiene efecto (`sinEfecto`: el estudio se resolvió sin él) o el estudio terminó (`cierre`). Pura.
+ */
+export function coarrendatarioSigueVivo(coa: CoarrendatarioEnResumen | null | undefined, o: { sinEfecto: boolean; cierre: CierreEstudio }): boolean {
+  if (!coa || o.cierre) return false
+  if (coa.estudio?.estado === 'completado') {
+    const persona = personaA5dUsable(coa.estudio.persona_a5d)
+    if (persona) return ETIQUETAS_VIVAS.includes(normalizar(persona.etiqueta))
+    // Sin `persona_a5d`: «En revisión» (rotuloCoarrendatario) mientras no la decida un analista.
+    return coa.estudio.resultado === 'condicionado'
+  }
+  if (coa.estado === 'pendiente_aceptacion' || coa.estado === 'aceptado') return !o.sinEfecto
+  return false
+}

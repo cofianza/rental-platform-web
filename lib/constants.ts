@@ -374,8 +374,10 @@ export const ESTADOS_EXPEDIENTE: Record<EstadoExpediente, EstadoConfig> = {
     textColor: 'text-red-700',
     borderColor: 'border-red-300',
   },
+  // Reporte de Gerencia (21-nov), punto 6: sin «Condicionado». Sin el resultado de la Adenda 5 a mano,
+  // el estado junta la revisión de Cofianza y el segundo firmante (etiquetaCondicionado lo precisa).
   condicionado: {
-    label: 'Condicionado',
+    label: 'En revisión o con segundo firmante',
     color: 'purple',
     bgColor: 'bg-purple-100',
     textColor: 'text-purple-700',
@@ -675,8 +677,9 @@ export const ESTADOS_RESULTADO_ESTUDIO: Record<ResultadoEstudioType, EstadoConfi
     textColor: 'text-red-700',
     borderColor: 'border-red-300',
   },
+  // Sin «Condicionado» (punto 6): con el resultado de la Adenda 5, etiquetaCondicionado.
   condicionado: {
-    label: 'Condicionado',
+    label: 'En revisión o con segundo firmante',
     color: 'yellow',
     bgColor: 'bg-yellow-100',
     textColor: 'text-yellow-700',

@@ -1,10 +1,11 @@
 /**
  * ExpedienteProgressBar
- * Barra de progreso visual del flujo del usuario (7 pasos):
- * Solicitud → Cita previa → Estudio → Aprobacion → Contrato → Firma → Listo
- *
- * Calcula el paso actual combinando el estado del expediente y si tiene
- * cita realizada (consulta automatica al servicio de citas).
+ * - Quien gestiona (BarraPorEtapa): cuatro pasos fijos, Estudio → Resultado → Contrato → Firma
+ *   (reporte de Gerencia, 21-nov, punto 11). El nombre del paso no cambia con la etapa: el estado
+ *   lo dice la insignia del encabezado. Solo el resultado se rotula «Segundo firmante» mientras el
+ *   estudio espera uno (rotuloPaso).
+ * - El prospecto (BarraPorEstado): los siete pasos de su flujo (lib/expedienteProcessStep), según el
+ *   estado del expediente y si tiene cita realizada (consulta automática al servicio de citas).
  */
 
 'use client'
@@ -18,7 +19,7 @@ import { cn } from '@/lib/utils'
 import { PROCESS_STEPS, getProcessStep } from '@/lib/expedienteProcessStep'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { mensajeCondicionCoarrendatario } from '@/components/expedientes/textoVisible'
-import { PASOS_DETALLE, PASO_DE_ETAPA, type EtapaEstudio } from '@/hooks/useEtapaEstudio'
+import { PASOS_DETALLE, PASO_DE_ETAPA, rotuloPaso, tonoDelPaso, type EtapaEstudio } from '@/hooks/useEtapaEstudio'
 
 export interface ExpedienteProgressBarProps {
   expedienteId: string
@@ -47,7 +48,10 @@ export interface ExpedienteProgressBarProps {
    * siempre (prospecto); null = la etapa todavía se está leyendo.
    */
   etapa?: EtapaEstudio | null
-  /** Rótulo del paso actual en la barra por etapa: el mismo del chip del encabezado. */
+  /**
+   * El nombre de la etapa (el mismo del chip del encabezado). En la barra por etapa no renombra el
+   * paso: lo lee el lector de pantalla junto al paso actual y sale cuando todos los pasos están completos.
+   */
   etiquetaActual?: string
   className?: string
 }
@@ -66,7 +70,9 @@ export function ExpedienteProgressBar({
   etiquetaActual,
   className,
 }: ExpedienteProgressBarProps) {
-  if (etapa !== undefined && !esProspecto) return <BarraPorEtapa etapa={etapa} etiquetaActual={etiquetaActual} className={className} />
+  if (etapa !== undefined && !esProspecto) {
+    return <BarraPorEtapa etapa={etapa} conCondicion={!!conCondicion} etiquetaActual={etiquetaActual} className={className} />
+  }
   return (
     <BarraPorEstado
       expedienteId={expedienteId}
@@ -85,10 +91,13 @@ export function ExpedienteProgressBar({
 
 function BarraPorEtapa({
   etapa,
+  conCondicion,
   etiquetaActual,
   className,
 }: {
   etapa: EtapaEstudio | null
+  /** Condición de coarrendatario (Adenda 3 §6): el resultado se rotula «Segundo firmante». */
+  conCondicion: boolean
   etiquetaActual?: string
   className?: string
 }) {
@@ -108,22 +117,21 @@ function BarraPorEtapa({
     )
   }
   const actual = PASO_DE_ETAPA[etapa]
-  // El resultado vencido (o por vencer sin margen para firmar) ya no sirve: su paso va en gris, como el chip.
-  const tono = etapa === 'no_aprobado' ? 'rojo' : etapa === 'vencido' ? 'gris' : etapa === 'decision' ? 'ambar' : 'normal'
+  // El no aprobable marca el resultado en rojo; el resultado vencido (o por vencer sin margen para
+  // firmar) ya no sirve: su paso va en gris, como el chip. El nombre del paso no cambia.
+  const tono = tonoDelPaso(etapa)
   const total = PASOS_DETALLE.length
-  const rotuloActual = (idx: number, label: string) =>
-    // El mismo nombre que el chip del encabezado («Por habilitar», «Aprobado con condición»).
-    idx === actual ? etiquetaActual ?? (tono === 'rojo' ? 'No aprobable' : label) : label
   return (
     <div className={cn('w-full', className)}>
       <ol aria-label="Pasos del estudio" className="flex items-start">
-        {PASOS_DETALLE.map((label, idx) => {
+        {PASOS_DETALLE.map((paso, idx) => {
+          const label = rotuloPaso(idx, etapa, conCondicion)
           const isComplete = idx < actual
           const isCurrent = idx === actual
           const isFailed = isCurrent && tono === 'rojo'
           const isGris = isCurrent && tono === 'gris'
           return (
-            <li key={label} className="flex min-w-0 flex-1 items-start last:flex-none sm:last:flex-1">
+            <li key={paso} className="flex min-w-0 flex-1 items-start last:flex-none sm:last:flex-1">
               <div className="flex min-w-0 flex-1 flex-col items-center">
                 <span
                   className={cn(
@@ -140,7 +148,7 @@ function BarraPorEtapa({
                 </span>
                 <span
                   className={cn(
-                    // En el celular los siete rótulos no caben: van en la línea de abajo.
+                    // En el celular los rótulos van en la línea de abajo (el del paso actual).
                     'mt-2 hidden max-w-[7.5rem] text-center text-xs leading-snug sm:block',
                     isFailed ? 'font-semibold text-red-700'
                       : isGris ? 'font-semibold text-gray-700'
@@ -149,11 +157,11 @@ function BarraPorEtapa({
                       : 'text-gray-500',
                   )}
                 >
-                  {rotuloActual(idx, label)}
+                  {label}
                 </span>
                 <span className="sr-only sm:hidden">
-                  {rotuloActual(idx, label)}
-                  {isComplete ? ' (completo)' : isCurrent ? ' (paso actual)' : ''}
+                  {label}
+                  {isComplete ? ' (completo)' : isCurrent ? (etiquetaActual ? ` (paso actual: ${etiquetaActual})` : ' (paso actual)') : ''}
                 </span>
               </div>
               {idx < total - 1 && (
@@ -172,7 +180,7 @@ function BarraPorEtapa({
           <>
             <span className="text-gray-500">Paso {actual + 1} de {total}: </span>
             <span className={cn('font-semibold', tono === 'rojo' ? 'text-red-700' : tono === 'gris' ? 'text-gray-700' : 'text-amber-800')}>
-              {rotuloActual(actual, PASOS_DETALLE[actual])}
+              {rotuloPaso(actual, etapa, conCondicion)}
             </span>
           </>
         ) : (

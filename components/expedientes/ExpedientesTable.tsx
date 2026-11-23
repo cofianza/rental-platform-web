@@ -237,7 +237,8 @@ function sinTurno(datos: DatosEstadoFila, e: IExpediente, vista: VistaTurno): st
   // En la visita el RPC no da turno (depende_de NULL): la lista dice qué falta.
   if (datos.etapa === 'visita') return vista === 'gestor' ? 'Agende la visita o indique que ya se hizo' : 'Falta la visita'
   if (identidadRechazada(e)) return 'Su equipo debe comunicarse con Cofianza'
-  if (datos.etapa === 'decision' && e.depende_de === 'cofianza') return 'Esperando a Cofianza'
+  // También el aprobado con segundo firmante con una apelación radicada: la decide Cofianza.
+  if ((datos.etapa === 'decision' || datos.etapa === 'segundo_firmante') && e.depende_de === 'cofianza') return 'Esperando a Cofianza'
   // El resultado ya dice que falta otra persona: aquí, lo que se espera (texto de la API si llega).
   if (datos.etapa === 'segundo_firmante') return e.estudio_vigente?.siguiente_accion_texto ?? 'Falta presentar al segundo firmante'
   if (datos.etapa === 'bloqueado') return e.estudio_vigente?.siguiente_accion_texto ?? 'La operación está bloqueada: vea qué hacer en el detalle'
@@ -264,16 +265,26 @@ function QueSigue({ fila, vista }: { fila: Fila; vista: VistaTurno }) {
   }
   if (datos.turno) {
     const texto = textoTurno(datos.turno.turno, vista, datos.turno)
+    // Lo que la API redacta (p. ej. el plazo del segundo firmante), debajo del turno.
+    const detalle = datos.detalleTurno && <span className="mt-0.5 block text-xs text-gray-600">{datos.detalleTurno}</span>
     if (propio) {
       return (
-        <span className="inline-flex items-start gap-1.5 text-sm font-semibold text-coral-700">
-          <IconArrowRight size={16} className="mt-0.5 shrink-0" />
-          {texto}
+        <span className="block">
+          <span className="inline-flex items-start gap-1.5 text-sm font-semibold text-coral-700">
+            <IconArrowRight size={16} className="mt-0.5 shrink-0" />
+            {texto}
+          </span>
+          {detalle && <span className="block pl-[22px]">{detalle}</span>}
         </span>
       )
     }
     // Solo lectura: el turno es de su equipo, no de quien mira (sin coral: no puede hacerlo).
-    return <span className={cn('block text-sm', datos.turno.turno === 'gestor' ? 'font-medium text-gray-800' : 'text-gray-600')}>{texto}</span>
+    return (
+      <span className="block">
+        <span className={cn('block text-sm', datos.turno.turno === 'gestor' ? 'font-medium text-gray-800' : 'text-gray-600')}>{texto}</span>
+        {detalle}
+      </span>
+    )
   }
   const texto = sinTurno(datos, expediente, vista)
   if (texto) return <span className="block text-sm text-gray-500">{texto}</span>

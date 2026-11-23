@@ -13,7 +13,7 @@ export const ESTADO_OPTIONS: { value: EstadoExpediente; label: string }[] = [
   { value: 'informacion_incompleta', label: 'Info. incompleta' },
   { value: 'aprobado', label: 'Aprobado' },
   { value: 'rechazado', label: 'No aprobable' },
-  { value: 'condicionado', label: 'Condicionado' },
+  { value: 'condicionado', label: 'En revisión o con segundo firmante' },
   // U12: el mismo nombre que la pestaña «Cerrados» (incluye cancelados y no aprobables cerrados).
   { value: 'cerrado', label: 'Cerrado' },
 ]

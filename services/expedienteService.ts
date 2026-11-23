@@ -124,7 +124,9 @@ class ExpedienteService {
    * (GET /expedientes/conteos, mismo alcance y criterio que la lista). Con una
    * API anterior al endpoint cuenta como antes: una petición por chip, sin
    * «todos» (lo da el total de la lista). La API vieja no responde 404: la ruta
-   * cae en GET /:id y su validación de uuid da 400 VALIDATION_ERROR.
+   * cae en GET /:id y su validación de uuid da 400 VALIDATION_ERROR. La API nueva
+   * cuenta además `segundo_firmante`, `revision_cofianza` y `bloqueado` (punto 6 del
+   * reporte de Gerencia); sin esas claves la lista muestra «Condicionados», como antes.
    */
   async getConteos(): Promise<Partial<Record<EstudioFiltro, number>>> {
     try {
@@ -173,6 +175,10 @@ class ExpedienteService {
       por_estado,
       ...(response.data && 'condicionados_por_decidir' in response.data
         ? { condicionados_por_decidir: response.data.condicionados_por_decidir as number | null }
+        : {}),
+      // Solo un número sirve; cualquier otra cosa es «no se sabe» (null).
+      ...(response.data && 'revision_cofianza' in response.data
+        ? { revision_cofianza: typeof response.data.revision_cofianza === 'number' ? (response.data.revision_cofianza as number) : null }
         : {}),
     }
   }

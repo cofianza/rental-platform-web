@@ -31,6 +31,8 @@ import { cn } from '@/lib/utils'
 import {
   TEXTO_ENLACE_VENCIDO_REAPERTURA,
   cierreDelEstudio,
+  coarrendatarioEnCurso,
+  coarrendatarioSigueVivo,
   comoSePresento,
   insigniaPersona,
   papelEnElEstudio,
@@ -72,6 +74,12 @@ interface CoarrendatarioPropietarioCardProps {
   reaperturaAbierta?: boolean
   /** Tras cancelar la invitación con la reapertura abierta, el estudio cambia: la página recarga el expediente. */
   onExpedienteCambio?: () => void
+  /**
+   * Avisa, cada vez que cambia y ya cargado, si el coarrendatario sigue en curso (invitación sin
+   * responder, evaluación sin terminar, en verificación o en revisión): así el Resumen lo deja a la
+   * vista y no en «Pasos anteriores» (reporte de Gerencia, punto 10).
+   */
+  onSigueVivo?: (vivo: boolean) => void
 }
 
 /** Antes de que se decida al titular (Adenda 3 V2 §6.1). */
@@ -105,6 +113,7 @@ export function CoarrendatarioPropietarioCard({
   cierre: cierreProp,
   reaperturaAbierta = false,
   onExpedienteCambio,
+  onSigueVivo,
 }: CoarrendatarioPropietarioCardProps) {
   const cierre = cierreProp !== undefined ? cierreProp : cierreDelEstudio(expedienteEstado)
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -183,6 +192,13 @@ export function CoarrendatarioPropietarioCard({
     const id = setInterval(() => { if (!document.hidden) fetchCoa() }, 8000)
     return () => clearInterval(id)
   }, [coa, fetchCoa, vigente])
+
+  // Dónde va la tarjeta en el Resumen: arriba mientras siga en curso, plegada cuando terminó.
+  const cargado = !loading && ventana !== undefined
+  const sigueVivo = coarrendatarioSigueVivo(coa, { sinEfecto: !vigente, cierre })
+  useEffect(() => {
+    if (cargado) onSigueVivo?.(sigueVivo)
+  }, [cargado, sigueVivo, onSigueVivo])
 
   const esRolValido =
     userRol === 'propietario' ||
@@ -518,12 +534,6 @@ function estadoInvitacion(
 
 /** Cómo salió su evaluación, con las palabras de la Adenda 3 V2 §7: válido, en revisión o no califica. */
 /** El enlace de la invitación expira (7 días); reenviarla renueva la fecha. */
-/** Invitación viva o evaluación sin terminar. */
-function coarrendatarioEnCurso(coa: ICoarrendatario): boolean {
-  if (coa.estado === 'pendiente_aceptacion') return !invitacionVencida(coa)
-  return coa.estado === 'aceptado' && coa.estudio?.estado !== 'completado'
-}
-
 function invitacionVencida(coa: ICoarrendatario): boolean {
   return coa.estado === 'pendiente_aceptacion' && new Date(coa.token_expiracion) < new Date()
 }
