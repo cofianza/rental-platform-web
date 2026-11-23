@@ -8,7 +8,7 @@
 import { toast } from 'sonner'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Badge } from '@/components/ui/Badge'
 import { etiquetaCondicionado } from '@/lib/etapaEstudio'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, PROVEEDOR_LABELS, ESTUDIO_UI_MESSAGES } from './constants'
@@ -121,6 +121,8 @@ export interface EstudiosTableProps {
   onPageChange: (page: number) => void
   onLimitChange: (limit: number) => void
   onClearFilters?: () => void
+  /** Una acción del detalle cambió la evaluación (p. ej. la verificación del segundo firmante): se relee la lista. */
+  onDetalleCambiado?: () => void
 }
 
 export function EstudiosTable({
@@ -131,8 +133,11 @@ export function EstudiosTable({
   onPageChange,
   onLimitChange,
   onClearFilters,
+  onDetalleCambiado,
 }: EstudiosTableProps) {
   const [selectedEstudio, setSelectedEstudio] = useState<IEstudio | null>(null)
+  // Cambió algo desde el detalle: al cerrarlo se relee la lista.
+  const detalleCambio = useRef(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
   // Gerencia también llega a /estudios, pero solo lee: el API le da 403 en
   // soportes, re-evaluación y certificado. Mismo criterio que EstudiosSection.
@@ -460,7 +465,16 @@ export function EstudiosTable({
         <EstudioDetailModal
           estudio={selectedEstudio}
           isOpen={!!selectedEstudio}
-          onClose={() => setSelectedEstudio(null)}
+          onClose={() => {
+            setSelectedEstudio(null)
+            if (detalleCambio.current) {
+              detalleCambio.current = false
+              onDetalleCambiado?.()
+            }
+          }}
+          onApelacionCambiada={() => {
+            detalleCambio.current = true
+          }}
           readOnly={!canManage}
         />
       )}

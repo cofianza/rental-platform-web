@@ -199,6 +199,21 @@ export const estudioService = {
     return res.data
   },
 
+  /** Segundo firmante en verificación: Cofianza lo verificó y deja constancia; el estudio se decide con las dos personas. */
+  async resolverVerificacionSegundo(estudioId: string, nota: string): Promise<{ resultado: string; expediente_estado: string | null }> {
+    const res = await apiClient.post<{ resultado: string; expediente_estado: string | null }>(
+      `/estudios/${estudioId}/verificacion-segundo/resolver`,
+      { nota },
+    )
+    return res.data
+  },
+
+  /** Segundo firmante en verificación: se le pide otra vez a Auco la consulta de antecedentes y listas. */
+  async reintentarVerificacionSegundo(estudioId: string): Promise<{ pedido_en: string }> {
+    const res = await apiClient.post<{ pedido_en: string }>(`/estudios/${estudioId}/verificacion-segundo/reintentar`, {})
+    return res.data
+  },
+
   /** Adenda 3 V2 §7: Cofianza descarta la coincidencia (homónimo); el caso sigue en revisión. */
   async descartarListas(estudioId: string, motivo: string): Promise<{ listas: 'descartada' }> {
     const res = await apiClient.post<{ listas: 'descartada' }>(`/estudios/${estudioId}/listas/descartar`, { motivo })
