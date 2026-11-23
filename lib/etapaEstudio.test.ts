@@ -144,10 +144,10 @@ test('reporte de Gerencia (21-nov): etapas de traba, su nombre y su texto', asyn
   // El vencido no es turno de nadie (la API: depende_de null, no «requiere su acción»).
   assert.equal(turnoDeEtapa('vencido', false), null)
   // Con la leyenda «hasta un canon»: la cifra; sin ella, canon mayor al evaluado; sin hasta_canon (API anterior) decide la cifra.
-  assert.equal(etiquetaTraba('canon_excede', { hasta_canon: true, canon_habilitado_cop: 1_611_000 }), 'Aprobado hasta un canon de $1.611.000')
+  assert.equal(etiquetaTraba('canon_excede', { hasta_canon: true, canon_habilitado_cop: 1_250_000 }), 'Aprobado hasta un canon de $1.250.000')
   assert.equal(etiquetaTraba('canon_excede', { hasta_canon: true }), 'Aprobado hasta un canon menor')
   assert.equal(etiquetaTraba('canon_excede', { hasta_canon: false, canon_habilitado_cop: 1_500_000 }), 'Aprobado · canon mayor al evaluado')
-  assert.equal(etiquetaTraba('canon_excede', { canon_habilitado_cop: 1_611_000 }), 'Aprobado hasta un canon de $1.611.000')
+  assert.equal(etiquetaTraba('canon_excede', { canon_habilitado_cop: 1_250_000 }), 'Aprobado hasta un canon de $1.250.000')
   // Estudios anteriores a la Adenda 5: canon_excede sin la cifra.
   assert.equal(etiquetaTraba('canon_excede', {}), 'Aprobado · canon mayor al evaluado')
   assert.equal(etiquetaTraba('canon_excede'), 'Aprobado · canon mayor al evaluado')
