@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal } from '@/components/ui/Modal'
 import { IconLoader, IconPlus, IconMail, IconX, IconRefresh, IconClipboardList, IconEye } from '@/components/icons'
 import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
+import { SOLICITANTE_ANTERIOR, evaluacionDeOtroSolicitante, personaA5dUsable, rolDeclarado, type CierreEstudio } from '@/lib/personaEstudio'
 import { estudioService } from '@/services/estudioService'
 import { creditosEstudiosService } from '@/services/creditosEstudiosService'
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
@@ -82,6 +83,10 @@ function getPersonaEvaluada(
       etiqueta: 'Coarrendatario',
     }
   }
+  // La evaluación de un solicitante que ya fue reemplazado no lleva el nombre ni el documento del actual.
+  if (evaluacionDeOtroSolicitante(estudio.datos_formulario, titular?.numero_documento, personaA5dUsable(estudio.persona_a5d))) {
+    return { nombre: SOLICITANTE_ANTERIOR, apellido: null, tipo_documento: null, numero_documento: null, etiqueta: 'Titular' }
+  }
   if (!titular) return null
   return {
     nombre: `${titular.nombre} ${titular.apellido}`.trim(),
@@ -101,7 +106,12 @@ function getSolicitanteParaModal(
   estudio: IEstudio,
   titular: { nombre: string; apellido: string; tipo_documento?: string | null; numero_documento?: string | null } | null | undefined,
 ): { nombre: string; apellido: string; tipo_documento?: string | null; numero_documento?: string | null } | null | undefined {
-  if (estudio.tipo !== 'con_coarrendatario') return titular
+  if (estudio.tipo !== 'con_coarrendatario') {
+    // Como getPersonaEvaluada: a la evaluación de quien ya salió no se le pone el solicitante actual.
+    return evaluacionDeOtroSolicitante(estudio.datos_formulario, titular?.numero_documento, personaA5dUsable(estudio.persona_a5d))
+      ? { nombre: SOLICITANTE_ANTERIOR, apellido: '' }
+      : titular
+  }
   const datos = (estudio.datos_formulario || {}) as {
     nombre_completo?: string
     tipo_documento?: string
@@ -146,6 +156,10 @@ interface EstudiosSectionProps {
   pedidoReevaluar?: number
   /** Ya se abrió el detalle por el pedido: la página lo vuelve a 0 (al volver a la pestaña no se reabre). */
   onPedidoAtendido?: () => void
+  /** En qué quedó el estudio: con él terminado, una evaluación que esperaba revisión o que pasó no se nombra «En revisión» ni «Válido». */
+  cierre?: CierreEstudio
+  /** El estudio está aprobado: quien no califica no lo bloquea (gris, no rojo). */
+  estudioAprobado?: boolean
 }
 
 export function EstudiosSection({
@@ -155,6 +169,8 @@ export function EstudiosSection({
   coarrendatarioVigente = true,
   pedidoReevaluar = 0,
   onPedidoAtendido,
+  cierre = null,
+  estudioAprobado = false,
 }: EstudiosSectionProps) {
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
@@ -446,7 +462,8 @@ export function EstudiosSection({
                           {persona?.nombre || 'Persona evaluada'}
                         </span>
                         <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                          {persona?.etiqueta ?? (estudio.tipo === 'con_coarrendatario' ? 'Coarrendatario' : 'Titular')}
+                          {/* Cómo se presentó, igual en todas las filas; el papel en el estudio (Adenda 5) va en la pastilla del resultado. */}
+                          {rolDeclarado(estudio.tipo === 'con_coarrendatario')}
                         </span>
                         {estudio.estudio_padre_id && (
                           <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
@@ -462,8 +479,8 @@ export function EstudiosSection({
                     </div>
                     {/* Una sola pastilla, con el mismo nombre que el Resumen y el detalle. */}
                     <Badge
-                      estado={colorEvaluacion(estudio)}
-                      label={rotuloEvaluacion(estudio)}
+                      estado={colorEvaluacion(estudio, cierre, estudioAprobado)}
+                      label={rotuloEvaluacion(estudio, undefined, cierre)}
                       className="self-start"
                     />
                   </div>
@@ -633,6 +650,8 @@ export function EstudiosSection({
           apelacionCambiada.current = true
         }}
         irAReevaluacion={irAReevaluacion}
+        cierre={cierre}
+        estudioAprobado={estudioAprobado}
         estudio={showDetail}
         readOnly={!canManage}
         solicitante={showDetail ? getSolicitanteParaModal(showDetail, solicitante) : solicitante}

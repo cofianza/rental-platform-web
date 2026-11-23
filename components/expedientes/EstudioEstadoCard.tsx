@@ -22,6 +22,7 @@ import { documento } from '@/components/contratos/v3/campos'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 import { estudioService } from '@/services/estudioService'
 import { contratoService } from '@/services/contratoService'
+import { coarrendatarioService, type ICoarrendatario } from '@/services/coarrendatarioService'
 import { formatDate } from '@/lib/constants'
 import {
   ReintentarEstudioForm,
@@ -39,6 +40,27 @@ import { MarcarRestitucionModal } from './MarcarRestitucionModal'
 import { SustitucionesEstudio } from './SustitucionesEstudio'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { useMarcaEstudio } from '@/hooks/useMarcaEstudio'
+import {
+  ROTULO_EN_ESPERA,
+  ROTULO_SIN_EFECTO,
+  SOLICITANTE_ANTERIOR,
+  TEXTO_EN_ESPERA,
+  cierreDelEstudio,
+  comoSePresento,
+  esSalidaDelEstudio,
+  estaEnVerificacion,
+  evaluacionDeOtroSolicitante,
+  insigniaPersona,
+  papelEnElEstudio,
+  personaA5dUsable,
+  noCalificaEnRojo,
+  rotuloCoarrendatario,
+  textoCoarrendatario,
+  textoVerificacionAnalista,
+  titularEstudioTerminado,
+  tonoPersonaA5d,
+  type CierreEstudio,
+} from '@/lib/personaEstudio'
 
 interface EstudioEstadoCardProps {
   expedienteId: string
@@ -85,6 +107,20 @@ interface EstudioEstadoCardProps {
    * decisión del analista sobre el condicionado llega en `decision_cofianza`.
    */
   expedienteEstado?: string
+  /**
+   * En qué quedó el estudio (no aprobable, cerrado después de estarlo, cerrado o en curso), para que lo que se
+   * dice de cada persona no lo contradiga. Sin el dato, se deduce de `expedienteEstado`.
+   */
+  cierre?: CierreEstudio
+  /** Reabierto por un reemplazo (`reapertura_abierta`): espera la evaluación de la persona nueva. */
+  reaperturaAbierta?: boolean
+  /** Con la reapertura: hasta cuándo debe autorizar la persona nueva (ISO, lo manda la API). */
+  venceReapertura?: string | null
+  /**
+   * Un cambio de persona (cargar, cancelar, retirar) mueve el estado del estudio: la página recarga el
+   * expediente para que el encabezado, el banner del rechazo y esta tarjeta digan lo mismo.
+   */
+  onExpedienteCambio?: () => void
 }
 
 // Mapeo estado → label legible. Los estados internos del flujo (pago_pendiente,
@@ -115,13 +151,20 @@ export function etiquetaEstado(estudio: Pick<IEstudio, 'estado' | 'estudio_padre
  * El nombre del resultado de una evaluación: el mismo en esta tarjeta, la
  * pestaña Evaluación y el detalle. La decisión del analista sobre un
  * condicionado llega en `decision_cofianza` (el estudio sigue 'condicionado').
+ *
+ * `cierre`: con el estudio terminado, una evaluación que esperaba revisión o que
+ * pasó no se nombra «En revisión», «Válido» ni «Aprobado» (reporte de Gerencia, punto 4).
  */
-export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con_coarrendatario'): string {
+export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con_coarrendatario', cierre: CierreEstudio = null): string {
+  // Adenda 5: la etiqueta de la persona (su papel en el estudio, o por qué no cuenta) la redacta la API.
+  const persona = personaA5dUsable(e.persona_a5d)
+  if (persona) return persona.etiqueta
   if (e.estado === 'completado') {
     // Adenda 3 V2 §7: el coarrendatario es válido o no califica; nunca «no aprobable».
-    if (esCoarrendatario && e.resultado === 'aprobado') return 'Válido'
-    if (esCoarrendatario && e.resultado === 'rechazado') return 'No califica'
-    if (esCoarrendatario && e.resultado === 'condicionado') return 'En revisión'
+    const coarrendatario = esCoarrendatario ? rotuloCoarrendatario(e.resultado, cierre) : null
+    if (coarrendatario) return coarrendatario
+    const terminado = esCoarrendatario ? null : titularEstudioTerminado(e, cierre)
+    if (terminado) return terminado.rotulo
     // Con el resultado que envía la API, su nombre es el de ella (la web no lo redacta).
     if (!esCoarrendatario && e.desenlace && e.desenlace_texto) return e.desenlace_texto
     if (e.resultado === 'condicionado') {
@@ -141,7 +184,19 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
 }
 
 /** Color de la pastilla: el del resultado efectivo, para que «Aprobado» no salga en ámbar. */
-export function colorEvaluacion(e: IEstudio): string {
+export function colorEvaluacion(e: IEstudio, cierre: CierreEstudio = null, estudioAprobado = false): string {
+  const persona = personaA5dUsable(e.persona_a5d)
+  // Adenda 5: segundo firmante en verde; sin papel en gris, salvo cuando hay que actuar (rojo). Titular: su resultado.
+  const tono = persona ? tonoPersonaA5d(persona, { estudioAprobado, cierre }) : null
+  if (tono === 'exito') return 'aprobado'
+  if (tono === 'alerta') return 'rechazado'
+  if (tono === 'cerrada' || tono === 'neutro') return 'cancelado'
+  if (!persona) {
+    const rotulo = rotuloEvaluacion(e, undefined, cierre)
+    if (rotulo === ROTULO_SIN_EFECTO) return 'cancelado'
+    // «No califica» con el estudio aprobado o cerrado no bloquea nada: gris.
+    if (rotulo === 'No califica' && !noCalificaEnRojo({ estudioAprobado, cierre })) return 'cancelado'
+  }
   if (e.resultado === 'condicionado' && e.decision_cofianza === 'aprobado') return 'aprobado'
   if (e.resultado === 'condicionado' && e.decision_cofianza === 'negado') return 'rechazado'
   return e.resultado !== 'pendiente' ? e.resultado : e.estado
@@ -230,6 +285,8 @@ function getSiguientePaso(
   verCentral = esCofianza,
   /** Puede reenviar o cancelar la invitación del coarrendatario (no Gerencia ni solo lectura). */
   puedeGestionar = false,
+  /** El estudio terminó: ninguna evaluación dice que sigue o que la revisa un analista. */
+  cierre: CierreEstudio = null,
 ): string {
   // Reunión con Gerencia 23-oct: a la inmobiliaria y al propietario no se les
   // dice en qué central se consultó («reserva del sumario»).
@@ -250,13 +307,13 @@ function getSiguientePaso(
       : 'La persona no autorizó dentro del plazo y el enlace venció. No se consultó ninguna central de riesgo.'
   }
 
-  if (estudio.estado === 'completado' && esCoarrendatario) {
-    // Adenda 3 V2 §7: la evaluación del coarrendatario no decide el estudio: suma o no suma.
-    if (estudio.resultado === 'aprobado') return 'El coarrendatario es válido: suma su puntaje y su ingreso. El estudio se decide con los dos.'
-    if (estudio.resultado === 'rechazado') return 'El coarrendatario no califica: no aporta puntos ni ingreso, y el estudio sigue con el titular.'
-    return 'La evaluación del coarrendatario la revisa un analista de Cofianza.'
-  }
+  // Adenda 3 V2 §7, condicionado al estado del estudio (reporte de Gerencia, punto 4).
+  if (estudio.estado === 'completado' && esCoarrendatario) return textoCoarrendatario(estudio.resultado, cierre)
   if (estudio.estado === 'completado') {
+    // Estudio terminado: la evaluación que no lo negó (aprobada o en revisión) ya no lleva al contrato ni
+    // la decide nadie. El resultado que envía la API y la condición del coarrendatario dicen lo suyo.
+    const terminado = titularEstudioTerminado(estudio, cierre)
+    if (terminado) return terminado.texto
     // Flujo §10: cuando la API manda la ruta, se le antepone su etiqueta
     // ("Aprobado automático (87 puntos)"). Cofianza ve el puntaje; la
     // inmobiliaria y el propietario la reciben sin él, y el prospecto sin
@@ -403,7 +460,12 @@ export function EstudioEstadoCard({
   reasignable = true,
   coarrendatarioVigente = true,
   expedienteEstado,
+  cierre: cierreProp,
+  reaperturaAbierta = false,
+  venceReapertura = null,
+  onExpedienteCambio,
 }: EstudioEstadoCardProps) {
+  const cierre = cierreProp !== undefined ? cierreProp : cierreDelEstudio(expedienteEstado)
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
   // Guardamos hasta 2 estudios: el del titular (tipo='individual') y el del
@@ -413,16 +475,20 @@ export function EstudioEstadoCard({
   // titular sobre el score del coarrendatario y se confundian.
   const [estudioTitular, setEstudioTitular] = useState<IEstudio | null>(null)
   const [estudioCoa, setEstudioCoa] = useState<IEstudio | null>(null)
+  /** La evaluación mostrada es de quien ya salió del estudio (la API la marca «Salió del estudio»). */
+  const [coaSalio, setCoaSalio] = useState(false)
   const [tieneContrato, setTieneContrato] = useState(false)
   const [loading, setLoading] = useState(true)
   const [errorCarga, setErrorCarga] = useState(false)
 
   const fetchEstudios = useCallback(async () => {
     try {
-      const [res, contratos] = await Promise.all([
+      const [res, contratos, coaVigente] = await Promise.all([
         estudioService.getEstudiosForExpediente(expedienteId, 1, 10),
         // Los mismos parámetros que ContratoEstadoCard: comparten la petición.
         contratoService.getContratosForExpediente(expedienteId, { limit: 20 }).catch(() => null),
+        // El coarrendatario vigente (la misma petición que su tarjeta). undefined = no se pudo leer.
+        coarrendatarioService.getDelExpediente(expedienteId).catch((): ICoarrendatario | null | undefined => undefined),
       ])
       setTieneContrato(!!contratos?.data.some((c) => c.estado !== 'cancelado'))
       const activos = res.data.filter((e) => e.estado !== 'cancelado')
@@ -436,7 +502,9 @@ export function EstudioEstadoCard({
 
       const titular = masReciente(candidatos.filter((e) => e.tipo !== 'con_coarrendatario'))
       setEstudioTitular(titular)
-      setEstudioCoa(masReciente(candidatos.filter((e) => e.tipo === 'con_coarrendatario')))
+      const coa = elegirEvaluacionCoarrendatario(res.data, candidatos, coaVigente)
+      setEstudioCoa(coa.estudio)
+      setCoaSalio(coa.salio)
       setErrorCarga(false)
     } catch {
       // Se conserva lo último cargado: vaciarlo borraba la evaluación del
@@ -481,7 +549,11 @@ export function EstudioEstadoCard({
     )
   }
 
-  const titularSolicitante = solicitante ?? null
+  // Reporte de Gerencia, punto 11: la evaluación de quien ya fue reemplazado no lleva el nombre del solicitante actual.
+  const titularSolicitante =
+    estudioTitular && evaluacionDeOtroSolicitante(estudioTitular.datos_formulario, solicitante?.numero_documento, personaA5dUsable(estudioTitular.persona_a5d))
+      ? { nombre: SOLICITANTE_ANTERIOR, apellido: '' }
+      : (solicitante ?? null)
   const coaSolicitante = estudioCoa ? getCoarrendatarioFromEstudio(estudioCoa) : null
 
   return (
@@ -492,11 +564,15 @@ export function EstudioEstadoCard({
           etiqueta="Titular"
           persona={titularSolicitante}
           segundoFirmante={
-            estudioCoa?.estado === 'completado' && coaSolicitante ? `${coaSolicitante.nombre} ${coaSolicitante.apellido ?? ''}`.trim() : null
+            estudioCoa?.estado === 'completado' && !coaSalio && coaSolicitante ? `${coaSolicitante.nombre} ${coaSolicitante.apellido ?? ''}`.trim() : null
           }
           tieneContrato={tieneContrato}
           expedienteId={expedienteId}
           expedienteEstado={expedienteEstado}
+          cierre={cierre}
+          reaperturaAbierta={reaperturaAbierta}
+          venceReapertura={venceReapertura}
+          onExpedienteCambio={onExpedienteCambio}
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
@@ -517,8 +593,10 @@ export function EstudioEstadoCard({
           onVerEstudios={onVerEstudios}
           userRol={userRol}
           onRetried={fetchEstudios}
-          sinReintento={!coarrendatarioVigente}
+          // Quien ya salió del estudio no se vuelve a consultar.
+          sinReintento={!coarrendatarioVigente || coaSalio}
           expedienteEstado={expedienteEstado}
+          cierre={cierre}
           // La reasignacion NO se ofrece desde el panel del coarrendatario: lo
           // que se mueve es el INMUEBLE DEL EXPEDIENTE, que es uno solo y ya
           // arrastra los dos estudios. Dos botones para el mismo traslado solo
@@ -557,6 +635,22 @@ interface EstudioPanelProps {
   /** Solo titular: ya hay contrato (o el estudio se cerró): no se dice «generar contrato». */
   tieneContrato?: boolean
   expedienteEstado?: string
+  cierre?: CierreEstudio
+  /** Solo titular: el estudio se reabrió por un reemplazo y espera a la persona nueva. */
+  reaperturaAbierta?: boolean
+  venceReapertura?: string | null
+  /** Solo titular: tras un cambio de persona, la página recarga el expediente. */
+  onExpedienteCambio?: () => void
+}
+
+/** La insignia de la persona con el color del tono de la tarjeta. */
+const INSIGNIA_TONO: Record<string, string> = {
+  success: 'border-primary-300 text-primary-900',
+  warning: 'border-amber-300 text-amber-900',
+  danger: 'border-red-300 text-red-800',
+  progress: 'border-gray-300 text-gray-700',
+  pending: 'border-gray-300 text-gray-700',
+  muted: 'border-gray-300 text-gray-700',
 }
 
 function EstudioPanel({
@@ -575,6 +669,10 @@ function EstudioPanel({
   sinReintento,
   tieneContrato = false,
   expedienteEstado,
+  cierre = null,
+  reaperturaAbierta = false,
+  venceReapertura = null,
+  onExpedienteCambio,
 }: EstudioPanelProps) {
   const [reasignarAbierto, setReasignarAbierto] = useState(false)
   const [marcaAbierta, setMarcaAbierta] = useState(false)
@@ -614,17 +712,35 @@ function EstudioPanel({
     esGestor && onReasignado != null && estudio.estado === 'completado' && !estudio.condicion_coarrendatario
   const esCofianza = userRol === 'administrador' || userRol === 'operador_analista' || userRol === 'gerencia_consulta'
 
+  const esCoarrendatario = etiqueta === 'Coarrendatario'
+  // Adenda 5: el papel de la persona en el estudio, su etiqueta y su texto los redacta la API.
+  const personaA5d = personaA5dUsable(estudio.persona_a5d)
   // La decisión del analista sobre el condicionado del titular (como rotuloEvaluacion).
   const decisionAnalista =
     etiqueta === 'Titular' && estudio.estado === 'completado' && estudio.resultado === 'condicionado'
       ? estudio.decision_cofianza
       : null
-  const tone = decisionAnalista === 'aprobado'
-      ? 'success'
-      : decisionAnalista === 'negado'
-        ? 'danger'
-        : getTone(estudio)
-  const rotulo = rotuloEvaluacion(estudio, etiqueta === 'Coarrendatario')
+  // Sin persona_a5d, el estudio reabierto por un reemplazo: la evaluación del titular espera a la persona nueva.
+  const reabierto = reaperturaAbierta && etiqueta === 'Titular' && !personaA5d && estudio.estado === 'completado'
+  const rotulo = reabierto ? ROTULO_EN_ESPERA : rotuloEvaluacion(estudio, esCoarrendatario, cierre)
+  // Adenda 5: segundo firmante en verde; sin papel en gris, salvo «No pasó» y «No califica» (rojo).
+  const contextoTono = { estudioAprobado: expedienteEstado === 'aprobado', cierre }
+  const tonoA5d = personaA5d ? tonoPersonaA5d(personaA5d, contextoTono) : null
+  const tone = tonoA5d === 'exito'
+    ? 'success'
+    : tonoA5d === 'alerta'
+      ? 'danger'
+      : tonoA5d === 'cerrada'
+        ? 'muted'
+        : tonoA5d === 'neutro' || reabierto
+          ? 'progress'
+          : !personaA5d && (rotulo === ROTULO_SIN_EFECTO || (rotulo === 'No califica' && !noCalificaEnRojo(contextoTono)))
+            ? 'muted'
+            : decisionAnalista === 'aprobado'
+              ? 'success'
+              : decisionAnalista === 'negado'
+                ? 'danger'
+                : getTone(estudio)
 
   // No aprobable o fallida: una X, no el visto de las aprobadas.
   // En revisión, en espera o consultando: un reloj; el visto solo para lo aprobado.
@@ -634,13 +750,22 @@ function EstudioPanel({
       ? <IconCheck size={18} />
       : <IconClock size={18} />
 
-  const siguientePasoBase = sinReintento && estudio.estado === 'fallido'
-      ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
-      : getSiguientePaso(estudio, userRol === 'administrador' || userRol === 'operador_analista', etiqueta === 'Coarrendatario', esRolInterno(userRol), esGestor)
+  const esAnalista = userRol === 'administrador' || userRol === 'operador_analista'
+  // La persona «En verificación»: al analista se le dice qué hacer, no el texto para quien gestiona.
+  const verificaAnalista = esAnalista && estaEnVerificacion(personaA5d)
+  const siguientePasoBase = verificaAnalista
+    ? textoVerificacionAnalista(estudio.listas?.estado)
+    : personaA5d
+      ? personaA5d.texto
+      : reabierto
+        ? TEXTO_EN_ESPERA
+        : sinReintento && estudio.estado === 'fallido'
+          ? 'La consulta falló y el estudio ya se resolvió: esta evaluación ya no se reintenta.'
+          : getSiguientePaso(estudio, esAnalista, esCoarrendatario, esRolInterno(userRol), esGestor, cierre)
   // Estudio sin propiedad: antes del contrato va la vinculación del inmueble.
-  // Con contrato o con el estudio cerrado ya no es el siguiente paso.
+  // Con contrato, con el estudio cerrado o no aprobable ya no es el siguiente paso.
   const siguientePaso =
-    tieneContrato || expedienteEstado === 'cerrado'
+    tieneContrato || expedienteEstado === 'cerrado' || cierre !== null
       ? siguientePasoBase.replace(' Siguiente paso: crear el contrato.', '')
       : destinacion && !inmuebleActualId
         ? siguientePasoBase.replace('Siguiente paso: crear el contrato.', 'Siguiente paso: vincular el inmueble.')
@@ -650,8 +775,12 @@ function EstudioPanel({
   const interno = esRolInterno(userRol)
   const visible = (t: string | null | undefined) => textoVisible(t, { externo: !interno })
   const nombreCompleto = persona ? `${persona.nombre} ${persona.apellido ?? ''}`.trim() : ''
+  // Adenda 5: «{Nombre} · Titular del estudio»; la insignia solo si la etiqueta dice algo más que el papel.
+  const papel = personaA5d ? papelEnElEstudio(personaA5d) : null
+  const insignia = personaA5d ? insigniaPersona(personaA5d) : null
+  const sePresento = personaA5d ? comoSePresento(personaA5d, esCoarrendatario) : null
   const mostrarPorQueRevision =
-    (rotulo === 'En revisión de Cofianza' || rotulo === 'En revisión') && !!visible(estudio.observaciones)
+    (rotulo === 'En revisión de Cofianza' || rotulo === 'En revisión' || estaEnVerificacion(personaA5d)) && !!visible(estudio.observaciones)
   const mostrarFallo = estudio.estado === 'fallido' && !!visible(estudio.observaciones)
 
   return (
@@ -660,15 +789,28 @@ function EstudioPanel({
       icono={iconNode}
       titulo={
         <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
-          <span>
-            {etiqueta === 'Coarrendatario' ? 'Evaluación del coarrendatario' : 'Evaluación crediticia del titular'}: {rotulo}
-          </span>
+          {personaA5d ? (
+            <>
+              <span className="min-w-0 break-words">
+                {nombreCompleto || 'Persona evaluada'}
+                {papel && ` · ${papel}`}
+              </span>
+              {insignia && (
+                <span className={cn('rounded-full border bg-white px-2 py-0.5 text-xs font-medium', INSIGNIA_TONO[tone])}>{insignia}</span>
+              )}
+            </>
+          ) : (
+            <span>
+              {esCoarrendatario ? 'Evaluación del coarrendatario' : 'Evaluación crediticia del titular'}: {rotulo}
+            </span>
+          )}
           <InfoTip texto={AYUDA.evaluacion} lado="derecha" />
           {estudio.expiracion?.expirado && (
             <span className="rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">
               {estudio.expiracion.detenida ? 'Enlace detenido' : 'Expirado'}
             </span>
           )}
+          {sePresento && <span className="basis-full text-xs font-normal text-gray-600">{sePresento}</span>}
         </span>
       }
       descripcion={
@@ -699,6 +841,12 @@ function EstudioPanel({
       {/* Los datos de la evaluación, en pares etiqueta-valor */}
       <div className="px-4 py-4 sm:px-5">
         <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+          {/* Adenda 5: la insignia es de la persona; el resultado del estudio sigue a la vista. */}
+          {/* Reabierto, «Se decide de nuevo…» ya lo dicen la franja y el texto de la persona: no una tercera vez. */}
+          {personaA5d && estudio.desenlace && estudio.desenlace_texto && !reaperturaAbierta &&
+            estudio.desenlace_texto.trim() !== personaA5d.texto.trim() && (
+            <Dato etiqueta="Resultado del estudio">{estudio.desenlace_texto}</Dato>
+          )}
           {persona && (
             <Dato etiqueta="Persona evaluada">
               {nombreCompleto}
@@ -853,7 +1001,13 @@ function EstudioPanel({
           expedienteId={expedienteId}
           activo={!!estudio.desenlace && estudio.estado === 'completado'}
           puedeEditar={puedeEditar}
-          onCambio={onRetried}
+          onCambio={() => {
+            onRetried?.()
+            onExpedienteCambio?.()
+          }}
+          estudioRechazado={cierre === 'no_aprobable'}
+          reaperturaAbierta={reaperturaAbierta}
+          venceReapertura={venceReapertura}
         />
       )}
 
@@ -915,6 +1069,29 @@ function Dato({ etiqueta, children, className }: { etiqueta: ReactNode; children
 }
 
 const primeraMayuscula = (t: string) => t.charAt(0).toUpperCase() + t.slice(1)
+
+/**
+ * La evaluación del coarrendatario que va en la tarjeta: la del VIGENTE (el
+ * `estudio_id` de GET /expedientes/:id/coarrendatario, que ya excluye a quien
+ * salió o declinó), no la última. Sin vigente evaluado, solo la que la API marca
+ * «Salió del estudio» (y se muestra como tal); nunca la de quien salió como si
+ * fuera el coarrendatario actual. Sin poder leer el vigente, la más reciente,
+ * como antes.
+ */
+function elegirEvaluacionCoarrendatario(
+  todas: IEstudio[],
+  candidatos: IEstudio[],
+  vigente: ICoarrendatario | null | undefined,
+): { estudio: IEstudio | null; salio: boolean } {
+  const masReciente = (lista: IEstudio[]) =>
+    lista.slice().sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0] ?? null
+  const delCoa = (e: IEstudio) => e.tipo === 'con_coarrendatario'
+  if (vigente === undefined) return { estudio: masReciente(candidatos.filter(delCoa)), salio: false }
+  const delVigente = vigente?.estudio_id ? todas.find((e) => delCoa(e) && e.id === vigente.estudio_id) ?? null : null
+  if (delVigente) return { estudio: delVigente, salio: false }
+  const salida = masReciente(todas.filter((e) => delCoa(e) && esSalidaDelEstudio(personaA5dUsable(e.persona_a5d))))
+  return { estudio: salida, salio: !!salida }
+}
 
 /**
  * Para estudios tipo='con_coarrendatario' los datos de la persona evaluada

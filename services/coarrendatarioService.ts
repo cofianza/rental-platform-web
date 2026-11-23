@@ -5,6 +5,7 @@
  */
 
 import type { IBeneficioPrima } from '@/lib/textosPrima'
+import type { IPersonaA5d } from '@/types/estudio'
 import { apiClient } from '@/lib/api'
 import { coalesceRequest } from '@/lib/requestCoalesce'
 
@@ -23,6 +24,8 @@ export interface ICoarrendatarioEstudio {
   score: number | null
   observaciones: string | null
   fecha_completado: string | null
+  /** Adenda 5: el papel de la persona en el estudio, con su etiqueta y su texto (lo redacta la API). Ausente = como antes. */
+  persona_a5d?: IPersonaA5d | null
 }
 
 export interface ICoarrendatario {

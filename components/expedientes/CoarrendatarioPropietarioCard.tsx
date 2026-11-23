@@ -27,7 +27,17 @@ import { coarrendatarioService, type ICoarrendatario, type IVentanaCoarrendatari
 import { estudioService } from '@/services/estudioService'
 import { EstudioDetailModal } from './EstudioDetailModal'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
-import { textoCoarrendatarioFuera } from '@/lib/textosPrima'
+import { cn } from '@/lib/utils'
+import {
+  TEXTO_ENLACE_VENCIDO_REAPERTURA,
+  cierreDelEstudio,
+  comoSePresento,
+  insigniaPersona,
+  papelEnElEstudio,
+  personaA5dUsable,
+  tonoPersonaA5d,
+  type CierreEstudio,
+} from '@/lib/personaEstudio'
 import { CoarrendatarioReenviarInvitacion } from './CoarrendatarioReenviarInvitacion'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import type { IEstudio } from '@/types/estudio'
@@ -53,10 +63,27 @@ interface CoarrendatarioPropietarioCardProps {
   conCondicion?: boolean
   /** El estudio espera un segundo firmante («aprobado con segundo firmante» o la condición de coarrendatario). */
   pideSegundoFirmante?: boolean
+  /** En qué quedó el estudio (para el detalle de la evaluación). Sin el dato, se deduce de `expedienteEstado`. */
+  cierre?: CierreEstudio
+  /**
+   * El estudio no aprobable se reabrió por el cambio de persona (`reapertura_abierta`): cancelar la invitación o
+   * dejar vencer el enlace cierra el cambio y lo devuelve a no aprobable.
+   */
+  reaperturaAbierta?: boolean
+  /** Tras cancelar la invitación con la reapertura abierta, el estudio cambia: la página recarga el expediente. */
+  onExpedienteCambio?: () => void
 }
 
 /** Antes de que se decida al titular (Adenda 3 V2 §6.1). */
 const PREVIOS_A_LA_DECISION = ['borrador', 'en_revision', 'informacion_incompleta']
+
+/** La insignia de la persona con el color del tono de la tarjeta. */
+const INSIGNIA_TONO: Record<TonoPaso, string> = {
+  accion: 'border-primary-300 text-primary-900',
+  revision: 'border-amber-300 text-amber-900',
+  alerta: 'border-red-300 text-red-800',
+  neutro: 'border-gray-300 text-gray-700',
+}
 
 const TIPO_DOC_LABEL: Record<string, string> = {
   cc: 'CC',
@@ -75,7 +102,11 @@ export function CoarrendatarioPropietarioCard({
   onEstudioCompletado,
   conCondicion = false,
   pideSegundoFirmante = false,
+  cierre: cierreProp,
+  reaperturaAbierta = false,
+  onExpedienteCambio,
 }: CoarrendatarioPropietarioCardProps) {
+  const cierre = cierreProp !== undefined ? cierreProp : cierreDelEstudio(expedienteEstado)
   // Refresco en sitio cuando el detalle del estudio recarga.
   const version = useRefrescoExpediente()
   const [coa, setCoa] = useState<ICoarrendatario | null>(null)
@@ -252,34 +283,56 @@ export function CoarrendatarioPropietarioCard({
   // ('completado'), sin depender de que el campo coa.estado haya ganado la
   // carrera contra la transición del expediente.
   const estudioTerminado = coa.estudio && coa.estudio.estado === 'completado' ? coa.estudio : null
-  const estado = estadoInvitacion(coa, !vigente, antesDeLaDecision)
-  const resultado = estudioTerminado ? resultadoEvaluacion(estudioTerminado) : null
+  // Adenda 5: el papel de la persona en el estudio, su etiqueta y su texto (lo redacta la API), como el panel
+  // de la evaluación. Sin él (reporte de Gerencia, punto 4), esta tarjeta no repite un resultado que pueda
+  // contradecir a ese panel: solo dice en qué va la invitación.
+  const personaA5d = estudioTerminado ? personaA5dUsable(estudioTerminado.persona_a5d) : null
+  const estado = estadoInvitacion(estudioTerminado ? { ...coa, estado: 'estudio_completado' } : coa, !vigente, antesDeLaDecision, reaperturaAbierta)
+  const tonoA5d = personaA5d ? tonoPersonaA5d(personaA5d, { estudioAprobado: expedienteEstado === 'aprobado', cierre }) : null
+  // Reapertura con el enlace vencido: el cambio se cerró; reenviar ya no sirve.
+  const reenviable = !(reaperturaAbierta && invitacionVencida(coa))
+  const tono: TonoPaso = !personaA5d
+    ? estado.tono
+    : tonoA5d === 'exito'
+      ? 'accion'
+      : tonoA5d === 'alerta'
+        ? 'alerta'
+        : tonoA5d
+          ? 'neutro'
+          : estudioTerminado?.resultado === 'aprobado'
+            ? 'accion'
+            : estudioTerminado?.resultado === 'condicionado'
+              ? 'revision'
+              : 'neutro'
+  const papel = personaA5d ? papelEnElEstudio(personaA5d) : null
+  const insignia = personaA5d ? insigniaPersona(personaA5d) : null
+  const sePresento = personaA5d ? comoSePresento(personaA5d, true) : null
   const externo = !esRolInterno(userRol)
 
   return (
     <>
       <TarjetaSiguientePaso
-        tono={resultado ? resultado.tono : estado.tono}
+        tono={tono}
         icono={<IconUsers size={18} />}
         titulo={
-          <span className="inline-flex flex-wrap items-center gap-x-1.5">
-            <span>Coarrendatario: {resultado ? resultado.label : estado.label}</span>
-            <InfoTip texto={AYUDA.coarrendatario} lado="derecha" />
-          </span>
-        }
-        descripcion={
-          resultado ? (
-            <p>
-              {resultado.resultado === 'rechazado'
-                ? textoCoarrendatarioFuera(ventana?.beneficio_prima, !!resultado.noCalifica)
-                : resultado.resultado === 'condicionado'
-                  ? 'Cofianza está revisando la evaluación del coarrendatario.'
-                  : 'La evaluación del coarrendatario terminó.'}
-            </p>
+          personaA5d ? (
+            <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+              <span className="min-w-0 break-words">
+                {`${coa.nombre} ${coa.apellido}`.trim() || 'Coarrendatario'}
+                {papel && ` · ${papel}`}
+              </span>
+              {insignia && <span className={cn('rounded-full border bg-white px-2 py-0.5 text-xs font-medium', INSIGNIA_TONO[tono])}>{insignia}</span>}
+              <InfoTip texto={AYUDA.coarrendatario} lado="derecha" />
+              {sePresento && <span className="basis-full text-xs font-normal text-gray-600">{sePresento}</span>}
+            </span>
           ) : (
-            <p>{estado.mensaje}</p>
+            <span className="inline-flex flex-wrap items-center gap-x-1.5">
+              <span>Coarrendatario: {estado.label}</span>
+              <InfoTip texto={AYUDA.coarrendatario} lado="derecha" />
+            </span>
           )
         }
+        descripcion={<p>{personaA5d ? personaA5d.texto : estado.mensaje}</p>}
       >
         {/* Canal del propietario directo con un coarrendatario todavía en curso: la invitación ya no se puede
             aceptar y su evaluación no entra al contrato. Se dice por qué. */}
@@ -302,8 +355,9 @@ export function CoarrendatarioPropietarioCard({
           </dl>
         </div>
 
-        {/* Resultado de la evaluación: puntaje, fecha, observaciones y el detalle. */}
-        {estudioTerminado && resultado && (
+        {/* Resultado de la evaluación: puntaje, fecha, observaciones y el detalle. Solo con el estado de la persona
+            que manda la API: sin él, el resultado lo dice el panel de la evaluación (un solo lugar). */}
+        {estudioTerminado && personaA5d && (
           <SeccionPaso titulo="Resultado de la evaluación">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 space-y-1">
@@ -337,13 +391,18 @@ export function CoarrendatarioPropietarioCard({
         {/* Invitación pendiente: corregir y reenviar, o cancelar para invitar a
             otra persona (P4). Con la ventana cerrada ya no rige (P3). El key
             remonta el form cuando los datos guardados cambian. */}
-        {coa.estado === 'pendiente_aceptacion' && puedeEditar && vigente && (
+        {coa.estado === 'pendiente_aceptacion' && puedeEditar && vigente && reenviable && (
           <div className="px-4 py-4 sm:px-5">
             <CoarrendatarioReenviarInvitacion
               key={coa.updated_at}
               expedienteId={expedienteId}
               coa={coa}
-              onCambio={fetchCoa}
+              reaperturaAbierta={reaperturaAbierta}
+              onCambio={() => {
+                void fetchCoa()
+                // Cancelada con la reapertura abierta, el estudio vuelve a no aprobable: encabezado y banner también.
+                if (reaperturaAbierta) onExpedienteCambio?.()
+              }}
               embebido
             />
           </div>
@@ -355,6 +414,8 @@ export function CoarrendatarioPropietarioCard({
         onClose={() => setShowDetail(false)}
         estudio={estudioFull}
         readOnly={userRol === 'propietario' || userRol === 'inmobiliaria'}
+        cierre={cierre}
+        estudioAprobado={expedienteEstado === 'aprobado'}
         solicitante={{
           nombre: coa.nombre,
           apellido: coa.apellido,
@@ -382,6 +443,8 @@ function estadoInvitacion(
   coa: ICoarrendatario,
   sinEfecto: boolean,
   antesDeLaDecision: boolean,
+  /** Estudio reabierto por este cambio de persona (punto 5 del reporte). */
+  reapertura = false,
 ): { tono: TonoPaso; label: string; mensaje: string } {
   const fallida = coa.estudio?.estado === 'fallido'
   const fallo = coa.estudio ? tipoFallo(coa.estudio) : 'tecnico'
@@ -397,7 +460,9 @@ function estadoInvitacion(
       ? {
           tono: 'revision',
           label: 'Invitación vencida',
-          mensaje: `Venció el ${formatFecha(coa.token_expiracion)} sin respuesta y el enlace ya no sirve. Reenvíela para que le llegue uno nuevo.`,
+          mensaje: reapertura
+            ? TEXTO_ENLACE_VENCIDO_REAPERTURA
+            : `Venció el ${formatFecha(coa.token_expiracion)} sin respuesta y el enlace ya no sirve. Reenvíela para que le llegue uno nuevo.`,
         }
       : {
           tono: 'neutro',
@@ -444,33 +509,14 @@ function estadoInvitacion(
     estudio_completado: {
       tono: 'neutro',
       label: 'Evaluación completada',
-      mensaje: 'La evaluación del coarrendatario terminó. Ver resultado abajo.',
+      // El resultado va en un solo lugar (punto 4 del reporte): el panel de la evaluación del Resumen.
+      mensaje: 'La evaluación del coarrendatario terminó. Su resultado está en la evaluación crediticia del estudio.',
     },
   }
   return cfg[coa.estado]
 }
 
 /** Cómo salió su evaluación, con las palabras de la Adenda 3 V2 §7: válido, en revisión o no califica. */
-function resultadoEvaluacion(estudio: NonNullable<ICoarrendatario['estudio']>): {
-  tono: TonoPaso
-  label: string
-  resultado: string
-  noCalifica: boolean
-} {
-  const cfg: Record<string, { tono: TonoPaso; label: string }> = {
-    aprobado: { tono: 'accion', label: 'Válido' },
-    condicionado: { tono: 'revision', label: 'En revisión' },
-    rechazado: { tono: 'alerta', label: 'No califica' },
-    pendiente: { tono: 'neutro', label: 'Pendiente' },
-  }
-  const resultado = estudio.resultado || 'pendiente'
-  // Adenda 3 V2 §7: un coarrendatario que no cuenta «no califica»; nunca
-  // «rechazado» ni «no aprobable». No tumba el estudio: sigue con el titular.
-  const noCalifica = resultado === 'rechazado' && /no califica como coarrendatario/i.test(estudio.observaciones ?? '')
-  const c = noCalifica ? { tono: 'neutro' as TonoPaso, label: 'No califica' } : (cfg[resultado] ?? cfg.pendiente)
-  return { ...c, resultado, noCalifica }
-}
-
 /** El enlace de la invitación expira (7 días); reenviarla renueva la fecha. */
 /** Invitación viva o evaluación sin terminar. */
 function coarrendatarioEnCurso(coa: ICoarrendatario): boolean {

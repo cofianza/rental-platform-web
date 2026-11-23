@@ -67,6 +67,8 @@ const ORDEN: Record<EtapaEstudio, Orden> = {
   finalizado: { ahora: ['contratoEstado'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   no_aprobado: { ahora: [], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   cancelado: { ahora: [], detalle: ['evaluacion', 'contratoEstado'], ...DESPUES_DEL_RESULTADO },
+  // Reabierto por un reemplazo: la persona nueva (su invitación) y el cambio en curso de «Personas del estudio».
+  reapertura: { ahora: ['evaluacion', 'coarrendatario'], detalle: [], historial: ['autorizacion', 'pago', 'visita'] },
 }
 
 interface Props {

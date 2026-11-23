@@ -212,3 +212,21 @@ test('punto 7: vencimiento del resultado en días de Colombia', async () => {
   assert.equal(vigenciaResultado('vencido', { vencioEn: '2026-11-20T15:00:00Z', sinMargen: true, ahoraMs })?.texto, 'Vencido')
   assert.equal(v('2026-11-30T15:00:00Z')?.titulo, 'El resultado sirve hasta el 30 de noviembre de 2026')
 })
+
+test('estudio reabierto por un reemplazo: espera a la persona nueva, nunca «No aprobable» ni «En evaluación»', async () => {
+  const { ETAPA_LABEL } = await import('./etapaEstudio')
+  const reabierto = { ...base, estado: 'en_revision' as DatosEtapa['estado'], titularEstado: 'completado', reaperturaAbierta: true }
+  assert.equal(calcularEtapa(reabierto), 'reapertura')
+  // Aunque una lectura llegue con el estado anterior todavía.
+  assert.equal(calcularEtapa({ ...reabierto, estado: 'rechazado' }), 'reapertura')
+  // Sin la marca, lo de siempre (el titular ya consultado: «En evaluación»).
+  assert.equal(calcularEtapa({ ...reabierto, reaperturaAbierta: false }), 'consulta')
+  // Cerrado manda.
+  assert.equal(calcularEtapa({ ...reabierto, estado: 'cerrado' }), 'finalizado')
+  assert.equal(ETAPA_LABEL.reapertura, 'Esperando al nuevo segundo firmante')
+  assert.equal(turnoDeEtapa('reapertura', false), 'prospecto')
+  const texto = 'El estudio se decide de nuevo cuando la persona nueva acepte, autorice y termine su evaluación.'
+  for (const vista of ['gestor', 'cofianza', 'equipo'] as const) {
+    assert.equal(queSigue('reapertura', { vista, analista: vista === 'cofianza', fechaCondicion: null, esperaHasta: null, sinInmueble: false }), texto)
+  }
+})

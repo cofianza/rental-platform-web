@@ -66,6 +66,7 @@ const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
   autorizacion: 'gris',
   pago_prospecto: 'gris',
   espera_coarrendatario: 'gris',
+  reapertura: 'gris',
 }
 
 const BOGOTA = 'America/Bogota'
@@ -203,6 +204,8 @@ export function datosEstadoFila(
     !!turno &&
     (interno || ev?.estado_bloqueo !== 'identidad_rechazada') &&
     etapa !== 'espera_coarrendatario' &&
+    // Reabierto por un reemplazo: la etapa ya dice a quién se espera (nunca «Cofianza procesando»).
+    etapa !== 'reapertura' &&
     !(revision && vista !== 'cofianza')
 
   return {

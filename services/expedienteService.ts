@@ -659,14 +659,15 @@ class ExpedienteService {
     },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
   ): Promise<{
-    expediente: { id: string; numero: string; estado: 'aprobado' }
+    /** 'condicionado': verificado el segundo firmante, el estudio queda aprobado con segundo firmante (falta otro válido). */
+    expediente: { id: string; numero: string; estado: 'aprobado' | 'condicionado' }
     contrato_id: string | null
     puntaje_revision_manual?: IPuntajeRevisionManual | null
   }> {
     // Sin datosContrato: solo aprueba (transición a 'aprobado'); el contrato se
     // genera luego desde la pestaña Contratos con el formulario completo.
     const response = await apiClient.post<{
-      expediente: { id: string; numero: string; estado: 'aprobado' }
+      expediente: { id: string; numero: string; estado: 'aprobado' | 'condicionado' }
       contrato_id: string | null
       puntaje_revision_manual?: IPuntajeRevisionManual | null
     }>(`/expedientes/${expedienteId}/aprobar-condicionado`, { ...revision, ...(datosContrato ?? {}) })

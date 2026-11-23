@@ -10,6 +10,8 @@ const CONTRATO_FIRMADO = ['firmado', 'vigente', 'finalizado']
 const CONSULTA = ['en_proceso', 'completado', 'pagado', 'formulario_completado', 'documentos_cargados']
 
 export function etapaDeFila(e: IExpediente): EtapaEstudio {
+  // Reabierto por un reemplazo (como calcularEtapa): espera a la persona nueva.
+  if (e.reapertura_abierta && e.estado !== 'cerrado') return 'reapertura'
   if (e.estado === 'rechazado') return 'no_aprobado'
   if (e.estado === 'cerrado') {
     if (e.estado_pre_cancelacion === 'rechazado') return 'no_aprobado'

@@ -28,13 +28,3 @@ export function textoEvaluacionTerminadaSobreAprobado(b: BeneficioPrima): string
     ? 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado.'
     : 'La evaluación de su coarrendatario terminó y su estudio sigue aprobado. Le contamos por correo si quedó vinculado y qué prima paga.'
 }
-
-/** Al gestor: el coarrendatario evaluado no entra al contrato. */
-export function textoCoarrendatarioFuera(b: BeneficioPrima, noCalifica: boolean): string {
-  const fuera = b === null ? 'No entra al contrato ni al certificado.' : 'No entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'
-  return noCalifica
-    ? `No aporta puntos ni ingreso, y el estudio sigue con el titular. ${fuera}`
-    : b === null
-      ? 'Con este resultado no entra al contrato ni al certificado.'
-      : 'Con este resultado no entra al contrato ni al certificado: la prima es la de firma sin coarrendatario.'
-}

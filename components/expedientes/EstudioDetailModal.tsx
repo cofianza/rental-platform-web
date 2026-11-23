@@ -31,6 +31,7 @@ import { formatCurrency, formatDateTime, TIPOS_DOCUMENTO } from '@/lib/constants
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { motivoCoarrendatario, textoVisible, esRolInterno, centralDefinida } from './textoVisible'
 import { colorEvaluacion, rotuloEvaluacion } from './EstudioEstadoCard'
+import { rolDeclarado, type CierreEstudio } from '@/lib/personaEstudio'
 
 interface EstudioDetailModalProps {
   isOpen: boolean
@@ -57,17 +58,16 @@ interface EstudioDetailModalProps {
    * reevaluación creada): el banner del rechazo de la página ya no la refleja.
    */
   onApelacionCambiada?: () => void
+  /** En qué quedó el estudio: con él terminado, una evaluación que esperaba revisión o que pasó no se nombra «En revisión» ni «Válido». */
+  cierre?: CierreEstudio
+  /** El estudio está aprobado: quien no califica no lo bloquea (gris, no rojo). */
+  estudioAprobado?: boolean
 }
 
 const PROVEEDOR_LABELS: Record<string, string> = {
   transunion: 'TransUnion',
   sifin: 'SIFIN',
   datacredito: 'DataCrédito',
-}
-
-const TIPO_LABELS: Record<string, string> = {
-  individual: 'Titular',
-  con_coarrendatario: 'Coarrendatario',
 }
 
 const PAGO_LABELS: Record<string, string> = {
@@ -116,7 +116,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 // Main modal
 // ============================================
 
-export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly: readOnlyProp = false, solicitante, irAReevaluacion = false, onApelacionCambiada }: EstudioDetailModalProps) {
+export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, readOnly: readOnlyProp = false, solicitante, irAReevaluacion = false, onApelacionCambiada, cierre = null, estudioAprobado = false }: EstudioDetailModalProps) {
   const [loadingCert, setLoadingCert] = useState(false)
   const rol = useUsuarioVista()?.rol
   // Texto de la API: sin citas a documentos, y sin datos internos del modelo para quien no es de Cofianza.
@@ -346,7 +346,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
         <div>
           <h3 className="sr-only">Resultado</h3>
           <div className="flex flex-col items-center gap-2 py-2">
-            <Badge estado={colorEvaluacion(estudio)} label={rotuloEvaluacion(estudio)} />
+            <Badge estado={colorEvaluacion(estudio, cierre, estudioAprobado)} label={rotuloEvaluacion(estudio, undefined, cierre)} />
             {/* La API la manda sin puntaje a los externos. Como en el Resumen: solo
                 con resultado y en el titular (sin resultado la ruta dice «En revisión manual»). */}
             {estudio.estado === 'completado' && estudio.tipo !== 'con_coarrendatario' && estudio.ruta?.etiquetaGestor && (
@@ -569,7 +569,8 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                     )}
                   </>
                 )}
-                <DetailRow label="Evaluación de" value={TIPO_LABELS[estudio.tipo] || estudio.tipo} />
+                {/* Cómo se presentó (el mismo nombre que la pestaña Evaluación); el papel en el estudio lo dice la pastilla. */}
+                <DetailRow label="Evaluación de" value={rolDeclarado(estudio.tipo === 'con_coarrendatario')} />
                 {/* Reunión con Gerencia 23-oct: la central consultada es reserva de Cofianza. */}
                 {!externo && centralDefinida(estudio) && <DetailRow label="Proveedor" value={PROVEEDOR_LABELS[estudio.proveedor] || estudio.proveedor} />}
                 {estudio.duracion_contrato_meses != null && estudio.duracion_contrato_meses > 0 && (

@@ -67,6 +67,7 @@ import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudio
 import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
 import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
 import { ACCION_GESTOR, revisionDemorada } from '@/lib/etapaFila'
+import { cierreDelEstudio } from '@/lib/personaEstudio'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import {
@@ -614,7 +615,9 @@ function ExpedienteDetalleContenido() {
             ? ETAPA_LABEL[etapa]
             : undefined
   // En la espera, la franja ya dice que falta el coarrendatario: «Esperando al prospecto» la contradecía.
-  const turnoBase = etapaTurno && etapaTurno !== 'espera_coarrendatario' ? turnoDeEtapa(etapaTurno, !!condicionCoa) : null
+  // Reabierto por un reemplazo, igual: la franja ya dice que se espera a la persona nueva.
+  const turnoBase =
+    etapaTurno && etapaTurno !== 'espera_coarrendatario' && etapaTurno !== 'reapertura' ? turnoDeEtapa(etapaTurno, !!condicionCoa) : null
   // La lista no le pone turno a la visita (como el RPC), pero a la inmobiliaria y al
   // propietario sí les toca: agendarla o marcarla como hecha. Sin esto la franja no decía de quién era.
   const turno = turnoBase ?? (!isInternalRole && etapaTurno === 'visita' ? 'gestor' : null)
@@ -993,6 +996,7 @@ function ExpedienteDetalleContenido() {
                 motivo={textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) })}
                 esProspecto={user?.rol === 'solicitante'}
                 apelacion={apelacionTitular}
+                interno={esRolInterno(user?.rol)}
                 onReevaluar={
                   user?.rol === 'administrador' || user?.rol === 'operador_analista'
                     ? () => {
@@ -1172,6 +1176,7 @@ function ExpedienteDetalleContenido() {
                         motivoRevision={titularCondicionado?.observaciones ?? null}
                         motivoRevisionCoarrendatario={titularCondicionado ? obsCoaRevision : null}
                         sinInmueble={!expediente.inmueble}
+                        desenlacePrevisto={titularCondicionado?.verificacion_segundo?.desenlace_previsto ?? null}
                         onAprobado={fetchExpediente}
                       />
                       </div>
@@ -1208,6 +1213,11 @@ function ExpedienteDetalleContenido() {
                       }
                       coarrendatarioVigente={coarrendatarioVigente}
                       expedienteEstado={expediente.estado}
+                      cierre={cierreDelEstudio(expediente.estado, expediente.estado_pre_cancelacion)}
+                      reaperturaAbierta={!!expediente.reapertura_abierta}
+                      venceReapertura={expediente.vence_reapertura ?? null}
+                      // Un cambio de persona mueve el estado del estudio: encabezado, banner y tarjeta, coherentes.
+                      onExpedienteCambio={fetchExpediente}
                     />
                   ),
                   // §6.3: primero la autorización, después el cobro.
@@ -1252,6 +1262,9 @@ function ExpedienteDetalleContenido() {
                     <CoarrendatarioPropietarioCard
                       expedienteId={id}
                       expedienteEstado={expediente.estado}
+                      cierre={cierreDelEstudio(expediente.estado, expediente.estado_pre_cancelacion)}
+                      reaperturaAbierta={!!expediente.reapertura_abierta}
+                      onExpedienteCambio={fetchExpediente}
                       userRol={user?.rol}
                       // La ponderación puede mover el expediente sola al completar el
                       // estudio del coarrendatario: se recarga.
@@ -1495,6 +1508,8 @@ function ExpedienteDetalleContenido() {
               coarrendatarioVigente={coarrendatarioVigente}
               pedidoReevaluar={pedidoReevaluar}
               onPedidoAtendido={pedidoAtendido}
+              cierre={cierreDelEstudio(expediente.estado, expediente.estado_pre_cancelacion)}
+              estudioAprobado={expediente.estado === 'aprobado'}
             />
 
             {/* La decisión del condicionado vive en el Resumen (un solo lugar);
@@ -1504,6 +1519,9 @@ function ExpedienteDetalleContenido() {
                 <CoarrendatarioPropietarioCard
                   expedienteId={id}
                   expedienteEstado={expediente.estado}
+                  cierre={cierreDelEstudio(expediente.estado, expediente.estado_pre_cancelacion)}
+                  reaperturaAbierta={!!expediente.reapertura_abierta}
+                  onExpedienteCambio={fetchExpediente}
                   userRol={user?.rol}
                   onEstudioCompletado={fetchExpediente}
                   conCondicion={!!condicionCoa}

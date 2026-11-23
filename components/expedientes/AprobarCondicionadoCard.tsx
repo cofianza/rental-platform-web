@@ -76,6 +76,11 @@ interface AprobarCondicionadoCardProps {
   motivoRevisionCoarrendatario?: string | null
   /** Estudio sin propiedad: al aprobar no hay dueño a quien avisar y el contrato espera el inmueble. */
   sinInmueble?: boolean
+  /**
+   * Lo que da el estudio al verificar al segundo firmante (`verificacion_segundo.desenlace_previsto`): con
+   * 'aprobado_segundo_firmante', aprobar no lleva al contrato (falta otro segundo firmante válido).
+   */
+  desenlacePrevisto?: string | null
   onAprobado?: () => void
 }
 
@@ -92,6 +97,7 @@ export function AprobarCondicionadoCard({
   motivoRevision,
   motivoRevisionCoarrendatario,
   sinInmueble,
+  desenlacePrevisto = null,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
@@ -353,7 +359,16 @@ export function AprobarCondicionadoCard({
         esCofianza && p?.puntaje_normalizado != null
           ? ` Puntaje de la revisión: ${p.puntaje_normalizado.toLocaleString('es-CO', { maximumFractionDigits: 1 })} de 100.`
           : ''
-      toast.success(`Estudio aprobado. Ya puede crear el contrato.${puntaje}`)
+      // Segundo pase del reporte de Gerencia: verificado el segundo firmante, el estudio puede quedar aprobado con
+      // segundo firmante (la API responde 'condicionado'): no se dice «ya puede crear el contrato».
+      const conSegundoFirmante = res.expediente?.estado
+        ? res.expediente.estado === 'condicionado'
+        : desenlacePrevisto === 'aprobado_segundo_firmante'
+      toast.success(
+        conSegundoFirmante
+          ? `Quedó aprobado con segundo firmante: falta un segundo firmante válido.${puntaje}`
+          : `Estudio aprobado. Ya puede crear el contrato.${puntaje}`,
+      )
       onAprobado?.()
     } catch (err) {
       if (err instanceof ApiClientError && err.code === 'NOTA_IDENTIDAD_REQUERIDA') {
@@ -448,8 +463,11 @@ export function AprobarCondicionadoCard({
         ) : esCofianza ? (
           <>
             <p>
-              Revise el caso, los soportes y el coarrendatario si lo hay. Si lo aprueba, el estudio pasa a
-              Aprobado y se puede crear el contrato. Para no aprobarlo, use «Cambiar estado», arriba.
+              Revise el caso, los soportes y el coarrendatario si lo hay.{' '}
+              {desenlacePrevisto === 'aprobado_segundo_firmante'
+                ? 'Si lo aprueba, el estudio queda aprobado con segundo firmante: para el contrato falta un segundo firmante válido.'
+                : 'Si lo aprueba, el estudio pasa a Aprobado y se puede crear el contrato.'}{' '}
+              Para no aprobarlo, use «Cambiar estado», arriba.
             </p>
             {/* Si con el ingreso el estudio quedó no aprobado, se recarga (onAprobado recarga el estudio). */}
             <IngresoVerificadoSection
@@ -700,9 +718,11 @@ export function AprobarCondicionadoCard({
           <p className="font-semibold text-gray-900">Al aprobar</p>
           <ul className="mt-1 list-disc space-y-0.5 pl-5">
             <li>
-              {sinInmueble
-                ? 'El estudio pasa a Aprobado. Para crear el contrato, primero vincule el inmueble.'
-                : 'El estudio pasa a Aprobado y se puede crear el contrato.'}
+              {desenlacePrevisto === 'aprobado_segundo_firmante'
+                ? 'El estudio queda aprobado con segundo firmante: para crear el contrato falta un segundo firmante válido.'
+                : sinInmueble
+                  ? 'El estudio pasa a Aprobado. Para crear el contrato, primero vincule el inmueble.'
+                  : 'El estudio pasa a Aprobado y se puede crear el contrato.'}
             </li>
             <li>
               {sinInmueble

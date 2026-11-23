@@ -14,11 +14,12 @@
 'use client'
 
 import { useState } from 'react'
-import { IconAlertTriangle, IconArrowRight, IconExternalLink, IconUsers } from '@/components/icons'
+import { IconAlertTriangle, IconArrowRight, IconExternalLink, IconInfo, IconUsers } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { formatCurrency } from '@/lib/constants'
 import type { ICotizacionSustitucion, ISustitucionCreada } from '@/types/sustitucion'
+import { avisoReemplazoEnRechazado } from '@/lib/personaEstudio'
 
 interface SustituirPersonaModalProps {
   isOpen: boolean
@@ -27,9 +28,11 @@ interface SustituirPersonaModalProps {
   cotizacion: ICotizacionSustitucion | null
   /** Abre el cambio con el valor confirmado. null = no se pudo (ya se informó). */
   onConfirmar: (cotizacion: ICotizacionSustitucion) => Promise<ISustitucionCreada | null>
+  /** El estudio está no aprobable: con la persona nueva vuelve a revisión (punto 5 del reporte). */
+  estudioRechazado?: boolean
 }
 
-export function SustituirPersonaModal({ isOpen, onClose, cotizacion, onConfirmar }: SustituirPersonaModalProps) {
+export function SustituirPersonaModal({ isOpen, onClose, cotizacion, onConfirmar, estudioRechazado = false }: SustituirPersonaModalProps) {
   const [confirmando, setConfirmando] = useState(false)
   const [creada, setCreada] = useState<ISustitucionCreada | null>(null)
 
@@ -41,13 +44,15 @@ export function SustituirPersonaModal({ isOpen, onClose, cotizacion, onConfirmar
   const yaSalio = cotizacion.sale.ya_salio === true
   const conCobro = cotizacion.requiere_pago && cotizacion.total_a_pagar_cop > 0
   const pago = creada?.pago ?? null
+  // Estudio rechazado: vuelve a revisión con la persona nueva. Lo que el aviso de la API ya dice no se repite.
+  const avisoRechazado = estudioRechazado && cotizacion.puede_sustituir ? avisoReemplazoEnRechazado(cotizacion) : null
 
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={pago ? 'Pague la consulta adicional' : yaSalio ? 'Cargar a otra persona' : `Sustituir a ${nombre}`}
+        title={pago ? 'Pague la consulta adicional' : yaSalio ? 'Cargar a otra persona' : `Reemplazar a ${nombre}`}
         size="md"
         footer={
           pago ? (
@@ -102,6 +107,12 @@ export function SustituirPersonaModal({ isOpen, onClose, cotizacion, onConfirmar
                 El estudio conserva su número, su inmueble y su historial.
               </span>
             </p>
+            {avisoRechazado && (
+              <p className="flex gap-2">
+                <IconInfo size={18} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
+                <span>{avisoRechazado}</span>
+              </p>
+            )}
             <p
               className={
                 cotizacion.puede_sustituir

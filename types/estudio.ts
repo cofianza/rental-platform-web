@@ -57,6 +57,22 @@ export interface IDesenlaceEstudio {
   }>
 }
 
+/**
+ * Adenda 5 §11-§12: el papel de la persona en el estudio. Titular es quien pasa, con independencia del rol con que
+ * se declaró; el segundo firmante válido queda vinculado; `sin_papel` = no cuenta (no califica, no aprobado, en
+ * verificación, sin efecto...).
+ */
+export type PapelPersonaA5d = 'titular' | 'segundo_firmante' | 'sin_papel'
+
+/** Lo que se dice de una persona en un estudio decidido con la Adenda 5. Lo redacta la API: se muestra tal cual. */
+export interface IPersonaA5d {
+  papel: PapelPersonaA5d
+  /** «Titular del estudio», «Segundo firmante», «No califica», «No aprobado», «En verificación», «Sin efecto»... */
+  etiqueta: string
+  /** Una o dos frases en usted, coherentes con el estado del estudio. */
+  texto: string
+}
+
 /** Marca que registra Cofianza sobre una persona del estudio. Solo la reciben los roles de Cofianza. */
 export interface IMarcaEstudio {
   marca: { persona: 'solicitante' | 'coarrendatario'; coarrendatario_id: string | null; marcada_en: string; soporte: string; motivo: string } | null
@@ -98,6 +114,16 @@ export interface IEstudio extends IDesenlaceEstudio {
   /** Solo administrador y operador analista, en el detalle. */
   reintento_saldo_transunion?: IReintentoSaldoTransUnion
   expediente_id?: string
+  /**
+   * Adenda 5: el papel de esta persona en el estudio, con su etiqueta y su texto. Solo en estudios decididos con la
+   * Adenda 5 (listado por expediente); ausente en los anteriores o con una API anterior.
+   */
+  persona_a5d?: IPersonaA5d | null
+  /**
+   * Solo Cofianza: el estudio espera la verificación del segundo firmante. `desenlace_previsto` dice qué da al
+   * verificarlo: con 'aprobado_segundo_firmante', aprobar no lleva al contrato. Ausente = como siempre.
+   */
+  verificacion_segundo?: { desenlace_previsto?: 'aprobado' | 'aprobado_segundo_firmante' | null } | null
   tipo: TipoEstudio
   proveedor: ProveedorEstudio
   estado: EstadoEstudio

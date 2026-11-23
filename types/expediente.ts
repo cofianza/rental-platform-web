@@ -174,6 +174,13 @@ export interface IExpediente {
   traba_contrato?: ITrabaContrato | null
   /** Lista y detalle, solo en estudios aprobados: hasta cuándo sirve el resultado (ISO). Ausente con una API anterior. */
   vigencia_hasta?: string | null
+  /**
+   * Lista y detalle: el estudio no aprobable se reabrió por un reemplazo y espera la evaluación de la persona nueva
+   * (punto 5 del reporte de Gerencia). Ausente con una API anterior.
+   */
+  reapertura_abierta?: boolean
+  /** Con `reapertura_abierta`: hasta cuándo debe autorizar la persona nueva (ISO). Ausente = no se muestra. */
+  vence_reapertura?: string | null
   created_at: string
   updated_at: string
 }

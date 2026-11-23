@@ -32,6 +32,8 @@ export type EtapaEstudio =
   | 'finalizado'
   | 'no_aprobado'
   | 'cancelado'
+  // Reporte de Gerencia (21-nov), punto 5: el no aprobable se reabrió por un reemplazo y espera a la persona nueva.
+  | 'reapertura'
 
 export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   visita: 'Visita pendiente',
@@ -62,6 +64,7 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   finalizado: 'Finalizado',
   no_aprobado: 'No aprobable',
   cancelado: 'Cancelado',
+  reapertura: 'Esperando al nuevo segundo firmante',
 }
 
 /** Pasos de la barra del detalle (la lista conserva los suyos). */
@@ -94,6 +97,8 @@ export const PASO_DE_ETAPA: Record<EtapaEstudio, number> = {
   vigente: PASOS_DETALLE.length,
   finalizado: PASOS_DETALLE.length,
   cancelado: 0,
+  // Se decide de nuevo con la evaluación de la persona nueva.
+  reapertura: 3,
 }
 
 const CONSULTA_INICIADA = ['en_proceso', 'completado']
@@ -123,6 +128,8 @@ export interface DatosEtapa {
   desenlace?: string | null
   /** traba_contrato.codigo del detalle: aprobado, pero algo impide crear el contrato. null o ausente = 'contrato'. */
   trabaCodigo?: string | null
+  /** `reapertura_abierta` del expediente: reabierto por un reemplazo, espera a la persona nueva. */
+  reaperturaAbierta?: boolean
 }
 
 /**
@@ -273,6 +280,8 @@ export const esEsperaDePersona = (etapa: EtapaEstudio | null | undefined, conCon
 
 /** Pura. */
 export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
+  // Reabierto por un reemplazo: nunca «No aprobable» ni «En evaluación» mientras espera a la persona nueva.
+  if (d.reaperturaAbierta && d.estado !== 'cerrado') return 'reapertura'
   if (d.estado === 'rechazado') return 'no_aprobado'
   if (d.estado === 'cerrado') {
     if (d.estadoPreCancelacion === 'rechazado') return 'no_aprobado'
@@ -335,6 +344,8 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean): Turno 
     case 'pago_prospecto':
     case 'espera_coarrendatario':
     case 'segundo_firmante':
+    // La persona nueva acepta, autoriza y se evalúa.
+    case 'reapertura':
       return 'prospecto'
     case 'consulta':
       return 'cofianza'

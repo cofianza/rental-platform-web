@@ -243,6 +243,8 @@ function sinTurno(datos: DatosEstadoFila, e: IExpediente, vista: VistaTurno): st
   if (datos.etapa === 'bloqueado') return e.estudio_vigente?.siguiente_accion_texto ?? 'La operación está bloqueada: vea qué hacer en el detalle'
   // La etapa ya dice «Esperando al coarrendatario»: aquí, lo que falta.
   if (datos.etapa === 'espera_coarrendatario') return 'Esperando su autorización'
+  // Reabierto por un reemplazo: la etapa dice «Esperando al nuevo segundo firmante»; aquí, a quién se espera.
+  if (datos.etapa === 'reapertura') return 'Esperando a la persona nueva'
   // Sin turno del RPC (p. ej. el vencido ya no «requiere su acción»): igual se dice cómo seguir.
   if (datos.etapa === 'vencido') return vista === 'gestor' ? 'Para continuar, cree un estudio nuevo' : 'Para continuar hace falta un estudio nuevo'
   if (datos.etapa === 'canon_excede') return 'Ajustar el canon o reasignar el estudio'

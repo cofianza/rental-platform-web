@@ -1,8 +1,11 @@
 /**
  * SustitucionesEstudio — personas del estudio: cuántos cambios lleva, qué se
- * puede hacer ahora (sustituir, retirar, pagar, cargar a la persona nueva) y
+ * puede hacer ahora (reemplazar, retirar, pagar, cargar a la persona nueva) y
  * el historial. Todo lo decide y lo redacta la API: los valores, el máximo de
- * cambios y los textos llegan en sus respuestas.
+ * cambios y los textos llegan en sus respuestas. El botón de reemplazar sale
+ * para quien la API diga que es sustituible (solicitante o coarrendatario);
+ * si hoy no se puede, la API manda el motivo en `accion_texto` sin `accion`, y
+ * se muestra ese texto en lugar del botón.
  */
 
 'use client'
@@ -19,6 +22,7 @@ import { CargarSolicitanteForm } from './CargarSolicitanteForm'
 import { CoarrendatarioInviteForm } from './CoarrendatarioInviteForm'
 import { SeccionPaso } from './TarjetaSiguientePaso'
 import { SustituirPersonaModal } from './SustituirPersonaModal'
+import { TEXTO_CANCELAR_REAPERTURA, textoPlazoReapertura } from '@/lib/personaEstudio'
 
 interface SustitucionesEstudioProps {
   estudioId: string
@@ -29,9 +33,24 @@ interface SustitucionesEstudioProps {
   puedeEditar: boolean
   /** Se llama tras cada cambio, para refrescar el estudio. */
   onCambio?: () => void
+  /** El estudio está no aprobable: reemplazar a una persona lo devuelve a revisión (se avisa antes de confirmar). */
+  estudioRechazado?: boolean
+  /** El estudio se reabrió por el cambio en curso: cancelarlo lo deja de nuevo no aprobable. */
+  reaperturaAbierta?: boolean
+  /** Con la reapertura: hasta cuándo debe autorizar la persona nueva (lo manda la API en el expediente). */
+  venceReapertura?: string | null
 }
 
-export function SustitucionesEstudio({ estudioId, expedienteId, activo, puedeEditar, onCambio }: SustitucionesEstudioProps) {
+export function SustitucionesEstudio({
+  estudioId,
+  expedienteId,
+  activo,
+  puedeEditar,
+  onCambio,
+  estudioRechazado = false,
+  reaperturaAbierta = false,
+  venceReapertura = null,
+}: SustitucionesEstudioProps) {
   const version = useRefrescoExpediente()
   const { estado, cargando, error, ocupado, recargar, cotizar, crear, retirar, cancelar, cargarPersona, cargarSolicitante } = useSustituciones(estudioId, activo, version, onCambio)
   const [cotizacion, setCotizacion] = useState<ICotizacionSustitucion | null>(null)
@@ -69,6 +88,8 @@ export function SustitucionesEstudio({ estudioId, expedienteId, activo, puedeEdi
     if (c) setCotizacion(c)
   }
   const nombreRetiro = retiro?.persona === 'solicitante' ? solicitante?.persona?.nombre : persona?.nombre
+  // Estudio reabierto por este cambio: el plazo de la persona nueva, el que manda la API (después de cargarla también).
+  const plazoReapertura = textoPlazoReapertura(abierta?.vence_reapertura ?? (reaperturaAbierta ? venceReapertura : null))
 
   return (
     <SeccionPaso titulo="Personas del estudio" icono={<IconUsers size={16} />}>
@@ -91,7 +112,8 @@ export function SustitucionesEstudio({ estudioId, expedienteId, activo, puedeEdi
                 className={botonModal(accion ? 'secondary' : 'primary', 'w-full sm:w-auto')}
               >
                 {cotizando === 'solicitante' ? <IconLoader size={16} className="animate-spin" aria-hidden="true" /> : <IconUsers size={16} aria-hidden="true" />}
-                {solicitante.persona.nombre && !solicitante.persona.ya_salio ? `Cambiar a ${solicitante.persona.nombre}` : 'Cargar a otro solicitante'}
+                {/* Reporte de Gerencia, punto 5: «Cambiar a {nombre}» se leía como «elegir a {nombre}». */}
+                {solicitante.persona.nombre && !solicitante.persona.ya_salio ? `Reemplazar a ${solicitante.persona.nombre} por otra persona` : 'Cargar a otro solicitante'}
               </button>
             )}
             {puedeEditar && solicitante.accion === 'retirar_por_listas' && solicitante.persona && (
@@ -103,13 +125,14 @@ export function SustitucionesEstudio({ estudioId, expedienteId, activo, puedeEdi
           </div>
         )}
 
-        {(accion_texto || accion) && solicitante && <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Segundo firmante</p>}
+        {/* El rol con que se declaró (como «Solicitante»): su papel en el estudio lo dice la tarjeta de cada persona. */}
+        {(accion_texto || accion) && solicitante && <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Coarrendatario</p>}
         {accion_texto && (puedeEditar || !accion) && <p className="text-gray-700">{accion_texto}</p>}
 
         {puedeEditar && accion === 'sustituir' && persona && (
           <button type="button" onClick={() => void abrirSustitucion('coarrendatario')} disabled={!!cotizando || ocupado} aria-busy={cotizando === 'coarrendatario' || undefined} className={botonModal('primary', 'w-full sm:w-auto')}>
             {cotizando === 'coarrendatario' ? <IconLoader size={16} className="animate-spin" aria-hidden="true" /> : <IconUsers size={16} aria-hidden="true" />}
-            {persona.nombre && !persona.ya_salio ? `Sustituir a ${persona.nombre}` : 'Cargar a otra persona'}
+            {persona.nombre && !persona.ya_salio ? `Reemplazar a ${persona.nombre} por otra persona` : 'Cargar a otra persona'}
           </button>
         )}
 
@@ -126,6 +149,7 @@ export function SustitucionesEstudio({ estudioId, expedienteId, activo, puedeEdi
               {esConsulta ? 'Consulta adicional en curso' : abiertaDelSolicitante ? 'Cambio del solicitante en curso' : 'Cambio en curso'}: {abierta.estado_texto}
             </p>
             {abierta.entra && <p className="text-gray-700">Persona cargada: {abierta.entra.nombre}. Su evaluación se hace cuando autorice.</p>}
+            {plazoReapertura && <p className="text-gray-700">{plazoReapertura}</p>}
             {abierta.url_pago && (
               <a href={abierta.url_pago} target="_blank" rel="noopener noreferrer" className={botonModal('primary', 'w-full sm:w-auto')}>
                 <IconExternalLink size={16} aria-hidden="true" />
@@ -187,7 +211,9 @@ export function SustitucionesEstudio({ estudioId, expedienteId, activo, puedeEdi
         )}
       </div>
 
-      {cotizacion && <SustituirPersonaModal isOpen onClose={() => setCotizacion(null)} cotizacion={cotizacion} onConfirmar={crear} />}
+      {cotizacion && (
+        <SustituirPersonaModal isOpen onClose={() => setCotizacion(null)} cotizacion={cotizacion} onConfirmar={crear} estudioRechazado={estudioRechazado} />
+      )}
 
       <ConfirmDialog
         isOpen={!!retiro}
@@ -214,7 +240,10 @@ export function SustitucionesEstudio({ estudioId, expedienteId, activo, puedeEdi
         }}
         title={esConsulta ? 'Cancelar la consulta adicional' : 'Cancelar el cambio de persona'}
         message={
-          esConsulta
+          // Punto 5 del reporte: el cambio reabrió el estudio no aprobable; cancelarlo lo devuelve a como estaba.
+          reaperturaAbierta && !esConsulta
+            ? TEXTO_CANCELAR_REAPERTURA
+            : esConsulta
             ? abierta?.estado === 'pagada'
               ? 'La consulta adicional se cancela y Cofianza le devuelve el pago a quien pagó.'
               : 'La consulta adicional se cancela y su enlace de pago deja de servir.'
