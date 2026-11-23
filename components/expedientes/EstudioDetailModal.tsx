@@ -19,6 +19,7 @@ import { DataCreditoReportDetail } from '@/components/estudios/DataCreditoReport
 import { ReporteBuroErrorBoundary } from '@/components/estudios/ReporteBuroErrorBoundary'
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import { ListasPorConfirmar } from '@/components/estudios/ListasPorConfirmar'
+import { VerificacionSegundoFirmante } from '@/components/estudios/VerificacionSegundoFirmante'
 import { ReintentoSaldoTransUnion } from '@/components/estudios/ReintentoSaldoTransUnion'
 import type { IEstudio, IEstudioHistorial, IEndeudamientoMotor } from '@/types/estudio'
 
@@ -56,6 +57,8 @@ interface EstudioDetailModalProps {
   /**
    * La apelación cambió desde este detalle (soporte, fecha de radicación o
    * reevaluación creada): el banner del rechazo de la página ya no la refleja.
+   * También cuando el analista resuelve la verificación del segundo firmante
+   * (el estudio se decide): al cerrar, la página se recarga completa.
    */
   onApelacionCambiada?: () => void
   /** En qué quedó el estudio: con él terminado, una evaluación que esperaba revisión o que pasó no se nombra «En revisión» ni «Válido». */
@@ -395,6 +398,20 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                   }}
                 />
               ))}
+
+            {/* Segundo firmante válido «en verificación» (Auco no respondió a tiempo o sus antecedentes piden
+                revisión): el analista lo da por verificado o reintenta la consulta. La API solo lo manda a
+                administrador y operador. Resolverlo mueve el estudio: al cerrar, la página se recarga completa. */}
+            {!readOnly && estudio.verificacion_segundo_firmante && (
+              <VerificacionSegundoFirmante
+                estudioId={estudio.id}
+                verificacion={estudio.verificacion_segundo_firmante}
+                onHecho={async () => {
+                  onApelacionCambiada?.()
+                  await recargarDetalle()
+                }}
+              />
+            )}
 
             {/* Adenda 5 §19: TransUnion no entregó el saldo en mora; el analista reintenta
                 la consulta (la API solo lo manda a administrador y operador, y si aplica). */}

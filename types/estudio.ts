@@ -105,6 +105,27 @@ export interface IReintentoSaldoTransUnionResultado {
   mensaje: string
 }
 
+/**
+ * El segundo firmante válido que quedó «en verificación» (Auco no respondió la
+ * consulta de listas a tiempo, o sus antecedentes piden revisión). Solo
+ * administrador y operador analista, en el detalle; sin nada que resolver, la
+ * API no la envía.
+ */
+export interface IVerificacionSegundoFirmante {
+  /** Lo que falta verificar. */
+  pendiente: string
+  /** Qué frena mientras tanto (el estudio, o la vinculación al contrato si ya está aprobado). */
+  efecto: string
+  /** Si llega un resultado limpio de Auco, se resuelve sola; si no, la cierra «Aprobar estudio». */
+  se_resuelve_solo: boolean
+  puede_dar_por_verificado: boolean
+  puede_reintentar: boolean
+  /** Ya se le pidió de nuevo a Auco y el resultado no ha llegado. */
+  reintento_pedido_en: string | null
+  /** Por qué no se resuelve desde aquí, o por qué no hay reintento. */
+  motivo: string | null
+}
+
 export interface IEstudio extends IDesenlaceEstudio {
   id: string
   /** Solo Cofianza, en el detalle: reclamos en trámite que reporta la central. */
@@ -113,6 +134,8 @@ export interface IEstudio extends IDesenlaceEstudio {
   restitucion?: IMarcaEstudio
   /** Solo administrador y operador analista, en el detalle. */
   reintento_saldo_transunion?: IReintentoSaldoTransUnion
+  /** Solo administrador y operador analista, en el detalle del segundo firmante en verificación. */
+  verificacion_segundo_firmante?: IVerificacionSegundoFirmante
   expediente_id?: string
   /**
    * Adenda 5: el papel de esta persona en el estudio, con su etiqueta y su texto. Solo en estudios decididos con la

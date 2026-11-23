@@ -134,6 +134,7 @@ function EstudiosAdminView() {
             onPageChange={(page) => setFilters({ page })}
             onLimitChange={(limit) => setFilters({ limit, page: 1 })}
             onClearFilters={hasActiveFilters() ? clearFilters : undefined}
+            onDetalleCambiado={() => void fetchEstudios()}
           />
         )}
       </div>

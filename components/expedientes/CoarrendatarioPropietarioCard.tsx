@@ -124,6 +124,8 @@ export function CoarrendatarioPropietarioCard({
   const [errorCarga, setErrorCarga] = useState(false)
   const [estudioFull, setEstudioFull] = useState<IEstudio | null>(null)
   const [showDetail, setShowDetail] = useState(false)
+  // Cambió algo desde el detalle de la evaluación: al cerrarlo se relee la tarjeta y el estudio.
+  const detalleCambio = useRef(false)
   const [loadingDetail, setLoadingDetail] = useState(false)
   // Gerencia y el miembro 'solo_lectura' entran aquí con rol 'inmobiliaria':
   // ven la card (es lectura) pero no las acciones, que el API les niega.
@@ -427,7 +429,18 @@ export function CoarrendatarioPropietarioCard({
 
       <EstudioDetailModal
         isOpen={showDetail}
-        onClose={() => setShowDetail(false)}
+        onClose={() => {
+          setShowDetail(false)
+          // La verificación del segundo firmante (u otra acción del detalle) movió el estudio: tarjeta y encabezado al día.
+          if (detalleCambio.current) {
+            detalleCambio.current = false
+            void fetchCoa()
+            onExpedienteCambio?.()
+          }
+        }}
+        onApelacionCambiada={() => {
+          detalleCambio.current = true
+        }}
         estudio={estudioFull}
         readOnly={userRol === 'propietario' || userRol === 'inmobiliaria'}
         cierre={cierre}
