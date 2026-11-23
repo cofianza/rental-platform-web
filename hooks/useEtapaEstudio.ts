@@ -18,6 +18,9 @@ import type { EstadoExpediente } from '@/lib/constants'
 export {
   calcularEtapa,
   ETAPA_LABEL,
+  esEtapaDeTraba,
+  etiquetaTraba,
+  vigenciaResultado,
   PASOS_DETALLE,
   PASO_DE_ETAPA,
   turnoDeEtapa,
@@ -36,6 +39,8 @@ interface ExpedienteEtapa {
   estudio_rechazado?: boolean | null
   cita_omitida?: boolean
   inmueble?: { id: string } | null
+  /** Aprobado con algo que impide el contrato (reporte de Gerencia, 21-nov). Ausente con una API anterior. */
+  traba_contrato?: { codigo: string } | null
 }
 
 /**
@@ -64,6 +69,7 @@ export function useEtapaEstudio(
   const rechazado = !!expediente?.estudio_rechazado
   const citaOmitida = expediente?.cita_omitida ?? false
   const tieneInmueble = !!expediente?.inmueble
+  const trabaCodigo = expediente?.traba_contrato?.codigo ?? null
 
   useEffect(() => {
     if (!id || !estado) return
@@ -106,6 +112,7 @@ export function useEtapaEstudio(
         contratosEstados: (contratos?.data ?? []).map((c) => c.estado),
         // Con el resultado que envía la API, la etapa sale de él; sin él, del estado (como siempre).
         desenlace: titular?.desenlace ?? null,
+        trabaCodigo,
       })
       setLeida({
         etapa,
@@ -118,7 +125,7 @@ export function useEtapaEstudio(
     return () => {
       cancel = true
     }
-  }, [id, estado, pre, habilitado, rechazado, citaOmitida, tieneInmueble, conPago, version])
+  }, [id, estado, pre, habilitado, rechazado, citaOmitida, tieneInmueble, trabaCodigo, conPago, version])
 
   return leida
 }

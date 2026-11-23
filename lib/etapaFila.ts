@@ -4,7 +4,7 @@
  */
 
 import type { IExpediente, IExpedienteFilters } from '@/types/expediente'
-import { etapaCondicionado, type EtapaEstudio } from './etapaEstudio'
+import { etapaCondicionado, etapaDeTraba, type EtapaEstudio } from './etapaEstudio'
 
 const CONTRATO_FIRMADO = ['firmado', 'vigente', 'finalizado']
 const CONSULTA = ['en_proceso', 'completado', 'pagado', 'formulario_completado', 'documentos_cargados']
@@ -19,8 +19,11 @@ export function etapaDeFila(e: IExpediente): EtapaEstudio {
   if (e.contrato_estado === 'pendiente_firma') return 'firma'
   if (e.contrato_estado === 'firma_incompleta') return 'firma_incompleta'
   const ev = e.estudio_vigente
+  // Un resultado vencido ya no sirve para nada: ni reintentar la consulta del coarrendatario.
+  if (e.estado === 'aprobado' && e.traba_contrato?.codigo === 'vencido') return 'vencido'
   if (ev?.coarrendatario_fallido) return 'fallida'
-  if (e.estado === 'aprobado') return 'contrato'
+  // Reporte de Gerencia (21-nov): lo que impide el contrato lo dice la API; sin traba, 'contrato' como siempre.
+  if (e.estado === 'aprobado') return etapaDeTraba(e.traba_contrato?.codigo) ?? 'contrato'
   if (e.estado === 'condicionado') return etapaCondicionado(ev?.desenlace)
   if (!ev || ev.estado === 'cancelado') {
     if (!e.cita_realizada) return 'visita'
@@ -50,6 +53,10 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   fallida: 'reintentar la consulta',
   sin_ejecutar: 'ejecutar la consulta',
   contrato: 'crear el contrato',
+  // Reporte de Gerencia (21-nov): con la traba nunca «crear el contrato».
+  canon_excede: 'ajustar el canon o reasignar el estudio',
+  coarrendatario_pendiente: 'esperar al coarrendatario o seguir sin él',
+  vencido: 'crear un estudio nuevo',
   firma: 'revisar la firma del contrato',
   firma_incompleta: 'revisar la firma incompleta',
   vigente: 'cargar el acta de entrega',
@@ -57,8 +64,14 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   bloqueado: 'revisar el bloqueo en el detalle',
 }
 
+/**
+ * Etapas de traba en que el turno es siempre de quien gestiona, diga lo que diga depende_de (el RPC puede
+ * contar al coarrendatario sin responder como turno del prospecto: la decisión de esperarlo es del gestor).
+ */
+export const TURNO_GESTOR_TRABA: EtapaEstudio[] = ['canon_excede', 'coarrendatario_pendiente']
+
 export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | undefined {
-  if (e.depende_de !== 'gestor') return undefined
+  if (e.depende_de !== 'gestor' && !(e.depende_de && TURNO_GESTOR_TRABA.includes(etapa))) return undefined
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'bloqueado_documento') return 'corregir el documento'
   // Con la identidad rechazada solo Cofianza reenvía: el gestor no puede «reenviar el enlace».
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'identidad_rechazada') return 'comunicarse con Cofianza'
@@ -84,7 +97,8 @@ export function tomarDisponible(e: IExpediente, etapa: EtapaEstudio = etapaDeFil
  * o el estudio terminado, el tiempo quieto no es un atraso.
  */
 export function actividadConAlerta(e: IExpediente, etapa: EtapaEstudio = etapaDeFila(e)): boolean {
-  if (['vigente', 'firma', 'finalizado', 'no_aprobado', 'cancelado'].includes(etapa)) return false
+  // Vencido: el resultado ya no sirve; el tiempo quieto no es un atraso de nadie.
+  if (['vigente', 'firma', 'finalizado', 'no_aprobado', 'cancelado', 'vencido'].includes(etapa)) return false
   return e.depende_de === 'gestor' || e.depende_de === 'cofianza'
 }
 

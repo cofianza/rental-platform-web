@@ -7,6 +7,8 @@
  *   2. Citas por realizar (confirmada y fecha <= hoy)
  *   3. Estudios por habilitar (cita realizada + estudio_habilitado=false)
  *   4. Contratos por generar (expediente aprobado/condicionado y sin contrato)
+ *   5. Aprobados con algo por resolver antes del contrato (traba_contrato: canon o coarrendatario sin
+ *      responder). No cuentan como «por generar»; el vencido no va en ninguna: ya no es una acción.
  *
  * Categoría 4 cubre el gap: tras estudio aprobado, el orchestrator deja el
  * expediente en 'aprobado' SIN contrato y espera que el propietario decida
@@ -27,7 +29,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { citaService } from '@/services/citaService'
-import { cargarAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
+import { cargarAprobadosSinContrato, tieneTrabaContrato } from '@/hooks/useAprobadosSinContrato'
 import { expedienteService } from '@/services/expedienteService'
 import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
@@ -37,6 +39,8 @@ export interface AccionesPendientes {
   porRealizar: ICita[]             // estado=confirmada y fecha_confirmada <= hoy
   porHabilitar: ICita[]            // estado=realizada && expediente.estudio_habilitado===false
   porGenerarContrato: IExpediente[] // estado=aprobado/condicionado sin contrato activo
+  /** Aprobados sin contrato con traba_contrato (canon o coarrendatario sin responder); el vencido no entra. */
+  conTrabaContrato: IExpediente[]
   total: number
   /** Total del filtro «Requieren mi acción» de /expedientes (0 si no se pudo leer). */
   requierenAccion: number
@@ -47,6 +51,7 @@ const EMPTY: AccionesPendientes = {
   porRealizar: [],
   porHabilitar: [],
   porGenerarContrato: [],
+  conTrabaContrato: [],
   total: 0,
   requierenAccion: 0,
 }
@@ -100,19 +105,24 @@ export function useAccionesPendientes() {
       }
 
       // ── Categoria contratos por generar (5 visibles, como las otras) ──
-      const porGenerarContrato: IExpediente[] =
-        expedientesRes.status === 'fulfilled' ? expedientesRes.value.slice(0, 5) : []
+      const aprobadosSinContrato = expedientesRes.status === 'fulfilled' ? expedientesRes.value : []
+      const porGenerarContrato: IExpediente[] = aprobadosSinContrato.filter((e) => !tieneTrabaContrato(e)).slice(0, 5)
+      const conTrabaContrato: IExpediente[] = aprobadosSinContrato
+        .filter((e) => tieneTrabaContrato(e) && e.traba_contrato?.codigo !== 'vencido')
+        .slice(0, 5)
 
       setData({
         porConfirmar,
         porRealizar,
         porHabilitar,
         porGenerarContrato,
+        conTrabaContrato,
         total:
           porConfirmar.length +
           porRealizar.length +
           porHabilitar.length +
-          porGenerarContrato.length,
+          porGenerarContrato.length +
+          conTrabaContrato.length,
         requierenAccion: requierenRes.status === 'fulfilled' ? requierenRes.value.meta.total : 0,
       })
 

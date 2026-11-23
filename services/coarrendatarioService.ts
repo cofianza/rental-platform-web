@@ -6,6 +6,7 @@
 
 import type { IBeneficioPrima } from '@/lib/textosPrima'
 import { apiClient } from '@/lib/api'
+import { coalesceRequest } from '@/lib/requestCoalesce'
 
 export type CoarrendatarioEstado =
   | 'pendiente_aceptacion'
@@ -153,12 +154,17 @@ export const coarrendatarioService = {
     return res.data
   },
 
-  /** Estado del coarrendatario actual del expediente (o null si no hay). */
+  /**
+   * Estado del coarrendatario actual del expediente (o null si no hay). Coalescida: la tarjeta del
+   * coarrendatario y la franja «Qué sigue» del detalle la piden a la vez.
+   */
   async getDelExpediente(expedienteId: string): Promise<ICoarrendatario | null> {
-    const res = (await apiClient.get(`/expedientes/${expedienteId}/coarrendatario`)) as unknown as {
-      data: ICoarrendatario | null
-    }
-    return res.data
+    return coalesceRequest(`coarrendatario-exp:${expedienteId}`, async () => {
+      const res = (await apiClient.get(`/expedientes/${expedienteId}/coarrendatario`)) as unknown as {
+        data: ICoarrendatario | null
+      }
+      return res.data
+    })
   },
 
   /** Si se puede invitar ahora y si la invitación enviada sigue en pie. */

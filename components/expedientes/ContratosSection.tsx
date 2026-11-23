@@ -29,7 +29,7 @@ import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
-import { BloqueosContrato, bloqueoDeEvaluacion, frenosDelContrato } from '@/components/contratos/v3/BloqueosContrato'
+import { BloqueosContrato, bloqueoDeEvaluacion, frenosDelContrato, type SalidasCanon } from '@/components/contratos/v3/BloqueosContrato'
 import { ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
 import { CanalCofianza } from './ContactoCofianzaInline'
 import { contratoV3Service } from '@/services/contratoV3Service'
@@ -43,6 +43,7 @@ import { cn } from '@/lib/utils'
 import type { IContrato, EstadoContrato } from '@/types/contrato'
 import type { IFirmantesPreview } from '@/types/firma'
 import type { Bloqueo } from '@/types/contratoV3'
+import type { ITrabaContrato } from '@/types/expediente'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 
 const TERMINAL_STATES: EstadoContrato[] = ['finalizado', 'cancelado']
@@ -93,6 +94,10 @@ interface ContratosSectionProps {
   esperaSegundoFirmante?: boolean
   /** Inmueble sin inmobiliaria (propietario directo): ahí todavía no se puede sumar un segundo firmante. */
   canalPropietario?: boolean
+  /** traba_contrato del estudio: lo que impide crear el contrato (canon, coarrendatario sin responder, vencido). */
+  traba?: ITrabaContrato | null
+  /** Las salidas del canon por encima del aprobado (las arma el detalle con la evaluación aprobada). */
+  salidasCanon?: Omit<SalidasCanon, 'asistenteV3'>
 }
 
 export function ContratosSection({
@@ -105,6 +110,8 @@ export function ContratosSection({
   conComision,
   esperaSegundoFirmante = false,
   canalPropietario = false,
+  traba,
+  salidasCanon,
 }: ContratosSectionProps) {
   const { user } = useAuth()
   // Con «ver como», el rol simulado: el proveedor de firma y su costo son de Cofianza.
@@ -201,21 +208,32 @@ export function ContratosSection({
   const puedeGenerarAnterior = canGenerarAnterior && expedienteAprobado && !sinInmueble && !contratosV3
   const anteriorBloqueado = useSegundoFirmanteContrato(expedienteId, puedeGenerarAnterior, contratos.length)
 
-  // Asistente V3: lo que impide crear el contrato (segundo firmante, titular, evaluación que ya no sirve).
-  // Con algo de eso no se ofrece «Crear contrato» como si se pudiera. undefined = sin leer (o no aplica).
+  // Asistente V3: lo que impide crear el contrato (segundo firmante, titular, canon, evaluación que ya no
+  // sirve, y lo que dice traba_contrato). Con algo de eso no se ofrece «Crear contrato» como si se pudiera.
+  // undefined = sin leer (o no aplica).
   const ofreceCrearV3 = canCreate && expedienteAprobado && !sinInmueble && !!contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro
   const [frenosV3, setFrenosV3] = useState<{ expedienteId: string; bloqueos: Bloqueo[] } | null>(null)
   useEffect(() => {
     if (!ofreceCrearV3) return
     let vivo = true
     contratoV3Service.obtener(expedienteId).then(
-      (e) => { if (vivo) setFrenosV3({ expedienteId, bloqueos: frenosDelContrato(e.bloqueos) }) },
+      (e) => { if (vivo) setFrenosV3({ expedienteId, bloqueos: e.bloqueos }) },
       // Sin poder leer el asistente se ofrece como antes: él muestra los bloqueos al entrar.
       () => { if (vivo) setFrenosV3({ expedienteId, bloqueos: [] }) },
     )
     return () => { vivo = false }
   }, [ofreceCrearV3, expedienteId, contratos.length])
-  const frenan = frenosV3?.expedienteId === expedienteId ? frenosV3.bloqueos : undefined
+  const frenan = frenosV3?.expedienteId === expedienteId ? frenosDelContrato(frenosV3.bloqueos, traba) : undefined
+  // Contrato anterior: sin asistente, solo frena lo que dice traba_contrato (reporte de Gerencia, 21-nov).
+  const frenosAnterior = puedeGenerarAnterior && contratos.every((c) => c.estado === 'cancelado') ? frenosDelContrato([], traba) : []
+  const avisoPrima = traba?.codigo === 'coarrendatario_pendiente' ? traba.aviso_prima : undefined
+  // Con el resultado vencido (o sin margen para firmar) lo que sigue es un estudio nuevo, no «resolver lo de arriba».
+  const textoVencido = 'Este resultado ya no sirve para el contrato: arriba puede crear un estudio nuevo.'
+  // Tras «Seguir sin el coarrendatario» (o reasignar): se relee la pestaña y el estudio.
+  const trasResolverFreno = () => {
+    void fetchContratos()
+    onContratoActualizado?.()
+  }
 
   // Auto-abrir el panel de firma cuando hay un contrato en firma, para que el
   // progreso de firmantes quede visible sin tener que buscar el botón. Solo una
@@ -514,7 +532,9 @@ export function ContratosSection({
               : frenan === undefined
                 ? 'Revisando si el contrato se puede crear…'
                 : frenan.length > 0
-                  ? 'Primero resuelva lo pendiente de arriba; después podrá crear el contrato.'
+                  ? traba?.codigo === 'vencido'
+                    ? textoVencido
+                    : 'Primero resuelva lo pendiente de arriba; después podrá crear el contrato.'
                   : 'Pulse «Crear contrato» para abrir el asistente.'
             : 'Lo crea la inmobiliaria con el asistente de contratos, ahora que el estudio fue aprobado.'
           : puedeGenerarAnterior
@@ -524,7 +544,11 @@ export function ContratosSection({
                 ? interno
                   ? 'Se gestiona fuera de la plataforma.'
                   : 'Vea arriba cómo continuar.'
-                : 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
+                : frenosAnterior.length > 0
+                  ? traba?.codigo === 'vencido'
+                    ? textoVencido
+                    : 'Primero resuelva lo pendiente de arriba; después podrá generar el contrato.'
+                  : 'Pulse «Generar contrato» para crear uno con la plantilla activa.'
             : 'El contrato se generará cuando el propietario lo emita, ahora que el estudio fue aprobado.'
   const contratoFirmas = contratos.find((c) => c.id === firmaContratoId)
 
@@ -554,7 +578,7 @@ export function ContratosSection({
             Crear contrato
           </Link>
         )}
-        {puedeGenerarAnterior && anteriorBloqueado === null && (
+        {puedeGenerarAnterior && anteriorBloqueado === null && frenosAnterior.length === 0 && (
           <button type="button" onClick={() => setGenerarOpen(true)} className={buttonClasses('primary', 'md', 'min-h-10 shrink-0')}>
             <IconPlus size={16} />
             Generar contrato
@@ -584,6 +608,22 @@ export function ContratosSection({
           expedienteId={expedienteId}
           puedeEditar={puedeEditar}
           enElEstudio
+          onCambio={trasResolverFreno}
+          salidasCanon={salidasCanon && { ...salidasCanon, asistenteV3: true }}
+          avisoPrima={avisoPrima}
+        />
+      )}
+
+      {puedeGenerarAnterior && anteriorBloqueado === null && frenosAnterior.length > 0 && (
+        <BloqueosContrato
+          bloqueos={frenosAnterior}
+          para="generar el contrato"
+          expedienteId={expedienteId}
+          puedeEditar={puedeEditar}
+          enElEstudio
+          onCambio={trasResolverFreno}
+          salidasCanon={salidasCanon && { ...salidasCanon, asistenteV3: false }}
+          avisoPrima={avisoPrima}
         />
       )}
 

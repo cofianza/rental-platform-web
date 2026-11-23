@@ -108,7 +108,8 @@ function BarraPorEtapa({
     )
   }
   const actual = PASO_DE_ETAPA[etapa]
-  const tono = etapa === 'no_aprobado' ? 'rojo' : etapa === 'decision' ? 'ambar' : 'normal'
+  // El resultado vencido (o por vencer sin margen para firmar) ya no sirve: su paso va en gris, como el chip.
+  const tono = etapa === 'no_aprobado' ? 'rojo' : etapa === 'vencido' ? 'gris' : etapa === 'decision' ? 'ambar' : 'normal'
   const total = PASOS_DETALLE.length
   const rotuloActual = (idx: number, label: string) =>
     // El mismo nombre que el chip del encabezado («Por habilitar», «Aprobado con condición»).
@@ -120,6 +121,7 @@ function BarraPorEtapa({
           const isComplete = idx < actual
           const isCurrent = idx === actual
           const isFailed = isCurrent && tono === 'rojo'
+          const isGris = isCurrent && tono === 'gris'
           return (
             <li key={label} className="flex min-w-0 flex-1 items-start last:flex-none sm:last:flex-1">
               <div className="flex min-w-0 flex-1 flex-col items-center">
@@ -127,7 +129,8 @@ function BarraPorEtapa({
                   className={cn(
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold sm:h-9 sm:w-9',
                     isComplete && 'bg-primary-700 text-white',
-                    isCurrent && !isFailed && 'bg-amber-50 text-amber-800 ring-2 ring-amber-500',
+                    isCurrent && !isFailed && !isGris && 'bg-amber-50 text-amber-800 ring-2 ring-amber-500',
+                    isGris && 'bg-gray-100 text-gray-700 ring-2 ring-gray-400',
                     isFailed && 'bg-red-50 text-red-700 ring-2 ring-red-400',
                     !isComplete && !isCurrent && 'bg-gray-100 text-gray-500',
                   )}
@@ -140,6 +143,7 @@ function BarraPorEtapa({
                     // En el celular los siete rótulos no caben: van en la línea de abajo.
                     'mt-2 hidden max-w-[7.5rem] text-center text-xs leading-snug sm:block',
                     isFailed ? 'font-semibold text-red-700'
+                      : isGris ? 'font-semibold text-gray-700'
                       : isCurrent ? 'font-semibold text-amber-800'
                       : isComplete ? 'font-medium text-gray-700'
                       : 'text-gray-500',
@@ -167,7 +171,7 @@ function BarraPorEtapa({
         {actual < total ? (
           <>
             <span className="text-gray-500">Paso {actual + 1} de {total}: </span>
-            <span className={cn('font-semibold', tono === 'rojo' ? 'text-red-700' : 'text-amber-800')}>
+            <span className={cn('font-semibold', tono === 'rojo' ? 'text-red-700' : tono === 'gris' ? 'text-gray-700' : 'text-amber-800')}>
               {rotuloActual(actual, PASOS_DETALLE[actual])}
             </span>
           </>

@@ -9,12 +9,15 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
-import { IconAlertTriangle, IconArrowRight, IconInfo, IconLoader, IconRefresh } from '@/components/icons'
-import { Button } from '@/components/ui/Button'
+import { IconAlertTriangle, IconArrowRight, IconBuilding2, IconInfo, IconLoader, IconRefresh } from '@/components/icons'
+import { Button, buttonClasses } from '@/components/ui/Button'
 import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudioNuevo'
+import { ReasignarEstudioModal } from '@/components/expedientes/ReasignarEstudioModal'
+import { SeguirSinCoarrendatario } from '@/components/expedientes/SeguirSinCoarrendatario'
+import { formatCurrency } from '@/lib/constants'
 import { PagarConsultaAdicional } from '@/components/expedientes/PagarConsultaAdicional'
 import { CanalCofianza } from '@/components/expedientes/ContactoCofianzaInline'
 import { estudioService } from '@/services/estudioService'
@@ -25,6 +28,34 @@ import { esRolInterno } from '@/components/expedientes/textoVisible'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
+import type { ITrabaContrato } from '@/types/expediente'
+
+/**
+ * Las dos salidas del canon que supera el aprobado (reporte de Gerencia, 21-nov, punto 1): pactar un canon
+ * hasta el aprobado o reasignar el estudio a un inmueble de canon igual o inferior. Las arma el detalle del
+ * estudio, que tiene la evaluación aprobada.
+ */
+export interface SalidasCanon {
+  /** Hasta qué canon quedó aprobado el estudio; null = sin la cifra. */
+  canonHabilitadoCop: number | null
+  /** El contrato se crea con el asistente V3 (el canon se pacta en su paso 1); si no, el contrato toma el canon del inmueble. */
+  asistenteV3: boolean
+  inmuebleId?: string | null
+  /**
+   * traba_contrato.puede_reevaluar: canon mayor al evaluado, sin la leyenda «hasta un canon»; la API ofrece
+   * evaluar de nuevo con el canon de la propiedad (necesita la evaluación y la propiedad).
+   */
+  puedeReevaluar?: boolean
+  /** La evaluación aprobada, para reasignarla; null = aquí no se ofrece reasignar. */
+  estudio?: {
+    id: string
+    canonEvaluado: number | string | null
+    /** Como en la tarjeta de la evaluación: undefined = sin el dato de la API. */
+    canonHabilitado?: number | null
+    hastaCanon?: boolean
+  } | null
+  onReasignado?: () => void
+}
 
 interface Props {
   bloqueos: Bloqueo[]
@@ -51,6 +82,10 @@ interface Props {
   enElEstudio?: boolean
   /** resumen.canon.evaluadoA5D: la reevaluación del canon solo se ofrece en un estudio evaluado con la Adenda 5. */
   evaluadoA5D?: boolean
+  /** En el estudio: con el freno del canon se ofrecen sus dos salidas (pactar uno menor o reasignar). */
+  salidasCanon?: SalidasCanon
+  /** traba_contrato.aviso_prima (estudios anteriores a la Adenda 5): se muestra al confirmar «Seguir sin el coarrendatario». */
+  avisoPrima?: string | null
 }
 
 const enlace = 'inline-flex items-center gap-1 text-xs font-semibold text-primary-700 hover:text-primary-800 hover:underline'
@@ -81,16 +116,48 @@ export const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']
 export const DE_LAS_PARTES = ['COARRENDATARIO_PENDIENTE', 'COARRENDATARIO_SIN_EVALUAR', 'TITULAR_NO_DISPONIBLE']
 
 /**
- * Lo que impide crear el contrato V3 y se ve desde el estudio: del segundo firmante y del titular, y la
- * evaluación que ya no sirve (con su certificado). Mientras haya algo, no se ofrece «Crear contrato».
+ * Código propio de la web (la API no lo envía): el freno del canon que se arma con traba_contrato, porque
+ * antes de iniciar el contrato la API solo avisa del canon (lo bloquea al pactarlo en el paso 1).
  */
-export function frenosDelContrato(bloqueos: Bloqueo[]): Bloqueo[] {
+export const CANON_EXCEDE_APROBADO = 'CANON_EXCEDE_APROBADO'
+
+/** Del canon: el pactado (o, antes del contrato, el del inmueble) supera el aprobado. */
+export const DEL_CANON = ['CANON_REQUIERE_REEVALUACION', 'CANON_FUERA_DE_TOLERANCIA', 'CANON_INGRESO_EXCEDE', CANON_EXCEDE_APROBADO]
+
+/**
+ * Los frenos que dice traba_contrato y que la API no envió como bloqueo (antes de iniciar el contrato,
+ * o en el flujo anterior, que no tiene asistente). Con el bloqueo de la API, manda el suyo.
+ */
+function frenosDeTraba(traba: ITrabaContrato | null | undefined, ya: Bloqueo[]): Bloqueo[] {
+  if (!traba?.texto) return []
+  if (traba.codigo === 'canon_excede' && !ya.some((b) => DEL_CANON.includes(b.codigo))) {
+    return [{ codigo: CANON_EXCEDE_APROBADO, mensaje: traba.texto }]
+  }
+  if (traba.codigo === 'coarrendatario_pendiente' && !ya.some((b) => b.codigo === 'COARRENDATARIO_PENDIENTE')) {
+    return [{ codigo: 'COARRENDATARIO_PENDIENTE', mensaje: traba.texto, accion: 'estudio' }]
+  }
+  // Resultado vencido: el mismo punto de «la evaluación ya no sirve», con su estudio nuevo.
+  if (traba.codigo === 'vencido' && !ya.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))) {
+    return [{ codigo: 'ESTUDIO_VENCIDO', mensaje: traba.texto }]
+  }
+  return []
+}
+
+/**
+ * Lo que impide crear el contrato y se ve desde el estudio: del segundo firmante y del titular, el canon
+ * por encima del aprobado, y la evaluación que ya no sirve (con su certificado). Con `traba`
+ * (traba_contrato del estudio) también lo que dice la API aunque no llegue como bloqueo. Mientras haya
+ * algo, no se ofrece «Crear contrato».
+ */
+export function frenosDelContrato(bloqueos: Bloqueo[], traba?: ITrabaContrato | null): Bloqueo[] {
   const pideEvaluacion = bloqueos.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))
-  return bloqueos.filter(
+  const frenos = bloqueos.filter(
     (b) =>
       DE_LAS_PARTES.includes(b.codigo) ||
+      DEL_CANON.includes(b.codigo) ||
       (pideEvaluacion && (SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo))),
   )
+  return [...frenos, ...frenosDeTraba(traba, frenos)]
 }
 
 /** Los resuelve Cofianza: se dice el canal (su mensaje ya dice «Escríbanos»). */
@@ -133,7 +200,9 @@ function puntosDe(bloqueos: Bloqueo[], evaluadoA5D?: boolean): Punto[] {
           : ofreceReevaluar(b, evaluadoA5D)
             ? b.reevaluacionConCosto
               ? 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio: como el reporte ya venció, es una consulta adicional.'
-              : 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio, sin costo.'
+              : b.reevaluacionConCosto === false
+                ? 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio, sin costo.'
+                : 'Si necesita este canon, primero actualice el canon del inmueble y luego evalúe de nuevo el estudio.'
             : undefined,
         bloqueo: b,
         paso: b.paso,
@@ -170,6 +239,8 @@ export function BloqueosContrato({
   onCambio,
   enElEstudio = false,
   evaluadoA5D,
+  salidasCanon,
+  avisoPrima,
 }: Props) {
   const user = useUsuarioVista()
   const rol = user?.rol
@@ -178,9 +249,48 @@ export function BloqueosContrato({
     ...faltantes.map((f, i) => ({ key: `falta-${f.paso}-${i}`, texto: f.mensaje, paso: f.paso, esFaltante: true })),
   ]
   if (puntos.length === 0) return null
+  // En el asistente de un estudio que no está aprobado, seguir sin el coarrendatario no lleva a un contrato.
+  const noAprobado = bloqueos.some((b) => b.codigo === 'EXPEDIENTE_NO_APROBADO')
 
-  const accion = (b: Bloqueo) => {
+  const accion = (b: Bloqueo): ReactNode => {
     if (!expedienteId) return null
+    // Reporte de Gerencia (21-nov, punto 1): en el estudio, el canon por encima del aprobado tiene dos salidas.
+    if (salidasCanon && DEL_CANON.includes(b.codigo)) {
+      return (
+        <>
+          {puedeEditar && (
+            <SalidasCanonEnEstudio
+              expedienteId={expedienteId}
+              salidas={salidasCanon}
+              inmuebleAccesible={inmuebleAccesible}
+              // El freno armado con traba_contrato no trae la acción de la API: «Evaluar de nuevo» va aquí.
+              conReevaluar={b.codigo === CANON_EXCEDE_APROBADO}
+              onCambio={onCambio}
+            />
+          )}
+          {/* El bloqueo de la API conserva su acción (evaluar de nuevo, editar el canon, estudio nuevo). */}
+          {b.codigo !== CANON_EXCEDE_APROBADO && accionBase(b, expedienteId)}
+        </>
+      )
+    }
+    // Punto 3 (Adenda 5 §12): con el titular aprobado, el coarrendatario que no responde no frena el contrato.
+    // El texto del punto ya dice que puede esperarlo: aquí solo la otra salida.
+    if (b.codigo === 'COARRENDATARIO_PENDIENTE' && puedeEditar && !noAprobado) {
+      return (
+        <>
+          <SeguirSinCoarrendatario expedienteId={expedienteId} avisoPrima={avisoPrima} onCambio={onCambio} />
+          {!enElEstudio && (
+            <Link href={`/expedientes/${expedienteId}`} className={enlace}>
+              Ir al estudio <IconArrowRight size={12} />
+            </Link>
+          )}
+        </>
+      )
+    }
+    return accionBase(b, expedienteId)
+  }
+
+  const accionBase = (b: Bloqueo, expedienteId: string): ReactNode => {
     const volverAqui = encodeURIComponent(`/expedientes/${expedienteId}/contrato`)
     switch (b.accion) {
       case 'datos_contrato': {
@@ -213,7 +323,7 @@ export function BloqueosContrato({
               <ReevaluarCanon
                 estudioId={b.estudioId}
                 inmuebleId={inmueble}
-                conCosto={!!b.reevaluacionConCosto}
+                conCosto={b.reevaluacionConCosto}
                 onCambio={onCambio}
               />
             )}
@@ -356,7 +466,7 @@ export function BloqueosContrato({
                 )}
                 {p.nota && <p className="text-xs text-gray-600">{p.nota}</p>}
                 {(hacer || ir) && (
-                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     {hacer}
                     {ir}
                   </div>
@@ -367,6 +477,76 @@ export function BloqueosContrato({
         })}
       </ol>
     </div>
+  )
+}
+
+/**
+ * Las dos salidas del canon que supera el aprobado, desde el estudio: crear el contrato con un canon hasta el
+ * aprobado (en el asistente se pacta en el paso 1; en el flujo anterior el contrato toma el canon del
+ * inmueble) o reasignar la evaluación a otro inmueble. La API valida las dos.
+ */
+function SalidasCanonEnEstudio({
+  expedienteId,
+  salidas,
+  inmuebleAccesible,
+  conReevaluar,
+  onCambio,
+}: {
+  expedienteId: string
+  salidas: SalidasCanon
+  inmuebleAccesible: boolean | null
+  /** Con salidas.puedeReevaluar: también «Evaluar de nuevo» con el canon de la propiedad. */
+  conReevaluar: boolean
+  onCambio?: () => void
+}) {
+  const [reasignar, setReasignar] = useState(false)
+  const hasta = salidas.canonHabilitadoCop ? formatCurrency(salidas.canonHabilitadoCop) : null
+  const volver = encodeURIComponent(`/expedientes/${expedienteId}`)
+  return (
+    <>
+      {salidas.asistenteV3 ? (
+        <Link href={`/expedientes/${expedienteId}/contrato`} className={buttonClasses('primary', 'sm', 'min-h-10')}>
+          {hasta ? `Crear el contrato con un canon de hasta ${hasta}` : 'Crear el contrato con un canon menor'}
+          <IconArrowRight size={14} />
+        </Link>
+      ) : (
+        salidas.inmuebleId &&
+        inmuebleAccesible && (
+          <Link href={`/inmuebles/${salidas.inmuebleId}/editar?returnTo=${volver}`} className={buttonClasses('primary', 'sm', 'min-h-10')}>
+            {hasta ? `Ajustar el canon de la propiedad a ${hasta} o menos` : 'Ajustar el canon de la propiedad'}
+            <IconArrowRight size={14} />
+          </Link>
+        )
+      )}
+      {salidas.estudio && (
+        <>
+          <Button tamano="sm" variante="secondary" className="min-h-10" onClick={() => setReasignar(true)}>
+            <IconBuilding2 size={14} />
+            Reasignar a otra propiedad
+          </Button>
+          <ReasignarEstudioModal
+            isOpen={reasignar}
+            onClose={() => setReasignar(false)}
+            estudioId={salidas.estudio.id}
+            inmuebleActualId={salidas.inmuebleId}
+            canonEvaluado={salidas.estudio.canonEvaluado}
+            canonHabilitado={salidas.estudio.canonHabilitado}
+            sinReevaluacion={salidas.estudio.hastaCanon}
+            expedienteId={expedienteId}
+            onReasignado={salidas.onReasignado}
+          />
+        </>
+      )}
+      {conReevaluar && salidas.puedeReevaluar && salidas.estudio && salidas.inmuebleId && (
+        <>
+          <ReevaluarCanon estudioId={salidas.estudio.id} inmuebleId={salidas.inmuebleId} onCambio={onCambio} />
+          <p className="w-full text-xs text-gray-600">
+            «Evaluar de nuevo» usa el canon actual de la propiedad. Si requiere una consulta adicional, verá su valor antes
+            de pagarla.
+          </p>
+        </>
+      )}
+    </>
   )
 }
 
@@ -419,6 +599,7 @@ export function AvisosContrato({ avisos, tono = 'info' }: { avisos: string[]; to
 /**
  * Adenda 5 §14: evalúa de nuevo el estudio con el canon actual del inmueble (lo decide la API). Sin costo, o
  * con una consulta adicional (`conCosto`): la API responde 402 con el valor y se ofrece pagarla aquí mismo.
+ * Sin saber el costo (`conCosto` ausente, el freno armado con traba_contrato) dice solo «Evaluar de nuevo».
  * Si la API responde que no, su mensaje queda a la vista.
  */
 function ReevaluarCanon({
@@ -429,7 +610,7 @@ function ReevaluarCanon({
 }: {
   estudioId: string
   inmuebleId: string
-  conCosto: boolean
+  conCosto?: boolean
   onCambio?: () => void
 }) {
   const { reevaluar, evaluando } = useReevaluarCanon(onCambio)
@@ -450,7 +631,13 @@ function ReevaluarCanon({
           aria-busy={evaluando || undefined}
         >
           {evaluando ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
-          {evaluando ? 'Evaluando…' : conCosto ? 'Evaluar de nuevo (consulta adicional)' : 'Evaluar de nuevo sin costo'}
+          {evaluando
+            ? 'Evaluando…'
+            : conCosto
+              ? 'Evaluar de nuevo (consulta adicional)'
+              : conCosto === false
+                ? 'Evaluar de nuevo sin costo'
+                : 'Evaluar de nuevo'}
         </Button>
       )}
       {respuesta && (

@@ -21,7 +21,8 @@ import { contratoService, type IContratosStats } from '@/services/contratoServic
 import type { IContratoListItem, IContratoMeta, IContratoListFilters } from '@/types/contrato'
 import { ESTADOS_CONTRATO, type EstadoContratoKey, etiquetaContrato, formatCurrency, formatDate, formatDateTime, rutaContrato } from '@/lib/constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
-import { useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
+import { tieneTrabaContrato, useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
+import { etapaDeTraba, etiquetaTraba } from '@/lib/etapaEstudio'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ContratosFilters } from './ContratosFilters'
 import { SkeletonCards, SkeletonTable } from '@/components/ui/Skeleton'
@@ -222,6 +223,68 @@ export function ContratosInmobiliariaView() {
         ).includes(plegar(searchAplicado.trim())),
       )
     : sinContrato
+  // Reporte de Gerencia (21-nov): con traba_contrato (canon, coarrendatario sin responder o resultado vencido)
+  // no son contratos por generar: van aparte, con su etiqueta y sin «Generar contrato».
+  const porGenerar = sinContrato.filter((e) => !tieneTrabaContrato(e))
+  const porGenerarVisibles = sinContratoVisibles.filter((e) => !tieneTrabaContrato(e))
+  const conTraba = sinContrato.filter(tieneTrabaContrato)
+  const conTrabaVisibles = sinContratoVisibles.filter(tieneTrabaContrato)
+  const filaAprobado = (e: (typeof sinContrato)[number]) => {
+    const etapaTraba = etapaDeTraba(e.traba_contrato?.codigo)
+    const cta = !puedeEditar || e.traba_contrato?.codigo === 'vencido' ? 'Ver estudio' : etapaTraba ? 'Ver qué falta' : 'Generar contrato'
+    return (
+      <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
+        <td className="px-4 py-3 sm:px-6">
+          <Link href={`/expedientes/${e.id}`} className="font-medium text-primary-700 hover:underline">
+            {e.solicitante?.nombre ?? '—'}
+          </Link>
+          {etapaTraba && (
+            <span className={cn('block text-xs font-medium', etapaTraba === 'vencido' ? 'text-gray-600' : 'text-amber-800')}>
+              {etiquetaTraba(etapaTraba, e.traba_contrato)}
+            </span>
+          )}
+        </td>
+        <td className="px-4 py-3 sm:px-6">
+          {e.inmueble ? (
+            <div>
+              <span className="text-gray-900">
+                {e.inmueble.codigo && (
+                  <span className="mr-1.5 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs font-bold">{e.inmueble.codigo}</span>
+                )}
+                {e.inmueble.direccion}
+              </span>
+              {e.inmueble.ciudad && <span className="block text-xs text-gray-500">{e.inmueble.ciudad}</span>}
+            </div>
+          ) : (
+            <span className="text-gray-500">—</span>
+          )}
+        </td>
+        <td className="px-4 py-3 sm:px-6 text-xs text-gray-500">{formatDate(e.updated_at)}</td>
+        <td className="px-4 py-3 sm:px-6 text-right">
+          <Link
+            href={`/expedientes/${e.id}`}
+            className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
+          >
+            {cta}
+            <IconChevronRight size={14} />
+          </Link>
+        </td>
+      </tr>
+    )
+  }
+  const tablaAprobados = (filas: typeof sinContrato) => (
+    <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
+      <thead>
+        <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
+          <th className="px-4 py-3 sm:px-6 font-bold">Arrendatario</th>
+          <th className="px-4 py-3 sm:px-6 font-bold">Inmueble</th>
+          <th className="px-4 py-3 sm:px-6 font-bold">Aprobado el</th>
+          <th className="px-4 py-3 sm:px-6" />
+        </tr>
+      </thead>
+      <tbody>{filas.map(filaAprobado)}</tbody>
+    </table></div>
+  )
   const onFilterChange = (patch: Partial<IContratoListFilters>) => {
     if ('search' in patch) {
       setSearch(patch.search ?? '')
@@ -285,7 +348,7 @@ export function ContratosInmobiliariaView() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Pendientes de generar"
-          value={sinContrato.length}
+          value={porGenerar.length}
           color="text-coral-700"
           sub="Estudios aprobados sin contrato"
         />
@@ -314,61 +377,29 @@ export function ContratosInmobiliariaView() {
       >
         {loadingSinContrato ? (
           <SkeletonTable filas={2} columnas={4} etiqueta="Buscando estudios aprobados…" className="rounded-none border-0" />
-        ) : sinContratoVisibles.length === 0 ? (
+        ) : porGenerarVisibles.length === 0 ? (
           <EmptyRow
-            texto={sinContrato.length > 0 ? 'Ningún estudio aprobado coincide con la búsqueda.' : 'Ningún estudio aprobado espera contrato.'}
+            texto={porGenerar.length > 0 ? 'Ningún estudio aprobado coincide con la búsqueda.' : 'Ningún estudio aprobado espera contrato.'}
           />
         ) : (
-          <div className="overflow-x-auto"><table className="w-full min-w-max text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-left text-[11px] uppercase tracking-wide text-gray-600">
-                <th className="px-4 py-3 sm:px-6 font-bold">Arrendatario</th>
-                <th className="px-4 py-3 sm:px-6 font-bold">Inmueble</th>
-                <th className="px-4 py-3 sm:px-6 font-bold">Aprobado el</th>
-                <th className="px-4 py-3 sm:px-6" />
-              </tr>
-            </thead>
-            <tbody>
-              {sinContratoVisibles.map((e) => (
-                <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60">
-                  <td className="px-4 py-3 sm:px-6">
-                    <Link href={`/expedientes/${e.id}`} className="font-medium text-primary-700 hover:underline">
-                      {e.solicitante?.nombre ?? '—'}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 sm:px-6">
-                    {e.inmueble ? (
-                      <div>
-                        <span className="text-gray-900">
-                          {e.inmueble.codigo && (
-                            <span className="mr-1.5 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs font-bold">
-                              {e.inmueble.codigo}
-                            </span>
-                          )}
-                          {e.inmueble.direccion}
-                        </span>
-                        {e.inmueble.ciudad && <span className="block text-xs text-gray-500">{e.inmueble.ciudad}</span>}
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 sm:px-6 text-xs text-gray-500">{formatDate(e.updated_at)}</td>
-                  <td className="px-4 py-3 sm:px-6 text-right">
-                    <Link
-                      href={`/expedientes/${e.id}`}
-                      className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
-                    >
-                      {puedeEditar ? 'Generar contrato' : 'Ver estudio'}
-                      <IconChevronRight size={14} />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table></div>
+          tablaAprobados(porGenerarVisibles)
         )}
       </Panel>
+
+      {/* Aprobados que todavía no pueden pasar al contrato (traba_contrato): aparte, sin «Generar contrato». */}
+      {!loadingSinContrato && conTraba.length > 0 && (
+        <Panel
+          title="Aprobados que todavía no pueden pasar al contrato"
+          dot="bg-amber-500"
+          subtitle="Abra el estudio para ver qué falta"
+        >
+          {conTrabaVisibles.length === 0 ? (
+            <EmptyRow texto="Ningún estudio coincide con la búsqueda." />
+          ) : (
+            tablaAprobados(conTrabaVisibles)
+          )}
+        </Panel>
+      )}
 
       {/* Borradores YA generados: aquí la acción no es generar (el contrato
           existe), sino revisarlo y mandarlo a firma. */}

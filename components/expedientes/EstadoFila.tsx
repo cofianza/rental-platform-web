@@ -8,9 +8,20 @@
 import { useState } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IExpediente } from '@/types/expediente'
-import { ETAPA_LABEL, esEsperaDePersona, type EtapaEstudio, type Turno, type VistaTurno } from '@/lib/etapaEstudio'
+import {
+  ETAPA_LABEL,
+  esEsperaDePersona,
+  esEtapaDeTraba,
+  etiquetaTraba,
+  vigenciaResultado,
+  type EtapaEstudio,
+  type Turno,
+  type VigenciaResultado,
+  type VistaTurno,
+} from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
-import { etapaDeFila, accionDeFila, revisionDemorada } from '@/lib/etapaFila'
+import { etapaDeFila, accionDeFila, revisionDemorada, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
+import { IconClock } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { PastillaTurno, analistaAjeno, type OpcionesTurno } from './PastillaTurno'
@@ -31,6 +42,10 @@ const TONO: Record<Tono, { wrap: string; dot: string }> = {
 
 const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
   contrato: 'verde',
+  // Aprobado, pero algo impide el contrato: pendiente, no éxito.
+  canon_excede: 'ambar',
+  coarrendatario_pendiente: 'ambar',
+  vencido: 'gris',
   firma: 'verde',
   firma_incompleta: 'rojo',
   vigente: 'verde',
@@ -76,6 +91,7 @@ function pastillaEtapa(e: IExpediente, etapa: EtapaEstudio, interno: boolean): {
     if (ev?.estado_bloqueo === 'pendiente_reenvio') return { texto: 'Pendiente de reenvío', tono }
   }
   if (etapa === 'fallida' && ev?.coarrendatario_fallido) return { texto: 'Falló la consulta del coarrendatario', tono }
+  if (esEtapaDeTraba(etapa)) return { texto: etiquetaTraba(etapa, e.traba_contrato), tono }
   const c = ev?.condicion_coarrendatario
   // Etapas que salen del resultado que envía la API: su texto manda (la web no lo redacta).
   if (etapa === 'segundo_firmante' || etapa === 'bloqueado') {
@@ -137,6 +153,8 @@ export interface DatosEstadoFila {
   demora: ReturnType<typeof revisionDemorada>
   /** Adenda de precios §8.2: solo Cofianza (orden interno de la cola). */
   prioridadBaja: boolean
+  /** Hasta cuándo sirve el resultado (aprobado sin contrato); null = no se muestra. */
+  vigencia: VigenciaResultado | null
 }
 
 /**
@@ -171,7 +189,13 @@ export function datosEstadoFila(
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
   const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
-  const turno = etapa === 'firma' && expediente.depende_de === 'prospecto' ? 'firmas' : expediente.depende_de
+  // Con el canon que excede o el coarrendatario sin responder, decide quien gestiona (como turnoDeEtapa).
+  const turno =
+    etapa === 'firma' && expediente.depende_de === 'prospecto'
+      ? 'firmas'
+      : expediente.depende_de && TURNO_GESTOR_TRABA.includes(etapa)
+        ? 'gestor'
+        : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
   // En la espera, la etapa ya dice a quién se espera: «Esperando al prospecto» la contradecía.
   // U8: fuera de Cofianza la etapa ya dice «En revisión de Cofianza»; la pastilla de turno lo repetía.
@@ -195,6 +219,7 @@ export function datosEstadoFila(
       sinInmueble: !expediente.inmueble_id,
       enLista: true,
       textoApi: ev?.siguiente_accion_texto ?? null,
+      textoTraba: expediente.traba_contrato?.texto ?? null,
     }),
     score,
     turno:
@@ -211,7 +236,55 @@ export function datosEstadoFila(
         : null,
     demora,
     prioridadBaja: interno && expediente.estado === 'condicionado' && expediente.prioridad_revision === 'baja',
+    vigencia: vigenciaResultado(etapa, {
+      hasta: expediente.vigencia_hasta,
+      vencioEn: expediente.traba_contrato?.vencio_en,
+      sinMargen: expediente.traba_contrato?.sin_margen,
+      ahoraMs: ahora,
+    }),
   }
+}
+
+const TONO_VIGENCIA: Record<VigenciaResultado['tono'], string> = {
+  gris: 'text-gray-500',
+  // -700/-800: legibles también sobre el fondo coral de «Su turno».
+  ambar: 'text-amber-800',
+  rojo: 'text-red-700',
+}
+
+const PASTILLA_VIGENCIA: Record<VigenciaResultado['tono'], string> = {
+  gris: 'border-gray-200 bg-gray-50 text-gray-600',
+  ambar: 'border-amber-300 bg-amber-50 text-amber-800',
+  rojo: 'border-red-200 bg-red-50 text-red-700',
+}
+
+/**
+ * «Vence en N días» / «Vence hoy» / «Vencido» del resultado: en línea debajo de la etapa (lista, cola e
+ * inicio) o, con `pastilla`, junto al estado del encabezado del detalle.
+ */
+export function VigenciaFila({
+  vigencia,
+  pastilla = false,
+  className,
+}: {
+  vigencia: VigenciaResultado
+  pastilla?: boolean
+  className?: string
+}) {
+  return (
+    <span
+      title={vigencia.titulo}
+      className={cn(
+        'inline-flex items-center gap-1 font-medium',
+        pastilla ? cn('rounded-full border px-2.5 py-1 text-xs', PASTILLA_VIGENCIA[vigencia.tono]) : cn('text-[11px]', TONO_VIGENCIA[vigencia.tono]),
+        className,
+      )}
+    >
+      <IconClock size={pastilla ? 14 : 12} className="shrink-0" aria-hidden="true" />
+      {vigencia.texto}
+      <span className="sr-only">. {vigencia.titulo}</span>
+    </span>
+  )
 }
 
 /**
@@ -272,6 +345,7 @@ export function EstadoFila({
   return (
     <div className={cn('flex items-start gap-1', compacto ? 'flex-row flex-wrap items-center gap-1.5' : 'flex-col')}>
       <PastillaEtapa texto={d.texto} tono={d.tono} ayuda={d.ayuda} />
+      {d.vigencia && <VigenciaFila vigencia={d.vigencia} />}
       {d.score > 0 && (
         <span title={AYUDA_PUNTAJE} className="text-[11px] text-gray-500">
           Puntaje de la central: {d.score} (no es el de Cofianza)

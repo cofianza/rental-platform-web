@@ -17,6 +17,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { contratoService } from '@/services/contratoService'
 import { expedienteService } from '@/services/expedienteService'
 import type { IExpediente } from '@/types/expediente'
+import { etapaDeTraba } from '@/lib/etapaEstudio'
 
 /**
  * Aprobados con inmueble y sin contrato activo (un contrato cancelado no cuenta). ÚNICA fuente
@@ -34,6 +35,7 @@ export async function cargarAprobadosSinContrato(limit: number): Promise<IExpedi
     con_contrato_vivo: true,
   })
   // Aprobado sin propiedad: antes del contrato va «Vincular inmueble» (lo pide el detalle).
+  // Con traba_contrato vienen también: quien lo usa los separa con tieneTrabaContrato (no son «por generar»).
   const candidatos = aprobados.filter((e) => e.inmueble)
   if (candidatos.length === 0) return []
   if (candidatos[0].tiene_contrato_vivo !== undefined) return candidatos.filter((e) => !e.tiene_contrato_vivo)
@@ -45,6 +47,12 @@ export async function cargarAprobadosSinContrato(limit: number): Promise<IExpedi
   const conContrato = new Set(contratos.filter((c) => c.estado !== 'cancelado').map((c) => c.expediente_id))
   return candidatos.filter((e) => !conContrato.has(e.id))
 }
+
+/**
+ * Aprobado sin contrato al que algo le impide pasar al contrato (traba_contrato: canon, coarrendatario sin
+ * responder o resultado vencido). Reporte de Gerencia (21-nov): no cuenta como contrato por generar.
+ */
+export const tieneTrabaContrato = (e: IExpediente): boolean => etapaDeTraba(e.traba_contrato?.codigo) !== null
 
 export function useAprobadosSinContrato() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])

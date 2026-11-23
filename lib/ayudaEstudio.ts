@@ -4,7 +4,7 @@
  * centrales: también los lee la inmobiliaria.
  */
 
-import type { EtapaEstudio, VistaTurno } from './etapaEstudio'
+import { esEtapaDeTraba, type EtapaEstudio, type VistaTurno } from './etapaEstudio'
 
 export const AYUDA = {
   autorizacion:
@@ -67,6 +67,13 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   segundo_firmante: 'El estudio quedó aprobado con segundo firmante: falta presentarlo antes de que venza el plazo. Puede invitarlo en la tarjeta del coarrendatario, aquí abajo.',
   bloqueado: 'La operación está bloqueada. En «Evaluación crediticia», aquí abajo, está qué hacer para continuar.',
   contrato: 'El estudio está aprobado: cree el contrato aquí abajo.',
+  // Respaldo de las etapas de traba_contrato: cuando la API envía su texto, se muestra ese.
+  canon_excede:
+    'El canon de la propiedad es mayor al que cubre el estudio. Cree el contrato con un canon igual o menor al aprobado, o reasigne el estudio a una propiedad de ese canon.',
+  coarrendatario_pendiente:
+    'El estudio está aprobado, pero el coarrendatario invitado aún no responde. Puede esperar su respuesta o seguir sin él: el contrato se hará solo con el titular.',
+  vencido:
+    'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Para continuar, cree un estudio nuevo.',
   firma: 'El contrato está en firma electrónica: falta que firmen todas las partes.',
   firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Abra el contrato: allí verá qué aviso aceptar y si puede reenviarlo o debe cancelarlo.',
   vigente: 'El contrato está firmado y vigente.',
@@ -87,6 +94,12 @@ export const AYUDA_ETAPA_TERCERO: Partial<Record<EtapaEstudio, string>> = {
     'La persona autorizó y el estudio está pagado, pero la consulta no arrancó sola. Se ejecuta desde «Evaluación crediticia», aquí abajo.',
   decision: 'Lo decide un analista de Cofianza.',
   contrato: 'Falta que la inmobiliaria o el propietario creen el contrato.',
+  canon_excede:
+    'El canon de la propiedad es mayor al que cubre el estudio. Falta que la inmobiliaria o el propietario ajusten el canon del contrato o reasignen el estudio.',
+  coarrendatario_pendiente:
+    'El estudio está aprobado, pero el coarrendatario invitado aún no responde. La inmobiliaria o el propietario pueden esperarlo o seguir sin él.',
+  vencido:
+    'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Para continuar hace falta un estudio nuevo.',
   firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Falta que la inmobiliaria o el propietario la reenvíen o cancelen el contrato.',
 }
 
@@ -107,6 +120,12 @@ export const AYUDA_ETAPA_EQUIPO: Partial<Record<EtapaEstudio, string>> = {
     'La consulta a las centrales no se completó (no es un rechazo de crédito). Alguien de su equipo con permiso de edición puede corregir los datos y reintentarla.',
   decision: 'Lo decide un analista de Cofianza; avisamos a quien creó el inmueble y al responsable del estudio cuando decida.',
   contrato: 'El estudio está aprobado. Falta que alguien de su equipo con permiso de edición cree el contrato.',
+  canon_excede:
+    'El canon de la propiedad es mayor al que cubre el estudio. Falta que alguien de su equipo con permiso de edición ajuste el canon del contrato o reasigne el estudio.',
+  coarrendatario_pendiente:
+    'El estudio está aprobado, pero el coarrendatario invitado aún no responde. Alguien de su equipo con permiso de edición puede esperarlo o seguir sin él.',
+  vencido:
+    'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Alguien de su equipo con permiso de edición puede crear un estudio nuevo.',
   firma_incompleta:
     'La firma quedó incompleta y la fianza no opera. Falta que alguien de su equipo con permiso de edición la reenvíe o cancele el contrato.',
 }
@@ -136,9 +155,21 @@ export function queSigue(
     enLista?: boolean
     /** Qué hacer, redactado por la API (`siguiente_accion_texto`). Manda en las etapas que salen del resultado. */
     textoApi?: string | null
+    /**
+     * traba_contrato.texto, redactado por la API para quien gestiona: manda en las etapas que salen de él
+     * (canon, coarrendatario, vencido), solo en la vista del gestor que puede actuar.
+     */
+    textoTraba?: string | null
   },
 ): string {
   if ((etapa === 'segundo_firmante' || etapa === 'bloqueado') && o.textoApi) return o.textoApi
+  if (esEtapaDeTraba(etapa) && o.vista === 'gestor') {
+    // Con el perfil incompleto no puede actuar: el texto de la API le diría que haga algo que no puede.
+    if (o.perfilIncompleto) return 'Complete su perfil para poder actuar en este estudio.'
+    // Tal cual; en una lista solo se corrige «aquí abajo», que ahí no apunta a nada.
+    if (o.textoTraba) return o.enLista ? paraLista(o.textoTraba) : o.textoTraba
+  }
+  // Cofianza, Gerencia y solo lectura: los textos propios de su vista (AYUDA_ETAPA_TERCERO / _EQUIPO).
   const base = queSigueBase(etapa, o)
   const texto = o.enLista ? paraLista(base) : base
   // Sin edición por el perfil incompleto, «alguien de su equipo con permiso de edición» no le decía qué hacer.

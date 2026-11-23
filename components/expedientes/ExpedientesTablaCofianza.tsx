@@ -19,7 +19,7 @@ import { InfoTip } from '@/components/ui/InfoTip'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import type { EtapaEstudio, VistaTurno } from '@/lib/etapaEstudio'
 import type { IExpediente } from '@/types/expediente'
-import { AYUDA_PUNTAJE, PastillaEtapa, PrioridadBaja, datosEstadoFila, type DatosEstadoFila } from './EstadoFila'
+import { AYUDA_PUNTAJE, PastillaEtapa, PrioridadBaja, VigenciaFila, datosEstadoFila, type DatosEstadoFila } from './EstadoFila'
 import { textoTurno, turnoPropio } from './PastillaTurno'
 import { direccionLegible } from '@/lib/direccionLegible'
 import {
@@ -80,6 +80,7 @@ function Etapa({ datos }: { datos: DatosEstadoFila }) {
   return (
     <div className="flex flex-col items-start gap-1">
       <PastillaEtapa texto={datos.texto} tono={datos.tono} ayuda={datos.ayuda} conAyuda />
+      {datos.vigencia && <VigenciaFila vigencia={datos.vigencia} />}
       {/* Qué es el puntaje: una sola vez, en la burbuja del pie. */}
       {datos.score > 0 && (
         <span className="text-xs tabular-nums text-gray-500">
