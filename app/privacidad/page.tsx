@@ -7,6 +7,10 @@
  *
  * Datos de identificación (NIT y dirección) confirmados por el cliente el
  * 09-jul-2026 con la versión oficial v1.0 del documento legal.
+ *
+ * v1.3 (24-nov-2026): nueva sección 6, mensajes por WhatsApp (Meta pide que
+ * la política de la app de WhatsApp Business lo explique). Describe lo que
+ * hace la API (plantillas de aviso, estados del webhook) y la firma por Auco.
  */
 
 import type { Metadata } from 'next'
@@ -29,7 +33,7 @@ export default function PrivacidadPage() {
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Política de Tratamiento de Datos Personales</h1>
           <p className="text-base text-gray-700 mt-1">COFIANZA S.A.S.</p>
-          <p className="text-sm text-gray-500 mt-2">Versión 1.2 · Conforme a la Ley 1581 de 2012 y Decreto 1377 de 2013</p>
+          <p className="text-sm text-gray-500 mt-2">Versión 1.3 · Actualizada el 24 de noviembre de 2026 · Conforme a la Ley 1581 de 2012 y Decreto 1377 de 2013</p>
         </header>
 
         <article className="prose prose-sm max-w-none text-gray-700 space-y-7 leading-relaxed">
@@ -62,6 +66,7 @@ export default function PrivacidadPage() {
               <li>Información financiera, comercial y crediticia.</li>
               <li>Historial de pagos y comportamiento de obligaciones.</li>
               <li>Información de interacción digital, navegación o dispositivos.</li>
+              <li>Número de celular y estado de los mensajes de WhatsApp que se le envían (ver sección 6).</li>
               <li>Datos biométricos o de validación de identidad, cuando sea necesario.</li>
             </ul>
           </section>
@@ -123,14 +128,41 @@ export default function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">6. Datos sensibles</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">6. Mensajes por WhatsApp</h2>
+            <p>
+              COFIANZA envía mensajes por WhatsApp mediante la WhatsApp Business Platform de Meta Platforms, Inc. y sus filiales, incluida WhatsApp LLC («Meta»), al número de celular que suministró el titular o quien lo registró en la plataforma (por ejemplo, la inmobiliaria o el propietario que solicita el estudio). Este canal se usa únicamente para avisos relacionados con el servicio, y no para publicidad:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li>Enlaces y códigos de verificación para autorizar el tratamiento de datos y firmar electrónicamente esa autorización.</li>
+              <li>Enlaces para pagar el estudio y confirmación de otros pagos recibidos (por ejemplo, depósito o primer canon).</li>
+              <li>Avisos sobre el avance y el resultado del estudio, incluida la invitación a un coarrendatario o segundo firmante.</li>
+              <li>Citas para visitar inmuebles: solicitud, confirmación, reprogramación y cancelación.</li>
+              <li>Avisos a propietarios e inmobiliarias sobre las personas interesadas en sus inmuebles, con el nombre, el celular, el correo y el mensaje que esa persona dejó, y sobre los estudios que gestionan.</li>
+              <li>Recordatorios de cánones de arrendamiento vencidos (mora) y avisos sobre su cobro.</li>
+            </ul>
+            <p className="mt-3">
+              Para entregar cada mensaje, Meta recibe el número de celular del destinatario y el contenido del mensaje, que puede incluir datos del destinatario y de otras personas del mismo trámite: nombres, la dirección del inmueble, la fecha de una cita, el valor de un canon vencido, el canon aprobado en un estudio, los datos de contacto que dejó una persona interesada en un inmueble o un enlace. Meta actúa como encargado del tratamiento por cuenta de COFIANZA y puede tratar esta información en servidores ubicados fuera de Colombia. El uso que el titular haga de WhatsApp se rige, además, por las condiciones y la política de privacidad de WhatsApp.
+            </p>
+            <p className="mt-3">
+              Además, para la firma electrónica del contrato de arrendamiento, el proveedor de firma electrónica de COFIANZA envía por WhatsApp, desde su propia línea, el enlace para firmar y el código de verificación al celular de cada firmante, y actúa como encargado del tratamiento por cuenta de COFIANZA.
+            </p>
+            <p className="mt-3">
+              De los avisos que Meta le envía, COFIANZA solo usa y guarda el estado de cada mensaje (enviado, entregado, leído o fallido, con el código de error si falló), para confirmar que el aviso llegó y para que el equipo de COFIANZA sepa cuándo no se entregó. El número desde el que se envían estos avisos no recibe respuestas: lo que se escriba a ese número no se lee ni se guarda. Para consultas, el titular puede escribir a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a> o al WhatsApp de atención publicado en www.cofianza.co; lo que escriba por ese canal lo atiende el equipo de COFIANZA y se trata conforme a esta política.
+            </p>
+            <p className="mt-3">
+              El titular puede pedir en cualquier momento que no se le envíen avisos por WhatsApp escribiendo a <a href="mailto:hola@cofianza.co" className="text-primary-600 underline">hola@cofianza.co</a>. Los avisos que también se envían por correo electrónico o se muestran en la plataforma le seguirán llegando por esos medios. Algunos avisos y pasos solo se hacen por WhatsApp, como los recordatorios de cánones vencidos y la firma electrónica del contrato de arrendamiento; en ese caso, COFIANZA le indicará en su respuesta cómo continuar.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">7. Datos sensibles</h2>
             <p>
               Cuando se recolecten datos sensibles (por ejemplo, biométricos o de autenticación), su suministro será facultativo y su tratamiento se realizará únicamente para las finalidades informadas.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">7. Derechos del titular</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">8. Derechos del titular</h2>
             <p>El titular tiene derecho a:</p>
             <ul className="list-disc pl-5 space-y-1 mt-2">
               <li>Conocer, actualizar y rectificar sus datos personales.</li>
@@ -146,21 +178,21 @@ export default function PrivacidadPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">8. Seguridad de la información</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">9. Seguridad de la información</h2>
             <p>
               COFIANZA implementa medidas técnicas, administrativas y organizacionales razonables para proteger la información contra pérdida, uso indebido, acceso no autorizado, alteración o fraude.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">9. Vigencia de la información</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">10. Vigencia de la información</h2>
             <p>
               Los datos personales serán conservados durante el tiempo necesario para el cumplimiento de las finalidades autorizadas, las obligaciones legales y la gestión de riesgos, incluso después de terminada la relación contractual, cuando sea necesario.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">10. Actualizaciones</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">11. Actualizaciones</h2>
             <p>
               COFIANZA podrá modificar esta política en cualquier momento. La versión vigente estará disponible en su sitio web o en los canales de atención.
             </p>
