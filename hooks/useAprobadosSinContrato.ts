@@ -49,8 +49,8 @@ export async function cargarAprobadosSinContrato(limit: number): Promise<IExpedi
 }
 
 /**
- * Aprobado sin contrato al que algo le impide pasar al contrato (traba_contrato: canon, coarrendatario sin
- * responder o resultado vencido). Reporte de Gerencia (21-nov): no cuenta como contrato por generar.
+ * Aprobado sin contrato al que algo le impide pasar al contrato (traba_contrato: canon, segundo firmante sin
+ * terminar o resultado vencido). Reporte de Gerencia (21-nov): no cuenta como contrato por generar.
  */
 export const tieneTrabaContrato = (e: IExpediente): boolean => etapaDeTraba(e.traba_contrato?.codigo) !== null
 

@@ -49,7 +49,9 @@ export interface VolumenFilters {
 /**
  * Tasa de aprobación (P26): la decisión vigente de cada estudio; los aprobados
  * por tarifa (la que fija la ruta de aprobación); `condicionados` son los que siguen «en decisión» y
- * quedan fuera de la tasa; `total` son los decididos (aprobados + no aprobables).
+ * quedan fuera de la tasa; `total` son los decididos. Bloque 4: la misma definición de /estudios y del inicio,
+ * decididos = aprobados + con segundo firmante + no aprobables + bloqueados por listas (con una API anterior,
+ * aprobados + no aprobables, sin las dos cifras nuevas).
  */
 export interface AprobacionPeriodo {
   periodo: string
@@ -61,6 +63,10 @@ export interface AprobacionPeriodo {
   aprobados_tarifa_automatica: number
   aprobados_tarifa_no_automatica: number
   rechazados: number
+  /** Bloque 4: aprobados con segundo firmante. Decididos, pero no aprobados (cuentan en `total`). Ausente con una API anterior. */
+  con_segundo_firmante?: number
+  /** Bloque 4: bloqueados por listas restrictivas. Decididos (cuentan en `total`). Ausente con una API anterior. */
+  bloqueados?: number
   condicionados: number
   total: number
   tasa: number
@@ -79,6 +85,9 @@ export interface AprobacionData {
     total_condicionados: number
     total_resueltos: number
     tasa_global: number
+    /** Bloque 4: los dos cuentan en `total_resueltos` (el denominador de `tasa_global`). Ausentes con una API anterior. */
+    total_con_segundo_firmante?: number
+    total_bloqueados?: number
   }
 }
 

@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { etapaDeFila, accionDeFila, tomarDisponible, actividadConAlerta, revisionDemorada, siguienteOrdenActividad } from './etapaFila'
+import { ACCION_GESTOR, accionSegundoFirmante, etapaDeFila, accionDeFila, tomarDisponible, actividadConAlerta, revisionDemorada, siguienteOrdenActividad } from './etapaFila'
 import type { IExpediente, IEstudioVigente } from '@/types/expediente'
 
 const fila = (o: Partial<IExpediente> = {}, ev?: Partial<IEstudioVigente> | null): IExpediente =>
@@ -158,7 +158,7 @@ test('reporte de Gerencia (21-nov): aprobado con traba_contrato nunca es «crear
   // Con el coarrendatario sin responder el RPC puede decir «prospecto»: decide quien gestiona.
   const coa = fila({ estado: 'aprobado', depende_de: 'prospecto', traba_contrato: traba('coarrendatario_pendiente') })
   assert.equal(etapaDeFila(coa), 'coarrendatario_pendiente')
-  assert.equal(accionDeFila(coa, 'coarrendatario_pendiente'), 'esperar al coarrendatario o seguir sin él')
+  assert.equal(accionDeFila(coa, 'coarrendatario_pendiente'), 'esperar al segundo firmante o seguir sin él')
   // La API pone depende_de null y requiere_accion false en el vencido: sin acción en la pastilla.
   const vencido = fila({ estado: 'aprobado', depende_de: null, requiere_accion: false, traba_contrato: traba('vencido') })
   assert.equal(etapaDeFila(vencido), 'vencido')
@@ -186,12 +186,76 @@ test('estudio reabierto por un reemplazo: su propia etapa en la lista', () => {
   assert.equal(actividadConAlerta(fila({ estado: 'en_revision', reapertura_abierta: true, depende_de: 'prospecto' }), 'reapertura'), false)
 })
 
-test('aprobado con segundo firmante sin coarrendatario en curso: «invite al segundo firmante o reemplácelo»', () => {
-  const asf = (depende_de: IExpediente['depende_de']) =>
-    fila({ estado: 'condicionado', depende_de }, { estado: 'completado', resultado: 'condicionado', desenlace: 'aprobado_segundo_firmante' })
+test('aprobado con segundo firmante sin coarrendatario en curso: «invitar al segundo firmante» (en infinitivo, tras «Su turno:»)', () => {
+  const asf = (depende_de: IExpediente['depende_de'], ev: Partial<IEstudioVigente> = {}) =>
+    fila({ estado: 'condicionado', depende_de }, { estado: 'completado', resultado: 'condicionado', desenlace: 'aprobado_segundo_firmante', ...ev })
   assert.equal(etapaDeFila(asf('gestor')), 'segundo_firmante')
-  assert.equal(accionDeFila(asf('gestor'), 'segundo_firmante'), 'invite al segundo firmante o reemplácelo')
+  assert.equal(accionDeFila(asf('gestor'), 'segundo_firmante'), 'invitar al segundo firmante')
   // Con el coarrendatario en curso (la API: 'prospecto') o con apelación ('cofianza'), no hay acción de quien gestiona.
   assert.equal(accionDeFila(asf('prospecto'), 'segundo_firmante'), undefined)
   assert.equal(accionDeFila(asf('cofianza'), 'segundo_firmante'), undefined)
+  // «Reemplazar» solo si ya hay uno evaluado que no alcanza (la API: sustituir).
+  assert.equal(
+    accionDeFila(asf('gestor', { siguiente_accion: 'sustituir_segundo_firmante', siguiente_accion_texto: 'Esta persona no cumple las condiciones. Puede reemplazarla.' }), 'segundo_firmante'),
+    'reemplazar al segundo firmante',
+  )
+  assert.equal(
+    accionDeFila(asf('gestor', { siguiente_accion: 'presentar_segundo_firmante', siguiente_accion_texto: 'Presente un segundo firmante antes del 05/12/2026.' }), 'segundo_firmante'),
+    'invitar al segundo firmante',
+  )
+})
+
+test('bloque 4: propietario directo o sin acción de la API: sin «invitar al segundo firmante»', () => {
+  // Lo dice la API con su campo (lista y vista del estudio): el canal no admite segundo firmante.
+  const motivo = 'En este inmueble todavía no se puede sumar un segundo firmante.'
+  const canal = { siguiente_accion: 'presentar_segundo_firmante', siguiente_accion_texto: motivo, canal_sin_segundo_firmante: true }
+  assert.equal(accionSegundoFirmante(canal), undefined)
+  assert.equal(
+    accionDeFila(
+      fila({ estado: 'condicionado', depende_de: 'gestor' }, { estado: 'completado', resultado: 'condicionado', desenlace: 'aprobado_segundo_firmante', ...canal } as Partial<IEstudioVigente>),
+      'segundo_firmante',
+    ),
+    undefined,
+  )
+  // Sin el campo (una API anterior) no se deduce del texto: la acción de siempre.
+  assert.equal(accionSegundoFirmante({ siguiente_accion: 'presentar_segundo_firmante', siguiente_accion_texto: motivo }), 'invitar al segundo firmante')
+  // La API no pide acción (p. ej. con el segundo firmante en verificación).
+  assert.equal(accionSegundoFirmante({ siguiente_accion: 'ninguna', siguiente_accion_texto: 'Cofianza está verificando al segundo firmante que usted presentó.' }), undefined)
+  // Quien no cumple es el solicitante (lo dice el texto de la API): no se llama «segundo firmante» a quien no lo es.
+  assert.equal(
+    accionSegundoFirmante({ siguiente_accion: 'sustituir_segundo_firmante', siguiente_accion_texto: 'El solicitante no cumple las condiciones. Puede reemplazarlo por otra persona desde el estudio.' }),
+    'reemplazar al solicitante',
+  )
+  assert.equal(accionSegundoFirmante({ siguiente_accion: 'sustituir_segundo_firmante' }), 'reemplazar al segundo firmante')
+  // Sin datos (API anterior): la acción de siempre.
+  assert.equal(accionSegundoFirmante(null), 'invitar al segundo firmante')
+  assert.equal(accionSegundoFirmante({}), 'invitar al segundo firmante')
+})
+
+test('bloque 4: trabas del segundo firmante que ya aceptó (en evaluación o en verificación)', () => {
+  const traba = (codigo: string) => ({ codigo, texto: 'Texto de la API.' })
+  const evaluacion = fila({ estado: 'aprobado', depende_de: 'prospecto', traba_contrato: traba('coarrendatario_en_evaluacion') })
+  assert.equal(etapaDeFila(evaluacion), 'coarrendatario_en_evaluacion')
+  assert.equal(accionDeFila(evaluacion, 'coarrendatario_en_evaluacion'), 'esperar el resultado del segundo firmante o seguir sin él')
+  // Diga lo que diga depende_de (aquí, Cofianza): esperarlo o seguir sin él lo decide quien gestiona.
+  const verificacion = fila({ estado: 'aprobado', depende_de: 'cofianza', traba_contrato: traba('coarrendatario_en_verificacion') })
+  assert.equal(etapaDeFila(verificacion), 'coarrendatario_en_verificacion')
+  assert.equal(accionDeFila(verificacion, 'coarrendatario_en_verificacion'), 'esperar la verificación del segundo firmante o seguir sin él')
+  // Nunca «crear el contrato».
+  for (const e of [evaluacion, verificacion]) assert.notEqual(accionDeFila(e, etapaDeFila(e)), 'crear el contrato')
+  // El analista puede tomar la verificación; la evaluación en curso no es de Cofianza.
+  assert.equal(tomarDisponible(verificacion), true)
+  assert.equal(tomarDisponible(evaluacion), false)
+  // Las acciones van en infinitivo (siguen a «Su turno:» o a «Turno del gestor:»).
+  for (const accion of Object.values(ACCION_GESTOR)) assert.doesNotMatch(accion ?? '', /^(invite|espere|cree|ajuste|revise)\b/)
+  // El vencido no tiene acción en la pastilla (la API no lo cuenta como turno de nadie).
+  assert.equal(ACCION_GESTOR.vencido, undefined)
+})
+
+test('bloque 4: «aprobado con segundo firmante» con el segundo en verificación: lo toma un analista', () => {
+  const asf = (extra: Partial<IExpediente> = {}) =>
+    fila({ estado: 'condicionado', depende_de: 'cofianza', ...extra }, { estado: 'completado', resultado: 'condicionado', desenlace: 'aprobado_segundo_firmante' })
+  assert.equal(tomarDisponible(asf({ segundo_en_verificacion: true })), true)
+  // Sin la marca de la API (anterior), como antes.
+  assert.equal(tomarDisponible(asf()), false)
 })

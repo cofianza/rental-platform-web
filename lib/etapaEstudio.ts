@@ -25,6 +25,9 @@ export type EtapaEstudio =
   // Aprobado, pero la API dice qué impide crear el contrato (traba_contrato): nunca «crear el contrato».
   | 'canon_excede'
   | 'coarrendatario_pendiente'
+  // Bloque 4: el segundo firmante ya aceptó, pero su evaluación sigue en curso o Cofianza lo verifica.
+  | 'coarrendatario_en_evaluacion'
+  | 'coarrendatario_en_verificacion'
   | 'vencido'
   | 'firma'
   | 'firma_incompleta'
@@ -44,7 +47,8 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   pago: 'Pago pendiente',
   pago_prospecto: 'Esperando el pago',
   consulta: 'En evaluación',
-  espera_coarrendatario: 'Esperando al coarrendatario',
+  // «Segundo firmante» en los nombres de etapa: «coarrendatario» queda para la invitación y el rol declarado.
+  espera_coarrendatario: 'Esperando al segundo firmante',
   sin_ejecutar: 'Consulta sin ejecutar',
   fallida: 'Consulta fallida',
   // U8: un nombre por situación (lista, detalle y notificación). Con condición
@@ -56,7 +60,9 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   contrato: 'Aprobado',
   // Respaldo: con la leyenda «hasta un canon» etiquetaTraba pone la cifra («Aprobado hasta un canon de $X»).
   canon_excede: 'Aprobado · canon mayor al evaluado',
-  coarrendatario_pendiente: 'Aprobado · coarrendatario sin responder',
+  coarrendatario_pendiente: 'Aprobado · segundo firmante sin responder',
+  coarrendatario_en_evaluacion: 'Aprobado · segundo firmante en evaluación',
+  coarrendatario_en_verificacion: 'Aprobado · segundo firmante en verificación',
   vencido: 'Resultado vencido',
   firma: 'En firma',
   firma_incompleta: 'Firma incompleta',
@@ -64,7 +70,8 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   finalizado: 'Finalizado',
   no_aprobado: 'No aprobable',
   cancelado: 'Cancelado',
-  reapertura: 'Esperando al nuevo segundo firmante',
+  // Un solo nombre para el estudio reabierto (la persona nueva puede ser el solicitante o el segundo firmante).
+  reapertura: 'Reabierto: esperando a la persona nueva',
 }
 
 /**
@@ -101,10 +108,12 @@ export const PASO_DE_ETAPA: Record<EtapaEstudio, number> = {
   vencido: PASO_RESULTADO,
   // Se decide de nuevo con la evaluación de la persona nueva.
   reapertura: PASO_RESULTADO,
-  // Contrato: aprobado, también con lo que impide crearlo (canon mayor, coarrendatario sin responder).
+  // Contrato: aprobado, también con lo que impide crearlo (canon mayor o el segundo firmante sin terminar).
   contrato: 2,
   canon_excede: 2,
   coarrendatario_pendiente: 2,
+  coarrendatario_en_evaluacion: 2,
+  coarrendatario_en_verificacion: 2,
   firma: 3,
   firma_incompleta: 3,
   vigente: PASOS_DETALLE.length,
@@ -163,18 +172,35 @@ export interface DatosEtapa {
   reaperturaAbierta?: boolean
 }
 
+/** Los códigos de traba_contrato que esta versión conoce: cada uno es su propia etapa. */
+const ETAPAS_DE_TRABA: EtapaEstudio[] = [
+  'canon_excede',
+  'coarrendatario_pendiente',
+  'coarrendatario_en_evaluacion',
+  'coarrendatario_en_verificacion',
+  'vencido',
+]
+
 /**
  * La etapa de un estudio aprobado con traba_contrato. null sin traba o con un código que esta
  * versión no conoce: queda 'contrato', como siempre. Pura.
  */
 export function etapaDeTraba(codigo: string | null | undefined): EtapaEstudio | null {
-  if (codigo === 'canon_excede' || codigo === 'coarrendatario_pendiente' || codigo === 'vencido') return codigo
-  return null
+  return ETAPAS_DE_TRABA.find((e) => e === codigo) ?? null
 }
 
 /** Las etapas que salen de traba_contrato. */
-export const esEtapaDeTraba = (etapa: EtapaEstudio | null | undefined): boolean =>
-  etapa === 'canon_excede' || etapa === 'coarrendatario_pendiente' || etapa === 'vencido'
+export const esEtapaDeTraba = (etapa: EtapaEstudio | null | undefined): boolean => !!etapa && ETAPAS_DE_TRABA.includes(etapa)
+
+/**
+ * Trabas del segundo firmante en un estudio ya aprobado (sin responder, en evaluación o en verificación):
+ * quien gestiona puede esperarlo o seguir sin él.
+ */
+export const ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO: EtapaEstudio[] = [
+  'coarrendatario_pendiente',
+  'coarrendatario_en_evaluacion',
+  'coarrendatario_en_verificacion',
+]
 
 /** Pesos sin decimales y sin el espacio duro de Intl (como formatCurrency, sin importar constants: es pura). */
 const pesos = (cop: number) =>
@@ -222,7 +248,7 @@ function fechaLegible(iso: string, ahoraMs?: number): string {
 }
 
 /** Etapas en que el resultado todavía tiene que servir para el contrato. */
-const CON_VIGENCIA: EtapaEstudio[] = ['contrato', 'canon_excede', 'coarrendatario_pendiente']
+const CON_VIGENCIA: EtapaEstudio[] = ['contrato', 'canon_excede', ...ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO]
 
 /** Días de calendario de Colombia que faltan hasta la fecha, y si ya pasó (una fecha sola sirve todo ese día). null sin fecha válida. */
 function plazoHasta(iso: string, ahoraMs: number): { vencido: boolean; dias: number } | null {
@@ -235,17 +261,23 @@ function plazoHasta(iso: string, ahoraMs: number): { vencido: boolean; dias: num
 
 const venceEn = (dias: number) => (dias <= 0 ? 'Vence hoy' : `Vence en ${dias} ${dias === 1 ? 'día' : 'días'}`)
 
+const enDias = (dias: number) => `${dias} ${dias === 1 ? 'día' : 'días'}`
+
 /**
- * Hasta cuándo sirve el resultado (punto 7 del reporte de Gerencia, 21-nov): «Vence en N días»,
- * «Vence hoy» o «Vencido», en días de calendario de Colombia; ámbar con DIAS_ALERTA_VIGENCIA o
- * menos, rojo vencido. Con la etapa 'vencido': «Vencido» (gris, como la etapa) o, si todavía no
- * vence pero ya no alcanza para firmar (`sinMargen`), «Vence en N días · ya no alcanza para firmar»:
- * nunca un plazo como si el resultado sirviera. null en las demás etapas (en firma o con contrato ya no
- * aplica) o sin la fecha. Pura.
+ * Hasta cuándo sirve el resultado (punto 7 del reporte de Gerencia, 21-nov), en días de calendario de
+ * Colombia; ámbar con DIAS_ALERTA_VIGENCIA o menos, rojo vencido.
+ * - Con `firmarHasta` (la API: fin de la vigencia menos el margen que necesita la firma) se cuenta contra
+ *   esa fecha, que es la que de verdad le queda a quien gestiona: «Envíe a firma antes del 10 de diciembre
+ *   (5 días)» o «Envíe a firma hoy». Pasada esa fecha sin que la API haya marcado la traba, «Vence en N
+ *   días · ya no alcanza para firmar».
+ * - Sin `firmarHasta` (API anterior): «Vence en N días», «Vence hoy» o «Vencido», contra el fin de la vigencia.
+ * - Con la etapa 'vencido': «Vencido» (gris, como la etapa) o, si todavía no vence pero ya no alcanza para
+ *   firmar (`sinMargen`), «Vence en N días · ya no alcanza para firmar»: nunca un plazo como si sirviera.
+ * null en las demás etapas (en firma o con contrato ya no aplica) o sin la fecha. Pura.
  */
 export function vigenciaResultado(
   etapa: EtapaEstudio,
-  o: { hasta?: string | null; vencioEn?: string | null; sinMargen?: boolean; ahoraMs: number },
+  o: { hasta?: string | null; firmarHasta?: string | null; vencioEn?: string | null; sinMargen?: boolean; ahoraMs: number },
 ): VigenciaResultado | null {
   if (etapa === 'vencido') {
     const fecha = o.vencioEn ?? o.hasta
@@ -263,6 +295,21 @@ export function vigenciaResultado(
   const plazo = plazoHasta(o.hasta, o.ahoraMs)
   if (!plazo) return null
   if (plazo.vencido) return { texto: 'Vencido', tono: 'rojo', titulo: `El resultado venció el ${fechaLegible(o.hasta)}` }
+  const firma = o.firmarHasta ? plazoHasta(o.firmarHasta, o.ahoraMs) : null
+  if (o.firmarHasta && firma) {
+    if (firma.vencido) {
+      return {
+        texto: `${venceEn(plazo.dias)} · ya no alcanza para firmar`,
+        tono: 'ambar',
+        titulo: `El resultado vence el ${fechaLegible(o.hasta)} y ya no alcanza el tiempo para firmar el contrato`,
+      }
+    }
+    return {
+      texto: firma.dias <= 0 ? 'Envíe a firma hoy' : `Envíe a firma antes del ${fechaLegible(o.firmarHasta, o.ahoraMs)} (${enDias(firma.dias)})`,
+      tono: firma.dias <= DIAS_ALERTA_VIGENCIA ? 'ambar' : 'gris',
+      titulo: `Después de esa fecha ya no alcanza el tiempo para firmar; el resultado vence el ${fechaLegible(o.hasta)}`,
+    }
+  }
   return {
     texto: venceEn(plazo.dias),
     tono: plazo.dias <= DIAS_ALERTA_VIGENCIA ? 'ambar' : 'gris',
@@ -275,10 +322,22 @@ export interface DatosTrabaEtiqueta {
   canon_habilitado_cop?: number | null
   hasta_canon?: boolean
   sin_margen?: boolean
+  /** El canon supera el tope que Cofianza afianza (la API solo lo manda con true). */
+  sobre_tope?: boolean
 }
+
+/** Nombre de la traba del canon cuando lo que se supera es el tope que Cofianza afianza (no lo evaluado). */
+export const ETIQUETA_SOBRE_TOPE = 'Aprobado · canon sobre el tope'
+
+/**
+ * La traba del canon es por el tope de la destinación (lo decide la Gerencia General), no por lo evaluado:
+ * `traba_contrato.sobre_tope` de la API. Sin el campo (una API anterior), el nombre de siempre.
+ */
+export const esTrabaPorTope = (traba?: DatosTrabaEtiqueta | null): boolean => traba?.sobre_tope === true
 
 /**
  * El nombre de la etapa de traba, el mismo en la lista, el encabezado y la barra:
+ * - canon_excede por el tope de Cofianza: «Aprobado · canon sobre el tope»;
  * - canon_excede con la leyenda «hasta un canon»: «Aprobado hasta un canon de $X» (sin la cifra, «Aprobado hasta un canon menor»);
  *   sin la leyenda (canon mayor al evaluado, se puede evaluar de nuevo): «Aprobado · canon mayor al evaluado».
  *   Sin hasta_canon (API anterior) decide la cifra.
@@ -286,6 +345,7 @@ export interface DatosTrabaEtiqueta {
  */
 export function etiquetaTraba(etapa: EtapaEstudio, traba?: DatosTrabaEtiqueta | null): string {
   if (etapa === 'canon_excede') {
+    if (esTrabaPorTope(traba)) return ETIQUETA_SOBRE_TOPE
     const canon = typeof traba?.canon_habilitado_cop === 'number' && traba.canon_habilitado_cop > 0 ? traba.canon_habilitado_cop : null
     const hasta = traba?.hasta_canon ?? canon !== null
     if (!hasta) return ETAPA_LABEL.canon_excede
@@ -304,6 +364,14 @@ export function etapaCondicionado(desenlace: string | null | undefined): EtapaEs
   if (desenlace === 'bloqueado_listas') return 'bloqueado'
   return 'decision'
 }
+
+/**
+ * «Aprobado con segundo firmante» sin nada que hacer por ahora: la API lo dice con `siguiente_accion: 'ninguna'`
+ * (Cofianza verifica al segundo firmante ya presentado) y su `siguiente_accion_texto` lo explica. Mientras tanto
+ * no se pide presentar a nadie ni se muestra el plazo; al prospecto se le dice «En revisión». Pura.
+ */
+export const sinAccionSegundoFirmante = (e: { desenlace?: string | null; siguiente_accion?: string | null } | null | undefined): boolean =>
+  e?.desenlace === 'aprobado_segundo_firmante' && e.siguiente_accion === 'ninguna'
 
 /** El nombre genérico del condicionado cuando no se sabe cuál de los resultados es (punto 6: sin «Condicionado»). */
 export const ETIQUETA_CONDICIONADO = 'En revisión o con segundo firmante'
@@ -369,22 +437,28 @@ export interface DatosTurnoSegundoFirmante {
   coarrendatarioEnCurso?: boolean | null
   /** Hay una apelación radicada: la decide Cofianza. */
   apelacion?: boolean
+  /**
+   * Cofianza verifica al segundo firmante ya evaluado (`segundo_en_verificacion` de la API, o su evaluación
+   * terminada «En verificación»): quien gestiona no puede invitar ni reemplazar a nadie mientras tanto.
+   */
+  enVerificacion?: boolean
 }
 
 /**
  * El turno del «aprobado con segundo firmante», con el criterio de depende_de de la lista: con apelación
- * radicada, Cofianza; con el coarrendatario en curso, se le espera; si no, quien gestiona lo invita o lo
- * reemplaza. null mientras no se sabe si hay coarrendatario en curso. Pura.
+ * radicada o con el segundo firmante en verificación, Cofianza; con el coarrendatario en curso, se le
+ * espera; si no, quien gestiona lo invita o lo reemplaza. null mientras no se sabe si hay coarrendatario
+ * en curso. Pura.
  */
 export function turnoSegundoFirmante(o: DatosTurnoSegundoFirmante = {}): Turno | null {
-  if (o.apelacion) return 'cofianza'
+  if (o.apelacion || o.enVerificacion) return 'cofianza'
   if (o.coarrendatarioEnCurso === true) return 'prospecto'
   if (o.coarrendatarioEnCurso === false) return 'gestor'
   return null
 }
 
 /**
- * Mismo criterio que depende_de del RPC de la lista (20261027000002), para que
+ * Mismo criterio que depende_de del RPC de la lista, para que
  * lista y detalle digan lo mismo: la visita tampoco la cuenta el RPC. null = no
  * hay turno (cerrado o sin paso pendiente de alguien). `segundo`: lo que decide el
  * turno del aprobado con segundo firmante (turnoSegundoFirmante).
@@ -399,10 +473,12 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean, segundo
     case 'fallida':
     case 'contrato':
     // Lo que impide el contrato lo resuelve quien gestiona: ajustar el canon o reasignar, o esperar al
-    // coarrendatario o seguir sin él. El vencido no es turno de nadie (la API: depende_de null, no
-    // «requiere su acción»); la franja solo dice cómo seguir.
+    // segundo firmante (sin responder, en evaluación o en verificación) o seguir sin él. El vencido no es
+    // turno de nadie (la API: depende_de null, no «requiere su acción»); la franja solo dice cómo seguir.
     case 'canon_excede':
     case 'coarrendatario_pendiente':
+    case 'coarrendatario_en_evaluacion':
+    case 'coarrendatario_en_verificacion':
     case 'firma_incompleta':
     // Quien gestiona el estudio debe retirar a la persona indicada.
     case 'bloqueado':

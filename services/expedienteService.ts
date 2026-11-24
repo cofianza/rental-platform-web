@@ -23,8 +23,25 @@ import type {
   IHistorialTransicion,
   IEvaluacionRevisionManual,
   IPuntajeRevisionManual,
+  ITrabaContrato,
   EstudioFiltro,
 } from '@/types/expediente'
+
+/** Respuesta de POST /expedientes/:id/aprobar-condicionado. */
+export interface IAprobarCondicionadoResultado {
+  /** 'condicionado': verificado el segundo firmante, el estudio queda aprobado con segundo firmante (falta otro válido). */
+  expediente: { id: string; numero: string; estado: 'aprobado' | 'condicionado' }
+  contrato_id: string | null
+  puntaje_revision_manual?: IPuntajeRevisionManual | null
+  /**
+   * Solo si el estudio quedó aprobado: lo que impide crear el contrato (o null si nada lo impide), con la regla y el
+   * texto de la lista y del detalle. Ausente = no quedó aprobado, no se pudo leer, o una API anterior.
+   */
+  traba_contrato?: ITrabaContrato | null
+  /** Con `traba_contrato`: hasta cuándo sirve el resultado y hasta cuándo se puede enviar a firma (ISO). */
+  vigencia_hasta?: string | null
+  firmar_hasta?: string | null
+}
 
 // ============================================
 // Helpers
@@ -173,9 +190,6 @@ class ExpedienteService {
     return {
       total: response.data?.total || 0,
       por_estado,
-      ...(response.data && 'condicionados_por_decidir' in response.data
-        ? { condicionados_por_decidir: response.data.condicionados_por_decidir as number | null }
-        : {}),
       // Solo un número sirve; cualquier otra cosa es «no se sabe» (null).
       ...(response.data && 'revision_cofianza' in response.data
         ? { revision_cofianza: typeof response.data.revision_cofianza === 'number' ? (response.data.revision_cofianza as number) : null }
@@ -664,19 +678,13 @@ class ExpedienteService {
       nota_identidad?: string
     },
     datosContrato?: { duracion_contrato_meses: number; fecha_inicio_contrato: string },
-  ): Promise<{
-    /** 'condicionado': verificado el segundo firmante, el estudio queda aprobado con segundo firmante (falta otro válido). */
-    expediente: { id: string; numero: string; estado: 'aprobado' | 'condicionado' }
-    contrato_id: string | null
-    puntaje_revision_manual?: IPuntajeRevisionManual | null
-  }> {
+  ): Promise<IAprobarCondicionadoResultado> {
     // Sin datosContrato: solo aprueba (transición a 'aprobado'); el contrato se
     // genera luego desde la pestaña Contratos con el formulario completo.
-    const response = await apiClient.post<{
-      expediente: { id: string; numero: string; estado: 'aprobado' | 'condicionado' }
-      contrato_id: string | null
-      puntaje_revision_manual?: IPuntajeRevisionManual | null
-    }>(`/expedientes/${expedienteId}/aprobar-condicionado`, { ...revision, ...(datosContrato ?? {}) })
+    const response = await apiClient.post<IAprobarCondicionadoResultado>(`/expedientes/${expedienteId}/aprobar-condicionado`, {
+      ...revision,
+      ...(datosContrato ?? {}),
+    })
     return response.data
   }
 

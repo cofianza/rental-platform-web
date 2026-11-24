@@ -43,6 +43,11 @@ export interface ExpedienteProgressBarProps {
   /** Adenda 4 R3: «Está cerca» con R2: decide un analista; el literal no aplica. */
   condicionDecideAnalista?: boolean
   /**
+   * Prospecto, estudio en revisión sin nada que hacer (Cofianza verifica a la otra persona): el texto de la API
+   * (`siguiente_accion_texto`), que se muestra bajo «En revisión» en vez del aviso de la condición y su plazo.
+   */
+  textoRevision?: string | null
+  /**
    * Detalle para quien gestiona (revisión del Resumen, 23-oct): pasos con la
    * autorización y el pago, según la etapa real. undefined = la barra de
    * siempre (prospecto); null = la etapa todavía se está leyendo.
@@ -66,6 +71,7 @@ export function ExpedienteProgressBar({
   conCondicion,
   condicionObligatoria,
   condicionDecideAnalista,
+  textoRevision,
   etapa,
   etiquetaActual,
   className,
@@ -84,6 +90,7 @@ export function ExpedienteProgressBar({
       conCondicion={conCondicion}
       condicionObligatoria={condicionObligatoria}
       condicionDecideAnalista={condicionDecideAnalista}
+      textoRevision={textoRevision}
       className={className}
     />
   )
@@ -201,6 +208,7 @@ function BarraPorEstado({
   conCondicion,
   condicionObligatoria,
   condicionDecideAnalista,
+  textoRevision,
   className,
 }: Omit<ExpedienteProgressBarProps, 'etapa'>) {
   // Refresco en sitio cuando el detalle del estudio recarga.
@@ -276,14 +284,22 @@ function BarraPorEstado({
         )}
       >
         <p className="text-sm font-semibold">
-          {isRejected ? 'No aprobable por ahora' : conCondicion ? (condicionObligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : 'Estamos revisando su estudio'}
+          {isRejected
+            ? 'No aprobable por ahora'
+            : textoRevision
+              ? 'En revisión'
+              : conCondicion
+                ? condicionObligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
+                : 'Estamos revisando su estudio'}
         </p>
         <p className="text-xs mt-0.5">
           {isRejected
             ? 'Con la información disponible hoy no podemos respaldar este estudio. No es una decisión definitiva sobre usted.'
-            : conCondicion
-              ? mensajeCondicionCoarrendatario({ obligatoria: condicionObligatoria, decide_analista: condicionDecideAnalista })
-              : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
+            : textoRevision
+              ? textoRevision
+              : conCondicion
+                ? mensajeCondicionCoarrendatario({ obligatoria: condicionObligatoria, decide_analista: condicionDecideAnalista })
+                : 'Una persona de nuestro equipo está revisando su caso. Le escribimos apenas tengamos la respuesta.'}
         </p>
       </div>
     )

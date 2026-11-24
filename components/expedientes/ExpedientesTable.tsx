@@ -15,9 +15,9 @@ import { useRouter } from 'next/navigation'
 import { Avatar } from '@/components/ui/Avatar'
 import { AYUDA_PUNTAJE, PastillaEtapa, VigenciaFila, datosEstadoFila, type DatosEstadoFila } from './EstadoFila'
 import { textoTurno, turnoPropio } from './PastillaTurno'
-import { actividadConAlerta, siguienteOrdenActividad } from '@/lib/etapaFila'
+import { ACCION_GESTOR, actividadConAlerta, siguienteOrdenActividad } from '@/lib/etapaFila'
 import { direccionLegible } from '@/lib/direccionLegible'
-import type { EtapaEstudio, VistaTurno } from '@/lib/etapaEstudio'
+import { esEtapaDeTraba, type EtapaEstudio, type VistaTurno } from '@/lib/etapaEstudio'
 import { ITEMS_PER_PAGE_OPTIONS, SORTABLE_COLUMNS, EXPEDIENTE_UI_MESSAGES } from './constants'
 import { formatDate, formatDateTime } from '@/lib/constants'
 import { AYUDA } from '@/lib/ayudaEstudio'
@@ -242,14 +242,15 @@ function sinTurno(datos: DatosEstadoFila, e: IExpediente, vista: VistaTurno): st
   // El resultado ya dice que falta otra persona: aquí, lo que se espera (texto de la API si llega).
   if (datos.etapa === 'segundo_firmante') return e.estudio_vigente?.siguiente_accion_texto ?? 'Falta presentar al segundo firmante'
   if (datos.etapa === 'bloqueado') return e.estudio_vigente?.siguiente_accion_texto ?? 'La operación está bloqueada: vea qué hacer en el detalle'
-  // La etapa ya dice «Esperando al coarrendatario»: aquí, lo que falta.
+  // La etapa ya dice «Esperando al segundo firmante»: aquí, lo que falta.
   if (datos.etapa === 'espera_coarrendatario') return 'Esperando su autorización'
-  // Reabierto por un reemplazo: la etapa dice «Esperando al nuevo segundo firmante»; aquí, a quién se espera.
-  if (datos.etapa === 'reapertura') return 'Esperando a la persona nueva'
+  // Reabierto por un reemplazo: la etapa dice «Reabierto: esperando a la persona nueva»; aquí, lo que falta de ella.
+  if (datos.etapa === 'reapertura') return 'Falta que acepte, autorice y termine su evaluación'
   // Sin turno del RPC (p. ej. el vencido ya no «requiere su acción»): igual se dice cómo seguir.
   if (datos.etapa === 'vencido') return vista === 'gestor' ? 'Para continuar, cree un estudio nuevo' : 'Para continuar hace falta un estudio nuevo'
-  if (datos.etapa === 'canon_excede') return 'Ajustar el canon o reasignar el estudio'
-  if (datos.etapa === 'coarrendatario_pendiente') return 'Esperar al coarrendatario o seguir sin él'
+  // Las mismas palabras de la acción del turno (ACCION_GESTOR), con mayúscula.
+  const accion = ACCION_GESTOR[datos.etapa]
+  if (accion && esEtapaDeTraba(datos.etapa)) return accion.charAt(0).toUpperCase() + accion.slice(1)
   return null
 }
 

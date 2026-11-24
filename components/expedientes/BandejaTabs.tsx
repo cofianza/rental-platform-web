@@ -28,7 +28,15 @@ const BANDEJAS: Array<{
 }> = [
   { label: 'Todos', estado: null },
   { label: 'Antes del resultado', estado: 'borrador' },
-  { label: 'En revisión', estado: 'en_revision', siHay: true },
+  // Bloque 4: el estado 'en_revision' trae los estudios reabiertos por un cambio de persona (esperan a la persona
+  // nueva) y los que alguien devolvió a revisión a mano. Con el nombre «En revisión» quedaban junto a «En revisión
+  // de Cofianza» como si fueran lo mismo; el nombre dice las dos cosas que trae.
+  {
+    label: 'Reabiertos y devueltos',
+    estado: 'en_revision',
+    siHay: true,
+    nota: 'Estudios no aprobables que se reabrieron por un cambio de persona (esperan a la persona nueva) y estudios devueltos a revisión a mano.',
+  },
   { label: 'Incompletos', estado: 'informacion_incompleta', siHay: true },
   // Reporte de Gerencia (21-nov), punto 6: «En revisión de Cofianza», con el conteo y el filtro del chip
   // `revision_cofianza` (sin el segundo firmante ni el bloqueo por listas). Si la API no lo sabe, la bandeja

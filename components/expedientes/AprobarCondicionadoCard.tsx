@@ -24,7 +24,7 @@
 
 'use client'
 
-import { AYUDA } from '@/lib/ayudaEstudio'
+import { AYUDA, TEXTO_SEGUNDO_EN_VERIFICACION, TEXTO_VERIFICAR_SEGUNDO_FIRMANTE, avisoEstudioAprobado } from '@/lib/ayudaEstudio'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { IngresoVerificadoSection } from './IngresoVerificadoSection'
@@ -37,7 +37,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { estudioService } from '@/services/estudioService'
 import type { ICondicionCoarrendatario, IMotivosElegidos } from '@/types/estudio'
-import { esRolInterno, partirObservaciones, seCierraSiVence, noSeSabeSiCierraAlVencer, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
+import { esRolInterno, fechaCondicion, partirObservaciones, seCierraSiVence, noSeSabeSiCierraAlVencer, textoCondicionCoarrendatario, textoVisible } from './textoVisible'
 import { MotivosRevision } from './MotivosRevision'
 import { useMotivosAprobacion } from '@/hooks/useMotivosAprobacion'
 import { useMotivosDecision } from '@/hooks/useMotivosDecision'
@@ -81,6 +81,19 @@ interface AprobarCondicionadoCardProps {
    * 'aprobado_segundo_firmante', aprobar no lleva al contrato (falta otro segundo firmante válido).
    */
   desenlacePrevisto?: string | null
+  /**
+   * Resultado del estudio que envía la API (`desenlace` del titular). Con 'aprobado_segundo_firmante' (Adenda 5)
+   * la tarjeta no es la de la condición de coarrendatario de la Adenda 3: se puede reemplazar a la persona y el
+   * estudio se decide solo con las dos evaluaciones.
+   */
+  desenlace?: string | null
+  /**
+   * Con ese resultado: Cofianza verifica al segundo firmante ya presentado. 'api' = lo dice la API y
+   * `siguienteAccionTexto` ya es el de esa situación; 'web' = lo dedujo la web (una API anterior).
+   */
+  segundoEnVerificacion?: 'api' | 'web' | false
+  /** `siguiente_accion_texto` del titular, redactado por la API. */
+  siguienteAccionTexto?: string | null
   onAprobado?: () => void
 }
 
@@ -98,6 +111,9 @@ export function AprobarCondicionadoCard({
   motivoRevisionCoarrendatario,
   sinInmueble,
   desenlacePrevisto = null,
+  desenlace = null,
+  segundoEnVerificacion = false,
+  siguienteAccionTexto = null,
   onAprobado,
 }: AprobarCondicionadoCardProps) {
   const [loading, setLoading] = useState(false)
@@ -193,6 +209,16 @@ export function AprobarCondicionadoCard({
 
   if (expedienteEstado !== 'condicionado' || !(esCofianza || esDueno)) return null
 
+  // Adenda 5: «aprobado con segundo firmante». Ni «Requiere coarrendatario» ni las reglas de la Adenda 3
+  // (un solo coarrendatario, cierre si no califica, decisión de un analista con los dos).
+  const conSegundoFirmanteA5d = desenlace === 'aprobado_segundo_firmante'
+  const tituloCondicion = conSegundoFirmanteA5d
+    ? 'Aprobado con segundo firmante: qué sigue'
+    : condicion?.obligatoria
+      ? 'Requiere coarrendatario: qué sigue'
+      : 'Aprobado con condición: qué sigue'
+  const ayudaCondicion = conSegundoFirmanteA5d ? AYUDA.coarrendatario : AYUDA.condicionado
+
   if (condicion && sinSegundoFirmante) {
     const motivo = (motivoCanal && sinEscribanos(motivoCanal)) || 'En este inmueble todavía no se puede sumar un segundo firmante.'
     return (
@@ -201,8 +227,8 @@ export function AprobarCondicionadoCard({
         icono={<IconShieldCheck size={18} />}
         titulo={
           <span className="inline-flex items-center gap-1">
-            {condicion.obligatoria ? 'Requiere coarrendatario: qué sigue' : 'Aprobado con condición: qué sigue'}
-            <InfoTip texto={AYUDA.condicionado} lado="derecha" />
+            {tituloCondicion}
+            <InfoTip texto={ayudaCondicion} lado="derecha" />
           </span>
         }
         descripcion={
@@ -224,6 +250,42 @@ export function AprobarCondicionadoCard({
     )
   }
 
+  if (condicion && conSegundoFirmanteA5d) {
+    const fecha = fechaCondicion(condicion.vence_en)
+    // Qué falta, con las palabras de la API (las de la franja): ella sabe si hay que presentar a alguien o si la
+    // persona presentada se puede reemplazar. Sin su texto, el respaldo no promete el reemplazo: remite a donde se ve.
+    const queFalta =
+      siguienteAccionTexto?.trim() ||
+      `Falta un segundo firmante válido antes del ${fecha}. Si la persona presentada no alcanza, en «Personas del estudio» verá si puede reemplazarla.`
+    const descripcion = segundoEnVerificacion
+      ? esCofianza
+        ? TEXTO_VERIFICAR_SEGUNDO_FIRMANTE
+        : (segundoEnVerificacion === 'api' && siguienteAccionTexto) || TEXTO_SEGUNDO_EN_VERIFICACION
+      : condicion.vencida
+        ? `Venció el plazo para presentar un segundo firmante válido (${fecha}). Sin él, el estudio queda como no aprobable.`
+        : `${queFalta} Con las dos evaluaciones, el estudio se decide solo; Cofianza interviene únicamente si hay algo por verificar.`
+    // Con la verificación abierta ya hay un segundo firmante presentado: lo que se espera es a Cofianza.
+    const mientras = segundoEnVerificacion ? 'Mientras Cofianza lo verifica' : 'Mientras falte el segundo firmante'
+    return (
+      <TarjetaSiguientePaso
+        tono="revision"
+        icono={<IconShieldCheck size={18} />}
+        titulo={
+          <span className="inline-flex items-center gap-1">
+            {tituloCondicion}
+            <InfoTip texto={ayudaCondicion} lado="derecha" />
+          </span>
+        }
+        descripcion={descripcion}
+        pie={
+          esCofianza
+            ? `${mientras} no se puede aprobar el estudio a mano, pedir soportes al solicitante ni reasignarlo a otra propiedad. Para no aprobarlo, use «Cambiar estado», arriba.`
+            : `${mientras} no se piden más soportes ni se puede reasignar el estudio a otra propiedad.`
+        }
+      />
+    )
+  }
+
   if (condicion) {
     // Sin un coarrendatario que la resuelva (al vencer o porque el evaluado no
     // alcanza: solo se admite uno), ¿se cierra como no aprobado? (API vencidaSeRechaza)
@@ -236,8 +298,8 @@ export function AprobarCondicionadoCard({
         icono={<IconShieldCheck size={18} />}
         titulo={
           <span className="inline-flex items-center gap-1">
-            {condicion.obligatoria ? 'Requiere coarrendatario: qué sigue' : 'Aprobado con condición: qué sigue'}
-            <InfoTip texto={AYUDA.condicionado} lado="derecha" />
+            {tituloCondicion}
+            <InfoTip texto={ayudaCondicion} lado="derecha" />
           </span>
         }
         descripcion={textoCondicionCoarrendatario(condicion)}
@@ -364,10 +426,13 @@ export function AprobarCondicionadoCard({
       const conSegundoFirmante = res.expediente?.estado
         ? res.expediente.estado === 'condicionado'
         : desenlacePrevisto === 'aprobado_segundo_firmante'
+      // Aprobado: si algo impide crear el contrato (`traba_contrato` de la misma respuesta: canon, segundo firmante
+      // sin terminar, resultado vencido), se dice eso y no «ya puede crearlo». Sin el campo (no se pudo leer, o una
+      // API anterior), el aviso de siempre.
       toast.success(
         conSegundoFirmante
           ? `Quedó aprobado con segundo firmante: falta un segundo firmante válido.${puntaje}`
-          : `Estudio aprobado. Ya puede crear el contrato.${puntaje}`,
+          : `${avisoEstudioAprobado(res.traba_contrato, { sinInmueble })}${puntaje}`,
       )
       onAprobado?.()
     } catch (err) {
@@ -396,8 +461,8 @@ export function AprobarCondicionadoCard({
       icono={<IconShieldCheck size={18} />}
       titulo={
         <span className="inline-flex items-center gap-1">
-          {/* A la agencia, el mismo nombre del chip y de la franja; «condicionado» es el estado interno. */}
-          {esCofianza ? 'Estudio condicionado: qué sigue' : 'En revisión de Cofianza: qué sigue'}
+          {/* El mismo nombre del chip y de la franja para todos; «condicionado» es el estado interno. */}
+          En revisión de Cofianza: qué sigue
           <InfoTip texto={AYUDA.condicionado} lado="derecha" />
         </span>
       }

@@ -15,6 +15,19 @@ export interface DashboardSummary {
   ingresosDelPeriodo: number
   /** Estudios con decisión en el periodo (backends viejos no lo mandan). */
   decididosDelPeriodo?: number
+  /**
+   * Bloque 4: las cifras de `tasaAprobacion`, con la misma definición de /estudios y /reportes: aprobados /
+   * decididos, con decididos = aprobados + con segundo firmante + rechazados (no aprobables) + bloqueados por
+   * listas. `en_revision` (de Cofianza) va fuera de la tasa. Ausente con una API anterior: la tasa se muestra como antes.
+   */
+  desglose_aprobacion?: {
+    aprobados: number
+    con_segundo_firmante: number
+    rechazados: number
+    bloqueados: number
+    decididos: number
+    en_revision: number
+  }
 }
 
 export interface ExpedientePorEstado {
@@ -416,10 +429,14 @@ export interface MiCarteraAnalitica {
     scorePromedio?: number | null
     decisiones30d: {
       aprobados: number
-      /** P26: en decisión (condicionados que el analista aún no resuelve); fuera de la tasa. */
+      /** Bloque 4: aprobados con segundo firmante (decididos, no aprobados). Ausente con una API anterior. */
+      con_segundo_firmante?: number
+      /** Bloque 4: bloqueados por listas restrictivas (decididos). Ausente con una API anterior. */
+      bloqueados?: number
+      /** P26: en decisión (lo que revisa Cofianza y todavía no resuelve); fuera de la tasa. */
       condicionados: number
       rechazados: number
-      /** Decididos: aprobados + rechazados. */
+      /** Decididos: aprobados + con segundo firmante + rechazados + bloqueados (con una API anterior, aprobados + rechazados). */
       total: number
       /** Aprobados sobre decididos, con la decisión efectiva (igual que el informe y el dashboard). */
       tasaAprobacion: number

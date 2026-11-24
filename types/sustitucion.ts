@@ -87,8 +87,6 @@ export interface ICotizacionSustitucion {
   total_a_pagar_cop: number
   sale: IPersonaSustitucion
   aviso: string
-  /** Días que le quedan a la persona nueva para autorizar (lo calcula la API; con el estudio rechazado, el plazo de la reapertura). */
-  plazo_restante_dias?: number | null
   /** Estudio rechazado: al cargar a la persona nueva vuelve a revisión (el aviso ya lo dice). */
   vuelve_a_revision?: boolean
   /** Estudio rechazado: hasta cuándo debe autorizar la persona nueva (ISO). */

@@ -72,7 +72,12 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   canon_excede:
     'El canon de la propiedad es mayor al que cubre el estudio. Cree el contrato con un canon igual o menor al aprobado, o reasigne el estudio a una propiedad de ese canon.',
   coarrendatario_pendiente:
-    'El estudio está aprobado, pero el coarrendatario invitado aún no responde. Puede esperar su respuesta o seguir sin él: el contrato se hará solo con el titular.',
+    'El estudio está aprobado, pero el segundo firmante invitado aún no responde. Puede esperar su respuesta o seguir sin él: el contrato se hará solo con el titular.',
+  // Sin decir «en curso»: la misma traba cubre la consulta que falló (la API lo distingue en su texto, que es el que se muestra).
+  coarrendatario_en_evaluacion:
+    'El estudio está aprobado, pero el segundo firmante que aceptó todavía no tiene resultado. Puede esperarlo o seguir sin él: el contrato se hará solo con el titular.',
+  coarrendatario_en_verificacion:
+    'El estudio está aprobado. Cofianza está verificando al segundo firmante: puede esperar el resultado o seguir sin él (sale del estudio y el contrato se hará solo con el titular).',
   vencido:
     'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Para continuar, cree un estudio nuevo.',
   firma: 'El contrato está en firma electrónica: falta que firmen todas las partes.',
@@ -100,7 +105,11 @@ export const AYUDA_ETAPA_TERCERO: Partial<Record<EtapaEstudio, string>> = {
   canon_excede:
     'El canon de la propiedad es mayor al que cubre el estudio. Falta que la inmobiliaria o el propietario ajusten el canon del contrato o reasignen el estudio.',
   coarrendatario_pendiente:
-    'El estudio está aprobado, pero el coarrendatario invitado aún no responde. La inmobiliaria o el propietario pueden esperarlo o seguir sin él.',
+    'El estudio está aprobado, pero el segundo firmante invitado aún no responde. La inmobiliaria o el propietario pueden esperarlo o seguir sin él.',
+  coarrendatario_en_evaluacion:
+    'El estudio está aprobado, pero el segundo firmante que aceptó todavía no tiene resultado. La inmobiliaria o el propietario pueden esperarlo o seguir sin él.',
+  coarrendatario_en_verificacion:
+    'El estudio está aprobado. Cofianza verifica al segundo firmante antes de vincularlo al contrato; la inmobiliaria o el propietario pueden esperar el resultado o seguir sin él.',
   vencido:
     'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Para continuar hace falta un estudio nuevo.',
   firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Falta que la inmobiliaria o el propietario la reenvíen o cancelen el contrato.',
@@ -126,15 +135,63 @@ export const AYUDA_ETAPA_EQUIPO: Partial<Record<EtapaEstudio, string>> = {
   canon_excede:
     'El canon de la propiedad es mayor al que cubre el estudio. Falta que alguien de su equipo con permiso de edición ajuste el canon del contrato o reasigne el estudio.',
   coarrendatario_pendiente:
-    'El estudio está aprobado, pero el coarrendatario invitado aún no responde. Alguien de su equipo con permiso de edición puede esperarlo o seguir sin él.',
+    'El estudio está aprobado, pero el segundo firmante invitado aún no responde. Alguien de su equipo con permiso de edición puede esperarlo o seguir sin él.',
+  coarrendatario_en_evaluacion:
+    'El estudio está aprobado, pero el segundo firmante que aceptó todavía no tiene resultado. Alguien de su equipo con permiso de edición puede esperarlo o seguir sin él.',
+  coarrendatario_en_verificacion:
+    'El estudio está aprobado. Cofianza está verificando al segundo firmante: alguien de su equipo con permiso de edición puede esperar el resultado o seguir sin él.',
   vencido:
     'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Alguien de su equipo con permiso de edición puede crear un estudio nuevo.',
   firma_incompleta:
     'La firma quedó incompleta y la fianza no opera. Falta que alguien de su equipo con permiso de edición la reenvíe o cancele el contrato.',
 }
 
+/**
+ * «Aprobado con segundo firmante» con el segundo firmante ya evaluado y en verificación de Cofianza, cuando la
+ * API todavía no lo dice con su propio texto (una API anterior). Sin prometer nada sobre el plazo: eso solo lo
+ * afirma el texto de la API.
+ */
+export const TEXTO_SEGUNDO_EN_VERIFICACION =
+  'Cofianza está verificando al segundo firmante presentado. No tiene que hacer nada por ahora: el resultado aparecerá aquí.'
+
+/** El respaldo para Cofianza sin edición (Gerencia): no es «usted presentó». */
+const TEXTO_SEGUNDO_EN_VERIFICACION_TERCERO = 'Cofianza verifica al segundo firmante; mientras tanto, quien gestiona el estudio no tiene que hacer nada.'
+
+/**
+ * Al analista (administrador u operador): la verificación se resuelve en la evaluación del segundo firmante. Sin
+ * nombrar los botones: cuáles hay (dar por verificado, reintentar, ninguno) lo dice la API allí mismo.
+ */
+export const TEXTO_VERIFICAR_SEGUNDO_FIRMANTE =
+  'Verifique al segundo firmante en su evaluación, aquí abajo: allí están las acciones disponibles.'
+
+/**
+ * No aprobable, cuando alguna persona se puede reemplazar: la salida va antes que la apelación. La apelación,
+ * «si todavía aplica»: su plazo pudo vencer o agotarse (lo dice el banner de abajo).
+ */
+const NO_APROBADO_CON_REEMPLAZO: Record<VistaTurno, string> = {
+  gestor:
+    'El estudio no quedó aprobable. Puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
+  equipo:
+    'El estudio no quedó aprobable. Alguien de su equipo con permiso de edición puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
+  cofianza:
+    'El estudio no quedó aprobable. La inmobiliaria o el propietario pueden reemplazar a una persona o, si todavía aplica, el solicitante puede apelar (vea abajo).',
+}
+
+/**
+ * El aviso de un estudio que acaba de quedar aprobado. Con algo que impide crear el contrato (el texto de
+ * traba_contrato, redactado por la API) se dice eso; sin propiedad, que falta vincularla; si no, que ya
+ * puede crearlo. Pura.
+ */
+export function avisoEstudioAprobado(traba?: { texto?: string | null } | null, o: { sinInmueble?: boolean } = {}): string {
+  const texto = traba?.texto?.trim()
+  if (texto) return `Estudio aprobado. ${texto}`
+  if (o.sinInmueble) return 'Estudio aprobado. Para crear el contrato, primero vincule el inmueble.'
+  return 'Estudio aprobado. Ya puede crear el contrato.'
+}
+
 function textoEspera(plazo: string, gestor: boolean): string {
-  const base = `Ya se consultaron las centrales de riesgo. La decisión espera ${plazo} a que el coarrendatario autorice; después se decide con quienes hayan autorizado.`
+  // «Segundo firmante», como el nombre de la etapa («Esperando al segundo firmante»).
+  const base = `Ya se consultaron las centrales de riesgo. La decisión espera ${plazo} a que el segundo firmante autorice; después se decide con quienes hayan autorizado.`
   return gestor ? `${base} Si no lo va a hacer, reenvíele la invitación o cancélela aquí abajo.` : base
 }
 
@@ -163,9 +220,31 @@ export function queSigue(
      * (canon, coarrendatario, vencido), solo en la vista del gestor que puede actuar.
      */
     textoTraba?: string | null
+    /**
+     * Cofianza verifica al segundo firmante ya evaluado. 'api' = lo dice la API (`segundo_en_verificacion`) y su
+     * `siguiente_accion_texto` ya es el de esa situación; 'web' = lo dedujo la web de la evaluación del segundo
+     * firmante (una API anterior): el texto de la API todavía pediría presentar a alguien, y no se usa.
+     */
+    segundoEnVerificacion?: 'api' | 'web' | false
+    /** No aprobable: alguna persona del estudio se puede reemplazar (lo dice el texto de `persona_a5d`). */
+    reemplazoPosible?: boolean
   },
 ): string {
+  const analista = o.vista === 'cofianza' && o.analista
+  // Al analista, con el segundo firmante en verificación (también con el estudio ya aprobado): qué le toca.
+  if (analista && (etapa === 'coarrendatario_en_verificacion' || (etapa === 'segundo_firmante' && o.segundoEnVerificacion))) {
+    return o.enLista ? paraLista(TEXTO_VERIFICAR_SEGUNDO_FIRMANTE) : TEXTO_VERIFICAR_SEGUNDO_FIRMANTE
+  }
+  if (etapa === 'segundo_firmante' && o.segundoEnVerificacion) {
+    // La API redacta el texto de cada rol (quien gestiona, Cofianza); el respaldo, solo si lo dedujo la web.
+    if (o.segundoEnVerificacion === 'api' && o.textoApi) return o.textoApi
+    return o.vista === 'cofianza' ? TEXTO_SEGUNDO_EN_VERIFICACION_TERCERO : TEXTO_SEGUNDO_EN_VERIFICACION
+  }
   if ((etapa === 'segundo_firmante' || etapa === 'bloqueado') && o.textoApi) return o.textoApi
+  if (etapa === 'no_aprobado' && o.reemplazoPosible) {
+    const texto = NO_APROBADO_CON_REEMPLAZO[o.vista]
+    return o.enLista ? paraLista(texto) : texto
+  }
   if (esEtapaDeTraba(etapa) && o.vista === 'gestor') {
     // Con el perfil incompleto no puede actuar: el texto de la API le diría que haga algo que no puede.
     if (o.perfilIncompleto) return 'Complete su perfil para poder actuar en este estudio.'
@@ -187,6 +266,7 @@ const EN_LISTA: Array<[RegExp, string]> = [
   [/en la tarjeta del pago, aquí abajo/g, 'en la tarjeta del pago, en el detalle del estudio'],
   [/en la tarjeta de la cita, aquí abajo/g, 'en la tarjeta de la cita, en el detalle del estudio'],
   [/en la tarjeta de abajo/g, 'en el detalle del estudio'],
+  [/\(vea abajo\)/g, '(vea el detalle del estudio)'],
   [/aquí abajo/g, 'en el detalle del estudio'],
   [/en el detalle;/g, 'en el detalle del estudio;'],
   [/^Abajo están/, 'En el detalle del estudio están'],

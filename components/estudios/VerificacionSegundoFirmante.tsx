@@ -12,12 +12,16 @@
 
 import { useId, useState } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { IconAlertTriangle, IconLoader, IconRefresh, IconShieldCheck } from '@/components/icons'
+import { IconAlertTriangle, IconClock, IconLoader, IconRefresh, IconShieldCheck } from '@/components/icons'
 import { formatDateTime } from '@/lib/constants'
+import { efectoVerificacionSegundo, fraseResultadoLimpio } from '@/lib/personaEstudio'
 import { useVerificacionSegundoFirmante } from '@/hooks/useVerificacionSegundoFirmante'
 import type { IVerificacionSegundoFirmante } from '@/types/estudio'
 
 const MIN_NOTA = 10
+
+/** Ancla de la verificación en el Resumen del estudio: destino de «Ir a la verificación» de la franja del turno. */
+export const ID_VERIFICACION_SEGUNDO = 'verificacion-segundo-firmante'
 
 const BOTON =
   'inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto'
@@ -26,11 +30,14 @@ export function VerificacionSegundoFirmante({
   estudioId,
   verificacion,
   onHecho,
+  estudioAprobado = false,
 }: {
   estudioId: string
   verificacion: IVerificacionSegundoFirmante
   /** Recarga el detalle (con o sin éxito): los botones reflejan lo que diga la API. */
   onHecho: () => Promise<unknown> | void
+  /** El estudio ya está aprobado: verificarla la vincula al contrato (no «decide» el estudio con las dos personas). */
+  estudioAprobado?: boolean
 }) {
   const [dialogo, setDialogo] = useState<'resolver' | 'reintentar' | null>(null)
   const [nota, setNota] = useState('')
@@ -40,8 +47,12 @@ export function VerificacionSegundoFirmante({
   const ayudaNotaId = useId()
   const { darPorVerificado, reintentar, enviando, ultimoError } = useVerificacionSegundoFirmante(estudioId, {
     seResuelveSolo: verificacion.se_resuelve_solo,
+    estudioAprobado,
     alTerminar: onHecho,
   })
+  // El sistema reintenta solo: se avisa antes de que el analista pida (y Cofianza pague) una consulta de más.
+  // El texto lo redacta la API, y solo lo manda mientras queden intentos.
+  const avisoAutomatico = verificacion.reintento_automatico?.texto?.trim() || null
   const notaValida = nota.trim().length >= MIN_NOTA
 
   const confirmar = async () => {
@@ -62,7 +73,7 @@ export function VerificacionSegundoFirmante({
   // «Actualizar» cuando no hay qué hacer o cuando se espera la respuesta de Auco.
   const conActualizar = (!verificacion.puede_dar_por_verificado && !verificacion.puede_reintentar) || !!verificacion.reintento_pedido_en
   const alLlegar = verificacion.se_resuelve_solo
-    ? 'Si el resultado llega limpio, el estudio se decide solo.'
+    ? fraseResultadoLimpio(estudioAprobado)
     : 'Cuando llegue el resultado, apruebe el estudio con «Aprobar estudio» y deje constancia de cómo la verificó.'
 
   return (
@@ -82,6 +93,12 @@ export function VerificacionSegundoFirmante({
       {verificacion.motivo && (
         <p role="status" className="text-sm font-medium text-amber-900">
           {verificacion.motivo}
+        </p>
+      )}
+      {avisoAutomatico && (
+        <p className="flex items-start gap-2 text-sm text-amber-900">
+          <IconClock size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>{avisoAutomatico}</span>
         </p>
       )}
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -142,8 +159,8 @@ export function VerificacionSegundoFirmante({
               </p>
               <p>
                 Úselo cuando ya verificó eso por su cuenta. Para las listas restrictivas, por ejemplo, en la búsqueda de
-                sanciones de OFAC y en la lista consolidada de la ONU, por nombre y número de documento. Con la constancia, el
-                estudio se decide con las dos personas.
+                sanciones de OFAC y en la lista consolidada de la ONU, por nombre y número de documento. Con la constancia,{' '}
+                {efectoVerificacionSegundo(estudioAprobado)}.
               </p>
               <label htmlFor={notaId} className="block text-xs font-medium text-gray-700">
                 Qué fuentes consultó y qué encontró (queda en el registro)
@@ -163,6 +180,7 @@ export function VerificacionSegundoFirmante({
             </div>
           ) : (
             <ul className="list-disc space-y-1.5 pl-5">
+              {avisoAutomatico && <li className="font-medium text-gray-900">{avisoAutomatico}</li>}
               <li>Se le pide otra vez a Auco la consulta de antecedentes y listas restrictivas de esta persona. Pedirla puede tardar unos segundos.</li>
               <li>La paga Cofianza: al cliente no se le cobra nada ni se gasta un cupo.</li>
               <li>

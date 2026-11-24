@@ -147,12 +147,57 @@ const enumerar = (partes: string[]) => (partes.length < 2 ? partes.join('') : `$
 export function textoTasaAprobacion(conteos: ConteosEstudios | null | undefined): string | null {
   const t = tasaAprobacion(conteos)
   if (!t) return null
+  return `Tasa de aprobación: ${tasaLegible(t.tasa)} (${fraseDesgloseAprobacion(t)}).`
+}
+
+/**
+ * La tasa como se escribe en /estudios, en el inicio y en /reportes: «37,5 %» (coma decimal, un decimal como
+ * máximo y espacio antes del signo; el espacio es duro para que la cifra no se parta en dos líneas).
+ */
+export const tasaLegible = (tasa: number): string =>
+  `${(Math.round(tasa * 10) / 10).toLocaleString('es-CO', { maximumFractionDigits: 1 })}\u00a0%`
+
+/**
+ * «de 32 estudios decididos: 12 aprobados, 7 con segundo firmante y 13 no aprobables»: el desglose de la
+ * tasa, el mismo en /estudios, en el inicio y en /reportes. Los bloqueados por listas, al final y solo si hay
+ * alguno; sin el segundo firmante contado aparte (API anterior), sin él.
+ */
+export function fraseDesgloseAprobacion(t: Omit<TasaAprobacion, 'tasa'>): string {
   const partes = [
     cuenta(t.aprobados, 'aprobado', 'aprobados'),
     ...(t.conSegundoFirmante !== null ? [`${t.conSegundoFirmante} con segundo firmante`] : []),
     cuenta(t.noAprobables, 'no aprobable', 'no aprobables'),
     ...(t.bloqueados > 0 ? [cuenta(t.bloqueados, 'bloqueado por listas', 'bloqueados por listas')] : []),
   ]
-  const decididos = cuenta(t.decididos, 'estudio decidido', 'estudios decididos')
-  return `Tasa de aprobación: ${t.tasa.toLocaleString('es-CO')} % (de ${decididos}: ${enumerar(partes)}).`
+  return `de ${cuenta(t.decididos, 'estudio decidido', 'estudios decididos')}: ${enumerar(partes)}`
+}
+
+/**
+ * Las cifras de la tasa de aprobación que la API manda junto a ella en el inicio (`desglose_aprobacion` de
+ * GET /dashboard/summary, `decisiones30d` de la analítica de la cartera) y en GET /reportes/aprobacion (los
+ * totales, con el prefijo `total_`). `rechazados` son los no aprobables.
+ */
+export interface CifrasAprobacion {
+  aprobados: number
+  /** Aprobados con segundo firmante: decididos, pero no aprobados. Ausente con una API anterior. */
+  con_segundo_firmante?: number | null
+  rechazados: number
+  /** Bloqueados por listas restrictivas: decididos. Ausente con una API anterior. */
+  bloqueados?: number | null
+}
+
+const esCifra = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0
+
+/**
+ * Bloque 4: el desglose de la tasa del inicio y de /reportes, con la definición única de la API (la misma de
+ * /estudios): decididos = aprobados + con segundo firmante + no aprobables + bloqueados por listas; lo que revisa
+ * Cofianza va aparte. null si la API no cuenta aparte el segundo firmante (una API anterior, cuya tasa era
+ * aprobados / (aprobados + no aprobables)) o no hay ningún decidido: la pantalla queda como antes. Pura.
+ */
+export function desgloseDeCifras(c: CifrasAprobacion | null | undefined): Omit<TasaAprobacion, 'tasa'> | null {
+  if (!c || !esCifra(c.aprobados) || !esCifra(c.rechazados) || !esCifra(c.con_segundo_firmante)) return null
+  const bloqueados = esCifra(c.bloqueados) ? c.bloqueados : 0
+  const decididos = c.aprobados + c.con_segundo_firmante + c.rechazados + bloqueados
+  if (decididos <= 0) return null
+  return { aprobados: c.aprobados, decididos, conSegundoFirmante: c.con_segundo_firmante, noAprobables: c.rechazados, bloqueados }
 }
