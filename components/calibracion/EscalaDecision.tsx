@@ -272,7 +272,9 @@ export function EscalaA5D({ valores, onAbrir, params }: { valores: Valores; onAb
         <Barra titulo="1. Puntaje de la persona (0 a 100)" tramos={tramosA5dPuntaje(valores)} min={0} max={100} onAbrir={onAbrir} params={params} decimales />
         <p className="mt-3 max-w-prose text-xs text-gray-600">
           Antes que este puntaje mandan las reglas de rechazo (por ejemplo, una mora financiera vigente o una mora no financiera por encima de
-          la banda). Con dos personas, el titular es la de mayor puntaje entre las no rechazadas.
+          la banda). Con dos personas que aprueban solas, el titular es la que cubre el canon pedido; si lo cubren las dos, la de mayor
+          puntaje, y si ninguna, la de mayor canon máximo (se aprueba hasta ese canon); en empate, el solicitante. Si solo una aprueba
+          sola, ella es el titular; si ninguna, la de mayor puntaje entre las no rechazadas.
         </p>
       </div>
       <Barra
