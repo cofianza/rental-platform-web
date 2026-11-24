@@ -37,6 +37,8 @@ export interface OpcionesTurno {
    * esté aprobado y quien gestiona pueda seguir sin él); a los demás, que lo hace Cofianza.
    */
   verificacion?: boolean
+  /** Adenda 6 §4: a quién verifica Cofianza (las listas del solicitante en un estudio aprobado). Ausente = el segundo firmante. */
+  verificacionDe?: 'segundo' | 'solicitante'
 }
 
 /** «Nombre Apellido» del analista asignado si no es quien mira; null si es él o no hay. */
@@ -58,9 +60,10 @@ export function turnoPropio(turno: Turno, vista: VistaTurno, o: OpcionesTurno = 
 
 /** La verificación del segundo firmante, para quien mira: al analista le toca; a los demás, que la hace Cofianza. */
 function textoVerificacion(vista: VistaTurno, o: OpcionesTurno): string {
-  if (vista !== 'cofianza' || !o.analista) return 'Cofianza verifica al segundo firmante'
+  const quien = o.verificacionDe === 'solicitante' ? 'al solicitante' : 'al segundo firmante'
+  if (vista !== 'cofianza' || !o.analista) return `Cofianza verifica ${quien}`
   if (o.tomadoPor) return `Lo verifica ${o.tomadoPor}`
-  return 'Su turno: verificar al segundo firmante'
+  return o.verificacionDe === 'solicitante' ? 'Su turno: registrar la verificación de listas' : 'Su turno: verificar al segundo firmante'
 }
 
 export function textoTurno(turno: Turno, vista: VistaTurno, o: OpcionesTurno = {}): string {

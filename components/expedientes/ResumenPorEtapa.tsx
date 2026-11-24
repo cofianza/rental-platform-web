@@ -73,6 +73,12 @@ const ORDEN: Record<EtapaEstudio, Orden> = {
     detalle: ['evaluacion'],
     historial: ['autorizacion', 'visita'],
   },
+  // Adenda 6 §4: Cofianza termina una verificación del solicitante; el contrato espera.
+  solicitante_en_verificacion: {
+    ahora: ['vincular', 'contrato', 'coarrendatario'],
+    detalle: ['evaluacion'],
+    historial: ['autorizacion', 'visita'],
+  },
   // Un estudio sin propiedad también puede vencer: su tarjeta de «vincular» dice cómo seguir.
   vencido: { ahora: ['vincular', 'contrato'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   firma: { ahora: ['contratoEstado'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },

@@ -47,6 +47,7 @@ const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
   coarrendatario_pendiente: 'ambar',
   coarrendatario_en_evaluacion: 'ambar',
   coarrendatario_en_verificacion: 'ambar',
+  solicitante_en_verificacion: 'ambar',
   vencido: 'gris',
   firma: 'verde',
   firma_incompleta: 'rojo',
@@ -196,7 +197,8 @@ export function datosEstadoFila(
   const score = conPuntaje && ev?.resultado && ev.resultado !== 'pendiente' ? (ev.score ?? 0) : 0
   const c = ev?.condicion_coarrendatario
   // Cofianza verifica al segundo firmante ya evaluado (lo dice la API): el turno es suyo, no una decisión del estudio.
-  const verificacion = etapa === 'coarrendatario_en_verificacion' || (etapa === 'segundo_firmante' && segundoEnVerificacion(expediente))
+  const verificacion =
+    etapa === 'coarrendatario_en_verificacion' || etapa === 'solicitante_en_verificacion' || (etapa === 'segundo_firmante' && segundoEnVerificacion(expediente))
   const revision = expediente.estado === 'condicionado' && expediente.depende_de === 'cofianza' && !verificacion
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
   const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
@@ -253,6 +255,7 @@ export function datosEstadoFila(
             condicion: esEsperaDePersona(etapa, !!c),
             adenda3: etapa === 'decision' && !!c,
             verificacion,
+            verificacionDe: etapa === 'solicitante_en_verificacion' ? ('solicitante' as const) : ('segundo' as const),
             tomadoPor: deCofianza && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
           }

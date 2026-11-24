@@ -30,6 +30,8 @@ import type {
   ICatalogoMotivos,
   IDesenlaceEstudio,
   IReintentoSaldoTransUnionResultado,
+  IRegistroVerificacionListas,
+  ResultadoVerificacionListas,
 } from '@/types/estudio'
 
 // ============================================
@@ -206,6 +208,24 @@ export const estudioService = {
       { nota },
     )
     return res.data
+  },
+
+  /**
+   * Adenda 6 §4: el analista verificó las listas restrictivas directamente en Auco y registra la fecha, el resultado
+   * y la evidencia (PDF o imagen). Sin coincidencias, el estudio sigue solo; con coincidencias, queda confirmada.
+   */
+  async registrarVerificacionListas(
+    estudioId: string,
+    datos: { fecha_consulta: string; resultado: ResultadoVerificacionListas; nota?: string; otros_hallazgos?: boolean; evidencia: File },
+  ): Promise<IRegistroVerificacionListas> {
+    const form = new FormData()
+    form.append('archivo', datos.evidencia)
+    form.append('fecha_consulta', datos.fecha_consulta)
+    form.append('resultado', datos.resultado)
+    if (datos.nota?.trim()) form.append('nota', datos.nota.trim())
+    if (datos.otros_hallazgos) form.append('otros_hallazgos', 'true')
+    const response = await apiClient.raw(`/estudios/${estudioId}/listas/verificacion`, { method: 'POST', body: form })
+    return ((await response.json()) as { data: IRegistroVerificacionListas }).data
   },
 
   /** Segundo firmante en verificación: se le pide otra vez a Auco la consulta de antecedentes y listas. */

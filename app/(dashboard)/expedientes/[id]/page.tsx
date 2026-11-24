@@ -934,11 +934,13 @@ function ExpedienteDetalleContenido() {
             Como la lista: lo propio en coral con flecha; el turno de otros, en gris. */}
         {etapaTurno && user?.rol !== 'solicitante' && (() => {
           // Cofianza verifica al segundo firmante: con el estudio «aprobado con segundo firmante» o ya aprobado.
-          const verificacion = !!segundoEnVerificacion || etapaTurno === 'coarrendatario_en_verificacion'
+          // Adenda 6 §4: también las listas del solicitante sin verificar en un estudio aprobado.
+          const verificacion = !!segundoEnVerificacion || etapaTurno === 'coarrendatario_en_verificacion' || etapaTurno === 'solicitante_en_verificacion'
           const revisionAnalista = etapaTurno === 'decision' && !condicionCoa
           const opcionesTurno = {
             revision: revisionAnalista || (etapaTurno === 'segundo_firmante' && apelacionRadicada && !verificacion),
             verificacion,
+            verificacionDe: etapaTurno === 'solicitante_en_verificacion' ? ('solicitante' as const) : ('segundo' as const),
             analista: puedeAsignar,
             sinEjecutar: etapaTurno === 'sin_ejecutar',
             // El aprobado con segundo firmante siempre espera a otra persona; la decisión, solo con la condición.

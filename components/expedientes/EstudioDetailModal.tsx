@@ -20,6 +20,7 @@ import { ReporteBuroErrorBoundary } from '@/components/estudios/ReporteBuroError
 import { ReEvaluacionSection } from './ReEvaluacionSection'
 import { ListasPorConfirmar } from '@/components/estudios/ListasPorConfirmar'
 import { VerificacionSegundoFirmante } from '@/components/estudios/VerificacionSegundoFirmante'
+import { VerificacionListas } from '@/components/estudios/VerificacionListas'
 import { ReintentoSaldoTransUnion } from '@/components/estudios/ReintentoSaldoTransUnion'
 import type { IEstudio, IEstudioHistorial, IEndeudamientoMotor } from '@/types/estudio'
 
@@ -407,6 +408,19 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
                 estudioId={estudio.id}
                 verificacion={estudio.verificacion_segundo_firmante}
                 estudioAprobado={estudioAprobado}
+                onHecho={async () => {
+                  onApelacionCambiada?.()
+                  await recargarDetalle()
+                }}
+              />
+            )}
+
+            {/* Adenda 6 §4: Auco no entregó las listas restrictivas de esta persona; el analista las verifica en Auco y
+                registra la consulta (o se ve el registro ya hecho). La API solo lo manda a administrador y operador. */}
+            {!readOnly && estudio.verificacion_listas && (
+              <VerificacionListas
+                estudioId={estudio.id}
+                verificacion={estudio.verificacion_listas}
                 onHecho={async () => {
                   onApelacionCambiada?.()
                   await recargarDetalle()
