@@ -30,6 +30,7 @@ import { useInteresadosNuevos } from '@/hooks/useInteresadosNuevos'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
 import { NotificationBell } from './NotificationBell'
 import { BloqueosPendientesBanner } from '@/components/expedientes/BloqueosPendientesBanner'
+import { AvisosServicioBanner } from '@/components/avisos/AvisosServicioBanner'
 
 interface NavItem {
   label: string
@@ -200,6 +201,7 @@ export function PropietarioShell({ children }: { children: React.ReactNode }) {
         {/* Contenido */}
         <main id="contenido" tabIndex={-1} className="min-w-0 flex-1 px-4 py-6 sm:px-7 focus:outline-none">
           <div className="mx-auto max-w-[1200px]">
+            <AvisosServicioBanner />
             <BloqueosPendientesBanner />
             {children}
           </div>
