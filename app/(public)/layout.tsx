@@ -4,6 +4,7 @@
 
 import type { Metadata } from 'next'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
+import { AvisosServicioPublicos } from '@/components/avisos/AvisosServicioPublicos'
 
 // Flujos por enlace con token: nunca a un buscador (robots.ts tampoco los deja rastrear).
 export const metadata: Metadata = {
@@ -33,7 +34,11 @@ export default function PublicLayout({
           </a>
         </div>
       </header>
-      <main className="max-w-3xl mx-auto px-4 py-8">{children}</main>
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        {/* Fallas que el administrador marcó para prospectos (p. ej. WhatsApp: el código llega por correo). */}
+        <AvisosServicioPublicos />
+        {children}
+      </main>
     </div>
   )
 }

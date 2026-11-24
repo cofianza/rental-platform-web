@@ -17,6 +17,7 @@ import { OficinaVirtualShell } from './OficinaVirtualShell'
 import { PropietarioShell } from './PropietarioShell'
 import { BloqueosPendientesBanner } from '@/components/expedientes/BloqueosPendientesBanner'
 import { DatosEmpresaPendientesBanner, muestraAvisoDatosEmpresa } from '@/components/layout/DatosEmpresaPendientesBanner'
+import { AvisosServicioBanner } from '@/components/avisos/AvisosServicioBanner'
 
 interface Props {
   children: React.ReactNode
@@ -101,6 +102,8 @@ export function DashboardShell({ children }: Props) {
       <DashboardLayoutWrapper>
         <Header />
         <main id="contenido" tabIndex={-1} className="p-4 lg:p-6 overflow-x-clip focus:outline-none">
+          {/* Fallas de WhatsApp, pagos, firma…: las publica el administrador en Configuración. */}
+          <AvisosServicioBanner />
           {/* BLQ §2.1: Cofianza también envía enlaces y corrige documentos. */}
           {/* Dentro de un estudio distrae del caso: ya lo dicen el menú y el aviso de la sesión. */}
           {rol === 'administrador' && muestraAvisoDatosEmpresa(pathname) && <DatosEmpresaPendientesBanner />}
