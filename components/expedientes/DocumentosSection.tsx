@@ -1103,8 +1103,9 @@ export function DocumentosSection({ expedienteId, userRole, onPendientesChange }
               </span>
             )}
           </p>
-          {/* Punto 2: la identidad se valida en el flujo del prospecto, no con cargas del gestor. */}
-          {(userRole === 'inmobiliaria' || userRole === 'propietario') && (
+          {/* Punto 2: la identidad se valida en el flujo del prospecto, no con cargas del gestor.
+              Solo si de verdad no hay ninguno obligatorio: con alguno, la nota contradecía la lista de arriba. */}
+          {(userRole === 'inmobiliaria' || userRole === 'propietario') && progress.obligatoriosTotal === 0 && (
             <p className="mt-2 flex items-start gap-1.5 text-sm text-gray-600">
               <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
               <span>

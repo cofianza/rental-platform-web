@@ -20,7 +20,7 @@ import {
   type VistaTurno,
 } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
-import { etapaDeFila, accionDeFila, revisionDemorada, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
+import { etapaDeFila, accionDeFila, revisionDemorada, segundoEnVerificacion, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
 import { IconClock } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { InfoTip } from '@/components/ui/InfoTip'
@@ -45,6 +45,8 @@ const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
   // Aprobado, pero algo impide el contrato: pendiente, no éxito.
   canon_excede: 'ambar',
   coarrendatario_pendiente: 'ambar',
+  coarrendatario_en_evaluacion: 'ambar',
+  coarrendatario_en_verificacion: 'ambar',
   vencido: 'gris',
   firma: 'verde',
   firma_incompleta: 'rojo',
@@ -91,13 +93,15 @@ function pastillaEtapa(e: IExpediente, etapa: EtapaEstudio, interno: boolean): {
     }
     if (ev?.estado_bloqueo === 'pendiente_reenvio') return { texto: 'Pendiente de reenvío', tono }
   }
-  if (etapa === 'fallida' && ev?.coarrendatario_fallido) return { texto: 'Falló la consulta del coarrendatario', tono }
+  if (etapa === 'fallida' && ev?.coarrendatario_fallido) return { texto: 'Falló la consulta del segundo firmante', tono }
   if (esEtapaDeTraba(etapa)) return { texto: etiquetaTraba(etapa, e.traba_contrato), tono }
   const c = ev?.condicion_coarrendatario
   // Etapas que salen del resultado que envía la API: su texto manda (la web no lo redacta).
   if (etapa === 'segundo_firmante' || etapa === 'bloqueado') {
     const base = ev?.desenlace_texto ?? ETAPA_LABEL[etapa]
-    return { texto: etapa === 'segundo_firmante' && c ? `${base} · ${plazo(c.vence_en)}` : base, tono }
+    // Con el segundo firmante en verificación el plazo no vence (y empieza de nuevo al terminar): no se pinta una fecha que ya no rechaza.
+    const conPlazo = etapa === 'segundo_firmante' && !!c && !segundoEnVerificacion(e)
+    return { texto: conPlazo && c ? `${base} · ${plazo(c.vence_en)}` : base, tono }
   }
   if (etapa === 'decision' && c) {
     return { texto: `${c.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'} · ${plazo(c.vence_en)}`, tono }
@@ -191,17 +195,22 @@ export function datosEstadoFila(
   const conPuntaje = etapa !== 'no_aprobado' && etapa !== 'cancelado'
   const score = conPuntaje && ev?.resultado && ev.resultado !== 'pendiente' ? (ev.score ?? 0) : 0
   const c = ev?.condicion_coarrendatario
-  const revision = expediente.estado === 'condicionado' && expediente.depende_de === 'cofianza'
+  // Cofianza verifica al segundo firmante ya evaluado (lo dice la API): el turno es suyo, no una decisión del estudio.
+  const verificacion = etapa === 'coarrendatario_en_verificacion' || (etapa === 'segundo_firmante' && segundoEnVerificacion(expediente))
+  const revision = expediente.estado === 'condicionado' && expediente.depende_de === 'cofianza' && !verificacion
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
   const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
-  // Con el canon que excede o el coarrendatario sin responder, decide quien gestiona (como turnoDeEtapa).
-  const turno =
+  // Con el canon que excede o el segundo firmante en curso, decide quien gestiona (como turnoDeEtapa).
+  // «Aprobado con segundo firmante» con el segundo en verificación: de Cofianza, diga lo que diga depende_de.
+  const turno: Turno | null | undefined =
     etapa === 'firma' && expediente.depende_de === 'prospecto'
       ? 'firmas'
       : expediente.depende_de && TURNO_GESTOR_TRABA.includes(etapa)
         ? 'gestor'
-        : expediente.depende_de
+        : verificacion && etapa === 'segundo_firmante'
+          ? 'cofianza'
+          : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
   // En la espera, la etapa ya dice a quién se espera: «Esperando al prospecto» la contradecía.
   // U8: fuera de Cofianza la etapa ya dice «En revisión de Cofianza»; la pastilla de turno lo repetía.
@@ -212,6 +221,8 @@ export function datosEstadoFila(
     // Reabierto por un reemplazo: la etapa ya dice a quién se espera (nunca «Cofianza procesando»).
     etapa !== 'reapertura' &&
     !(revision && vista !== 'cofianza')
+  // La verificación la toma un analista, como la revisión.
+  const deCofianza = revision || verificacion
 
   return {
     etapa,
@@ -228,6 +239,7 @@ export function datosEstadoFila(
       enLista: true,
       textoApi: ev?.siguiente_accion_texto ?? null,
       textoTraba: expediente.traba_contrato?.texto ?? null,
+      segundoEnVerificacion: verificacion ? 'api' : false,
     }),
     score,
     turno:
@@ -239,16 +251,20 @@ export function datosEstadoFila(
             sinEjecutar: etapa === 'sin_ejecutar',
             // El aprobado con segundo firmante siempre espera a otra persona; la decisión, solo con la condición.
             condicion: esEsperaDePersona(etapa, !!c),
-            tomadoPor: revision && analista ? analistaAjeno(expediente.analista, yo) : null,
+            adenda3: etapa === 'decision' && !!c,
+            verificacion,
+            tomadoPor: deCofianza && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
           }
         : null,
-    detalleTurno:
-      conTurno && turno && turno !== 'cofianza' && etapa === 'segundo_firmante' ? (ev?.siguiente_accion_texto ?? null) : null,
+    // Solo con el turno de quien gestiona: con el segundo firmante en curso (se le espera) o en verificación,
+    // «Presente un segundo firmante antes del…» contradiría al turno.
+    detalleTurno: conTurno && turno === 'gestor' && etapa === 'segundo_firmante' ? (ev?.siguiente_accion_texto ?? null) : null,
     demora,
     prioridadBaja: interno && expediente.estado === 'condicionado' && expediente.prioridad_revision === 'baja',
     vigencia: vigenciaResultado(etapa, {
       hasta: expediente.vigencia_hasta,
+      firmarHasta: expediente.firmar_hasta,
       vencioEn: expediente.traba_contrato?.vencio_en,
       sinMargen: expediente.traba_contrato?.sin_margen,
       ahoraMs: ahora,
@@ -287,7 +303,9 @@ export function VigenciaFila({
       title={vigencia.titulo}
       className={cn(
         'inline-flex items-center gap-1 font-medium',
-        pastilla ? cn('rounded-full border px-2.5 py-1 text-xs', PASTILLA_VIGENCIA[vigencia.tono]) : cn('text-[11px]', TONO_VIGENCIA[vigencia.tono]),
+        // rounded-xl: en una línea se ve igual que rounded-full; «Envíe a firma antes del…» puede bajar a dos
+        // líneas a 390 px, y ahí no queda una cápsula estirada.
+        pastilla ? cn('rounded-xl border px-2.5 py-1 text-xs', PASTILLA_VIGENCIA[vigencia.tono]) : cn('text-[11px]', TONO_VIGENCIA[vigencia.tono]),
         className,
       )}
     >

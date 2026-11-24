@@ -33,6 +33,12 @@ export interface Bloqueo {
   puedeReevaluar?: boolean;
   /** Con puedeReevaluar: el reporte venció y evaluar de nuevo es una consulta adicional (402 REQUIERE_CONSULTA_ADICIONAL). */
   reevaluacionConCosto?: boolean;
+  /**
+   * Bloqueo por el segundo firmante (COARRENDATARIO_PENDIENTE, COARRENDATARIO_SIN_EVALUAR, COARRENDATARIO_EN_VERIFICACION)
+   * con la salida «seguir sin él»: POST /expedientes/:id/coarrendatario/cancelar (cancela la invitación o retira a
+   * quien ya aceptó). Solo viaja con true; ausente = no aplica (o una API anterior).
+   */
+  puede_seguir_sin_el?: boolean;
 }
 export interface EstadoAsistente {
   habilitado: boolean;

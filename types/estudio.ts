@@ -48,6 +48,11 @@ export interface IDesenlaceEstudio {
   /** Textos listos para mostrar: los redacta la API. */
   desenlace_texto?: string
   siguiente_accion_texto?: string | null
+  /**
+   * «Aprobado con segundo firmante» en un canal donde hoy no se puede sumar un segundo firmante (propietario
+   * directo): `siguiente_accion_texto` dice el motivo y no se ofrece invitar ni reemplazar a nadie. Solo viaja con true.
+   */
+  canal_sin_segundo_firmante?: boolean
   sustituciones?: { usadas: number; maximo: number; valor_consulta_adicional_cop: number; iva_cop: number; total_cop: number }
   personas?: Array<{
     rol_declarado: 'solicitante' | 'segundo_firmante'
@@ -71,6 +76,8 @@ export interface IPersonaA5d {
   etiqueta: string
   /** Una o dos frases en usted, coherentes con el estado del estudio. */
   texto: string
+  /** El texto ofrece reemplazar a esta persona hoy (a quien puede hacerlo). Solo viaja con true. */
+  puede_reemplazar?: boolean
 }
 
 /** Marca que registra Cofianza sobre una persona del estudio. Solo la reciben los roles de Cofianza. */
@@ -118,12 +125,28 @@ export interface IVerificacionSegundoFirmante {
   efecto: string
   /** Si llega un resultado limpio de Auco, se resuelve sola; si no, la cierra «Aprobar estudio». */
   se_resuelve_solo: boolean
+  /** false con un reintento a Auco en curso (su resultado puede traer una coincidencia): `motivo` dice por qué. */
   puede_dar_por_verificado: boolean
   puede_reintentar: boolean
   /** Ya se le pidió de nuevo a Auco y el resultado no ha llegado. */
   reintento_pedido_en: string | null
   /** Por qué no se resuelve desde aquí, o por qué no hay reintento. */
   motivo: string | null
+  /**
+   * El sistema reintenta solo la consulta: se avisa para no pedir (y pagar) una de más. Ausente si ya no reintenta
+   * (o con una API anterior).
+   */
+  reintento_automatico?: IReintentoAutomatico
+}
+
+/** Lo que le queda al reintento automático de la consulta de antecedentes del segundo firmante. */
+export interface IReintentoAutomatico {
+  /** Cuántos intentos automáticos faltan. */
+  restantes: number
+  /** Cuándo es el próximo (ISO), como muy pronto; ausente si no se puede estimar. */
+  proximo_en?: string
+  /** Listo para mostrar: lo redacta la API. */
+  texto: string
 }
 
 export interface IEstudio extends IDesenlaceEstudio {
@@ -434,6 +457,11 @@ export interface IEstudioHistorial {
   responder_hasta?: string | null
   /** 'AAAA-MM-DD': día en que el prospecto apeló por correo u otro canal, registrado por el analista. */
   fecha_radicacion_apelacion?: string | null
+  /**
+   * La apelación está radicada (tiene `fecha_radicacion_apelacion`): el criterio de la lista y de la bandeja para el
+   * turno. `responder_hasta` puede venir sin ella: es un plazo, no el turno. Ausente con una API anterior.
+   */
+  apelacion_radicada?: boolean
   /**
    * 'AAAA-MM-DD': último día en que el reporte de la central (la consulta del estudio original)
    * sirve para decidir la apelación (los días de `dias_vigencia_reporte` desde la consulta). Pasado

@@ -29,6 +29,15 @@ import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPerso
 import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
 import type { ITrabaContrato } from '@/types/expediente'
+import {
+  COARRENDATARIO_EN_VERIFICACION,
+  SEGUNDO_FIRMANTE_EN_CURSO,
+  avisoPrimaDeTraba,
+  bloqueoOfreceSeguirSinEl,
+  trabaAdmiteSeguirSinEl,
+} from '@/lib/frenosSegundoFirmante'
+
+export { COARRENDATARIO_EN_VERIFICACION, SEGUNDO_FIRMANTE_EN_CURSO, avisoPrimaDeTraba, bloqueoOfreceSeguirSinEl, trabaAdmiteSeguirSinEl }
 
 /**
  * Las dos salidas del canon que supera el aprobado (reporte de Gerencia, 21-nov, punto 1): pactar un canon
@@ -84,7 +93,7 @@ interface Props {
   evaluadoA5D?: boolean
   /** En el estudio: con el freno del canon se ofrecen sus dos salidas (pactar uno menor o reasignar). */
   salidasCanon?: SalidasCanon
-  /** traba_contrato.aviso_prima (estudios anteriores a la Adenda 5): se muestra al confirmar «Seguir sin el coarrendatario». */
+  /** traba_contrato.aviso_prima (estudios anteriores a la Adenda 5): se muestra al confirmar «Seguir sin el segundo firmante». */
   avisoPrima?: string | null
 }
 
@@ -113,7 +122,7 @@ export function bloqueoDeEvaluacion(err: unknown): Bloqueo | null {
 export const DEL_CRC = ['CRC_NO_EMITIDO', 'CRC_DESACTUALIZADO']
 
 /** Del segundo firmante y del titular de la decisión: frenan el contrato hasta que se resuelvan en el estudio. */
-export const DE_LAS_PARTES = ['COARRENDATARIO_PENDIENTE', 'COARRENDATARIO_SIN_EVALUAR', 'TITULAR_NO_DISPONIBLE']
+export const DE_LAS_PARTES = ['COARRENDATARIO_PENDIENTE', ...SEGUNDO_FIRMANTE_EN_CURSO, 'TITULAR_NO_DISPONIBLE']
 
 /**
  * Código propio de la web (la API no lo envía): el freno del canon que se arma con traba_contrato, porque
@@ -134,7 +143,20 @@ function frenosDeTraba(traba: ITrabaContrato | null | undefined, ya: Bloqueo[]):
     return [{ codigo: CANON_EXCEDE_APROBADO, mensaje: traba.texto }]
   }
   if (traba.codigo === 'coarrendatario_pendiente' && !ya.some((b) => b.codigo === 'COARRENDATARIO_PENDIENTE')) {
-    return [{ codigo: 'COARRENDATARIO_PENDIENTE', mensaje: traba.texto, accion: 'estudio' }]
+    return [{ codigo: 'COARRENDATARIO_PENDIENTE', mensaje: traba.texto, accion: 'estudio', puede_seguir_sin_el: true }]
+  }
+  // Bloque 4: el segundo firmante ya aceptó (en evaluación, con la consulta fallida o en verificación). El texto
+  // es siempre el de la API (el mismo código tiene más de uno). Con el bloqueo de la API, manda el suyo.
+  if (trabaAdmiteSeguirSinEl(traba) && !ya.some((b) => SEGUNDO_FIRMANTE_EN_CURSO.includes(b.codigo))) {
+    return [
+      {
+        codigo: traba.codigo === 'coarrendatario_en_verificacion' ? COARRENDATARIO_EN_VERIFICACION : 'COARRENDATARIO_SIN_EVALUAR',
+        mensaje: traba.texto,
+        accion: 'estudio',
+        // La traba de la API viene con esa salida (su texto la ofrece): el freno la lleva como el bloqueo del asistente.
+        puede_seguir_sin_el: true,
+      },
+    ]
   }
   // Resultado vencido: el mismo punto de «la evaluación ya no sirve», con su estudio nuevo.
   if (traba.codigo === 'vencido' && !ya.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))) {
@@ -279,6 +301,20 @@ export function BloqueosContrato({
       return (
         <>
           <SeguirSinCoarrendatario expedienteId={expedienteId} avisoPrima={avisoPrima} onCambio={onCambio} />
+          {!enElEstudio && (
+            <Link href={`/expedientes/${expedienteId}`} className={enlace}>
+              Ir al estudio <IconArrowRight size={12} />
+            </Link>
+          )}
+        </>
+      )
+    }
+    // Bloque 4: el segundo firmante ya aceptó y su evaluación sigue en curso, o Cofianza lo verifica. El texto del
+    // punto dice que puede esperar el resultado: aquí, la otra salida («Seguir sin el segundo firmante» lo saca del estudio).
+    if (bloqueoOfreceSeguirSinEl(b) && puedeEditar && !noAprobado) {
+      return (
+        <>
+          <SeguirSinCoarrendatario expedienteId={expedienteId} caso="en_curso" avisoPrima={avisoPrima} onCambio={onCambio} />
           {!enElEstudio && (
             <Link href={`/expedientes/${expedienteId}`} className={enlace}>
               Ir al estudio <IconArrowRight size={12} />

@@ -72,7 +72,7 @@ interface CoarrendatarioPropietarioCardProps {
    * dejar vencer el enlace cierra el cambio y lo devuelve a no aprobable.
    */
   reaperturaAbierta?: boolean
-  /** Tras cancelar la invitación con la reapertura abierta, el estudio cambia: la página recarga el expediente. */
+  /** Tras invitar, reenviar o cancelar la invitación, el turno y la etapa del estudio cambian: la página recarga el expediente. */
   onExpedienteCambio?: () => void
   /**
    * Avisa, cada vez que cambia y ya cargado, si el coarrendatario sigue en curso (invitación sin
@@ -170,8 +170,8 @@ export function CoarrendatarioPropietarioCard({
     coarrendatarioService.getVentana(expedienteId).then(setVentana, () => setVentana(null))
   }, [expedienteId])
   const antesDeLaDecision = PREVIOS_A_LA_DECISION.includes(expedienteEstado)
-  // También con el estudio ya resuelto: la ventana trae lo que la API dice de la
-  // prima, que el aviso del coarrendatario evaluado necesita (ahí no se puede invitar).
+  // También con el estudio ya resuelto: de la ventana salen si la invitación sigue en pie (`vigente`), el
+  // motivo del canal del propietario directo y si cargar a otra persona pasa por un cambio de persona.
   const ventanaAplica =
     expedienteEstado === 'condicionado' || expedienteEstado === 'aprobado' || expedienteEstado === 'rechazado' || expedienteEstado === 'cerrado' || antesDeLaDecision
   useEffect(() => {
@@ -274,7 +274,12 @@ export function CoarrendatarioPropietarioCard({
         beneficioPrima={ventana?.beneficio_prima?.completo}
         antesDeLaDecision={antesDeLaDecision}
         condicionGestor={conCondicion}
-        onInvited={() => { fetchCoa(); fetchVentana() }}
+        onInvited={() => {
+          fetchCoa()
+          fetchVentana()
+          // Invitar mueve el turno y la etapa del estudio (franja, encabezado, pestaña Contratos): se recarga.
+          onExpedienteCambio?.()
+        }}
       />
     )
   }
@@ -418,8 +423,9 @@ export function CoarrendatarioPropietarioCard({
               reaperturaAbierta={reaperturaAbierta}
               onCambio={() => {
                 void fetchCoa()
-                // Cancelada con la reapertura abierta, el estudio vuelve a no aprobable: encabezado y banner también.
-                if (reaperturaAbierta) onExpedienteCambio?.()
+                // Reenviar o cancelar mueve el turno del estudio (y, con la reapertura abierta, lo devuelve a
+                // no aprobable): franja, encabezado y banner se recargan siempre, no solo con la reapertura.
+                onExpedienteCambio?.()
               }}
               embebido
             />
@@ -545,8 +551,7 @@ function estadoInvitacion(
   return cfg[coa.estado]
 }
 
-/** Cómo salió su evaluación, con las palabras de la Adenda 3 V2 §7: válido, en revisión o no califica. */
-/** El enlace de la invitación expira (7 días); reenviarla renueva la fecha. */
+/** El enlace de la invitación expira; reenviarla renueva la fecha. */
 function invitacionVencida(coa: ICoarrendatario): boolean {
   return coa.estado === 'pendiente_aceptacion' && new Date(coa.token_expiracion) < new Date()
 }

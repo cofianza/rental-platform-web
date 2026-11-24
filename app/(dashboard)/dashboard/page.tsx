@@ -20,6 +20,8 @@ import { citaService } from '@/services/citaService'
 import { pagoEstudioService } from '@/services/pagoEstudioService'
 import { estudioService } from '@/services/estudioService'
 import { fechaCondicion, mensajeCondicionCoarrendatario } from '@/components/expedientes/textoVisible'
+import { desgloseDeCifras, fraseDesgloseAprobacion, tasaLegible } from '@/lib/conteosEstudios'
+import { sinAccionSegundoFirmante } from '@/lib/etapaEstudio'
 import type { ICondicionCoarrendatario } from '@/types/estudio'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
@@ -91,6 +93,8 @@ export default function DashboardPage() {
 
   // State
   const [summary, setSummary] = useState<DashboardSummary | null>(null)
+  // Las cifras de la tasa de aprobación, si la API las manda (misma definición que /estudios y /reportes).
+  const desgloseTasa = desgloseDeCifras(summary?.desglose_aprobacion)
   const [porEstado, setPorEstado] = useState<ExpedientePorEstado[]>([])
   const [pendientes, setPendientes] = useState<IExpediente[]>([])
   const [loading, setLoading] = useState(true)
@@ -298,9 +302,11 @@ export default function DashboardPage() {
           />
           <KPICard
             title="Tasa de aprobación"
-            value={`${summary.tasaAprobacion}%`}
+            value={tasaLegible(summary.tasaAprobacion)}
             icon={IconCheck}
             accentColor="bg-green-600"
+            // Bloque 4: el mismo desglose de /estudios y /reportes, si la API manda las cifras.
+            detalle={desgloseTasa ? fraseDesgloseAprobacion(desgloseTasa) : undefined}
           />
           <KPICard
             title="Tiempo promedio"
@@ -548,12 +554,17 @@ function AvisoCuentaIncompleta() {
   )
 }
 
+/** Al prospecto, con el estudio en revisión y sin un texto más preciso de la API. Nunca «condicionado»: es el estado interno. */
+const TEXTO_EN_REVISION_PROSPECTO = 'Su estudio está en revisión. Ábralo para ver qué sigue.'
+
 function SolicitanteDashboard() {
   const [expedientes, setExpedientes] = useState<IExpediente[]>([])
   const [citasByExpediente, setCitasByExpediente] = useState<Record<string, CitaActivaInfo | null>>({})
   const [pagoByExpediente, setPagoByExpediente] = useState<Record<string, PagoEstudioInfo | null>>({})
   // Adenda 3 §6: la fecha límite de la condición de coarrendatario (solo condicionados).
   const [condicionByExpediente, setCondicionByExpediente] = useState<Record<string, ICondicionCoarrendatario | null>>({})
+  // «Aprobado con segundo firmante» sin nada que hacer (Cofianza verifica a la otra persona): el texto de la API.
+  const [revisionByExpediente, setRevisionByExpediente] = useState<Record<string, string | null>>({})
   const [loadingExp, setLoadingExp] = useState(true)
   // Los banners esperan citas y pagos; sin esto saldría un falso "Agendar
   // visita" mientras llegan las citas.
@@ -576,6 +587,7 @@ function SolicitanteDashboard() {
         const citasMap: Record<string, CitaActivaInfo | null> = {}
         const pagoMap: Record<string, PagoEstudioInfo | null> = {}
         const condicionMap: Record<string, ICondicionCoarrendatario | null> = {}
+        const revisionMap: Record<string, string | null> = {}
         await Promise.all([
           ...res.data.map(async (exp) => {
             try {
@@ -611,14 +623,18 @@ function SolicitanteDashboard() {
               try {
                 const { data } = await estudioService.getEstudiosForExpediente(exp.id, 1, 10)
                 condicionMap[exp.id] = data.find((e) => e.condicion_coarrendatario)?.condicion_coarrendatario ?? null
+                const sinAccion = data.find((e) => e.estado !== 'cancelado' && sinAccionSegundoFirmante(e))
+                revisionMap[exp.id] = sinAccion ? sinAccion.siguiente_accion_texto?.trim() || TEXTO_EN_REVISION_PROSPECTO : null
               } catch {
                 condicionMap[exp.id] = null
+                revisionMap[exp.id] = null
               }
             }),
         ])
         setCitasByExpediente(citasMap)
         setPagoByExpediente(pagoMap)
         setCondicionByExpediente(condicionMap)
+        setRevisionByExpediente(revisionMap)
       })
       .catch(() => setExpError(true))
       .finally(() => {
@@ -951,6 +967,7 @@ function SolicitanteDashboard() {
             const isRejected = exp.estado === 'rechazado' || cerradoNoAprobable
             const isConditioned = exp.estado === 'condicionado'
             const condicion = condicionByExpediente[exp.id]
+            const textoRevision = revisionByExpediente[exp.id] ?? null
             // Decidieron no habilitar la evaluación: el stepper «en curso» mentía.
             const noContinua = estadoActivo(exp) && !!citasByExpediente[exp.id]?.estudioRechazado
 
@@ -972,7 +989,16 @@ function SolicitanteDashboard() {
                       ) : (
                         <Badge
                           estado={cerradoNoAprobable ? 'rechazado' : exp.estado}
-                          label={noContinua ? 'No continúa' : exp.estado === 'borrador' ? 'En preparación' : undefined}
+                          label={
+                            noContinua
+                              ? 'No continúa'
+                              : exp.estado === 'borrador'
+                                ? 'En preparación'
+                                : // Sin nada que hacer mientras Cofianza verifica: el mismo nombre del detalle.
+                                  isConditioned && textoRevision
+                                  ? 'En revisión'
+                                  : undefined
+                          }
                         />
                       )}
                     </div>
@@ -1000,7 +1026,13 @@ function SolicitanteDashboard() {
                   </div>
                 ) : isConditioned ? (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    {condicion && !condicion.vencida ? (
+                    {textoRevision ? (
+                      // La API dice que no tiene que hacer nada: ni «Necesita un coarrendatario» ni un plazo para agregarlo.
+                      <>
+                        <p className="text-sm text-amber-800 font-medium">En revisión</p>
+                        <p className="text-xs text-amber-700 mt-0.5">{textoRevision}</p>
+                      </>
+                    ) : condicion && !condicion.vencida ? (
                       <>
                         <p className="text-sm text-amber-800 font-medium">{condicion.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'}</p>
                         <p className="text-xs text-amber-700 mt-0.5">
@@ -1010,8 +1042,9 @@ function SolicitanteDashboard() {
                       </>
                     ) : (
                       <>
-                        <p className="text-sm text-amber-800 font-medium">Estudio condicionado</p>
-                        <p className="text-xs text-amber-700 mt-0.5">Su estudio está en revisión. Ábralo para ver qué sigue.</p>
+                        {/* Nunca «condicionado» a un prospecto: es el estado interno. */}
+                        <p className="text-sm text-amber-800 font-medium">En revisión</p>
+                        <p className="text-xs text-amber-700 mt-0.5">{TEXTO_EN_REVISION_PROSPECTO}</p>
                       </>
                     )}
                   </div>

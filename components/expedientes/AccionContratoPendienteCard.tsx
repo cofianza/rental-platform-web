@@ -29,7 +29,14 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { contratoService } from '@/services/contratoService'
 import { contratoV3Service } from '@/services/contratoV3Service'
-import { BloqueosContrato, frenosDelContrato, type SalidasCanon } from '@/components/contratos/v3/BloqueosContrato'
+import {
+  BloqueosContrato,
+  DEL_CRC,
+  SOLO_NUEVA_EVALUACION,
+  avisoPrimaDeTraba,
+  frenosDelContrato,
+  type SalidasCanon,
+} from '@/components/contratos/v3/BloqueosContrato'
 import { useSegundoFirmanteContrato } from '@/hooks/useSegundoFirmanteContrato'
 import { ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
@@ -147,7 +154,7 @@ export function AccionContratoPendienteCard({
 
   // Sin el asistente (flujo anterior, o sin poder leerlo) solo frena lo que dice traba_contrato.
   const frenan = frenosDelContrato(bloqueosV3, traba)
-  const avisoPrima = traba?.codigo === 'coarrendatario_pendiente' ? traba.aviso_prima : undefined
+  const avisoPrima = avisoPrimaDeTraba(traba)
 
   // Solo relevante cuando el expediente está APROBADO y no hay contrato aún.
   // En 'condicionado' se muestra AprobarCondicionadoCard, no este card.
@@ -211,13 +218,17 @@ export function AccionContratoPendienteCard({
 
   // Sin borrador (con borrador, «Continuar» lleva al asistente, que trae la misma acción).
   // Con lo que frena el contrato a la vista no se dice «crear el contrato» como si se pudiera.
-  if (puedeCrearV3 && frenan.length > 0 && !borradorV3) {
+  // Bloque 4: con el resultado vencido (o sin margen para firmar) tampoco con borrador: «Continúe el
+  // asistente» llevaba a un contrato que ya no se puede enviar a firma; lo que sigue es un estudio nuevo.
+  const vencidoConBorrador = !!borradorV3 && traba?.codigo === 'vencido'
+  if (puedeCrearV3 && frenan.length > 0 && (!borradorV3 || vencidoConBorrador)) {
     return (
       <BloqueosContrato
-        bloqueos={frenan}
-        para="crear el contrato"
+        bloqueos={vencidoConBorrador ? frenan.filter((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo) || DEL_CRC.includes(b.codigo)) : frenan}
+        para={vencidoConBorrador ? 'seguir con el contrato' : 'crear el contrato'}
         expedienteId={expedienteId}
         puedeEditar={puedeEditar}
+        conBorrador={vencidoConBorrador}
         enElEstudio
         onCambio={onGenerated}
         salidasCanon={salidasCanon && { ...salidasCanon, asistenteV3: true }}

@@ -174,6 +174,47 @@ test('al analista, la persona en verificación: qué hacer', () => {
   assert.equal(textoVerificacionAnalista('descartada'), 'Revise el motivo y decida si lo aprueba.')
 })
 
+test('bloque 4: al analista, el segundo firmante en verificación con los botones de la API', () => {
+  const v = (dar: boolean, reintentar: boolean) => ({ puede_dar_por_verificado: dar, puede_reintentar: reintentar })
+  // Nunca «decida si lo aprueba»: ahí no hay «Aprobar estudio».
+  assert.equal(textoVerificacionAnalista(null, v(true, true)), 'Puede darla por verificada (con constancia) o pedir de nuevo la consulta.')
+  assert.equal(textoVerificacionAnalista(null, v(true, false)), 'Puede darla por verificada (con constancia).')
+  assert.equal(textoVerificacionAnalista(null, v(false, true)), 'Puede pedir de nuevo la consulta.')
+  // Sin ninguna de las dos, nada: el motivo de la API ya dice por qué.
+  assert.equal(textoVerificacionAnalista(null, v(false, false)), '')
+  // Las listas por confirmar mandan (se resuelven en el detalle).
+  assert.match(textoVerificacionAnalista('por_confirmar', v(true, true)), /listas restrictivas por confirmar/)
+  // Sin la verificación (no se pudo leer, o no hay nada que resolver): como antes.
+  assert.equal(textoVerificacionAnalista(null, null), 'Revise el motivo y decida si lo aprueba.')
+})
+
+test('bloque 4: verificado el segundo firmante, qué pasa (con el estudio ya aprobado no «se decide»)', async () => {
+  const { efectoVerificacionSegundo, fraseResultadoLimpio } = await import('./personaEstudio')
+  assert.equal(efectoVerificacionSegundo(false), 'el estudio se decide con las dos personas')
+  // Con el estudio ya aprobado no se promete la vinculación: depende de que resulte válida.
+  assert.equal(
+    efectoVerificacionSegundo(true),
+    'si es válida como segundo firmante, queda vinculada al contrato; si no, el contrato sigue solo con el titular',
+  )
+  assert.equal(fraseResultadoLimpio(false), 'Si el resultado llega limpio, el estudio se decide solo.')
+  assert.equal(
+    fraseResultadoLimpio(true),
+    'Si el resultado llega limpio y la persona es válida como segundo firmante, queda vinculada al contrato; si no, el contrato sigue solo con el titular.',
+  )
+  for (const texto of [efectoVerificacionSegundo(true), fraseResultadoLimpio(true)]) assert.doesNotMatch(texto, /esta persona queda vinculada/)
+})
+
+test('bloque 4: no aprobable con salida, cuando la API dice que a una persona se la puede reemplazar', async () => {
+  const { ofreceReemplazo, personaA5dUsable } = await import('./personaEstudio')
+  const persona = (extra: Partial<IPersonaA5d> = {}): IPersonaA5d => ({ papel: 'sin_papel', etiqueta: 'No pasó', texto: 'No pasó la evaluación: puede reemplazarla por otra persona.', ...extra })
+  // El campo de la API (solo viaja con true), que sobrevive a personaA5dUsable.
+  assert.equal(ofreceReemplazo(personaA5dUsable(persona({ puede_reemplazar: true }))), true)
+  // Sin el campo no se deduce del texto (una API anterior): no se afirma nada.
+  assert.equal(ofreceReemplazo(personaA5dUsable(persona())), false)
+  assert.equal(ofreceReemplazo(persona({ puede_reemplazar: false })), false)
+  assert.equal(ofreceReemplazo(null), false)
+})
+
 test('cómo se presentó: solo si el papel no es el que declaró (Adenda 5 §11) o no tiene papel', () => {
   assert.equal(comoSePresento(persona(), false), null)
   assert.equal(comoSePresento(persona({ papel: 'segundo_firmante' }), true), null)
@@ -200,12 +241,14 @@ test('evaluación de un solicitante que ya fue reemplazado', () => {
 })
 
 test('reemplazo en un estudio rechazado: manda el aviso de la API; el plazo, solo el que ella manda', () => {
-  const base = 'El estudio vuelve a revisión y se decide de nuevo con la persona nueva.'
+  // Bloque 4: el mismo nombre del estado («reabierto»), no «vuelve a revisión».
+  const base = 'Al cargar a la persona nueva, el estudio se reabre y se decide de nuevo con su evaluación.'
   // API anterior: sin campos ni frase.
   assert.equal(avisoReemplazoEnRechazado({ aviso: 'AVISO' }), base)
-  // La API ya lo dice (campo o frase): no se repite.
+  // La API ya lo dice (campo o frase, con cualquiera de las dos palabras): no se repite.
   assert.equal(avisoReemplazoEnRechazado({ aviso: 'AVISO', vuelve_a_revision: true }), null)
   assert.equal(avisoReemplazoEnRechazado({ aviso: 'AVISO. Al cargar a la persona nueva, el estudio vuelve a revisión y se decide de nuevo.' }), null)
+  assert.equal(avisoReemplazoEnRechazado({ aviso: 'AVISO. Al cargar a la persona nueva, el estudio se reabre y se decide de nuevo.' }), null)
   // Con la fecha de la API y un aviso que no la dice: se agrega; si el aviso ya dice el plazo, no.
   const vence = '2026-12-04T17:00:00Z'
   assert.equal(
@@ -234,10 +277,19 @@ test('textos de la reapertura', () => {
     TEXTO_CANCELAR_REAPERTURA,
     'El estudio vuelve a quedar no aprobable y Cofianza devuelve el pago si la consulta no se hizo. La persona anterior no vuelve al estudio.',
   )
-  assert.equal(TEXTO_CANCELAR_INVITACION_REAPERTURA, 'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobable y Cofianza devuelve el pago.')
+  // Bloque 4: la devolución, condicionada (no todo cambio cobra una consulta adicional); el enlace vencido no la promete.
+  assert.equal(
+    TEXTO_CANCELAR_INVITACION_REAPERTURA,
+    'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobable y, si pagó la consulta adicional, Cofianza devuelve el pago.',
+  )
   assert.equal(TOAST_INVITACION_CANCELADA_REAPERTURA, 'Invitación cancelada. El estudio volvió a no aprobable.')
-  assert.equal(TEXTO_ENLACE_VENCIDO_REAPERTURA, 'Venció el enlace: el cambio se cerró y Cofianza devolverá el pago.')
-  assert.equal(TEXTO_REAPERTURA, 'El estudio se decide de nuevo cuando la persona nueva acepte, autorice y termine su evaluación.')
+  assert.equal(
+    TEXTO_ENLACE_VENCIDO_REAPERTURA,
+    'Venció el enlace: el cambio se cierra y el estudio vuelve a no aprobable; si pagó la consulta adicional, Cofianza devuelve el pago.',
+  )
+  // La devolución nunca sin condición.
+  assert.doesNotMatch(TEXTO_ENLACE_VENCIDO_REAPERTURA, /devolverá el pago\.$|y Cofianza devuelve/)
+  assert.equal(TEXTO_REAPERTURA, 'El estudio está reabierto: se decide de nuevo cuando la persona nueva acepte, autorice y termine su evaluación.')
   // El texto de la evaluación en espera no repite el de la franja «Qué sigue».
   assert.notEqual(TEXTO_EN_ESPERA, TEXTO_REAPERTURA)
   assert.doesNotMatch(TEXTO_EN_ESPERA, /se decide de nuevo/)
@@ -289,4 +341,24 @@ test('coarrendatario en curso (el criterio del turno del segundo firmante): invi
   assert.equal(coarrendatarioEnCurso({ estado: 'rechazado_invitacion' }, ahora), false)
   assert.equal(coarrendatarioEnCurso({ estado: 'retirado' }, ahora), false)
   assert.equal(coarrendatarioEnCurso(null, ahora), false)
+})
+
+test('bloque 4: segundo firmante en verificación (respaldo cuando la API no manda segundo_en_verificacion)', async () => {
+  const { coarrendatarioEnVerificacion, coarrendatarioEnCurso } = await import('./personaEstudio')
+  const persona = (etiqueta: string): IPersonaA5d => ({ papel: 'sin_papel', etiqueta, texto: 'Texto de prueba.' })
+  const enVerificacion = { estado: 'estudio_completado', estudio: { estado: 'completado', resultado: 'condicionado', persona_a5d: persona('En verificación') } }
+  assert.equal(coarrendatarioEnVerificacion(enVerificacion), true)
+  // Ya no está «en curso» (su evaluación terminó): sin este criterio el turno caía en quien gestiona.
+  assert.equal(coarrendatarioEnCurso(enVerificacion), false)
+  // Sin persona_a5d: la evaluación terminada que quedó en revisión.
+  assert.equal(coarrendatarioEnVerificacion({ estado: 'aceptado', estudio: { estado: 'completado', resultado: 'condicionado' } }), true)
+  // Con persona_a5d manda su etiqueta: bloquea, no alcanza o válida no es «en verificación».
+  assert.equal(coarrendatarioEnVerificacion({ estado: 'aceptado', estudio: { estado: 'completado', resultado: 'condicionado', persona_a5d: persona('Bloquea la operación') } }), false)
+  assert.equal(coarrendatarioEnVerificacion({ estado: 'aceptado', estudio: { estado: 'completado', resultado: 'rechazado', persona_a5d: persona('No califica') } }), false)
+  assert.equal(coarrendatarioEnVerificacion({ estado: 'aceptado', estudio: { estado: 'completado', resultado: 'aprobado' } }), false)
+  // Sin terminar, sin responder, o quien ya salió: no.
+  assert.equal(coarrendatarioEnVerificacion({ estado: 'aceptado', estudio: { estado: 'en_proceso', resultado: 'pendiente' } }), false)
+  assert.equal(coarrendatarioEnVerificacion({ estado: 'pendiente_aceptacion' }), false)
+  assert.equal(coarrendatarioEnVerificacion({ estado: 'retirado', estudio: { estado: 'completado', resultado: 'condicionado' } }), false)
+  assert.equal(coarrendatarioEnVerificacion(null), false)
 })

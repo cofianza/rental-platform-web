@@ -34,7 +34,14 @@ export interface IEstudioVigente extends IDesenlaceEstudio {
  * Por qué un estudio aprobado y sin contrato vivo no puede pasar al contrato (reporte de Gerencia,
  * 21-nov, puntos 1, 3 y 7). Lo calcula la API una sola vez para la lista, el encabezado y el detalle.
  */
-export type CodigoTrabaContrato = 'vencido' | 'canon_excede' | 'coarrendatario_pendiente'
+export type CodigoTrabaContrato =
+  | 'vencido'
+  | 'canon_excede'
+  | 'coarrendatario_pendiente'
+  /** El segundo firmante aceptó y su evaluación sigue en curso: se puede esperar o seguir sin él. */
+  | 'coarrendatario_en_evaluacion'
+  /** Cofianza verifica al segundo firmante ya evaluado: se puede esperar el resultado o seguir sin él. */
+  | 'coarrendatario_en_verificacion'
 
 export interface ITrabaContrato {
   /** Un código que esta versión no conoce se trata como si no hubiera traba. */
@@ -53,6 +60,8 @@ export interface ITrabaContrato {
   sin_margen?: boolean
   /** coarrendatario_pendiente (estudios anteriores a la Adenda 5): lo que cambia en la prima al seguir sin él. */
   aviso_prima?: string
+  /** canon_excede: lo que se supera es el tope que Cofianza afianza (lo decide la Gerencia General). Solo viaja con true. */
+  sobre_tope?: boolean
 }
 
 /**
@@ -182,6 +191,16 @@ export interface IExpediente {
   /** Lista y detalle, solo en estudios aprobados: hasta cuándo sirve el resultado (ISO). Ausente con una API anterior. */
   vigencia_hasta?: string | null
   /**
+   * Lista y detalle, con `vigencia_hasta`: hasta cuándo se puede enviar a firma (ISO: el fin de la vigencia menos
+   * el margen que necesita el proceso de firma). Ausente con una API anterior: se cuenta contra `vigencia_hasta`.
+   */
+  firmar_hasta?: string | null
+  /**
+   * Lista y detalle: Cofianza verifica al segundo firmante ya evaluado (el turno es de Cofianza y quien gestiona
+   * no puede invitar ni reemplazar a nadie mientras tanto). Ausente con una API anterior.
+   */
+  segundo_en_verificacion?: boolean
+  /**
    * Lista y detalle: el estudio no aprobable se reabrió por un reemplazo y espera la evaluación de la persona nueva
    * (punto 5 del reporte de Gerencia). Ausente con una API anterior.
    */
@@ -243,8 +262,6 @@ export interface IExpedientesStatsRaw {
 export interface IExpedientesStats {
   total: number
   por_estado: Record<EstadoExpediente, number>
-  /** Solo Cofianza: condicionados sin condición de coarrendatario (los decide un analista). null = no se pudo leer. */
-  condicionados_por_decidir?: number | null
   /**
    * La bandeja «En revisión de Cofianza»: condicionados sin «aprobado con segundo firmante» ni «bloqueado por
    * listas», con la regla del chip `revision_cofianza` (la lista se pide con estado=condicionado y ese filtro).

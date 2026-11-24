@@ -16,7 +16,7 @@
  *
  * Puro, sin React.
  */
-import type { IPersonaA5d, PapelPersonaA5d } from '@/types/estudio'
+import type { IPersonaA5d, IVerificacionSegundoFirmante, PapelPersonaA5d } from '@/types/estudio'
 
 /**
  * En qué quedó el estudio, para lo que se dice de cada persona:
@@ -48,8 +48,11 @@ export const TEXTO_ESTUDIO_CERRADO = 'El estudio se cerró: esta evaluación ya 
 /** El rótulo de una evaluación que ya no cuenta: esperaba revisión o pasó, pero el estudio terminó. */
 export const ROTULO_SIN_EFECTO = 'Sin efecto'
 
-/** Estudio reabierto por un reemplazo (`reapertura_abierta`): lo que se espera de la persona nueva. */
-export const TEXTO_REAPERTURA = 'El estudio se decide de nuevo cuando la persona nueva acepte, autorice y termine su evaluación.'
+/**
+ * Estudio reabierto por un reemplazo (`reapertura_abierta`): lo que se espera de la persona nueva. Con el
+ * mismo nombre del estado («Reabierto: esperando a la persona nueva», ETAPA_LABEL.reapertura).
+ */
+export const TEXTO_REAPERTURA = 'El estudio está reabierto: se decide de nuevo cuando la persona nueva acepte, autorice y termine su evaluación.'
 
 /** Rótulo de la evaluación anterior mientras el estudio reabierto espera a la persona nueva. */
 export const ROTULO_EN_ESPERA = 'En espera'
@@ -85,6 +88,12 @@ export const esSalidaDelEstudio = (p: Pick<IPersonaA5d, 'etiqueta'> | null | und
 
 /** Cofianza verifica a la persona (etiqueta «En verificación» de la API). */
 export const estaEnVerificacion = (p: Pick<IPersonaA5d, 'etiqueta'> | null | undefined): boolean => etiquetaEs(p, 'En verificación')
+
+/**
+ * A esta persona se la puede reemplazar hoy (`persona_a5d.puede_reemplazar` de la API, que solo lo manda con
+ * true y a quien puede hacer el cambio). Sin el campo (una API anterior) no se afirma nada.
+ */
+export const ofreceReemplazo = (p: Pick<IPersonaA5d, 'puede_reemplazar'> | null | undefined): boolean => p?.puede_reemplazar === true
 
 /** Rótulo del coarrendatario sin `persona_a5d` (Adenda 3 V2 §7: válido o no califica; nunca «no aprobable»). null = no aplica. */
 export function rotuloCoarrendatario(resultado: string | null | undefined, cierre: CierreEstudio): string | null {
@@ -219,10 +228,40 @@ const TEXTO_LISTAS_POR_CONFIRMAR =
   'Coincidencia en listas restrictivas por confirmar. Ábrala en «Ver detalle» para confirmarla o descartarla antes de decidir.'
 const TEXTO_REVISE_Y_DECIDA = 'Revise el motivo y decida si lo aprueba.'
 
-/** Al analista (administrador u operador), con la persona «En verificación»: qué hacer, no el texto para quien gestiona. */
-export function textoVerificacionAnalista(listasEstado: string | null | undefined): string {
-  return listasEstado === 'por_confirmar' ? TEXTO_LISTAS_POR_CONFIRMAR : TEXTO_REVISE_Y_DECIDA
+/**
+ * Al analista (administrador u operador), con la persona «En verificación»: qué hacer, no el texto para quien
+ * gestiona. Con la verificación del segundo firmante que manda la API (`verificacion`), lo que ofrecen sus
+ * botones (no «decida si lo aprueba»: ahí no hay «Aprobar estudio»); si no ofrece ninguno, nada: su motivo
+ * ya dice por qué.
+ */
+export function textoVerificacionAnalista(
+  listasEstado: string | null | undefined,
+  verificacion?: Pick<IVerificacionSegundoFirmante, 'puede_dar_por_verificado' | 'puede_reintentar'> | null,
+): string {
+  if (listasEstado === 'por_confirmar') return TEXTO_LISTAS_POR_CONFIRMAR
+  if (!verificacion) return TEXTO_REVISE_Y_DECIDA
+  if (verificacion.puede_dar_por_verificado && verificacion.puede_reintentar) {
+    return 'Puede darla por verificada (con constancia) o pedir de nuevo la consulta.'
+  }
+  if (verificacion.puede_dar_por_verificado) return 'Puede darla por verificada (con constancia).'
+  if (verificacion.puede_reintentar) return 'Puede pedir de nuevo la consulta.'
+  return ''
 }
+
+/**
+ * Lo que pasa cuando el segundo firmante queda verificado. Con el estudio ya aprobado no se «decide» nada, y
+ * tampoco se promete que quede vinculada: verificada, puede no resultar válida como segundo firmante.
+ */
+export const efectoVerificacionSegundo = (estudioAprobado: boolean): string =>
+  estudioAprobado
+    ? 'si es válida como segundo firmante, queda vinculada al contrato; si no, el contrato sigue solo con el titular'
+    : 'el estudio se decide con las dos personas'
+
+/** Lo mismo cuando la resuelve sola la respuesta limpia de la consulta: la frase completa. */
+export const fraseResultadoLimpio = (estudioAprobado: boolean): string =>
+  estudioAprobado
+    ? 'Si el resultado llega limpio y la persona es válida como segundo firmante, queda vinculada al contrato; si no, el contrato sigue solo con el titular.'
+    : 'Si el resultado llega limpio, el estudio se decide solo.'
 
 /** «30 de noviembre de 2026», en hora de Colombia. null si la fecha no es válida. */
 export function fechaColombia(iso: string | null | undefined): string | null {
@@ -238,6 +277,9 @@ export function textoPlazoReapertura(venceReapertura: string | null | undefined)
   return fecha ? `La persona nueva debe autorizar a más tardar el ${fecha}.` : null
 }
 
+/** Antes de reemplazar a una persona en un estudio no aprobable: qué pasa al cargar a la nueva. */
+export const TEXTO_AVISO_REAPERTURA = 'Al cargar a la persona nueva, el estudio se reabre y se decide de nuevo con su evaluación.'
+
 /**
  * Estudio rechazado: lo que pasa al reemplazar a una persona (punto 5 del
  * reporte). Manda el aviso de la API: si ya dice que el estudio vuelve a
@@ -247,8 +289,8 @@ export function textoPlazoReapertura(venceReapertura: string | null | undefined)
  */
 export function avisoReemplazoEnRechazado(c: { aviso: string; vuelve_a_revision?: boolean; vence_reapertura?: string | null }): string | null {
   const partes: string[] = []
-  if (!c.vuelve_a_revision && !/vuelve a (?:revisión|revision)/i.test(c.aviso)) {
-    partes.push('El estudio vuelve a revisión y se decide de nuevo con la persona nueva.')
+  if (!c.vuelve_a_revision && !/vuelve a (?:revisión|revision)|se reabre/i.test(c.aviso)) {
+    partes.push(TEXTO_AVISO_REAPERTURA)
   }
   const plazo = /a más tardar|vence en/i.test(c.aviso) ? null : textoPlazoReapertura(c.vence_reapertura)
   if (plazo) partes.push(plazo)
@@ -259,11 +301,15 @@ export function avisoReemplazoEnRechazado(c: { aviso: string; vuelve_a_revision?
 export const TEXTO_CANCELAR_REAPERTURA =
   'El estudio vuelve a quedar no aprobable y Cofianza devuelve el pago si la consulta no se hizo. La persona anterior no vuelve al estudio.'
 
-/** Cancelar la invitación de la persona nueva de un estudio reabierto: el diálogo, el aviso y el enlace vencido. */
+/**
+ * Cancelar la invitación de la persona nueva de un estudio reabierto: el diálogo, el aviso y el enlace vencido.
+ * La devolución, siempre condicionada: no todo cambio de persona cobra una consulta adicional.
+ */
 export const TEXTO_CANCELAR_INVITACION_REAPERTURA =
-  'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobable y Cofianza devuelve el pago.'
+  'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobable y, si pagó la consulta adicional, Cofianza devuelve el pago.'
 export const TOAST_INVITACION_CANCELADA_REAPERTURA = 'Invitación cancelada. El estudio volvió a no aprobable.'
-export const TEXTO_ENLACE_VENCIDO_REAPERTURA = 'Venció el enlace: el cambio se cerró y Cofianza devolverá el pago.'
+export const TEXTO_ENLACE_VENCIDO_REAPERTURA =
+  'Venció el enlace: el cambio se cierra y el estudio vuelve a no aprobable; si pagó la consulta adicional, Cofianza devuelve el pago.'
 
 /** Etiquetas de la API de un coarrendatario que todavía no terminó: lo verifica Cofianza, espera o debe salir. */
 const ETIQUETAS_VIVAS = ['en verificación', 'en revisión', 'en espera', 'bloquea la operación']
@@ -288,6 +334,18 @@ export function coarrendatarioEnCurso(coa: CoarrendatarioEnResumen | null | unde
     return !(Number.isFinite(vence) && vence < ahoraMs)
   }
   return coa.estado === 'aceptado' && coa.estudio?.estado !== 'completado'
+}
+
+/**
+ * Cofianza verifica al segundo firmante ya evaluado: el respaldo de la web cuando la API no manda
+ * `segundo_en_verificacion` en el estudio. Su evaluación terminó y la API la marca «En verificación»; sin
+ * `persona_a5d`, la que quedó en revisión (resultado 'condicionado'). Pura.
+ */
+export function coarrendatarioEnVerificacion(coa: CoarrendatarioEnResumen | null | undefined): boolean {
+  if (!coa || coa.estudio?.estado !== 'completado') return false
+  if (coa.estado !== 'aceptado' && coa.estado !== 'estudio_completado') return false
+  const persona = personaA5dUsable(coa.estudio.persona_a5d)
+  return persona ? estaEnVerificacion(persona) : coa.estudio.resultado === 'condicionado'
 }
 
 /**

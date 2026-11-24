@@ -223,12 +223,16 @@ export function ContratosInmobiliariaView() {
         ).includes(plegar(searchAplicado.trim())),
       )
     : sinContrato
-  // Reporte de Gerencia (21-nov): con traba_contrato (canon, coarrendatario sin responder o resultado vencido)
+  // Reporte de Gerencia (21-nov): con traba_contrato (canon, segundo firmante sin terminar o resultado vencido)
   // no son contratos por generar: van aparte, con su etiqueta y sin «Generar contrato».
   const porGenerar = sinContrato.filter((e) => !tieneTrabaContrato(e))
   const porGenerarVisibles = sinContratoVisibles.filter((e) => !tieneTrabaContrato(e))
-  const conTraba = sinContrato.filter(tieneTrabaContrato)
-  const conTrabaVisibles = sinContratoVisibles.filter(tieneTrabaContrato)
+  // Bloque 4: el vencido ya no tiene nada por resolver (lo que sigue es un estudio nuevo): va en su propio panel.
+  const esVencido = (e: (typeof sinContrato)[number]) => e.traba_contrato?.codigo === 'vencido'
+  const conTraba = sinContrato.filter((e) => tieneTrabaContrato(e) && !esVencido(e))
+  const conTrabaVisibles = sinContratoVisibles.filter((e) => tieneTrabaContrato(e) && !esVencido(e))
+  const vencidos = sinContrato.filter(esVencido)
+  const vencidosVisibles = sinContratoVisibles.filter(esVencido)
   const filaAprobado = (e: (typeof sinContrato)[number]) => {
     const etapaTraba = etapaDeTraba(e.traba_contrato?.codigo)
     const cta = !puedeEditar || e.traba_contrato?.codigo === 'vencido' ? 'Ver estudio' : etapaTraba ? 'Ver qué falta' : 'Generar contrato'
@@ -263,7 +267,7 @@ export function ContratosInmobiliariaView() {
         <td className="px-4 py-3 sm:px-6 text-right">
           <Link
             href={`/expedientes/${e.id}`}
-            className="inline-flex items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
+            className="inline-flex min-h-10 items-center gap-1 rounded-md border-[1.5px] border-coral-500 px-3 py-1 text-xs font-bold text-coral-700 transition-colors hover:bg-coral-50"
           >
             {cta}
             <IconChevronRight size={14} />
@@ -386,10 +390,11 @@ export function ContratosInmobiliariaView() {
         )}
       </Panel>
 
-      {/* Aprobados que todavía no pueden pasar al contrato (traba_contrato): aparte, sin «Generar contrato». */}
+      {/* Aprobados que todavía no pueden pasar al contrato (traba_contrato): aparte, sin «Generar contrato».
+          El mismo nombre que en el inicio (AccionesPendientesWidget). */}
       {!loadingSinContrato && conTraba.length > 0 && (
         <Panel
-          title="Aprobados que todavía no pueden pasar al contrato"
+          title="Aprobados con algo por resolver"
           dot="bg-amber-500"
           subtitle="Abra el estudio para ver qué falta"
         >
@@ -397,6 +402,26 @@ export function ContratosInmobiliariaView() {
             <EmptyRow texto="Ningún estudio coincide con la búsqueda." />
           ) : (
             tablaAprobados(conTrabaVisibles)
+          )}
+        </Panel>
+      )}
+
+      {/* Los vencidos, aparte: su resultado ya no sirve para el contrato (lo que sigue es un estudio nuevo). */}
+      {!loadingSinContrato && vencidos.length > 0 && (
+        <Panel
+          title="Resultado vencido"
+          dot="bg-gray-400"
+          // A quien es solo lectura no se le dice «cree»: lo hace alguien con permiso de edición.
+          subtitle={
+            puedeEditar
+              ? 'Ya no sirve para el contrato: para continuar, cree un estudio nuevo'
+              : 'Ya no sirve para el contrato: para continuar hace falta un estudio nuevo'
+          }
+        >
+          {vencidosVisibles.length === 0 ? (
+            <EmptyRow texto="Ningún estudio coincide con la búsqueda." />
+          ) : (
+            tablaAprobados(vencidosVisibles)
           )}
         </Panel>
       )}

@@ -12,9 +12,10 @@
  * el refetch SECUENCIAL tras una mutación —await de la mutación y luego el
  * refetch) va fresca a la red. Salvedad: si un refetch se SOLAPA con un GET del
  * mismo key aún en vuelo, recibirá el resultado de ESE GET (posible dato previo
- * a la mutación). Con el uso actual (refetch secuencial) no ocurre; tenlo en
- * cuenta si introduces refetches concurrentes. El valor resuelto se comparte
- * por REFERENCIA entre callers concurrentes: trátalo como inmutable.
+ * a la mutación). Quien muta lo evita con `descartarEnVuelo(key)` al terminar la
+ * mutación: la lectura siguiente va a la red aunque la anterior siga en vuelo.
+ * El valor resuelto se comparte por REFERENCIA entre callers concurrentes:
+ * trátalo como inmutable.
  */
 const inflight = new Map<string, Promise<unknown>>()
 
@@ -22,8 +23,17 @@ export function coalesceRequest<T>(key: string, fn: () => Promise<T>): Promise<T
   const existing = inflight.get(key)
   if (existing) return existing as Promise<T>
   const p = fn().finally(() => {
-    inflight.delete(key)
+    // Solo la propia: si se descartó y otra lectura ocupó la clave, esa sigue compartiéndose.
+    if (inflight.get(key) === p) inflight.delete(key)
   })
   inflight.set(key, p)
   return p
+}
+
+/**
+ * Tras una mutación: la petición en vuelo de `key` (anterior a la mutación) deja de compartirse. Quien ya la
+ * esperaba recibe su respuesta; la siguiente lectura hace una petición nueva y ve el dato ya cambiado.
+ */
+export function descartarEnVuelo(key: string): void {
+  inflight.delete(key)
 }

@@ -18,6 +18,7 @@ import { dashboardService, type MiCarteraAnalitica } from '@/services/dashboardS
 import { moneyCompact } from '@/components/dashboard/secciones/_shared'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 import { cn } from '@/lib/utils'
+import { desgloseDeCifras, fraseDesgloseAprobacion, tasaLegible } from '@/lib/conteosEstudios'
 import { SkeletonCards } from '@/components/ui/Skeleton'
 
 export function CarteraAnaliticaSection() {
@@ -77,6 +78,10 @@ export function CarteraAnaliticaSection() {
   const s = data.salud
   const e = data.estudios
   const d = e.decisiones30d
+  // Bloque 4: las cifras de la tasa, si la API las manda (misma definición que /estudios y /reportes). Si las omite
+  // (una API anterior, o no pudo clasificar), ni la frase ni sus tarjetas.
+  const desgloseTasa = desgloseDeCifras(d)
+  const conDesglose = typeof d.con_segundo_firmante === 'number'
 
   return (
     <div className="space-y-6">
@@ -134,9 +139,9 @@ export function CarteraAnaliticaSection() {
           )}
           <StatCard
             label="Tasa de aprobación"
-            value={d.total ? `${d.tasaAprobacion}%` : '—'}
+            value={d.total ? tasaLegible(d.tasaAprobacion) : '—'}
             color="text-primary-600"
-            sub="últimos 30 días"
+            sub={desgloseTasa ? `últimos 30 días · ${fraseDesgloseAprobacion(desgloseTasa)}` : 'últimos 30 días'}
           />
         </div>
 
@@ -145,27 +150,41 @@ export function CarteraAnaliticaSection() {
           <div className="mb-3 text-[11px] font-bold uppercase tracking-wide text-gray-500">
             Decisiones — últimos 30 días
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* En el orden de la frase de la tasa (aprobados, con segundo firmante, no aprobables, bloqueados), la tasa
+              y, al final, lo que sigue en revisión (fuera de la tasa). Con el desglose son seis tarjetas (2×3 en el
+              celular, 3×2 desde sm); sin él (una API anterior, o no se pudo clasificar), las cuatro de siempre:
+              ninguna queda sola en su fila. */}
+          <div className={cn('grid grid-cols-2 gap-3', conDesglose ? 'sm:grid-cols-3' : 'sm:grid-cols-4')}>
             <DecisionCard
               label="Aprobados"
               value={d.aprobados}
               variant="border-primary-600 bg-primary-50 text-primary-700"
             />
-            {/* P26: condicionados que el analista aún no resuelve; no entran en la tasa. */}
-            <DecisionCard
-              label="En decisión"
-              value={d.condicionados}
-              variant="border-amber-300 bg-amber-50 text-amber-700"
-            />
+            {conDesglose && (
+              <DecisionCard
+                label="Con segundo firmante"
+                value={d.con_segundo_firmante ?? 0}
+                variant="border-amber-300 bg-amber-50 text-amber-700"
+              />
+            )}
             <DecisionCard
               label="No aprobables"
               value={d.rechazados}
               variant="border-red-300 bg-red-50 text-red-500"
             />
+            {conDesglose && (
+              <DecisionCard label="Bloqueados por listas" value={d.bloqueados ?? 0} variant="border-red-300 bg-red-50 text-red-500" />
+            )}
             <DecisionCard
               label="Tasa"
-              value={d.total ? `${d.tasaAprobacion}%` : '—'}
+              value={d.total ? tasaLegible(d.tasaAprobacion) : '—'}
               variant="border-primary-600 bg-primary-50 text-primary-700"
+            />
+            {/* P26: lo que revisa Cofianza y todavía no resuelve; no entra en la tasa. */}
+            <DecisionCard
+              label="En revisión de Cofianza"
+              value={d.condicionados}
+              variant="border-amber-300 bg-amber-50 text-amber-700"
             />
           </div>
         </div>

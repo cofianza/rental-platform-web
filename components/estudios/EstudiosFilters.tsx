@@ -67,7 +67,8 @@ export function EstudiosFilters({
             <option value="">Todos los resultados</option>
             <option value="aprobado">Aprobado</option>
             <option value="rechazado">No aprobable</option>
-            <option value="condicionado">En revisión o con segundo firmante</option>
+            {/* Lo que trae este filtro: los estudios que revisa Cofianza (el segundo firmante y el bloqueo tienen su chip). */}
+            <option value="condicionado">En revisión de Cofianza</option>
             <option value="pendiente">Pendiente</option>
           </select>
         </div>
