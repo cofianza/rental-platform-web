@@ -8,10 +8,12 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
+import { useNubyDisponible } from '@/hooks/useIntegracionNuby'
 import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard, IconPlug } from '@/components/icons'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad;
 // `soloTitular` la limita además al titular de la inmobiliaria (rol_miembro owner).
+// `requiereNuby` la esconde mientras la conexión con nuby esté apagada en la plataforma.
 const SECCIONES: Array<{
   id: string
   href: string
@@ -21,6 +23,7 @@ const SECCIONES: Array<{
   color: string
   soloRoles?: string[]
   soloTitular?: boolean
+  requiereNuby?: boolean
 }> = [
   {
     id: 'cuenta',
@@ -77,6 +80,7 @@ const SECCIONES: Array<{
     color: 'bg-orange-100 text-orange-600',
     soloRoles: ['inmobiliaria'],
     soloTitular: true,
+    requiereNuby: true,
   },
   {
     id: 'disponibilidad',
@@ -171,8 +175,13 @@ export default function ConfiguracionPage() {
   const { user } = useAuth()
   const rol = user?.rol
   const esTitular = user?.rol_miembro === 'owner'
+  // Solo se le pregunta a la API cuando quien entra es el titular de una inmobiliaria.
+  const nubyDisponible = useNubyDisponible(rol === 'inmobiliaria' && esTitular)
   const seccionesVisibles = SECCIONES.filter(
-    (s) => (!s.soloRoles || (rol && s.soloRoles.includes(rol))) && (!s.soloTitular || esTitular),
+    (s) =>
+      (!s.soloRoles || (rol && s.soloRoles.includes(rol))) &&
+      (!s.soloTitular || esTitular) &&
+      (!s.requiereNuby || nubyDisponible),
   )
 
   return (

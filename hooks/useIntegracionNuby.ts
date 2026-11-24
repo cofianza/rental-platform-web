@@ -44,6 +44,33 @@ export type ResultadoNuby<T = undefined> = { ok: true; datos: T } | ({ ok: false
 /** inactivo: no hay copia corriendo · activo: se sigue su avance · agotado: pasó el tope y sigue corriendo. */
 type Sondeo = 'inactivo' | 'activo' | 'agotado'
 
+/**
+ * ¿La conexión con nuby está encendida en la plataforma? Sirve para no
+ * mostrarle al titular una entrada que todavía no puede usar. Es false
+ * mientras carga y si la API no responde (o aún no tiene la función).
+ */
+export function useNubyDisponible(activo: boolean): boolean {
+  const [disponible, setDisponible] = useState(false)
+
+  useEffect(() => {
+    if (!activo) return
+    let vigente = true
+    integracionNubyService
+      .obtener({ tipo: 'titular' })
+      .then((estado) => {
+        if (vigente) setDisponible(estado.habilitada)
+      })
+      .catch(() => {
+        if (vigente) setDisponible(false)
+      })
+    return () => {
+      vigente = false
+    }
+  }, [activo])
+
+  return activo && disponible
+}
+
 export function useIntegracionNuby(modo: ModoIntegracionNuby) {
   const orgId = modo.tipo === 'admin' ? modo.orgId : null
   // Quien llama suele pasar el modo en línea: se fija para que no cambie en cada render.
