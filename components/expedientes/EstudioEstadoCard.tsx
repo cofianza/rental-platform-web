@@ -828,7 +828,9 @@ function EstudioPanel({
       tono={TONO_PASO[tone]}
       icono={iconNode}
       titulo={
-        <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+        // relative + InfoTip anclada: la burbuja abre desde el inicio del título; desde el ícono (a la derecha,
+        // tras la insignia) se salía de la tarjeta a 390 px.
+        <span className="relative inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
           {personaA5d ? (
             <>
               <span className="min-w-0 break-words">
@@ -844,7 +846,7 @@ function EstudioPanel({
               {esCoarrendatario ? 'Evaluación del coarrendatario' : 'Evaluación crediticia del titular'}: {rotulo}
             </span>
           )}
-          <InfoTip texto={AYUDA.evaluacion} lado="derecha" />
+          <InfoTip texto={AYUDA.evaluacion} lado="derecha" anclada />
           {estudio.expiracion?.expirado && (
             <span className="rounded-full border border-amber-300 bg-white px-2 py-0.5 text-xs font-medium text-amber-900">
               {estudio.expiracion.detenida ? 'Enlace detenido' : 'Expirado'}
