@@ -77,7 +77,7 @@ const GRUPOS_DE_REGLAS = [
       'Los datos se cambian en nuby: lo que edite en Cofianza en un inmueble que viene de nuby se reemplaza en una copia siguiente.',
       'Un inmueble con estudio en curso o con contrato en Cofianza no se toca.',
       'Si en nuby un inmueble pasa a arrendado o inactivo, en Cofianza cambia de estado y sale de la vitrina. Cofianza nunca publica por su cuenta.',
-      'Si un inmueble ya no aparece en nuby, sale de la vitrina, pero no se borra.',
+      'Si un inmueble deja de aparecer en nuby, sale de la vitrina cuando dos revisiones completas seguidas lo confirman. Nunca se borra.',
     ],
   },
 ]

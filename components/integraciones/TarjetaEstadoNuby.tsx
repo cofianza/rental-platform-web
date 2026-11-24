@@ -200,7 +200,7 @@ export function TarjetaEstadoNuby({
           </Dato>
           {totales.ausentes > 0 && (
             <Dato etiqueta="Ya no aparecen en nuby">
-              {totales.ausentes.toLocaleString('es-CO')} · siguen en Cofianza, fuera de la vitrina
+              {totales.ausentes.toLocaleString('es-CO')} · siguen en Cofianza; salen de la vitrina si la siguiente revisión completa tampoco los encuentra
             </Dato>
           )}
         </dl>
