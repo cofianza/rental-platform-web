@@ -1199,12 +1199,24 @@ export const META: Record<string, MetaParametro> = {
     nota: 'Acortarlo aplica también a los estudios ya creados: los que ya pasen el plazo nuevo sin la autorización del solicitante se cierran en la siguiente revisión automática (cada hora). Alargarlo no reabre los cerrados.',
     rige: 'a4',
   },
-  VIGENCIA_CRC_DIAS: {
-    nombre: 'Días que vale el certificado de riesgo',
+  DIAS_VIGENCIA_RESULTADO: {
+    nombre: 'Vigencia del resultado',
     seccion: 'plazos',
     sub: 'Plazos',
     unidad: 'dias',
-    queHace: 'El certificado de riesgo vale estos días desde la consulta a la central. Vencido, no se firma contrato con él y hay que consultar de nuevo.',
+    queHace:
+      'Días que vale el resultado de un estudio desde que se emite. Vencido, no se puede crear el contrato ni se renueva: hace falta un estudio nuevo, con su propio cobro. Dentro de la vigencia, evaluar de nuevo por un canon mayor no tiene costo.',
+    nota: 'Cada resultado conserva los días con que se emitió: cambiar este valor solo afecta a los que se emitan después.',
+    ejemplo: (v) => `Con ${v.DIAS_VIGENCIA_RESULTADO}: un estudio aprobado hoy permite crear el contrato hasta dentro de ${v.DIAS_VIGENCIA_RESULTADO} días (con el margen que necesita la firma).`,
+    rige: 'siempre',
+  },
+  VIGENCIA_CRC_DIAS: {
+    nombre: 'Vigencia de los resultados anteriores',
+    seccion: 'plazos',
+    sub: 'Plazos',
+    unidad: 'dias',
+    queHace:
+      'Los resultados emitidos antes de que existiera «Vigencia del resultado» valen estos días desde la consulta a la central; los posteriores conservan la suya. Vencido, no se firma contrato con él y hay que hacer un estudio nuevo.',
     rige: 'siempre',
   },
   MAX_INTENTOS_DOCUMENTO: {
