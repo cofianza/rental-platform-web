@@ -323,7 +323,7 @@ export function ReasignarEstudioModal({
               </p>
               <p className="mt-0.5 text-xs text-gray-600">
                 {evaluaDeNuevo
-                  ? 'El canon es mayor al aprobado: el estudio se evalúa de nuevo con este canon antes de trasladarlo, sin costo mientras el reporte de la evaluación esté vigente. Si ya venció, no se traslada ni se cobra nada.'
+                  ? 'El canon es mayor al aprobado: el estudio se evalúa de nuevo con este canon antes de trasladarlo, sin costo. Si la evaluación ya no está vigente, no se traslada ni se cobra nada.'
                   : 'No se generará ningún cobro ni se descontará ningún crédito, y el estudio conserva su vigencia original.'}
               </p>
             </div>

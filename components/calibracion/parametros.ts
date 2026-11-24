@@ -583,7 +583,7 @@ const META_A5D: Record<string, MetaParametro> = {
     sub: 'Consulta adicional',
     unidad: 'dias',
     queHace:
-      'Días desde la consulta a la central en que su resultado se reutiliza sin consultar de nuevo: se conserva a la persona que ya pasó cuando se sustituye a la otra, y un inmueble de canon mayor se reevalúa sin cobro. Vencidos, la nueva consulta se cobra como consulta adicional. También fija hasta cuándo sirve el reporte para decidir una apelación.',
+      'Días desde la consulta a la central en que su resultado se reutiliza sin consultar de nuevo: se conserva a la persona que ya pasó cuando se sustituye a la otra. Vencidos, la nueva consulta se cobra como consulta adicional. También fija hasta cuándo sirve el reporte para decidir una apelación. Un inmueble de canon mayor se reevalúa sin cobro mientras el resultado del estudio esté vigente (en los resultados anteriores a «Vigencia del resultado», mientras lo esté el reporte).',
     ejemplo: (v) =>
       `Con ${v.DIAS_VIGENCIA_REPORTE}: si a los ${v.DIAS_VIGENCIA_REPORTE + 5} días de la consulta se cambia a la otra persona, quien ya pasó se consulta de nuevo y se cobra.`,
     rige: 'a5d',
@@ -1205,10 +1205,11 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Plazos',
     unidad: 'dias',
     queHace:
-      'Días que vale el resultado de un estudio desde que se emite. Vencido, no se puede crear el contrato ni se renueva: hace falta un estudio nuevo, con su propio cobro. Dentro de la vigencia, evaluar de nuevo por un canon mayor no tiene costo.',
+      'Días que vale el resultado de un estudio desde la evaluación. Vencido, no se puede crear el contrato ni se renueva: hace falta un estudio nuevo, con su propio cobro. Dentro de la vigencia, evaluar de nuevo por un canon mayor no tiene costo.',
     nota: 'Cada resultado conserva los días con que se emitió: cambiar este valor solo afecta a los que se emitan después.',
-    ejemplo: (v) => `Con ${v.DIAS_VIGENCIA_RESULTADO}: un estudio aprobado hoy permite crear el contrato hasta dentro de ${v.DIAS_VIGENCIA_RESULTADO} días (con el margen que necesita la firma).`,
-    rige: 'siempre',
+    ejemplo: (v) =>
+      `Con ${v.DIAS_VIGENCIA_RESULTADO}: un resultado de hoy permite generar el contrato y enviarlo a firma hasta unos 3 días antes de cumplir los ${v.DIAS_VIGENCIA_RESULTADO} días; después ya no alcanza el tiempo para firmar.`,
+    rige: 'a5d',
   },
   VIGENCIA_CRC_DIAS: {
     nombre: 'Vigencia de los resultados anteriores',
@@ -1216,7 +1217,7 @@ export const META: Record<string, MetaParametro> = {
     sub: 'Plazos',
     unidad: 'dias',
     queHace:
-      'Los resultados emitidos antes de que existiera «Vigencia del resultado» valen estos días desde la consulta a la central; los posteriores conservan la suya. Vencido, no se firma contrato con él y hay que hacer un estudio nuevo.',
+      'Los resultados emitidos antes de que existiera «Vigencia del resultado» valen estos días desde la evaluación; los posteriores conservan la suya. Sin la Adenda 5, todos los resultados valen estos días. Vencidos, no se firma contrato con ellos y hace falta un estudio nuevo.',
     rige: 'siempre',
   },
   MAX_INTENTOS_DOCUMENTO: {
@@ -1277,7 +1278,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   TOLERANCIA_CANON: {
-    saleConA5d: 'en lugar del margen, un canon igual o menor al aprobado no se reevalúa y uno mayor se reevalúa sin cobro mientras el reporte de la central esté vigente',
+    saleConA5d: 'en lugar del margen, un canon igual o menor al aprobado no se reevalúa y uno mayor se reevalúa sin cobro mientras el resultado del estudio esté vigente',
     nombre: 'Cuánto puede subir el canon sin nueva evaluación',
     seccion: 'contratos',
     sub: 'Topes de canon',

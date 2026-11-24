@@ -397,19 +397,19 @@ test('bloque 4: el vencimiento se cuenta contra firmar_hasta (el margen que nece
   const v = (firmarHasta: string | null | undefined, etapa: Parameters<typeof vigenciaResultado>[0] = 'contrato') =>
     vigenciaResultado(etapa, { hasta, firmarHasta, ahoraMs })
   const con = v('2026-12-10T14:00:00Z')
-  assert.equal(con?.texto, 'Envíe a firma antes del 10 de diciembre (17 días)')
+  assert.equal(con?.texto, 'Vence en 20 días · envíe a firma antes del 10 de diciembre')
   assert.equal(con?.tono, 'gris')
   assert.equal(con?.titulo, 'Después de esa fecha ya no alcanza el tiempo para firmar; el resultado vence el 13 de diciembre de 2026')
-  // Ámbar desde los 7 días para firmar (aunque al resultado le queden 10).
-  assert.equal(v('2026-11-30T14:00:00Z')?.texto, 'Envíe a firma antes del 30 de noviembre (7 días)')
+  // Ámbar desde los 7 días para firmar (aunque al resultado le queden más).
+  assert.equal(v('2026-11-30T14:00:00Z')?.texto, 'Vence en 20 días · envíe a firma antes del 30 de noviembre')
   assert.equal(v('2026-11-30T14:00:00Z')?.tono, 'ambar')
-  assert.equal(v('2026-11-24T14:00:00Z')?.texto, 'Envíe a firma antes del 24 de noviembre (1 día)')
+  assert.equal(v('2026-11-24T14:00:00Z')?.texto, 'Vence en 20 días · envíe a firma antes del 24 de noviembre')
   // Más tarde hoy, en hora de Colombia.
-  assert.equal(v('2026-11-24T03:00:00Z')?.texto, 'Envíe a firma hoy')
+  assert.equal(v('2026-11-24T03:00:00Z')?.texto, 'Vence en 20 días · envíe a firma hoy')
   // De otro año, con el año.
   assert.match(
     vigenciaResultado('contrato', { hasta: '2027-01-08T15:00:00Z', firmarHasta: '2027-01-05T14:00:00Z', ahoraMs })?.texto ?? '',
-    /^Envíe a firma antes del 5 de enero de 2027 \(43 días\)$/,
+    /^Vence en 46 días · envíe a firma antes del 5 de enero de 2027$/,
   )
   // Ya pasó el margen y la API todavía no marcó la traba: nunca un plazo como si alcanzara.
   const sinMargen = v('2026-11-23T14:00:00Z')
@@ -420,7 +420,7 @@ test('bloque 4: el vencimiento se cuenta contra firmar_hasta (el margen que nece
   assert.equal(v(undefined)?.titulo, 'El resultado sirve hasta el 13 de diciembre de 2026')
   assert.equal(v('no es fecha')?.texto, 'Vence en 20 días')
   // Vale igual en las etapas con traba; con el resultado ya vencido manda «Vencido».
-  assert.equal(v('2026-12-10T14:00:00Z', 'canon_excede')?.texto, 'Envíe a firma antes del 10 de diciembre (17 días)')
+  assert.equal(v('2026-12-10T14:00:00Z', 'canon_excede')?.texto, 'Vence en 20 días · envíe a firma antes del 10 de diciembre')
   assert.equal(v('2026-12-10T14:00:00Z', 'firma'), null)
   assert.equal(vigenciaResultado('contrato', { hasta: '2026-11-22T15:00:00Z', firmarHasta: '2026-11-19T14:00:00Z', ahoraMs })?.texto, 'Vencido')
   // La etapa «vencido» no cambia: la decide la traba de la API.
