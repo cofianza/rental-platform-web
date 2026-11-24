@@ -74,7 +74,7 @@ export function VerificacionListas({
         <p className="text-sm text-gray-700">
           Consulta del {formatDate(`${r.fecha_consulta}T12:00:00-05:00`)}:{' '}
           <span className="font-medium">{r.resultado === 'sin_coincidencias' ? 'sin coincidencias' : 'con coincidencias'}</span>. Registrada
-          el {formatDateTime(r.en)}.
+          el {formatDateTime(r.en)}
         </p>
         {r.nota && <p className="text-sm text-gray-700">Nota: {r.nota}</p>}
         {r.evidencia_url ? (
