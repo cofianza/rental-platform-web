@@ -33,6 +33,9 @@ import {
 const DEBOUNCE_MS = 300
 const LIMIT = 12
 
+/** El número si no pasa del máximo; si no, vacío. */
+const hasta = (digitos: string, max: number) => (digitos && Number(digitos) <= max ? digitos : '')
+
 /** Los filtros que trae la URL (un enlace compartido abre la misma búsqueda). */
 function filtrosDeUrl(sp: URLSearchParams): FiltrosVitrinaValor {
   const digitos = (k: string) => (sp.get(k) || '').replace(/\D/g, '').slice(0, 12)
@@ -44,7 +47,12 @@ function filtrosDeUrl(sp: URLSearchParams): FiltrosVitrinaValor {
     habitaciones: digitos('habitaciones'),
     precioMin: digitos('precio_min'),
     precioMax: digitos('precio_max'),
-    estrato: digitos('estrato'),
+    // Fuera de lo que acepta la API (estrato 1-7, hasta 20 baños, 99.999 m²) se ignora: si no, un enlace viejo daba «No pudimos cargar».
+    estrato: hasta(digitos('estrato'), 7),
+    barrio: (sp.get('barrio') || '').slice(0, 100),
+    banos: hasta(digitos('banos'), 20),
+    parqueadero: sp.get('parqueadero') === '1' || sp.get('parqueadero') === 'true' ? '1' : '',
+    areaMin: digitos('area_min').slice(0, 5),
     orden: esOrden(orden) ? orden : 'recientes',
   }
 }
@@ -64,7 +72,7 @@ export function PropertyGrid() {
   const [properties, setProperties] = useState<PublicProperty[]>([])
   const [total, setTotal] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  const [filterOptions, setFilterOptions] = useState<PublicPropertyFilters>({ ciudades: [], tipos: [], estratos: [] })
+  const [filterOptions, setFilterOptions] = useState<PublicPropertyFilters>({ ciudades: [], tipos: [], estratos: [], ubicaciones: [] })
   const [loading, setLoading] = useState(true)
   // Si la carga falla no se dice «No hay resultados»: culpaba a los filtros.
   const [error, setError] = useState(false)
@@ -104,6 +112,10 @@ export function PropertyGrid() {
     if (filtros.precioMin) q.precio_min = Number(filtros.precioMin)
     if (filtros.precioMax) q.precio_max = Number(filtros.precioMax)
     if (filtros.estrato) q.estrato = Number(filtros.estrato)
+    if (filtros.barrio) q.barrio = filtros.barrio
+    if (filtros.banos) q.banos = Number(filtros.banos)
+    if (filtros.parqueadero) q.parqueadero = true
+    if (filtros.areaMin) q.area_min = Number(filtros.areaMin)
     return q
   }, [filtros, page])
 
@@ -153,6 +165,10 @@ export function PropertyGrid() {
     if (filtros.precioMin) params.set('precio_min', filtros.precioMin)
     if (filtros.precioMax) params.set('precio_max', filtros.precioMax)
     if (filtros.estrato) params.set('estrato', filtros.estrato)
+    if (filtros.barrio) params.set('barrio', filtros.barrio)
+    if (filtros.banos) params.set('banos', filtros.banos)
+    if (filtros.parqueadero) params.set('parqueadero', '1')
+    if (filtros.areaMin) params.set('area_min', filtros.areaMin)
     if (filtros.orden !== 'recientes') params.set('orden', filtros.orden)
     if (page > 1) params.set('page', String(page))
     const qs = params.toString()
@@ -161,8 +177,8 @@ export function PropertyGrid() {
 
   // ── Debounced fetch + URL sync ──────────────
 
-  // Solo se espera cuando cambió algo que se escribe (búsqueda o canon): un select busca de una vez.
-  const claveTexto = `${filtros.search.trim()}|${filtros.precioMin}|${filtros.precioMax}`
+  // Solo se espera cuando cambió algo que se escribe (búsqueda, canon o área): un select busca de una vez.
+  const claveTexto = `${filtros.search.trim()}|${filtros.precioMin}|${filtros.precioMax}|${filtros.areaMin}`
   const claveTextoRef = useRef(claveTexto)
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)

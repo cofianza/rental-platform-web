@@ -189,9 +189,17 @@ export function PropertyDetailClient({ property, similares }: Props) {
           <div className="lg:sticky lg:top-20 lg:has-[[role=dialog]]:z-40 space-y-6">
             {/* Price card */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <span className="inline-block px-2.5 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full mb-3">
-                {tipoLabel}
-              </span>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <span className="inline-block px-2.5 py-1 bg-primary-50 text-primary-700 text-xs font-semibold rounded-full">
+                  {tipoLabel}
+                </span>
+                {/* El código con el que lo identifica su dueño: con él se pregunta por este inmueble. */}
+                {property.codigo && (
+                  <span className="text-xs text-gray-500">
+                    Código <strong className="font-semibold tabular-nums text-gray-900">{property.codigo}</strong>
+                  </span>
+                )}
+              </div>
               <p className="text-2xl font-bold text-primary-700 mb-0.5">
                 {formatCurrency(property.valor_arriendo)}
                 <span className="text-sm font-normal text-gray-500"> /mes</span>

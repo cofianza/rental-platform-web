@@ -688,8 +688,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       error={errors.codigo}
       ayuda={
         isPropietarioUser
-          ? 'Lo generamos por usted; cámbielo si desea. Debe ser único dentro de sus inmuebles.'
-          : 'Identificador interno para sus reportes: letras, números y guiones, máximo 30. Único dentro de sus inmuebles.'
+          ? 'Lo generamos por usted y se muestra en la vitrina: con él los interesados encuentran el inmueble. Cámbielo si desea, sin incluir la dirección. Único dentro de sus inmuebles.'
+          : 'Se muestra en la vitrina y con él los interesados encuentran el inmueble: no incluya la dirección ni nombres. Letras, números y guiones, máximo 30; único dentro de sus inmuebles.'
       }
     >
       <input

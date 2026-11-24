@@ -53,7 +53,7 @@ export default function VitrinaPage() {
             fallback={
               // El lugar de la consola (sube sobre el encabezado) y debajo las tarjetas: nada salta al cargar.
               <div className="space-y-6">
-                <div className="relative z-10 -mt-12 h-[7.5rem] rounded-2xl border border-gray-200 bg-white shadow-[0_18px_40px_-20px_rgba(2,44,34,0.35)] md:-mt-14 md:h-[7.75rem]" aria-hidden />
+                <div className="relative z-10 -mt-12 h-[7.5rem] rounded-2xl border border-gray-200 bg-white shadow-[0_18px_40px_-20px_rgba(2,44,34,0.35)] md:-mt-14 lg:h-[7.75rem]" aria-hidden />
                 <div className="h-10" aria-hidden />
                 <SkeletonCards cantidad={6} etiqueta="Cargando inmuebles…" />
               </div>
