@@ -10,6 +10,8 @@ import { apiClient } from '@/lib/api'
 
 export interface PublicProperty {
   id: string
+  /** Código que le puso su dueño (p. ej. «APT-001»); se puede buscar. Opcional: una API anterior no lo manda. */
+  codigo?: string | null
   tipo: string
   ciudad: string
   barrio: string | null
@@ -35,6 +37,8 @@ export interface PublicPropertyFilters {
   ciudades: string[]
   tipos: string[]
   estratos: number[]
+  /** Barrios con inmuebles publicados y cuántos tiene cada uno (sugerencias del buscador). Una API anterior no lo manda. */
+  ubicaciones?: { ciudad: string; barrio: string | null; total: number }[]
 }
 
 export interface PublicPropertiesQuery {
@@ -46,6 +50,10 @@ export interface PublicPropertiesQuery {
   precio_min?: number
   precio_max?: number
   habitaciones?: number
+  barrio?: string
+  banos?: number
+  parqueadero?: boolean
+  area_min?: number
   search?: string
   sortBy?: 'created_at' | 'valor_arriendo'
   sortOrder?: 'asc' | 'desc'
@@ -86,6 +94,10 @@ export async function getPublicProperties(query: PublicPropertiesQuery = {}): Pr
   if (query.precio_min) params.set('precio_min', String(query.precio_min))
   if (query.precio_max) params.set('precio_max', String(query.precio_max))
   if (query.habitaciones) params.set('habitaciones', String(query.habitaciones))
+  if (query.barrio) params.set('barrio', query.barrio)
+  if (query.banos) params.set('banos', String(query.banos))
+  if (query.parqueadero) params.set('parqueadero', '1')
+  if (query.area_min) params.set('area_min', String(query.area_min))
   if (query.search) params.set('search', query.search)
   if (query.sortBy) params.set('sortBy', query.sortBy)
   if (query.sortOrder) params.set('sortOrder', query.sortOrder)

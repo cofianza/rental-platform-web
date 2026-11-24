@@ -1,9 +1,11 @@
 /**
  * Buscador y filtros de la vitrina pública (/vitrina).
  *
- * Una sola consola: la búsqueda arriba y, debajo, una celda por filtro (ciudad,
- * tipo, habitaciones, canon y estrato). En el celular los filtros van en un
- * panel inferior con «Ver N inmuebles» y el orden queda a la vista. Los filtros
+ * Una sola consola: la búsqueda arriba (por barrio, ciudad o código, con
+ * sugerencias de los barrios que tienen inmuebles) y, debajo, una celda por
+ * filtro (ciudad, tipo, habitaciones, canon, estrato y «Más filtros»: baños,
+ * parqueadero y área). En el celular y la tableta los filtros van en un panel
+ * inferior con «Ver N inmuebles» y el orden queda a la vista. Los filtros
  * activos se muestran como chips que se quitan con un toque.
  *
  * Solo presentación: el estado, la URL y las peticiones viven en PropertyGrid.
@@ -12,8 +14,8 @@
 
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
-import { IconSearch, IconX, IconChevronDown, IconSlidersHorizontal, IconArrowUpDown } from '@/components/icons'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { IconSearch, IconX, IconChevronDown, IconSlidersHorizontal, IconArrowUpDown, IconMapPin } from '@/components/icons'
 import { Modal } from '@/components/ui/Modal'
 import { cn } from '@/lib/utils'
 
@@ -33,6 +35,14 @@ export interface FiltrosVitrinaValor {
   precioMax: string
   /** '' = cualquiera. */
   estrato: string
+  /** Barrio exacto, elegido entre las sugerencias ('' = todos). */
+  barrio: string
+  /** Mínimo de baños ('' = cualquiera). */
+  banos: string
+  /** '1' = solo con parqueadero. */
+  parqueadero: string
+  /** Área mínima en m², solo dígitos. */
+  areaMin: string
   orden: OrdenVitrina
 }
 
@@ -44,7 +54,25 @@ export const FILTROS_VACIOS: FiltrosVitrinaValor = {
   precioMin: '',
   precioMax: '',
   estrato: '',
+  barrio: '',
+  banos: '',
+  parqueadero: '',
+  areaMin: '',
   orden: 'recientes',
+}
+
+/** Lo que borra «Limpiar» del panel: todo menos la búsqueda y el orden. */
+export const FILTROS_DEL_PANEL: Partial<FiltrosVitrinaValor> = {
+  ciudad: '',
+  barrio: '',
+  tipo: '',
+  habitaciones: '',
+  precioMin: '',
+  precioMax: '',
+  estrato: '',
+  banos: '',
+  parqueadero: '',
+  areaMin: '',
 }
 
 export const ORDENES: { valor: OrdenVitrina; etiqueta: string }[] = [
@@ -79,6 +107,8 @@ export const TIPO_LABELS: Record<string, string> = {
 }
 
 const HABITACIONES = ['1', '2', '3', '4']
+const BANOS = ['1', '2', '3']
+const AREAS = ['40', '60', '90', '120']
 const ESTRATOS_POR_DEFECTO = [1, 2, 3, 4, 5, 6]
 
 /** Rangos de canon frecuentes: un toque los llena. */
@@ -116,7 +146,20 @@ function textoCanon(min: string, max: string): string {
 
 /** Cuántos filtros hay puestos (la búsqueda y el orden no cuentan). */
 export function contarFiltros(f: FiltrosVitrinaValor): number {
-  return [f.ciudad, f.tipo, f.habitaciones, f.precioMin || f.precioMax, f.estrato].filter(Boolean).length
+  // Ciudad y barrio son un solo filtro (el barrio sale de las sugerencias de una ciudad).
+  return [f.ciudad || f.barrio, f.tipo, f.habitaciones, f.precioMin || f.precioMax, f.estrato, f.banos, f.parqueadero, f.areaMin].filter(Boolean)
+    .length
+}
+
+/** Resumen de «Más filtros» para su celda: el único puesto, o cuántos hay. */
+export function resumenMas(f: FiltrosVitrinaValor): string | null {
+  const puestos = [
+    f.banos && `${f.banos}+ ${f.banos === '1' ? 'baño' : 'baños'}`,
+    f.parqueadero && 'Con parqueadero',
+    f.areaMin && `Desde ${Number(f.areaMin).toLocaleString('es-CO')} m²`,
+  ].filter((x): x is string => !!x)
+  if (puestos.length === 0) return null
+  return puestos.length === 1 ? puestos[0] : `${puestos.length} filtros`
 }
 
 export const hayFiltros = (f: FiltrosVitrinaValor) => !!f.search.trim() || contarFiltros(f) > 0
@@ -136,7 +179,9 @@ export function chipsActivos(f: FiltrosVitrinaValor): ChipFiltro[] {
       texto: `«${f.search.trim()}»`,
       quitar: { search: '' },
     })
-  if (f.ciudad) chips.push({ clave: 'ciudad', texto: f.ciudad, quitar: { ciudad: '' } })
+  // Sin ciudad, el barrio elegido de sus sugerencias tampoco se sostiene: se quitan juntos.
+  if (f.ciudad) chips.push({ clave: 'ciudad', texto: f.ciudad, quitar: { ciudad: '', barrio: '' } })
+  if (f.barrio) chips.push({ clave: 'barrio', texto: f.barrio, quitar: { barrio: '' } })
   if (f.tipo)
     chips.push({
       clave: 'tipo',
@@ -161,7 +206,63 @@ export function chipsActivos(f: FiltrosVitrinaValor): ChipFiltro[] {
       texto: `Estrato ${f.estrato}`,
       quitar: { estrato: '' },
     })
+  if (f.banos) chips.push({ clave: 'banos', texto: `${f.banos}+ ${f.banos === '1' ? 'baño' : 'baños'}`, quitar: { banos: '' } })
+  if (f.parqueadero) chips.push({ clave: 'parqueadero', texto: 'Con parqueadero', quitar: { parqueadero: '' } })
+  if (f.areaMin) chips.push({ clave: 'area', texto: `Desde ${Number(f.areaMin).toLocaleString('es-CO')} m²`, quitar: { areaMin: '' } })
   return chips
+}
+
+// ── Sugerencias del buscador ────────────────
+
+export interface UbicacionVitrina {
+  ciudad: string
+  barrio: string | null
+  total: number
+}
+
+export interface Sugerencia {
+  ciudad: string
+  /** null = la ciudad entera. */
+  barrio: string | null
+  total: number
+}
+
+/** Sin tildes ni mayúsculas, como compara la API. */
+const sinTildes = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .trim()
+
+/**
+ * Ciudades y barrios con inmuebles que contienen lo escrito (desde 2 letras, sin tildes), primero los que
+ * empiezan así y las ciudades antes que sus barrios. Máximo 6.
+ */
+export function sugerenciasDe(texto: string, ubicaciones: UbicacionVitrina[]): Sugerencia[] {
+  const q = sinTildes(texto)
+  if (q.length < 2) return []
+  const ciudades = new Map<string, Sugerencia>()
+  for (const u of ubicaciones) {
+    const clave = sinTildes(u.ciudad)
+    const c = ciudades.get(clave)
+    if (c) c.total += u.total
+    else ciudades.set(clave, { ciudad: u.ciudad, barrio: null, total: u.total })
+  }
+  const candidatos: Array<Sugerencia & { rango: number }> = []
+  for (const c of ciudades.values()) {
+    const n = sinTildes(c.ciudad)
+    if (n.includes(q)) candidatos.push({ ...c, rango: n.startsWith(q) ? 0 : 2 })
+  }
+  for (const u of ubicaciones) {
+    if (!u.barrio) continue
+    const n = sinTildes(u.barrio)
+    if (n.includes(q)) candidatos.push({ ciudad: u.ciudad, barrio: u.barrio, total: u.total, rango: n.startsWith(q) ? 1 : 3 })
+  }
+  return candidatos
+    .sort((a, b) => a.rango - b.rango || b.total - a.total || (a.barrio ?? a.ciudad).localeCompare(b.barrio ?? b.ciudad, 'es'))
+    .slice(0, 6)
+    .map(({ ciudad, barrio, total }) => ({ ciudad, barrio, total }))
 }
 
 // ── Consola ─────────────────────────────────
@@ -170,6 +271,7 @@ interface OpcionesFiltros {
   ciudades: string[]
   tipos: string[]
   estratos: number[]
+  ubicaciones?: UbicacionVitrina[]
 }
 
 interface ConsolaProps {
@@ -192,26 +294,86 @@ export function ConsolaBusqueda({ valor, onCambiar, opciones, total, cargando, e
   const estratos = opciones.estratos.length > 0 ? [...opciones.estratos].sort((a, b) => a - b) : ESTRATOS_POR_DEFECTO
   const nFiltros = contarFiltros(valor)
 
+  // Sugerencias: barrios y ciudades que de verdad tienen inmuebles (combobox ARIA).
+  const [sugAbiertas, setSugAbiertas] = useState(false)
+  const [activa, setActiva] = useState(-1)
+  const listaId = useId()
+  const sugerencias = useMemo(() => sugerenciasDe(valor.search, opciones.ubicaciones ?? []), [valor.search, opciones.ubicaciones])
+  const mostrarSug = sugAbiertas && sugerencias.length > 0
+  // El número de cada sugerencia no cuenta los demás filtros: con alguno puesto, no se muestra (no prometer de más).
+  const otrosFiltros = contarFiltros({ ...valor, ciudad: '', barrio: '' }) > 0
+  const [aviso, setAviso] = useState('')
+  const consolaRef = useRef<HTMLDivElement>(null)
+  const elegir = (s: Sugerencia) => {
+    // La ciudad (y el barrio) pasan a ser filtros: el texto ya no hace falta.
+    onCambiar({ ciudad: s.ciudad, barrio: s.barrio ?? '', search: '' })
+    setSugAbiertas(false)
+    setActiva(-1)
+    setAviso(`Filtro aplicado: ${s.barrio ? `${s.barrio}, ${s.ciudad}` : s.ciudad}`)
+    // En el celular se cierra el teclado para ver los resultados; en el computador el foco se queda en el campo.
+    if (window.matchMedia('(pointer: coarse)').matches) busquedaRef.current?.blur()
+  }
+  // En el celular, al enfocar el buscador la consola sube al tope: si no, el teclado tapaba las sugerencias.
+  const subirConsola = () => {
+    if (!window.matchMedia('(max-width: 1023px)').matches) return
+    setTimeout(() => consolaRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 250)
+  }
+
   return (
     <>
       <div
-        className={cn('relative z-10 rounded-2xl border border-gray-200 bg-white shadow-[0_18px_40px_-20px_rgba(2,44,34,0.35)]', className)}
+        ref={consolaRef}
+        className={cn(
+          'relative z-10 scroll-mt-20 rounded-2xl border border-gray-200 bg-white shadow-[0_18px_40px_-20px_rgba(2,44,34,0.35)]',
+          className,
+        )}
       >
+        <span className="sr-only" aria-live="polite">
+          {aviso}
+        </span>
         {/* Búsqueda */}
         <div className="relative flex items-center rounded-t-2xl focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-600">
           <IconSearch size={20} className="pointer-events-none absolute left-4 text-gray-500 sm:left-5" />
           <input
             type="search"
             value={valor.search}
-            onChange={(e) => onCambiar({ search: e.target.value })}
+            onChange={(e) => {
+              onCambiar({ search: e.target.value })
+              setSugAbiertas(true)
+              setActiva(-1)
+            }}
             // La API separa términos por comas y espacios, sin tildes y con el tipo en plural («apartamentos Laureles»).
-            placeholder="Barrio, ciudad o tipo de inmueble"
-            aria-label="Buscar inmuebles por barrio, ciudad o tipo"
+            placeholder="Barrio, ciudad, tipo o código"
+            aria-label="Buscar inmuebles por barrio, ciudad, tipo o código"
             enterKeyHint="search"
             ref={busquedaRef}
-            // La búsqueda ya corre sola: Enter solo cierra el teclado del celular para ver los resultados.
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={mostrarSug}
+            aria-controls={listaId}
+            aria-activedescendant={mostrarSug && activa >= 0 ? `${listaId}-${activa}` : undefined}
+            onFocus={() => {
+              setSugAbiertas(true)
+              subirConsola()
+            }}
+            onBlur={() => setSugAbiertas(false)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur()
+              if (e.key === 'ArrowDown' && sugerencias.length > 0) {
+                e.preventDefault()
+                setSugAbiertas(true)
+                setActiva((i) => Math.min(i + 1, sugerencias.length - 1))
+              } else if (e.key === 'ArrowUp' && mostrarSug) {
+                e.preventDefault()
+                setActiva((i) => Math.max(i - 1, -1))
+              } else if (e.key === 'Escape' && mostrarSug) {
+                e.preventDefault()
+                setSugAbiertas(false)
+                setActiva(-1)
+              } else if (e.key === 'Enter') {
+                // Con una sugerencia marcada, la elige; si no, la búsqueda ya corre sola: Enter cierra el teclado del celular.
+                if (mostrarSug && activa >= 0) elegir(sugerencias[activa])
+                else e.currentTarget.blur()
+              }
             }}
             className="h-14 w-full rounded-t-2xl bg-transparent pl-12 pr-12 text-base text-gray-900 placeholder:text-gray-500 focus:outline-none sm:pl-14 [&::-webkit-search-cancel-button]:appearance-none"
           />
@@ -228,14 +390,49 @@ export function ConsolaBusqueda({ valor, onCambiar, opciones, total, cargando, e
               <IconX size={18} />
             </button>
           )}
+
+          {mostrarSug && (
+            <ul
+              id={listaId}
+              role="listbox"
+              aria-label="Barrios y ciudades con inmuebles"
+              // mousedown no le quita el foco al campo (tampoco en la barra de desplazamiento): si no, la lista se cerraba antes del clic.
+              onMouseDown={(e) => e.preventDefault()}
+              onMouseLeave={() => setActiva(-1)}
+              className="absolute inset-x-0 top-full z-30 mt-2 max-h-96 overflow-y-auto rounded-2xl border border-gray-200 bg-white p-1.5 shadow-[0_24px_48px_-16px_rgba(2,44,34,0.35)]"
+            >
+              {sugerencias.map((s, i) => (
+                <li
+                  key={`${s.ciudad}|${s.barrio ?? ''}`}
+                  id={`${listaId}-${i}`}
+                  role="option"
+                  aria-selected={i === activa}
+                  onClick={() => elegir(s)}
+                  onMouseEnter={() => setActiva(i)}
+                  className={cn('flex min-h-12 cursor-pointer items-center gap-3 rounded-xl px-3 py-2', i === activa && 'bg-primary-50')}
+                >
+                  <IconMapPin size={16} className="shrink-0 text-gray-500" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-gray-900">{s.barrio ?? s.ciudad}</span>
+                    <span className="block truncate text-xs text-gray-500">{s.barrio ? s.ciudad : 'Toda la ciudad'}</span>
+                  </span>
+                  {!otrosFiltros && (
+                    <span className="shrink-0 text-xs tabular-nums text-gray-500">
+                      {s.total} {s.total === 1 ? 'inmueble' : 'inmuebles'}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {/* Filtros: una celda por filtro (tableta y computador). */}
-        <div className="hidden border-t border-gray-200 md:grid md:grid-cols-5 md:divide-x md:divide-gray-200">
+        {/* Filtros: una celda por filtro (computador). */}
+        <div className="hidden border-t border-gray-200 lg:grid lg:grid-cols-6 lg:divide-x lg:divide-gray-200">
           <CeldaSelect
             etiqueta="Ciudad"
             valor={valor.ciudad}
-            onCambiar={(ciudad) => onCambiar({ ciudad })}
+            onCambiar={(ciudad) => onCambiar({ ciudad, barrio: '' })}
             opciones={[{ valor: '', etiqueta: 'Todas' }, ...opciones.ciudades.map((c) => ({ valor: c, etiqueta: c }))]}
             className="rounded-bl-2xl"
           />
@@ -256,31 +453,45 @@ export function ConsolaBusqueda({ valor, onCambiar, opciones, total, cargando, e
             valor={valor.habitaciones}
             onCambiar={(habitaciones) => onCambiar({ habitaciones })}
             opciones={[
-              { valor: '', etiqueta: 'Cualquiera' },
+              { valor: '', etiqueta: 'Todas' },
               ...HABITACIONES.map((h) => ({
                 valor: h,
                 etiqueta: `${h} o más`,
               })),
             ]}
           />
-          <CeldaCanon min={valor.precioMin} max={valor.precioMax} onCambiar={onCambiar} />
+          <CeldaPopover etiqueta="Canon mensual" resumen={resumenCanon(valor.precioMin, valor.precioMax)} vacio="Cualquiera">
+            {(listo) => (
+              <>
+                <CamposCanon min={valor.precioMin} max={valor.precioMax} onCambiar={onCambiar} autoFocus />
+                {listo}
+              </>
+            )}
+          </CeldaPopover>
           <CeldaSelect
             etiqueta="Estrato"
             valor={valor.estrato}
             onCambiar={(estrato) => onCambiar({ estrato })}
             opciones={[
-              { valor: '', etiqueta: 'Cualquiera' },
+              { valor: '', etiqueta: 'Todos' },
               ...estratos.map((e) => ({
                 valor: String(e),
                 etiqueta: `Estrato ${e}`,
               })),
             ]}
-            className="rounded-br-2xl"
           />
+          <CeldaPopover etiqueta="Más filtros" resumen={resumenMas(valor)} vacio="Ninguno" className="rounded-br-2xl">
+            {(listo) => (
+              <>
+                <CamposMas valor={valor} onCambiar={onCambiar} />
+                {listo}
+              </>
+            )}
+          </CeldaPopover>
         </div>
 
         {/* Celular: «Filtros» abre el panel; el orden queda a la vista. */}
-        <div className="grid grid-cols-2 divide-x divide-gray-200 border-t border-gray-200 md:hidden">
+        <div className="grid grid-cols-2 divide-x divide-gray-200 border-t border-gray-200 lg:hidden">
           <button
             type="button"
             onClick={() => setPanelAbierto(true)}
@@ -326,9 +537,23 @@ export function ConsolaBusqueda({ valor, onCambiar, opciones, total, cargando, e
           <CampoSelect
             etiqueta="Ciudad"
             valor={valor.ciudad}
-            onCambiar={(ciudad) => onCambiar({ ciudad })}
+            onCambiar={(ciudad) => onCambiar({ ciudad, barrio: '' })}
             opciones={[{ valor: '', etiqueta: 'Todas las ciudades' }, ...opciones.ciudades.map((c) => ({ valor: c, etiqueta: c }))]}
           />
+          {valor.barrio && (
+            <div className="-mt-3 flex items-center justify-between gap-3 rounded-xl bg-primary-50 py-1 pl-3.5 pr-1">
+              <p className="min-w-0 truncate text-sm text-primary-900">
+                Barrio: <strong className="font-semibold">{valor.barrio}</strong>
+              </p>
+              <button
+                type="button"
+                onClick={() => onCambiar({ barrio: '' })}
+                className="min-h-10 shrink-0 rounded-lg px-3 text-sm font-semibold text-primary-800 hover:bg-primary-100"
+              >
+                Quitar
+              </button>
+            </div>
+          )}
           <CampoSelect
             etiqueta="Tipo de inmueble"
             valor={valor.tipo}
@@ -363,6 +588,7 @@ export function ConsolaBusqueda({ valor, onCambiar, opciones, total, cargando, e
               })),
             ]}
           />
+          <CamposMas valor={valor} onCambiar={onCambiar} />
         </div>
 
         <div className="flex shrink-0 gap-3 border-t border-gray-200 bg-white px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
@@ -373,7 +599,7 @@ export function ConsolaBusqueda({ valor, onCambiar, opciones, total, cargando, e
           <button
             type="button"
             // Solo lo que hay en el panel: la búsqueda (arriba) y el orden se quedan.
-            onClick={() => onCambiar({ ciudad: '', tipo: '', habitaciones: '', precioMin: '', precioMax: '', estrato: '' })}
+            onClick={() => onCambiar(FILTROS_DEL_PANEL)}
             disabled={nFiltros === 0}
             className="min-h-12 rounded-xl px-4 text-sm font-semibold text-gray-700 underline-offset-4 hover:underline disabled:text-gray-400 disabled:no-underline"
           >
@@ -428,7 +654,7 @@ export function BarraResultados({ valor, onCambiar, onLimpiar, total, sinConteo 
             </>
           )}
         </p>
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           <span className="text-sm text-gray-500" id="vitrina-orden-etiqueta">
             Ordenar por
           </span>
@@ -444,7 +670,7 @@ export function BarraResultados({ valor, onCambiar, onLimpiar, total, sinConteo 
                 type="button"
                 onClick={() => onCambiar(c.quitar)}
                 aria-label={`Quitar filtro: ${c.texto}`}
-                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 pl-3.5 pr-2.5 text-sm font-medium text-primary-900 transition-colors hover:border-primary-300 hover:bg-primary-100 md:min-h-9"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-full border border-primary-200 bg-primary-50 pl-3.5 pr-2.5 text-sm font-medium text-primary-900 transition-colors hover:border-primary-300 hover:bg-primary-100 lg:min-h-9"
               >
                 <span className="max-w-[16rem] truncate">{c.texto}</span>
                 <IconX size={14} className="shrink-0 text-primary-700" />
@@ -455,7 +681,7 @@ export function BarraResultados({ valor, onCambiar, onLimpiar, total, sinConteo 
             <button
               type="button"
               onClick={onLimpiar}
-              className="min-h-10 px-2 text-sm font-semibold text-gray-700 underline-offset-4 hover:text-gray-900 hover:underline md:min-h-9"
+              className="min-h-10 px-2 text-sm font-semibold text-gray-700 underline-offset-4 hover:text-gray-900 hover:underline lg:min-h-9"
             >
               Limpiar todo
             </button>
@@ -522,15 +748,30 @@ function CeldaSelect({
   )
 }
 
-/** Celda del canon: abre un panel con mínimo, máximo y rangos frecuentes. */
-function CeldaCanon({ min, max, onCambiar }: { min: string; max: string; onCambiar: (p: Partial<FiltrosVitrinaValor>) => void }) {
+/**
+ * Celda que abre un panel (canon, «Más filtros»): se cierra con «Listo», un clic fuera, Escape o al salir
+ * con Tab (el foco vuelve a la celda con Escape y «Listo»). `children` recibe el botón «Listo».
+ */
+function CeldaPopover({
+  etiqueta,
+  resumen,
+  vacio,
+  className,
+  children,
+}: {
+  etiqueta: string
+  /** El valor elegido, o null si no hay. */
+  resumen: string | null
+  /** Lo que se lee sin nada elegido. */
+  vacio: string
+  className?: string
+  children: (listo: ReactNode) => ReactNode
+}) {
   const [abierto, setAbierto] = useState(false)
   const raizRef = useRef<HTMLDivElement>(null)
   const botonRef = useRef<HTMLButtonElement>(null)
   const panelId = useId()
-  const resumen = resumenCanon(min, max)
 
-  // Se cierra con un clic fuera o con Escape (el foco vuelve a la celda).
   useEffect(() => {
     if (!abierto) return
     const fuera = (e: MouseEvent) => {
@@ -542,7 +783,7 @@ function CeldaCanon({ min, max, onCambiar }: { min: string; max: string; onCambi
       setAbierto(false)
       botonRef.current?.focus()
     }
-    // Con Tab fuera del panel (p. ej. a la celda Estrato) también se cierra: si no, tapaba los resultados.
+    // Con Tab fuera del panel (p. ej. a la celda siguiente) también se cierra: si no, tapaba los resultados.
     const foco = (e: FocusEvent) => {
       if (raizRef.current && e.target instanceof Node && !raizRef.current.contains(e.target)) setAbierto(false)
     }
@@ -556,9 +797,24 @@ function CeldaCanon({ min, max, onCambiar }: { min: string; max: string; onCambi
     }
   }, [abierto])
 
+  const listo = (
+    <div className="mt-4 flex justify-end">
+      <button
+        type="button"
+        onClick={() => {
+          setAbierto(false)
+          botonRef.current?.focus()
+        }}
+        className="min-h-10 rounded-xl bg-primary-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-800"
+      >
+        Listo
+      </button>
+    </div>
+  )
+
   return (
-    <div ref={raizRef} className="relative min-w-0">
-      {/* El chevron se ubica contra esta caja (el botón no es `relative`). */}
+    <div ref={raizRef} className={cn('relative min-w-0', className)}>
+      {/* La etiqueta y el chevron se ubican contra esta caja (el botón no es `relative`). */}
       <button
         ref={botonRef}
         type="button"
@@ -566,13 +822,13 @@ function CeldaCanon({ min, max, onCambiar }: { min: string; max: string; onCambi
         aria-expanded={abierto}
         aria-controls={panelId}
         className={cn(
-          'block h-16 w-full min-w-0 pb-2.5 pl-4 pr-9 pt-[1.625rem] text-left transition-colors hover:bg-gray-50 focus-visible:bg-primary-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-600',
+          'block h-16 w-full min-w-0 rounded-[inherit] pb-2.5 pl-4 pr-9 pt-[1.625rem] text-left transition-colors hover:bg-gray-50 focus-visible:bg-primary-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-600',
           abierto && 'bg-gray-50',
         )}
       >
-        <span className="pointer-events-none absolute left-4 top-2.5 text-xs font-medium text-gray-500">Canon mensual</span>
+        <span className="pointer-events-none absolute left-4 top-2.5 text-xs font-medium text-gray-500">{etiqueta}</span>
         <span className={cn('block truncate text-sm font-semibold tabular-nums', resumen ? 'text-primary-800' : 'text-gray-900')}>
-          {resumen ?? 'Cualquiera'}
+          {resumen ?? vacio}
         </span>
         <IconChevronDown
           size={16}
@@ -584,24 +840,78 @@ function CeldaCanon({ min, max, onCambiar }: { min: string; max: string; onCambi
         <div
           id={panelId}
           role="dialog"
-          aria-label="Canon mensual"
+          aria-label={etiqueta}
           className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-[22rem] rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_24px_48px_-16px_rgba(2,44,34,0.35)] animate-in fade-in slide-in-from-top-1 duration-150"
         >
-          <CamposCanon min={min} max={max} onCambiar={onCambiar} autoFocus />
-          <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                setAbierto(false)
-                botonRef.current?.focus()
-              }}
-              className="min-h-10 rounded-xl bg-primary-700 px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-800"
-            >
-              Listo
-            </button>
-          </div>
+          {children(listo)}
         </div>
       )}
+    </div>
+  )
+}
+
+/** Baños, parqueadero y área mínima (en el panel de «Más filtros» y en el del celular). */
+function CamposMas({ valor, onCambiar }: { valor: FiltrosVitrinaValor; onCambiar: (p: Partial<FiltrosVitrinaValor>) => void }) {
+  const idArea = useId()
+  return (
+    <div className="space-y-5">
+      <Segmentado
+        etiqueta="Baños"
+        valor={valor.banos}
+        onCambiar={(banos) => onCambiar({ banos })}
+        opciones={[{ valor: '', etiqueta: 'Todos' }, ...BANOS.map((b) => ({ valor: b, etiqueta: `${b}+` }))]}
+      />
+      <div>
+        <p className="mb-2 text-sm font-semibold text-gray-900">Parqueadero</p>
+        <button
+          type="button"
+          aria-pressed={valor.parqueadero === '1'}
+          onClick={() => onCambiar({ parqueadero: valor.parqueadero === '1' ? '' : '1' })}
+          className={cn(
+            'min-h-11 rounded-xl border px-3.5 text-sm font-semibold transition-colors',
+            valor.parqueadero === '1' ? 'border-primary-700 bg-primary-700 text-white' : 'border-gray-300 bg-white text-gray-800 hover:bg-gray-50',
+          )}
+        >
+          Con parqueadero
+        </button>
+      </div>
+      <div>
+        <label htmlFor={idArea} className="mb-2 block text-sm font-semibold text-gray-900">
+          Área mínima
+        </label>
+        <div className="relative">
+          <input
+            id={idArea}
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={valor.areaMin ? Number(valor.areaMin).toLocaleString('es-CO') : ''}
+            onChange={(e) => onCambiar({ areaMin: e.target.value.replace(/\D/g, '').slice(0, 5) })}
+            placeholder="Sin mínimo"
+            className="h-11 w-full rounded-xl border border-gray-300 bg-white pl-3.5 pr-11 text-sm tabular-nums text-gray-900 placeholder:text-gray-500 focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600/30"
+          />
+          <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-500">m²</span>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {AREAS.map((a) => {
+            const activo = valor.areaMin === a
+            return (
+              <button
+                key={a}
+                type="button"
+                aria-pressed={activo}
+                onClick={() => onCambiar({ areaMin: activo ? '' : a })}
+                className={cn(
+                  'min-h-10 rounded-full border px-3 text-xs font-medium tabular-nums transition-colors',
+                  activo ? 'border-primary-700 bg-primary-700 text-white' : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50',
+                )}
+              >
+                Desde {a} m²
+              </button>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }

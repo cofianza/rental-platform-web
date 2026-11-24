@@ -263,6 +263,12 @@ export function PropertyCard({
             <span><strong className="text-ink-900">{property.area_m2}</strong> m²</span>
           ) : null}
           <span>Estrato <strong className="text-ink-900">{property.estrato}</strong></span>
+          {/* El código del dueño: con él se busca y se pregunta por este inmueble. */}
+          {property.codigo && (
+            <span className="ml-auto">
+              <abbr title="Código" className="no-underline">Cód.</abbr> <strong className="tabular-nums text-ink-900">{property.codigo}</strong>
+            </span>
+          )}
         </div>
 
         {/* Canon + CTA */}
