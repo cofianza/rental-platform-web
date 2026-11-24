@@ -387,7 +387,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         direccion: inmueble.direccion,
         ciudad: inmueble.ciudad,
         departamento: inmueble.departamento,
-        // Un inmueble migrado puede no traerlos: el formulario los sigue exigiendo.
+        // Un inmueble migrado o traído de una integración puede no traerlos: el
+        // tipo se sigue exigiendo; el estrato, solo si ya tenía uno (estratoObligatorio).
         tipo: inmueble.tipo ?? '',
         estrato: inmueble.estrato ?? '',
         valor_arriendo: inmueble.valor_arriendo,
@@ -430,6 +431,11 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     }
   }, [mode, inmueble])
 
+  // El estrato se exige al crear. Al editar, solo si el inmueble ya tenía uno:
+  // los que llegan de una integración pueden venir sin estrato, y exigirlo aquí
+  // impedía guardar cualquier otro cambio (p. ej. el canon).
+  const estratoObligatorio = mode === 'create' || Boolean(inmueble?.estrato)
+
   const validateForm = (): string[] => {
     const newErrors: FormErrors = {}
 
@@ -454,7 +460,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     if (!formData.tipo) {
       newErrors.tipo = INMUEBLE_MESSAGES.TIPO_REQUIRED
     }
-    if (!formData.estrato) {
+    if (estratoObligatorio && !formData.estrato) {
       newErrors.estrato = INMUEBLE_MESSAGES.ESTRATO_REQUIRED
     }
     if (!formData.valor_arriendo) {
@@ -463,7 +469,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     if (!formData.propietario_id) {
       newErrors.propietario_id = INMUEBLE_MESSAGES.PROPIETARIO_REQUIRED
     }
-    if (!formData.foto_fachada_url) {
+    // La fachada solo se pide al crear. En edición la maneja la galería (aquí no
+    // hay campo que corregir) y un inmueble puede no tenerla todavía.
+    if (mode === 'create' && !formData.foto_fachada_url) {
       newErrors.foto_fachada_url = INMUEBLE_MESSAGES.FOTO_REQUIRED
     }
 
@@ -588,10 +596,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           ciudad: formData.ciudad,
           departamento: formData.departamento,
           tipo: formData.tipo as TipoInmueble,
-          estrato: Number(formData.estrato),
+          // Sin estrato no se envía: la API lo acepta opcional al editar.
+          ...(formData.estrato ? { estrato: Number(formData.estrato) } : {}),
           valor_arriendo: Number(formData.valor_arriendo),
           propietario_id: formData.propietario_id,
-          foto_fachada_url: formData.foto_fachada_url,
+          // `foto_fachada_url` no se envía: la fachada se elige en la galería, que
+          // guarda al momento; mandar la que se cargó al abrir el formulario la pisaba.
           barrio: formData.barrio || null,
           uso: formData.uso,
           destinacion: formData.destinacion || null,
@@ -790,7 +800,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
             <Campo
               id="estrato"
               label="Estrato"
-              requerido
+              requerido={estratoObligatorio}
               error={errors.estrato}
               ayuda="El que aparece en el recibo de servicios públicos."
             >
@@ -802,7 +812,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 aria-invalid={!!errors.estrato}
                 className={inputClasses(!!errors.estrato)}
               >
-                <option value="">Seleccionar estrato...</option>
+                <option value="">{estratoObligatorio ? 'Seleccionar estrato...' : 'Sin estrato'}</option>
                 {ESTRATO_OPTIONS.filter((o) => o.value).map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}

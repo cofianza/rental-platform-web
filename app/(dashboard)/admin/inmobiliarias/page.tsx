@@ -37,6 +37,7 @@ import {
 } from '@/services/miembrosService'
 import { formatCurrency, formatDate } from '@/lib/constants'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
+import { AccesoNubyAdmin } from '@/components/integraciones/AccesoNubyAdmin'
 
 const MODALIDAD_LABEL: Record<ModalidadFianza, string> = {
   trasladada: 'Trasladada (la paga el arrendatario)',
@@ -453,6 +454,7 @@ export default function AdminInmobiliariasPage() {
                       }
                     />
                     <BeneficioPanel orgId={o.id} />
+                    <AccesoNubyAdmin orgId={o.id} orgNombre={o.nombre} />
                     <MiembrosPanel orgId={o.id} />
                   </div>
                 )}

@@ -32,9 +32,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const property = await getPublicPropertyById(id)
     const tipoLabel = TIPO_LABELS[property.tipo] || property.tipo
     const title = `${tipoLabel} en ${property.barrio || property.ciudad} - Cofianza`
+    // Habitaciones y baños solo si el inmueble los tiene (antes: «0 hab, 0 baños»).
+    const detalles = [
+      property.habitaciones > 0 ? `${property.habitaciones} hab` : null,
+      property.banos > 0 ? `${property.banos} baño${property.banos === 1 ? '' : 's'}` : null,
+    ]
+      .filter(Boolean)
+      .join(', ')
     const description = property.descripcion
       ? property.descripcion.slice(0, 160)
-      : `${tipoLabel} disponible en ${property.ciudad}. ${property.habitaciones} hab, ${property.banos} baño${property.banos === 1 ? '' : 's'}.`
+      : `${tipoLabel} disponible en ${property.ciudad}.${detalles ? ` ${detalles}.` : ''}`
 
     return {
       title,

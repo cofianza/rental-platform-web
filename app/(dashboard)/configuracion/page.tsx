@@ -8,9 +8,12 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard, IconAlertTriangle } from '@/components/icons'
+import { useNubyDisponible } from '@/hooks/useIntegracionNuby'
+import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard, IconPlug, IconAlertTriangle } from '@/components/icons'
 
-// Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
+// Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad;
+// `soloTitular` la limita además al titular de la inmobiliaria (rol_miembro owner).
+// `requiereNuby` la esconde mientras la conexión con nuby esté apagada en la plataforma.
 const SECCIONES: Array<{
   id: string
   href: string
@@ -19,6 +22,8 @@ const SECCIONES: Array<{
   icon: typeof IconBuilding2
   color: string
   soloRoles?: string[]
+  soloTitular?: boolean
+  requiereNuby?: boolean
 }> = [
   {
     id: 'cuenta',
@@ -160,13 +165,33 @@ const SECCIONES: Array<{
     color: 'bg-green-100 text-green-600',
     soloRoles: ['administrador'],
   },
+  {
+    // Conexión con nuby (solo lectura). Solo el titular: al resto del equipo la
+    // API le responde 403 en todo, así que no se le muestra la entrada.
+    // Va al final: aparece cuando responde la API y, más arriba, corría las filas de abajo.
+    id: 'integraciones',
+    href: '/configuracion/integraciones',
+    titulo: 'Integraciones',
+    descripcion: 'Conecte nuby para traer a Cofianza los inmuebles que tiene disponibles para arrendar.',
+    icon: IconPlug,
+    color: 'bg-orange-100 text-orange-600',
+    soloRoles: ['inmobiliaria'],
+    soloTitular: true,
+    requiereNuby: true,
+  },
 ]
 
 export default function ConfiguracionPage() {
   const { user } = useAuth()
   const rol = user?.rol
+  const esTitular = user?.rol_miembro === 'owner'
+  // Solo se le pregunta a la API cuando quien entra es el titular de una inmobiliaria.
+  const nubyDisponible = useNubyDisponible(rol === 'inmobiliaria' && esTitular)
   const seccionesVisibles = SECCIONES.filter(
-    (s) => !s.soloRoles || (rol && s.soloRoles.includes(rol)),
+    (s) =>
+      (!s.soloRoles || (rol && s.soloRoles.includes(rol))) &&
+      (!s.soloTitular || esTitular) &&
+      (!s.requiereNuby || nubyDisponible),
   )
 
   return (

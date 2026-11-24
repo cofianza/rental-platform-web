@@ -257,12 +257,19 @@ export function PropertyCard({
 
         {/* Specs */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-500 mb-4">
-          <span><strong className="text-ink-900">{property.habitaciones}</strong> hab</span>
-          <span><strong className="text-ink-900">{property.banos}</strong> baño{property.banos === 1 ? '' : 's'}</span>
-          {property.area_m2 ? (
+          {/* Cada dato solo si el inmueble lo tiene: los que llegan de una integración pueden venir sin ellos. */}
+          {property.habitaciones > 0 && (
+            <span><strong className="text-ink-900">{property.habitaciones}</strong> hab</span>
+          )}
+          {property.banos > 0 && (
+            <span><strong className="text-ink-900">{property.banos}</strong> baño{property.banos === 1 ? '' : 's'}</span>
+          )}
+          {property.area_m2 != null && property.area_m2 > 0 ? (
             <span><strong className="text-ink-900">{property.area_m2}</strong> m²</span>
           ) : null}
-          <span>Estrato <strong className="text-ink-900">{property.estrato}</strong></span>
+          {property.estrato != null && (
+            <span>Estrato <strong className="text-ink-900">{property.estrato}</strong></span>
+          )}
           {/* El código del dueño: con él se busca y se pregunta por este inmueble. */}
           {property.codigo && (
             <span className="ml-auto">
