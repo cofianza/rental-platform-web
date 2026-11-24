@@ -71,9 +71,10 @@ function PropCard({ p, onChanged }: { p: MiInmueble; onChanged: () => void }) {
 
   const detalles =
     [
-      p.habitaciones != null ? `${p.habitaciones} hab` : null,
-      p.banos != null ? `${p.banos} baños` : null,
-      p.area != null ? `${p.area} m²` : null,
+      // Cada dato solo si tiene valor: un 0 es «sin dato», no «0 hab».
+      (p.habitaciones ?? 0) > 0 ? `${p.habitaciones} hab` : null,
+      (p.banos ?? 0) > 0 ? `${p.banos} baños` : null,
+      (p.area ?? 0) > 0 ? `${p.area} m²` : null,
     ]
       .filter(Boolean)
       .join(' · ') || '—'

@@ -1,7 +1,7 @@
 /**
  * Integración nuby: lo que la copia dejó pendiente. Tres listas, cada una solo
- * si tiene elementos: códigos repetidos (el titular elige cuál inmueble es el
- * de nuby), inmuebles que no se trajeron (con el motivo) e inmuebles con
+ * si tiene elementos: códigos por confirmar (el titular elige cuál inmueble es
+ * el de nuby), inmuebles que no se trajeron (con el motivo) e inmuebles con
  * estudio o contrato donde nuby dice otra cosa. Las listas pueden llegar
  * recortadas: el total real viene aparte y se dice «y N más».
  */
@@ -71,9 +71,9 @@ export function PendientesNubyListas({ pendientes, totales, ocupado, onVincular 
     <>
       {repetidos.length > 0 && (
         <Lista
-          titulo="Códigos repetidos"
+          titulo="Códigos por confirmar"
           total={Math.max(totales.codigo_repetido, repetidos.length)}
-          descripcion="El mismo código está en más de un inmueble de Cofianza. Indique cuál es el de nuby; mientras tanto, ese inmueble queda sin vincular."
+          descripcion="El código de nuby coincide con inmuebles suyos en Cofianza, pero no se pudo saber cuál es. Indique cuál es el de nuby; mientras tanto, no se vincula."
           faltan={cuantosMas(totales.codigo_repetido, repetidos.length)}
         >
           {repetidos.map((item) => (
@@ -84,6 +84,13 @@ export function PendientesNubyListas({ pendientes, totales, ocupado, onVincular 
               {(item.titulo || item.direccion) && (
                 <p className="mt-0.5 break-words text-xs text-gray-500">
                   En nuby: {[item.titulo, item.direccion].filter(Boolean).join(' · ')}
+                </p>
+              )}
+              {/* Un solo candidato con el mismo código y otra dirección: la copia no lo vinculó sola. */}
+              {item.motivo === 'direccion_distinta' && (
+                <p className="mt-1 text-sm text-gray-700">
+                  El código coincide con un inmueble suyo, pero la dirección en nuby es otra. Confirme si es el mismo
+                  inmueble.
                 </p>
               )}
               {item.candidatos.length === 0 ? (
@@ -216,8 +223,8 @@ export function PendientesNubyListas({ pendientes, totales, ocupado, onVincular 
                 vinculado con el código <strong className="break-all">{eleccion.codigo}</strong> de nuby.
               </p>
               <p>
-                Desde la siguiente copia, sus datos y su estado se actualizarán con lo que diga nuby. Los demás
-                inmuebles con ese código quedan sin vincular.
+                Desde la siguiente copia, sus datos y su estado se actualizarán con lo que diga nuby. Si hay otros
+                inmuebles con ese código, quedan sin vincular.
               </p>
               <p>Esta elección no se puede deshacer desde aquí.</p>
             </div>

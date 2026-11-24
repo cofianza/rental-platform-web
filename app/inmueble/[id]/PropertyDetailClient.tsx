@@ -209,17 +209,20 @@ export function PropertyDetailClient({ property, similares }: Props) {
                   <p className="text-sm font-medium text-gray-900">
                     {property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}
                   </p>
-                  <p className="text-xs text-gray-500">Estrato {property.estrato}</p>
+                  {property.estrato != null && <p className="text-xs text-gray-500">Estrato {property.estrato}</p>}
                 </div>
               </div>
 
               {/* Specs grid */}
               <div className="grid grid-cols-2 gap-3 mb-6">
-                {property.area_m2 && (
+                {/* Cada dato solo si el inmueble lo tiene (un área en 0 se pintaba como un «0» suelto). */}
+                {property.area_m2 != null && property.area_m2 > 0 && (
                   <SpecItem icon={IconRuler} label="Área" value={`${property.area_m2} m²`} />
                 )}
-                <SpecItem icon={IconBed} label="Habitaciones" value={String(property.habitaciones)} />
-                <SpecItem icon={IconBath} label="Baños" value={String(property.banos)} />
+                {property.habitaciones > 0 && (
+                  <SpecItem icon={IconBed} label="Habitaciones" value={String(property.habitaciones)} />
+                )}
+                {property.banos > 0 && <SpecItem icon={IconBath} label="Baños" value={String(property.banos)} />}
                 <SpecItem
                   icon={IconCar}
                   label="Parqueadero"
@@ -310,8 +313,8 @@ function SimilarCard({ property }: { property: PublicProperty }) {
         <p className="text-xs text-gray-700 truncate">{property.barrio ? `${property.barrio}, ` : ''}{property.ciudad}</p>
         <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-1">
           <span>{tipoLabel}</span>
-          {property.area_m2 && <span>{property.area_m2}m²</span>}
-          <span>{property.habitaciones} hab</span>
+          {property.area_m2 != null && property.area_m2 > 0 && <span>{property.area_m2}m²</span>}
+          {property.habitaciones > 0 && <span>{property.habitaciones} hab</span>}
         </div>
       </div>
     </Link>

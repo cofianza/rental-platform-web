@@ -65,7 +65,7 @@ const estadoConectado = (sincronizando = false): EstadoIntegracionNuby => ({
   },
   totales: { vinculados: 11, codigo_repetido: 1, no_traidos: 2, con_diferencias: 1, ausentes: 0 },
   pendientes: {
-    codigo_repetido: [{ codigo: 'A-01', titulo: null, direccion: null, candidatos: [] }],
+    codigo_repetido: [{ codigo: 'A-01', titulo: null, direccion: null, motivo: null, candidatos: [] }],
     no_traidos: [{ codigo: 'A-02', titulo: null, motivo: 'sin_canon', detalle: null }],
     con_diferencias: [],
   },
@@ -234,6 +234,23 @@ test('si la API omite totales o listas, la pantalla recibe vacíos', () => {
   assert.deepEqual(n.pendientes.codigo_repetido[0].candidatos, [])
   assert.deepEqual(n.pendientes.con_diferencias[0].diferencias, [])
   assert.deepEqual(n.pendientes.no_traidos, [])
+})
+
+test('el motivo de un código por confirmar queda en null si no viene y se conserva si viene', () => {
+  const conPendientes = (codigo_repetido: unknown[]) =>
+    ({ ...estadoConectado(), pendientes: { codigo_repetido, no_traidos: [], con_diferencias: [] } }) as unknown as EstadoIntegracionNuby
+  const candidato = { inmueble_id: '00000000-0000-4000-8000-000000000004', codigo: 'A-07', direccion: 'Calle 9 # 8-7', ciudad: 'Bogotá', estado: 'disponible' }
+
+  // Una API anterior no manda el campo.
+  const sinMotivo = normalizarEstadoNuby(conPendientes([{ codigo: 'A-01', titulo: null, direccion: null, candidatos: [] }]))
+  assert.equal(sinMotivo.pendientes.codigo_repetido[0].motivo, null)
+
+  // Mismo código, otra dirección: un solo candidato que la copia no vinculó sola.
+  const conMotivo = normalizarEstadoNuby(
+    conPendientes([{ codigo: 'A-07', titulo: null, direccion: 'Carrera 1 # 2-3', motivo: 'direccion_distinta', candidatos: [candidato] }]),
+  )
+  assert.equal(conMotivo.pendientes.codigo_repetido[0].motivo, 'direccion_distinta')
+  assert.deepEqual(conMotivo.pendientes.codigo_repetido[0].candidatos, [candidato])
 })
 
 test('si el resumen llega sin las cifras nuevas, cuentan como 0', () => {

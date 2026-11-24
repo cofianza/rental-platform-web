@@ -13,8 +13,10 @@ export interface PublicProperty {
   tipo: string
   ciudad: string
   barrio: string | null
-  estrato: number
+  /** null: inmueble sin estrato (p. ej. los que llegan de una integración). */
+  estrato: number | null
   area_m2: number | null
+  /** 0 = sin dato (o no aplica): no se muestra. */
   habitaciones: number
   banos: number
   parqueadero: boolean

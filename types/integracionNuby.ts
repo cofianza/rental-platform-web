@@ -75,11 +75,19 @@ export interface CandidatoCodigoNuby {
   estado: string
 }
 
-/** El mismo código existe en 2+ inmuebles de Cofianza: no se vincula hasta que elijan cuál es. */
+/**
+ * Código de nuby que coincide con inmuebles de Cofianza sin que se sepa cuál
+ * es: no se vincula hasta que elijan. Lo normal es que el mismo código esté en
+ * 2+ inmuebles; con `motivo: 'direccion_distinta'` hay UN solo candidato, con el
+ * mismo código pero otra dirección, y la copia no lo vinculó sola para no pisar
+ * un inmueble distinto.
+ */
 export interface CodigoRepetidoNuby {
   codigo: string
   titulo: string | null
   direccion: string | null
+  /** Por qué quedó por confirmar; null si la API no lo dice. */
+  motivo?: string | null
   candidatos: CandidatoCodigoNuby[]
 }
 

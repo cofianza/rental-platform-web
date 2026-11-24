@@ -132,7 +132,7 @@ export function normalizarEstadoNuby(estado: EstadoIntegracionNuby): EstadoInteg
       ausentes: numero(totales.ausentes),
     },
     pendientes: {
-      codigo_repetido: (pendientes.codigo_repetido ?? []).map((c) => ({ ...c, candidatos: c.candidatos ?? [] })),
+      codigo_repetido: (pendientes.codigo_repetido ?? []).map((c) => ({ ...c, motivo: c.motivo ?? null, candidatos: c.candidatos ?? [] })),
       no_traidos: pendientes.no_traidos ?? [],
       con_diferencias: (pendientes.con_diferencias ?? []).map((c) => ({ ...c, diferencias: c.diferencias ?? [] })),
     },

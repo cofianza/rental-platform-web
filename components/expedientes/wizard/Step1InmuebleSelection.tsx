@@ -664,27 +664,37 @@ export function Step1InmuebleSelection({
                 </div>
               </div>
 
-              {/* Detalles */}
-              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
-                <div className="text-center">
-                  <p className="text-xl font-black leading-none tracking-tight text-gray-900">
-                    {data.inmueble.habitaciones}
-                  </p>
-                  <p className="mt-1 break-words text-[11px] font-bold uppercase tracking-normal text-gray-500 sm:tracking-wide">Habitaciones</p>
+              {/* Detalles: cada dato solo si el inmueble lo tiene (los que llegan de una
+                  integración pueden venir sin habitaciones, baños o estrato). Con los
+                  tres, las columnas quedan como antes; con menos, se reparten el ancho. */}
+              {(data.inmueble.habitaciones > 0 || data.inmueble.banos > 0 || data.inmueble.estrato != null) && (
+                <div className="grid grid-flow-col auto-cols-fr gap-2 pt-3 border-t border-gray-100">
+                  {data.inmueble.habitaciones > 0 && (
+                    <div className="text-center">
+                      <p className="text-xl font-black leading-none tracking-tight text-gray-900">
+                        {data.inmueble.habitaciones}
+                      </p>
+                      <p className="mt-1 break-words text-[11px] font-bold uppercase tracking-normal text-gray-500 sm:tracking-wide">Habitaciones</p>
+                    </div>
+                  )}
+                  {data.inmueble.banos > 0 && (
+                    <div className="text-center">
+                      <p className="text-xl font-black leading-none tracking-tight text-gray-900">
+                        {data.inmueble.banos}
+                      </p>
+                      <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Baños</p>
+                    </div>
+                  )}
+                  {data.inmueble.estrato != null && (
+                    <div className="text-center">
+                      <p className="text-xl font-black leading-none tracking-tight text-gray-900">
+                        {data.inmueble.estrato}
+                      </p>
+                      <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Estrato</p>
+                    </div>
+                  )}
                 </div>
-                <div className="text-center">
-                  <p className="text-xl font-black leading-none tracking-tight text-gray-900">
-                    {data.inmueble.banos}
-                  </p>
-                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Baños</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xl font-black leading-none tracking-tight text-gray-900">
-                    {data.inmueble.estrato}
-                  </p>
-                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">Estrato</p>
-                </div>
-              </div>
+              )}
 
               {/* Precio */}
               <div className="pt-3 border-t border-gray-100">
