@@ -58,7 +58,7 @@ export function Badge({ estado, className, label: labelOverride }: BadgeProps) {
       )}
     >
       {/* Círculo de color */}
-      <span className={cn('w-1.5 h-1.5 rounded-full', textColor.replace('text-', 'bg-'))} />
+      <span className={cn('w-1.5 h-1.5 shrink-0 rounded-full', textColor.replace('text-', 'bg-'))} />
       {label}
     </span>
   )

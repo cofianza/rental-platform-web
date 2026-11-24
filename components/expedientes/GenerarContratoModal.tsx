@@ -23,6 +23,7 @@ import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import { contratoService } from '@/services/contratoService'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { bloqueoDeEvaluacion } from '@/components/contratos/v3/BloqueosContrato'
+import { FRENOS_DEL_SEGUNDO_FIRMANTE } from '@/lib/frenosSegundoFirmante'
 import type { Bloqueo } from '@/types/contratoV3'
 import { SERVICIOS_CONTRATO } from './serviciosContrato'
 import type { ModalidadFianza, CargoServicio } from '@/types/contrato'
@@ -130,7 +131,8 @@ export function GenerarContratoModal({
         })
         return
       }
-      if (err instanceof ApiClientError && (CODIGOS_CONTRATO_POR_COFIANZA.includes(err.code ?? '') || err.code === 'COARRENDATARIO_PENDIENTE')) {
+      // Bloque 4: también el segundo firmante que ya aceptó (en evaluación o en verificación) queda como aviso fijo.
+      if (err instanceof ApiClientError && (CODIGOS_CONTRATO_POR_COFIANZA.includes(err.code ?? '') || FRENOS_DEL_SEGUNDO_FIRMANTE.includes(err.code ?? ''))) {
         setNoDisponible({ codigo: err.code ?? '', mensaje: err.message })
         return
       }
@@ -184,7 +186,7 @@ export function GenerarContratoModal({
         className="space-y-5"
       >
         {noDisponible &&
-          (noDisponible.codigo === 'COARRENDATARIO_PENDIENTE' ? (
+          (FRENOS_DEL_SEGUNDO_FIRMANTE.includes(noDisponible.codigo) ? (
             <div role="alert" className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
               <IconAlertTriangle size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
               <span>{noDisponible.mensaje}</span>

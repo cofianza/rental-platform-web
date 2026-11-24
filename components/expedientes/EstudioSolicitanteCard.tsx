@@ -40,6 +40,7 @@ import type { IAutorizacion } from '@/types/autorizacion'
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { abrirEnPestana } from '@/lib/utils'
 import { textoVisible, textoCondicionCoarrendatario } from './textoVisible'
+import { sinAccionSegundoFirmante } from '@/lib/etapaEstudio'
 
 interface EstudioSolicitanteCardProps {
   expedienteId: string
@@ -665,8 +666,14 @@ export function EstudioSolicitanteCard({
               )}
             </span>
             <div className="min-w-0">
-              <p className={`text-sm font-semibold ${tono.titulo} mb-0.5`}>{r.titulo}</p>
-              <p className={`text-sm ${tono.texto}`}>{r.mensaje}</p>
+              {/* Mientras Cofianza verifica a la otra persona, la ruta todavía pediría un coarrendatario con
+                  su fecha: manda el texto de la API (sin acción y sin plazo), con el nombre del chip. */}
+              <p className={`text-sm font-semibold ${tono.titulo} mb-0.5`}>
+                {sinAccionSegundoFirmante(estudio) && estudio.siguiente_accion_texto ? 'En revisión' : r.titulo}
+              </p>
+              <p className={`text-sm ${tono.texto}`}>
+                {sinAccionSegundoFirmante(estudio) && estudio.siguiente_accion_texto ? estudio.siguiente_accion_texto : r.mensaje}
+              </p>
 
               {/* §10: "se indica que puede mejorar. Nunca es un portazo." El
                   motivo de la regla dura ya trae la salida de su causa (P30). */}
@@ -695,7 +702,8 @@ export function EstudioSolicitanteCard({
               {/* Adenda 3 §6: aprobado con condición. El mensaje de la ruta ya
                   trae la fecha (sin el puntaje: el perfil se lo dice su
                   inmobiliaria); el formulario es la tarjeta del coarrendatario, debajo. */}
-              {estudio.condicion_coarrendatario && !estudio.condicion_coarrendatario.vencida && (
+              {/* Mientras Cofianza verifica a la otra persona no hay a quién invitar (la API: sin acción). */}
+              {estudio.condicion_coarrendatario && !estudio.condicion_coarrendatario.vencida && !sinAccionSegundoFirmante(estudio) && (
                 <a
                   href="#coarrendatario"
                   className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -704,7 +712,7 @@ export function EstudioSolicitanteCard({
                   Invitar a mi coarrendatario
                 </a>
               )}
-              {estudio.condicion_coarrendatario?.vencida && (
+              {estudio.condicion_coarrendatario?.vencida && !sinAccionSegundoFirmante(estudio) && (
                 <p className={`mt-3 text-sm ${tono.texto}`}>
                   {textoCondicionCoarrendatario(estudio.condicion_coarrendatario, { prospecto: true })}
                 </p>
@@ -742,14 +750,19 @@ export function EstudioSolicitanteCard({
             <div>
               {/* Su vocabulario: el del chip y la barra («Está cerca» o «En revisión»). */}
               <p className="text-sm font-semibold text-amber-900 mb-0.5">
-                {estudio.condicion_coarrendatario ? (estudio.condicion_coarrendatario.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca') : 'En revisión'}
+                {estudio.condicion_coarrendatario && !sinAccionSegundoFirmante(estudio)
+                  ? estudio.condicion_coarrendatario.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
+                  : 'En revisión'}
               </p>
               {/* Sin `ruta` no sabemos si es perfil medio o coarrendatario
                   obligatorio: copy neutro (§13 prohíbe "marginal"/"rechazado"). */}
               <p className="text-sm text-amber-800">
-                {estudio.condicion_coarrendatario
-                  ? textoCondicionCoarrendatario(estudio.condicion_coarrendatario, { prospecto: true })
-                  : 'Su evaluación necesita una revisión adicional. Le avisaremos en cuanto haya una decisión.'}
+                {/* Sin nada que hacer (Cofianza verifica a la otra persona): el texto de la API, sin plazo. */}
+                {sinAccionSegundoFirmante(estudio) && estudio.siguiente_accion_texto
+                  ? estudio.siguiente_accion_texto
+                  : estudio.condicion_coarrendatario && !sinAccionSegundoFirmante(estudio)
+                    ? textoCondicionCoarrendatario(estudio.condicion_coarrendatario, { prospecto: true })
+                    : 'Su evaluación necesita una revisión adicional. Le avisaremos en cuanto haya una decisión.'}
               </p>
               {botonCertificado}
             </div>

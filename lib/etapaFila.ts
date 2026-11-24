@@ -4,7 +4,7 @@
  */
 
 import type { IExpediente, IExpedienteFilters } from '@/types/expediente'
-import { etapaCondicionado, etapaDeTraba, type EtapaEstudio } from './etapaEstudio'
+import { ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO, etapaCondicionado, etapaDeTraba, type EtapaEstudio } from './etapaEstudio'
 
 const CONTRATO_FIRMADO = ['firmado', 'vigente', 'finalizado']
 const CONSULTA = ['en_proceso', 'completado', 'pagado', 'formulario_completado', 'documentos_cargados']
@@ -43,10 +43,10 @@ export function etapaDeFila(e: IExpediente): EtapaEstudio {
 }
 
 /**
- * Lo que hay que hacer cuando depende_de === 'gestor'. En minúscula: sigue a
- * «Su turno:». Las demás etapas no llevan acción, solo «Su turno».
- * ponytail: espejo de las cláusulas (a) a (k) del RPC de la lista. Si se
- * desalinean, que el RPC devuelva el código de la cláusula y la web solo lo traduzca.
+ * Lo que hay que hacer cuando depende_de === 'gestor'. En minúscula y en infinitivo: sigue a
+ * «Su turno:» o a «Turno del gestor:». Las demás etapas no llevan acción, solo «Su turno».
+ * ponytail: espejo de lo que el RPC de la lista cuenta como turno de quien gestiona. Si se
+ * desalinean, que el RPC devuelva el código de su regla y la web solo lo traduzca.
  */
 export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   habilitar: 'habilitar la evaluación',
@@ -57,25 +57,57 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   contrato: 'crear el contrato',
   // Reporte de Gerencia (21-nov): con la traba nunca «crear el contrato».
   canon_excede: 'ajustar el canon o reasignar el estudio',
-  coarrendatario_pendiente: 'esperar al coarrendatario o seguir sin él',
-  vencido: 'crear un estudio nuevo',
+  coarrendatario_pendiente: 'esperar al segundo firmante o seguir sin él',
+  // «el resultado», no «la evaluación en curso»: la misma traba cubre la consulta que falló (lo dice el texto de la API).
+  coarrendatario_en_evaluacion: 'esperar el resultado del segundo firmante o seguir sin él',
+  coarrendatario_en_verificacion: 'esperar la verificación del segundo firmante o seguir sin él',
   firma: 'revisar la firma del contrato',
   firma_incompleta: 'revisar la firma incompleta',
   vigente: 'cargar el acta de entrega',
   // Qué hacer exactamente lo dice el texto de la API, en el detalle.
   bloqueado: 'revisar el bloqueo en el detalle',
-  // Sin coarrendatario en curso (la API da el turno a quien gestiona): presentarlo o cambiar a la persona.
-  segundo_firmante: 'invite al segundo firmante o reemplácelo',
+  // Sin coarrendatario en curso (la API da el turno a quien gestiona): lo dice accionSegundoFirmante.
+  segundo_firmante: 'invitar al segundo firmante',
+}
+
+/** Lo del resultado que decide la acción del «aprobado con segundo firmante» (de la fila o de la evaluación del titular). */
+export interface DatosAccionSegundoFirmante {
+  siguiente_accion?: string | null
+  siguiente_accion_texto?: string | null
+  /** El canal no admite segundo firmante (propietario directo). La API solo lo manda con true. */
+  canal_sin_segundo_firmante?: boolean
+}
+
+/**
+ * La acción de quien gestiona en el «aprobado con segundo firmante», cuando el turno es suyo:
+ * - ninguna (undefined) si no hay nada que pueda hacer: el canal no admite segundo firmante
+ *   (`canal_sin_segundo_firmante` de la API: propietario directo) o la API no pide acción ('ninguna', p. ej.
+ *   con el segundo firmante en verificación). Ahí el texto de la API dice por qué;
+ * - «reemplazar al segundo firmante» solo si ya hay uno evaluado que no alcanza (la API: sustituir). Si a
+ *   quien hay que cambiar es al solicitante, «reemplazar al solicitante»: la API no trae un campo para
+ *   distinguirlo, así que se lee del inicio de su texto; si no se reconoce, queda «al segundo firmante»;
+ * - «invitar al segundo firmante» si falta presentarlo.
+ * Con una API anterior (sin `canal_sin_segundo_firmante`) el propietario directo ve «invitar al segundo
+ * firmante», como antes. Pura.
+ */
+export function accionSegundoFirmante(ev: DatosAccionSegundoFirmante | null | undefined): string | undefined {
+  if (ev?.canal_sin_segundo_firmante === true || ev?.siguiente_accion === 'ninguna') return undefined
+  if (ev?.siguiente_accion === 'sustituir_segundo_firmante') {
+    return /^El solicitante no cumple/i.test(ev.siguiente_accion_texto?.trim() ?? '') ? 'reemplazar al solicitante' : 'reemplazar al segundo firmante'
+  }
+  return ACCION_GESTOR.segundo_firmante
 }
 
 /**
  * Etapas de traba en que el turno es siempre de quien gestiona, diga lo que diga depende_de (el RPC puede
- * contar al coarrendatario sin responder como turno del prospecto: la decisión de esperarlo es del gestor).
+ * contar al segundo firmante en curso como turno del prospecto o de Cofianza: la decisión de esperarlo o de
+ * seguir sin él es del gestor).
  */
-export const TURNO_GESTOR_TRABA: EtapaEstudio[] = ['canon_excede', 'coarrendatario_pendiente']
+export const TURNO_GESTOR_TRABA: EtapaEstudio[] = ['canon_excede', ...ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO]
 
 export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | undefined {
   if (e.depende_de !== 'gestor' && !(e.depende_de && TURNO_GESTOR_TRABA.includes(etapa))) return undefined
+  if (etapa === 'segundo_firmante') return accionSegundoFirmante(e.estudio_vigente)
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'bloqueado_documento') return 'corregir el documento'
   // Con la identidad rechazada solo Cofianza reenvía: el gestor no puede «reenviar el enlace».
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'identidad_rechazada') return 'comunicarse con Cofianza'
@@ -85,13 +117,18 @@ export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | unde
   return ACCION_GESTOR[etapa]
 }
 
+/** Cofianza verifica al segundo firmante ya evaluado (lo dice la API en la fila; ausente con una API anterior). */
+export const segundoEnVerificacion = (e: Pick<IExpediente, 'segundo_en_verificacion'>): boolean => e.segundo_en_verificacion === true
+
 /**
  * U9: «Tomar» solo cuando el turno es de Cofianza: la decisión sin condición de
- * coarrendatario, la consulta fallida y la que no arrancó. En las demás no hay
- * nada que un analista deba tomar.
+ * coarrendatario, la verificación del segundo firmante, la consulta fallida y la que no
+ * arrancó. En las demás no hay nada que un analista deba tomar.
  */
 export function tomarDisponible(e: IExpediente, etapa: EtapaEstudio = etapaDeFila(e)): boolean {
   if (etapa === 'decision') return !e.estudio_vigente?.condicion_coarrendatario
+  if (etapa === 'coarrendatario_en_verificacion') return true
+  if (etapa === 'segundo_firmante') return segundoEnVerificacion(e)
   return etapa === 'fallida' || etapa === 'sin_ejecutar'
 }
 

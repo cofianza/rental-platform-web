@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
 import { IconArrowLeft } from '@/components/icons'
+import { desgloseDeCifras, fraseDesgloseAprobacion, tasaLegible } from '@/lib/conteosEstudios'
 import {
   reporteService,
   type AprobacionData,
@@ -26,6 +27,9 @@ function tasaColor(tasa: number): string {
   if (tasa >= 40) return 'text-amber-600'
   return 'text-red-600'
 }
+
+/** La primera columna de la tabla («Periodo») queda fija al desplazarla a los lados, con una línea que la separa. */
+const COLUMNA_FIJA = 'sticky left-0 z-10 whitespace-nowrap shadow-[inset_-1px_0_0_#e5e7eb]'
 
 function tasaBgColor(tasa: number): string {
   if (tasa >= 60) return 'bg-green-50 text-green-700 border-green-200'
@@ -59,10 +63,15 @@ function StackedBarChart({ data }: { data: AprobacionPeriodo[] }) {
           const hAprobados = (d.aprobados / maxTotal) * chartHeight
           const hRechazados = (d.rechazados / maxTotal) * chartHeight
           const hCondicionados = (d.condicionados / maxTotal) * chartHeight
-          // Stack from bottom: aprobados, then condicionados, then rechazados
+          // Bloque 4: decididos que no son aprobados ni no aprobables (cuentan en `total`); 0 con una API anterior.
+          const hSegundo = ((d.con_segundo_firmante ?? 0) / maxTotal) * chartHeight
+          const hBloqueados = ((d.bloqueados ?? 0) / maxTotal) * chartHeight
+          // Desde abajo: aprobados, con segundo firmante, en decisión, no aprobables y bloqueados por listas.
           const yAprobados = chartHeight - hAprobados
-          const yCondicionados = yAprobados - hCondicionados
+          const ySegundo = yAprobados - hSegundo
+          const yCondicionados = ySegundo - hCondicionados
           const yRechazados = yCondicionados - hRechazados
+          const yBloqueados = yRechazados - hBloqueados
           return (
             <g key={i}>
               {d.aprobados > 0 && (
@@ -75,6 +84,8 @@ function StackedBarChart({ data }: { data: AprobacionPeriodo[] }) {
                   rx={2}
                 />
               )}
+              {hSegundo > 0 && <rect x={x} y={ySegundo} width={barWidth} height={hSegundo} fill="#0ea5e9" rx={2} />}
+              {hBloqueados > 0 && <rect x={x} y={yBloqueados} width={barWidth} height={hBloqueados} fill="#7f1d1d" rx={2} />}
               {d.condicionados > 0 && (
                 <rect
                   x={x}
@@ -246,6 +257,18 @@ export default function AprobacionExpedientesPage() {
 
   const hasMeses = data && data.meses.length > 0
   const tasaGlobal = data?.totales.tasa_global
+  // Bloque 4: la misma definición de /estudios y del inicio. Con ella los aprobados con segundo firmante y los
+  // bloqueados por listas cuentan en los decididos: van en su columna y en la frase del indicador. Una API anterior
+  // no los manda: la página queda como antes.
+  const conDesglose = typeof data?.totales.total_con_segundo_firmante === 'number'
+  const desgloseTasa = data
+    ? desgloseDeCifras({
+        aprobados: data.totales.total_aprobados,
+        con_segundo_firmante: data.totales.total_con_segundo_firmante,
+        rechazados: data.totales.total_rechazados,
+        bloqueados: data.totales.total_bloqueados,
+      })
+    : null
 
   // Recarga con datos en pantalla: se dejan las cifras (atenuadas), sin volver al esqueleto.
   const recargando = loading && !!data
@@ -255,7 +278,11 @@ export default function AprobacionExpedientesPage() {
       {/* Header */}
       <PageHeader
         title="Tasa de Aprobación"
-        subtitle="Aprobados vs no aprobables por periodo. Los aprobados se agrupan por tarifa: automática (sin analista, también con coarrendatario) o no automática (decididos por un analista). Lo que sigue en revisión manual va aparte y no cuenta en la tasa."
+        subtitle={
+          conDesglose
+            ? 'Aprobados sobre decididos por periodo. Decididos: aprobados, aprobados con segundo firmante, no aprobables y bloqueados por listas. Los aprobados se agrupan por tarifa: automática (sin analista, también cuando se aprueba con su segundo firmante) o no automática (decididos por un analista). Lo que sigue en revisión de Cofianza va aparte y no cuenta en la tasa.'
+            : 'Aprobados vs no aprobables por periodo. Los aprobados se agrupan por tarifa: automática (sin analista, también cuando se aprueba con su segundo firmante) o no automática (decididos por un analista). Lo que sigue en revisión de Cofianza va aparte y no cuenta en la tasa.'
+        }
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <ExportButton
@@ -302,11 +329,14 @@ export default function AprobacionExpedientesPage() {
           }`}
         >
           <p className="text-4xl font-bold">
-            {tasaGlobal != null ? `${tasaGlobal.toFixed(1)}%` : 'N/A'}
+            {tasaGlobal != null ? tasaLegible(tasaGlobal) : 'N/A'}
           </p>
           <p className="text-sm mt-1 opacity-80">
             Tasa de aprobación global del periodo (aprobados sobre decididos)
           </p>
+          {desgloseTasa && tasaGlobal != null && (
+            <p className="mt-1 text-sm opacity-80">{`${fraseDesgloseAprobacion(desgloseTasa).replace(/^de /, 'De ')}.`}</p>
+          )}
         </div>
       )}
 
@@ -340,18 +370,30 @@ export default function AprobacionExpedientesPage() {
       </div>
 
       {/* Legend */}
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
         <span className="flex items-center gap-1.5 text-xs text-gray-600">
           <span className="w-3 h-3 rounded bg-green-500" />
           Aprobados
         </span>
+        {conDesglose && (
+          <span className="flex items-center gap-1.5 text-xs text-gray-600">
+            <span className="w-3 h-3 rounded bg-sky-500" />
+            Con segundo firmante
+          </span>
+        )}
         <span className="flex items-center gap-1.5 text-xs text-gray-600">
           <span className="w-3 h-3 rounded bg-red-500" />
           No aprobables
         </span>
+        {conDesglose && (
+          <span className="flex items-center gap-1.5 text-xs text-gray-600">
+            <span className="w-3 h-3 rounded bg-red-900" />
+            Bloqueados por listas
+          </span>
+        )}
         <span className="flex items-center gap-1.5 text-xs text-gray-600">
           <span className="w-3 h-3 rounded bg-amber-500" />
-          En decisión
+          En revisión de Cofianza
         </span>
       </div>
 
@@ -378,14 +420,17 @@ export default function AprobacionExpedientesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="text-left px-4 py-3 font-medium text-gray-700">Periodo</th>
+                {/* Fija al desplazar la tabla a los lados (a 390 px las columnas no caben): siempre se sabe de qué mes es la fila. */}
+                <th className={`text-left px-4 py-3 font-medium text-gray-700 bg-gray-50 ${COLUMNA_FIJA}`}>Periodo</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Aprobados</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Tarifa automática</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Tarifa no automática</th>
+                {conDesglose && <th className="text-right px-4 py-3 font-medium text-gray-700">Con segundo firmante</th>}
                 <th className="text-right px-4 py-3 font-medium text-gray-700">No aprobables</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-700">En decisión</th>
+                {conDesglose && <th className="text-right px-4 py-3 font-medium text-gray-700">Bloqueados por listas</th>}
+                <th className="text-right px-4 py-3 font-medium text-gray-700">En revisión de Cofianza</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Decididos</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-700">Tasa (%)</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-700">Tasa</th>
               </tr>
             </thead>
             <tbody>
@@ -394,24 +439,26 @@ export default function AprobacionExpedientesPage() {
                   key={i}
                   className={`border-b border-gray-100 ${i % 2 === 1 ? 'bg-gray-50/50' : ''}`}
                 >
-                  <td className="px-4 py-3 text-gray-900">{p.periodo}</td>
+                  <td className={`px-4 py-3 text-gray-900 bg-white ${COLUMNA_FIJA}`}>{p.periodo}</td>
                   <td className="px-4 py-3 text-right text-green-600 font-medium">{p.aprobados}</td>
                   <td className="px-4 py-3 text-right text-gray-600">{p.aprobados_tarifa_automatica}</td>
                   <td className="px-4 py-3 text-right text-gray-600">{p.aprobados_tarifa_no_automatica}</td>
+                  {conDesglose && <td className="px-4 py-3 text-right text-sky-700 font-medium">{p.con_segundo_firmante ?? 0}</td>}
                   <td className="px-4 py-3 text-right text-red-600 font-medium">{p.rechazados}</td>
+                  {conDesglose && <td className="px-4 py-3 text-right text-red-900 font-medium">{p.bloqueados ?? 0}</td>}
                   <td className="px-4 py-3 text-right text-amber-600 font-medium">
                     {p.condicionados}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-900 font-medium">{p.total}</td>
                   <td className={`px-4 py-3 text-right font-medium ${tasaColor(p.tasa)}`}>
-                    {p.tasa.toFixed(1)}%
+                    {tasaLegible(p.tasa)}
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className="bg-gray-50 border-t-2 border-gray-200">
-                <td className="px-4 py-3 font-bold text-gray-900">Totales</td>
+                <td className={`px-4 py-3 font-bold text-gray-900 bg-gray-50 ${COLUMNA_FIJA}`}>Totales</td>
                 <td className="px-4 py-3 text-right font-bold text-green-600">
                   {data.totales.total_aprobados}
                 </td>
@@ -421,9 +468,13 @@ export default function AprobacionExpedientesPage() {
                 <td className="px-4 py-3 text-right font-bold text-gray-600">
                   {data.totales.total_aprobados_tarifa_no_automatica}
                 </td>
+                {conDesglose && (
+                  <td className="px-4 py-3 text-right font-bold text-sky-700">{data.totales.total_con_segundo_firmante ?? 0}</td>
+                )}
                 <td className="px-4 py-3 text-right font-bold text-red-600">
                   {data.totales.total_rechazados}
                 </td>
+                {conDesglose && <td className="px-4 py-3 text-right font-bold text-red-900">{data.totales.total_bloqueados ?? 0}</td>}
                 <td className="px-4 py-3 text-right font-bold text-amber-600">
                   {data.totales.total_condicionados}
                 </td>
@@ -433,7 +484,7 @@ export default function AprobacionExpedientesPage() {
                 <td
                   className={`px-4 py-3 text-right font-bold ${tasaColor(data.totales.tasa_global)}`}
                 >
-                  {data.totales.tasa_global.toFixed(1)}%
+                  {tasaLegible(data.totales.tasa_global)}
                 </td>
               </tr>
             </tfoot>

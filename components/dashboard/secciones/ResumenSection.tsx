@@ -21,6 +21,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { facturacionService } from '@/services/facturacionService'
 import { migracionService } from '@/services/migracionService'
 import type { IExpedientesStats } from '@/types/expediente'
+import { desgloseDeCifras, fraseDesgloseAprobacion, tasaLegible } from '@/lib/conteosEstudios'
 import { ACTION_LABELS, ENTITY_LABELS } from '@/components/bitacora/constants'
 import {
   Kpi,
@@ -429,6 +430,8 @@ export function ResumenSection() {
 
   const resumen = extras?.resumen
   const sinDecisiones = resumen?.decididosDelPeriodo === 0
+  // Bloque 4: las cifras de la tasa, si la API las manda (misma definición que /estudios y /reportes).
+  const desgloseTasa = desgloseDeCifras(resumen?.desglose_aprobacion)
 
   return (
     <div className="space-y-6 font-display">
@@ -705,15 +708,21 @@ export function ResumenSection() {
             <Kpi
               Icon={IconCheckCircle}
               label="Aprobación del mes"
-              value={sinDecisiones ? '—' : pct(resumen.tasaAprobacion)}
+              value={sinDecisiones ? '—' : tasaLegible(resumen.tasaAprobacion)}
               sub={
                 sinDecisiones
                   ? 'ningún estudio decidido este mes'
-                  : resumen.decididosDelPeriodo != null
-                    ? `de ${resumen.decididosDelPeriodo} ${resumen.decididosDelPeriodo === 1 ? 'estudio decidido' : 'estudios decididos'}`
-                    : undefined
+                  : desgloseTasa
+                    ? fraseDesgloseAprobacion(desgloseTasa)
+                    : resumen.decididosDelPeriodo != null
+                      ? `de ${resumen.decididosDelPeriodo} ${resumen.decididosDelPeriodo === 1 ? 'estudio decidido' : 'estudios decididos'}`
+                      : undefined
               }
-              hint="Aprobados sobre los estudios creados este mes que ya tienen decisión (aprobados y no aprobables)"
+              hint={
+                desgloseTasa
+                  ? 'Aprobados sobre los estudios creados este mes que ya tienen decisión: aprobados, aprobados con segundo firmante, no aprobables y bloqueados por listas'
+                  : 'Aprobados sobre los estudios creados este mes que ya tienen decisión (aprobados y no aprobables)'
+              }
               onClick={goExpedientes}
             />
             <Kpi

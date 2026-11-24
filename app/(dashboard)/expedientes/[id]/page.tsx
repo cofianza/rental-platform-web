@@ -64,10 +64,12 @@ import {
 import { esCondicionadoSinInfo } from '@/components/expedientes/ReintentarEstudioForm'
 import { ResumenPorEtapa, Plegable } from '@/components/expedientes/ResumenPorEtapa'
 import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudioNuevo'
+import { ID_VERIFICACION_SEGUNDO } from '@/components/estudios/VerificacionSegundoFirmante'
 import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
 import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
-import { ACCION_GESTOR, revisionDemorada } from '@/lib/etapaFila'
-import { cierreDelEstudio, coarrendatarioEnCurso } from '@/lib/personaEstudio'
+import { ACCION_GESTOR, accionSegundoFirmante, revisionDemorada } from '@/lib/etapaFila'
+import { sinAccionSegundoFirmante } from '@/lib/etapaEstudio'
+import { cierreDelEstudio, coarrendatarioEnCurso, coarrendatarioEnVerificacion, ofreceReemplazo, personaA5dUsable } from '@/lib/personaEstudio'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
 import { useAuthStore } from '@/stores/auth.store'
 import {
@@ -234,6 +236,8 @@ function ExpedienteDetalleContenido() {
   // de esa cadena. Si la lista no se pudo leer, el banner ofrece la apelación genérica.
   const [apelableId, setApelableId] = useState<string | null>(null)
   const [listaFallo, setListaFallo] = useState(false)
+  // No aprobable con salida: el texto de alguna persona (lo redacta la API) ofrece reemplazarla.
+  const [reemplazoPosible, setReemplazoPosible] = useState(false)
   const [reasignadoDesde, setReasignadoDesde] = useState<string | null>(null)
   const estadoExpediente = expediente?.estado
   const actualizadoEn = expediente?.updated_at
@@ -266,6 +270,7 @@ function ExpedienteDetalleContenido() {
         setObsCoaRevision(coa?.estado === 'completado' && coa.resultado === 'condicionado' ? (coa.observaciones ?? null) : null)
         setApelableId(apelable?.id ?? null)
         setListaFallo(false)
+        setReemplazoPosible(filas.some((e) => e.estado !== 'cancelado' && ofreceReemplazo(personaA5dUsable(e.persona_a5d))))
         setReasignadoDesde(filas.find((e) => e.reasignado_desde)?.reasignado_desde ?? null)
       })
       .catch(() => {
@@ -275,6 +280,7 @@ function ExpedienteDetalleContenido() {
         setTitular(null)
         setObsCoaRevision(null)
         setApelableId(null)
+        setReemplazoPosible(false)
         setListaFallo(true)
       })
     return () => { cancel = true }
@@ -300,8 +306,10 @@ function ExpedienteDetalleContenido() {
   const apelacionTitular = enRechazo && listaFallo ? null : apelacion && apelacion.de === apelableId ? apelacion.h : undefined
   // Sin leer la apelación (o sin evaluación que apelar) no se adivina: el turno espera a saberlo.
   const apelacionLeida = !leerApelacion || apelacion?.de === apelableId
-  const apelacionRadicada =
-    enSegundoFirmante && apelacion?.de === apelableId && !!(apelacion.h?.fecha_radicacion_apelacion || apelacion.h?.responder_hasta)
+  // Un solo criterio con la lista (depende_de del RPC): la apelación está radicada cuando tiene su fecha. Lo dice la
+  // API (`apelacion_radicada`); con una API anterior, la propia fecha. `responder_hasta` es un plazo, no el turno.
+  const historialApelacion = enSegundoFirmante && apelacion?.de === apelableId ? apelacion.h : null
+  const apelacionRadicada = !!historialApelacion && (historialApelacion.apelacion_radicada ?? !!historialApelacion.fecha_radicacion_apelacion)
   const titularCondicionado = estadoExpediente === 'condicionado' ? titular : null
   const condicionadoSinInfo =
     estadoExpediente === 'condicionado' && !!titularCondicionado && esCondicionadoSinInfo(titularCondicionado)
@@ -349,7 +357,7 @@ function ExpedienteDetalleContenido() {
   const leerCoaEspera =
     esEsperaDePersona(etapa, !!condicionCoa) &&
     ['propietario', 'inmobiliaria', 'administrador', 'operador_analista'].includes(user?.rol ?? '')
-  const [coaEspera, setCoaEspera] = useState<{ de: string; invitado: boolean; enCurso: boolean } | null>(null)
+  const [coaEspera, setCoaEspera] = useState<{ de: string; invitado: boolean; enCurso: boolean; enVerificacion: boolean } | null>(null)
   // Punto 10 del reporte: el coarrendatario en curso (lo avisa su tarjeta) va en el Resumen, no en «Pasos anteriores».
   const [coaVivo, setCoaVivo] = useState(false)
   useEffect(() => {
@@ -357,7 +365,15 @@ function ExpedienteDetalleContenido() {
     let cancel = false
     coarrendatarioService.getDelExpediente(id).then(
       (c) => {
-        if (!cancel) setCoaEspera({ de: id, invitado: c?.estado === 'pendiente_aceptacion', enCurso: coarrendatarioEnCurso(c) })
+        if (!cancel) {
+          setCoaEspera({
+            de: id,
+            invitado: c?.estado === 'pendiente_aceptacion',
+            enCurso: coarrendatarioEnCurso(c),
+            // Respaldo de `segundo_en_verificacion` (una API anterior no lo manda).
+            enVerificacion: coarrendatarioEnVerificacion(c),
+          })
+        }
       },
       () => { if (!cancel) setCoaEspera(null) },
     )
@@ -607,6 +623,10 @@ function ExpedienteDetalleContenido() {
   const coaFallidaVive =
     coaFallido && !!etapa && etapa !== 'firma' && etapa !== 'firma_incompleta' && etapa !== 'vigente' && etapa !== 'vencido'
   const etapaTurno = coaFallidaVive ? 'fallida' : etapa
+  // Prospecto con el «aprobado con segundo firmante» sin nada que hacer (la API: `siguiente_accion` 'ninguna';
+  // Cofianza verifica a la otra persona): «En revisión» con el texto de la API, nunca «Necesita un
+  // coarrendatario» ni el plazo para agregarlo mientras se le dice que no tiene que hacer nada.
+  const prospectoSinAccion = user?.rol === 'solicitante' && sinAccionSegundoFirmante(titularCondicionado)
   // Un solo nombre para dónde está el estudio: el chip, la barra y el modal de cambio de estado.
   const etiquetaEtapa =
     user?.rol === 'solicitante'
@@ -614,12 +634,12 @@ function ExpedienteDetalleContenido() {
         expediente.estado === 'borrador'
         ? 'En preparación'
         : expediente.estado === 'condicionado'
-          ? condicionCoa
+          ? condicionCoa && !prospectoSinAccion
             ? condicionCoa.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
             : 'En revisión'
           : undefined
       : coaFallidaVive
-        ? 'Falló la consulta del coarrendatario'
+        ? 'Falló la consulta del segundo firmante'
         : etapa === 'segundo_firmante' || etapa === 'bloqueado'
           ? // El nombre del resultado lo redacta la API.
             (titularCondicionado?.desenlace_texto ?? ETAPA_LABEL[etapa])
@@ -631,6 +651,17 @@ function ExpedienteDetalleContenido() {
           : etapa
             ? ETAPA_LABEL[etapa]
             : undefined
+  // «Aprobado con segundo firmante» con el segundo ya evaluado y en verificación de Cofianza: el turno es de
+  // Cofianza (la API niega invitar y reemplazar mientras tanto). 'api' = lo dice el estudio
+  // (`segundo_en_verificacion`); 'web' = se deduce de la evaluación del segundo firmante (una API anterior).
+  const segundoEnVerificacion: 'api' | 'web' | false =
+    etapaTurno !== 'segundo_firmante'
+      ? false
+      : expediente.segundo_en_verificacion === true
+        ? 'api'
+        : coaEsperaLeida?.enVerificacion
+          ? 'web'
+          : false
   // En la espera, la franja ya dice que falta el coarrendatario: «Esperando al prospecto» la contradecía.
   // Reabierto por un reemplazo, igual: la franja ya dice que se espera a la persona nueva.
   const turnoBase =
@@ -638,6 +669,7 @@ function ExpedienteDetalleContenido() {
       ? turnoDeEtapa(etapaTurno, !!condicionCoa, {
           coarrendatarioEnCurso: apelacionLeida ? (coaEsperaLeida?.enCurso ?? null) : null,
           apelacion: apelacionRadicada,
+          enVerificacion: !!segundoEnVerificacion,
         })
       : null
   // La lista no le pone turno a la visita (como el RPC), pero a la inmobiliaria y al
@@ -653,6 +685,7 @@ function ExpedienteDetalleContenido() {
   const vigencia = etapa
     ? vigenciaResultado(etapa, {
         hasta: expediente.vigencia_hasta,
+        firmarHasta: expediente.firmar_hasta,
         vencioEn: expediente.traba_contrato?.vencio_en,
         sinMargen: expediente.traba_contrato?.sin_margen,
         ahoraMs: ahora,
@@ -663,10 +696,10 @@ function ExpedienteDetalleContenido() {
   const estadoBadge =
     expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado'
       ? 'rechazado'
-      : etapa === 'canon_excede' || etapa === 'coarrendatario_pendiente'
-        ? 'en_revision'
-        : etapa === 'vencido'
-          ? 'borrador'
+      : etapa === 'vencido'
+        ? 'borrador'
+        : esEtapaDeTraba(etapa)
+          ? 'en_revision'
           : expediente.estado
   // Punto 1: las dos salidas del canon por encima del aprobado (pactar uno menor o reasignar la evaluación).
   const salidasCanon: Omit<SalidasCanon, 'asistenteV3'> | undefined =
@@ -719,7 +752,9 @@ function ExpedienteDetalleContenido() {
               ) : (
                 // Cerrado tras "no aprobable" no es "Finalizado" (eso lee a
                 // éxito); y "Borrador" es jerga interna para el arrendatario.
-                <Badge estado={estadoBadge} label={etiquetaEtapa} />
+                // rounded-xl: con un nombre largo («Aprobado · segundo firmante en verificación») baja a dos líneas
+                // a 390 px sin quedar como una cápsula estirada (como las demás pastillas).
+                <Badge estado={estadoBadge} label={etiquetaEtapa} className="rounded-xl" />
               )}
               {vigencia && !expediente.cancelado_at && <VigenciaFila vigencia={vigencia} pastilla />}
               {isLoading && (
@@ -887,32 +922,47 @@ function ExpedienteDetalleContenido() {
           citaOmitida={expediente.cita_omitida || !expediente.inmueble}
           sinInfoBuro={condicionadoSinInfo}
           esProspecto={user?.rol === 'solicitante'}
-          conCondicion={!!condicionCoa}
+          conCondicion={!!condicionCoa && !prospectoSinAccion}
           condicionObligatoria={!!condicionCoa?.obligatoria}
           condicionDecideAnalista={!!condicionCoa?.decide_analista}
+          textoRevision={prospectoSinAccion ? (titularCondicionado?.siguiente_accion_texto ?? null) : null}
           etapa={user?.rol === 'solicitante' ? undefined : etapa}
           etiquetaActual={etiquetaEtapa}
         />
         {/* «Qué sigue»: de quién es el turno y el siguiente paso, con las palabras de la lista.
             Como la lista: lo propio en coral con flecha; el turno de otros, en gris. */}
         {etapaTurno && user?.rol !== 'solicitante' && (() => {
+          // Cofianza verifica al segundo firmante: con el estudio «aprobado con segundo firmante» o ya aprobado.
+          const verificacion = !!segundoEnVerificacion || etapaTurno === 'coarrendatario_en_verificacion'
+          const revisionAnalista = etapaTurno === 'decision' && !condicionCoa
           const opcionesTurno = {
-            revision: (etapaTurno === 'decision' && !condicionCoa) || (etapaTurno === 'segundo_firmante' && apelacionRadicada),
+            revision: revisionAnalista || (etapaTurno === 'segundo_firmante' && apelacionRadicada && !verificacion),
+            verificacion,
             analista: puedeAsignar,
             sinEjecutar: etapaTurno === 'sin_ejecutar',
             // El aprobado con segundo firmante siempre espera a otra persona; la decisión, solo con la condición.
             condicion: esEsperaDePersona(etapaTurno, !!condicionCoa),
+            // En la condición de la Adenda 3 a esa persona se le llama coarrendatario.
+            adenda3: etapaTurno === 'decision' && !!condicionCoa,
             // Ya hay un segundo firmante invitado sin responder: «reenvíele la invitación o invite a otra persona».
             invitado: puedeEditar && !!coaEsperaLeida?.invitado,
             // Con traba o sin segundo firmante en curso, la misma acción que la pastilla de la lista
-            // («Su turno: ajustar el canon…», «Su turno: invite al segundo firmante o reemplácelo»).
+            // («Su turno: ajustar el canon…», «Su turno: invitar al segundo firmante»). En el canal del
+            // propietario directo la API no admite segundo firmante: sin acción propia, su texto dice por qué.
             accion:
-              turno === 'gestor' && (esEtapaDeTraba(etapaTurno) || etapaTurno === 'segundo_firmante') ? ACCION_GESTOR[etapaTurno] : undefined,
-            // Como en la lista: si otro analista ya la tomó, «En revisión de X» y sin coral.
-            tomadoPor:
-              etapaTurno === 'decision' && !condicionCoa && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
+              turno !== 'gestor'
+                ? undefined
+                : etapaTurno === 'segundo_firmante'
+                  ? accionSegundoFirmante(titularCondicionado)
+                  : esEtapaDeTraba(etapaTurno)
+                    ? ACCION_GESTOR[etapaTurno]
+                    : undefined,
+            // Como en la lista: si otro analista ya la tomó, «En revisión de X» (o «Lo verifica X») y sin coral.
+            tomadoPor: (revisionAnalista || verificacion) && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
           }
           const propio = !!turno && turnoPropio(turno, vistaTurno, opcionesTurno)
+          // Al analista, la verificación del segundo firmante le queda en la evaluación de esa persona (Resumen).
+          const irAVerificacion = verificacion && puedeAsignar && puedeActuar && (propio || !!opcionesTurno.tomadoPor)
           // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
           const demora =
             isInternalRole && etapaTurno === 'decision' && !condicionCoa
@@ -950,11 +1000,12 @@ function ExpedienteDetalleContenido() {
                     perfilIncompleto: bloqueadoPorPerfil,
                     textoApi: titularCondicionado?.siguiente_accion_texto ?? null,
                     textoTraba: expediente.traba_contrato?.texto ?? null,
-                    // Propietario directo: la API no admite coarrendatario (espera el Convenio).
+                    segundoEnVerificacion,
+                    reemplazoPosible,
                   })}
                 </p>
               </div>
-              {(demora || irADecision) && (
+              {(demora || irADecision || irAVerificacion) && (
                 <div className={`flex flex-wrap items-center gap-x-4 gap-y-2 ${propio ? 'pl-[22px] sm:pl-0' : ''}`}>
                   {demora && (
                     <span
@@ -978,6 +1029,22 @@ function ExpedienteDetalleContenido() {
                       }}
                     >
                       Ir a la decisión
+                    </Button>
+                  )}
+                  {irAVerificacion && (
+                    <Button
+                      variante="secondary"
+                      className="min-h-10"
+                      onClick={() => {
+                        setActiveTab('resumen')
+                        requestAnimationFrame(() => {
+                          const destino = document.getElementById(ID_VERIFICACION_SEGUNDO)
+                          destino?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                          destino?.focus({ preventScroll: true })
+                        })
+                      }}
+                    >
+                      Ir a la verificación
                     </Button>
                   )}
                 </div>
@@ -1022,6 +1089,7 @@ function ExpedienteDetalleContenido() {
                 esProspecto={user?.rol === 'solicitante'}
                 apelacion={apelacionTitular}
                 interno={esRolInterno(user?.rol)}
+                reemplazo={reemplazoPosible && expediente.estado === 'rechazado' ? (puedeActuar ? 'propio' : 'ajeno') : undefined}
                 onReevaluar={
                   user?.rol === 'administrador' || user?.rol === 'operador_analista'
                     ? () => {
@@ -1156,7 +1224,7 @@ function ExpedienteDetalleContenido() {
                                 permitiría crearlo. Para continuar, cree un estudio nuevo.
                               </p>
                               <div className="mt-3">
-                                <EvaluarEnEstudioNuevo expedienteId={id} />
+                                <EvaluarEnEstudioNuevo expedienteId={id} sinInmueble />
                               </div>
                             </>
                           }
@@ -1188,7 +1256,12 @@ function ExpedienteDetalleContenido() {
                     // Con la operación bloqueada no hay decisión de un analista: qué hacer está en la evaluación.
                     esCondicionado && puedeActuar && etapa !== 'bloqueado' ? (
                       // Destino del atajo «Ir a la decisión» de la franja del turno.
-                      <div id="decision-estudio" tabIndex={-1} className="scroll-mt-4 rounded-xl focus:outline-none">
+                      <div
+                        id="decision-estudio"
+                        tabIndex={-1}
+                        // Recibe el foco al llegar con «Ir a la decisión»: con teclado se ve dónde quedó.
+                        className="scroll-mt-4 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+                      >
                       <AprobarCondicionadoCard
                         expedienteId={id}
                         expedienteEstado={expediente.estado}
@@ -1203,6 +1276,9 @@ function ExpedienteDetalleContenido() {
                         motivoRevisionCoarrendatario={titularCondicionado ? obsCoaRevision : null}
                         sinInmueble={!expediente.inmueble}
                         desenlacePrevisto={titularCondicionado?.verificacion_segundo?.desenlace_previsto ?? null}
+                        desenlace={titularCondicionado?.desenlace ?? null}
+                        segundoEnVerificacion={segundoEnVerificacion}
+                        siguienteAccionTexto={titularCondicionado?.siguiente_accion_texto ?? null}
                         onAprobado={fetchExpediente}
                       />
                       </div>

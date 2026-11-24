@@ -33,6 +33,8 @@ export interface KPICardProps {
   icon?: React.ComponentType<IconProps>
   accentColor?: keyof typeof ACCENT_VARIANTS
   className?: string
+  /** Una línea bajo el valor que dice de dónde sale la cifra (p. ej. el desglose de la tasa). */
+  detalle?: string
 }
 
 export function KPICard({
@@ -43,6 +45,7 @@ export function KPICard({
   icon: Icon,
   accentColor = 'bg-primary-600',
   className,
+  detalle,
 }: KPICardProps) {
   const trendColors = {
     up: 'text-green-600',
@@ -70,13 +73,14 @@ export function KPICard({
       {/* Borde de acento izquierdo */}
       <div className={cn('absolute left-0 top-0 bottom-0 w-1', accentColor)} />
 
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
           {/* Título */}
           <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
 
           {/* Valor */}
           <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
+          {detalle && <p className="mb-2 text-xs leading-snug text-gray-600">{detalle}</p>}
 
           {/* Cambio porcentual */}
           {change !== undefined && (

@@ -29,7 +29,14 @@ import { FirmaSolicitudesSection } from './FirmaSolicitudesSection'
 import { FirmantesContratoSection } from './FirmantesContratoSection'
 import { EnviarFirmaPreviewModal } from './EnviarFirmaPreviewModal'
 import { RegenerarContratoModal } from '@/components/contratos/RegenerarContratoModal'
-import { BloqueosContrato, bloqueoDeEvaluacion, frenosDelContrato, type SalidasCanon } from '@/components/contratos/v3/BloqueosContrato'
+import {
+  BloqueosContrato,
+  avisoPrimaDeTraba,
+  bloqueoDeEvaluacion,
+  frenosDelContrato,
+  trabaAdmiteSeguirSinEl,
+  type SalidasCanon,
+} from '@/components/contratos/v3/BloqueosContrato'
 import { ContratoSegundoFirmanteAviso } from './ContratoSegundoFirmanteAviso'
 import { CanalCofianza } from './ContactoCofianzaInline'
 import { contratoV3Service } from '@/services/contratoV3Service'
@@ -213,6 +220,12 @@ export function ContratosSection({
   // undefined = sin leer (o no aplica).
   const ofreceCrearV3 = canCreate && expedienteAprobado && !sinInmueble && !!contratosV3 && !hayV3Vivo && !inmuebleReservadoPorOtro
   const [frenosV3, setFrenosV3] = useState<{ expedienteId: string; bloqueos: Bloqueo[] } | null>(null)
+  // Sube al resolver un freno desde aquí («Seguir sin el segundo firmante», reasignar): los frenos se releen
+  // aunque la lista de contratos no cambie (antes el freno ya resuelto seguía a la vista).
+  const [relecturaFrenos, setRelecturaFrenos] = useState(0)
+  // La traba del segundo firmante que se acaba de resolver aquí: el estudio tarda un par de segundos en
+  // recargarse y, mientras tanto, `traba` (del estudio) seguiría armando el freno que ya no existe.
+  const [trabaResuelta, setTrabaResuelta] = useState<ITrabaContrato | null>(null)
   useEffect(() => {
     if (!ofreceCrearV3) return
     let vivo = true
@@ -222,15 +235,20 @@ export function ContratosSection({
       () => { if (vivo) setFrenosV3({ expedienteId, bloqueos: [] }) },
     )
     return () => { vivo = false }
-  }, [ofreceCrearV3, expedienteId, contratos.length])
-  const frenan = frenosV3?.expedienteId === expedienteId ? frenosDelContrato(frenosV3.bloqueos, traba) : undefined
+  }, [ofreceCrearV3, expedienteId, contratos.length, relecturaFrenos])
+  // Misma referencia = la traba que se resolvió; cuando el estudio recarga llega otra (o ninguna) y vuelve a contar.
+  const trabaVigente = traba && traba === trabaResuelta ? null : traba
+  const frenan = frenosV3?.expedienteId === expedienteId ? frenosDelContrato(frenosV3.bloqueos, trabaVigente) : undefined
   // Contrato anterior: sin asistente, solo frena lo que dice traba_contrato (reporte de Gerencia, 21-nov).
-  const frenosAnterior = puedeGenerarAnterior && contratos.every((c) => c.estado === 'cancelado') ? frenosDelContrato([], traba) : []
-  const avisoPrima = traba?.codigo === 'coarrendatario_pendiente' ? traba.aviso_prima : undefined
+  const frenosAnterior = puedeGenerarAnterior && contratos.every((c) => c.estado === 'cancelado') ? frenosDelContrato([], trabaVigente) : []
+  const avisoPrima = avisoPrimaDeTraba(trabaVigente)
   // Con el resultado vencido (o sin margen para firmar) lo que sigue es un estudio nuevo, no «resolver lo de arriba».
   const textoVencido = 'Este resultado ya no sirve para el contrato: arriba puede crear un estudio nuevo.'
-  // Tras «Seguir sin el coarrendatario» (o reasignar): se relee la pestaña y el estudio.
+  // Tras «Seguir sin el segundo firmante» (o reasignar): se relee la pestaña y el estudio.
   const trasResolverFreno = () => {
+    // Solo la del segundo firmante se da por resuelta al instante («Seguir sin él»); las demás esperan la recarga.
+    if (traba && (traba.codigo === 'coarrendatario_pendiente' || trabaAdmiteSeguirSinEl(traba))) setTrabaResuelta(traba)
+    setRelecturaFrenos((n) => n + 1)
     void fetchContratos()
     onContratoActualizado?.()
   }

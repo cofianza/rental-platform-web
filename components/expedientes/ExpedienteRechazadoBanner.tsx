@@ -50,6 +50,11 @@ interface ExpedienteRechazadoBannerProps {
    * asesor, sin la frase dirigida a él sobre los documentos.
    */
   interno?: boolean
+  /**
+   * Alguna persona del estudio se puede reemplazar (lo dice su texto, que redacta la API): la salida se nombra
+   * antes que la apelación. 'propio' = quien mira puede hacerlo; 'ajeno' = lo hace quien gestiona el estudio.
+   */
+  reemplazo?: 'propio' | 'ajeno'
 }
 
 // Neutro (P34): no culpa a la evaluación crediticia cuando pudo decidirlo un analista.
@@ -117,7 +122,13 @@ export function NotaApelacion({ className = '' }: { className?: string }) {
   )
 }
 
-export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, apelacion, interno = false }: ExpedienteRechazadoBannerProps) {
+/** No aprobable con salida: reemplazar a una persona, dicho antes que la apelación. */
+const TEXTO_REEMPLAZO = {
+  propio: 'Puede reemplazar a una persona en «Personas del estudio», aquí abajo.',
+  ajeno: 'Quien gestiona el estudio puede reemplazar a una persona en «Personas del estudio».',
+} as const
+
+export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, apelacion, interno = false, reemplazo }: ExpedienteRechazadoBannerProps) {
   if (esProspecto) {
     return (
       <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-6">
@@ -150,13 +161,16 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, ap
       descripcion={motivo || MOTIVO_FALLBACK}
     >
       {/* 27-oct: «El flujo termina aquí» escondía la apelación (Política §11). */}
-      {apelacion !== undefined && (
-        <div className="px-4 py-4 sm:px-5">
-          {onReevaluar ? (
-            <ApelacionCofianza a={apelacion && leerApelacion(apelacion)} vigencia={vigenciaDesdeLaConsulta(apelacion?.dias_vigencia_reporte)} onReevaluar={onReevaluar} />
-          ) : (
-            <ApelacionGestor a={apelacion && leerApelacion(apelacion)} interno={interno} />
-          )}
+      {(apelacion !== undefined || reemplazo) && (
+        <div className="space-y-2 px-4 py-4 sm:px-5">
+          {/* Bloque 4: con una persona reemplazable, esa salida va primero (antes solo se leía «puede apelar»). */}
+          {reemplazo && <p className="text-sm font-medium leading-relaxed text-gray-900">{TEXTO_REEMPLAZO[reemplazo]}</p>}
+          {apelacion !== undefined &&
+            (onReevaluar ? (
+              <ApelacionCofianza a={apelacion && leerApelacion(apelacion)} vigencia={vigenciaDesdeLaConsulta(apelacion?.dias_vigencia_reporte)} onReevaluar={onReevaluar} />
+            ) : (
+              <ApelacionGestor a={apelacion && leerApelacion(apelacion)} interno={interno} tambien={!!reemplazo} />
+            ))}
         </div>
       )}
     </TarjetaSiguientePaso>
@@ -210,12 +224,13 @@ function ApelacionCofianza({ a, vigencia, onReevaluar }: { a: Apelacion | null; 
  * puede apelar y hasta cuándo, sin pedirle que reciba documentos ni remitirlo
  * al correo de prospectos (reporte de Gerencia, punto 8).
  */
-function ApelacionGestor({ a, interno }: { a: Apelacion | null; interno: boolean }) {
+function ApelacionGestor({ a, interno, tambien = false }: { a: Apelacion | null; interno: boolean; tambien?: boolean }) {
   if (!a || (a.estado === 'abierta' && !a.radicada)) {
     const hasta = a?.fecha ? `hasta el ${formatDate(a.fecha)}` : 'dentro de los 15 días hábiles siguientes a esta decisión'
     return (
       <p className="text-sm leading-relaxed text-gray-700">
-        El solicitante puede apelar ante Cofianza {hasta}: el correo con el resultado de su estudio le indica cómo hacerlo.{' '}
+        {/* `tambien`: arriba ya se dijo que se puede reemplazar a una persona. */}
+        El solicitante {tambien ? 'también puede' : 'puede'} apelar ante Cofianza {hasta}: el correo con el resultado de su estudio le indica cómo hacerlo.{' '}
         {a?.porReporte ? 'Cofianza la decide a más tardar ese mismo día.' : 'Cofianza responde en máximo 10 días hábiles.'}
         {!interno && ' Usted no tiene que recibir ni enviar documentos.'}
       </p>

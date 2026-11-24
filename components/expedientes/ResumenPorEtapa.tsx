@@ -62,6 +62,17 @@ const ORDEN: Record<EtapaEstudio, Orden> = {
     detalle: ['evaluacion'],
     historial: ['autorizacion', 'visita'],
   },
+  // Igual con el segundo firmante en evaluación o en verificación: su tarjeta sigue a la vista.
+  coarrendatario_en_evaluacion: {
+    ahora: ['vincular', 'contrato', 'coarrendatario'],
+    detalle: ['evaluacion'],
+    historial: ['autorizacion', 'visita'],
+  },
+  coarrendatario_en_verificacion: {
+    ahora: ['vincular', 'contrato', 'coarrendatario'],
+    detalle: ['evaluacion'],
+    historial: ['autorizacion', 'visita'],
+  },
   // Un estudio sin propiedad también puede vencer: su tarjeta de «vincular» dice cómo seguir.
   vencido: { ahora: ['vincular', 'contrato'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },
   firma: { ahora: ['contratoEstado'], detalle: ['evaluacion'], ...DESPUES_DEL_RESULTADO },

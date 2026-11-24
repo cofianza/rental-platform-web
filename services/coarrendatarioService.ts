@@ -7,7 +7,7 @@
 import type { IBeneficioPrima } from '@/lib/textosPrima'
 import type { IPersonaA5d } from '@/types/estudio'
 import { apiClient } from '@/lib/api'
-import { coalesceRequest } from '@/lib/requestCoalesce'
+import { coalesceRequest, descartarEnVuelo } from '@/lib/requestCoalesce'
 
 export type CoarrendatarioEstado =
   | 'pendiente_aceptacion'
@@ -122,15 +122,43 @@ export interface ICoarrendatarioPublicView {
   version_terminos: string
 }
 
+/** La clave con que se comparte la lectura del coarrendatario de un estudio. */
+const claveDelExpediente = (expedienteId: string) => `coarrendatario-exp:${expedienteId}`
+
+/**
+ * Una acción sobre el coarrendatario (invitar, reenviar, cancelar): al terminar, la lectura que estuviera en
+ * vuelo (de antes de la acción) ya no se comparte, así que la relectura de la tarjeta trae el dato nuevo.
+ */
+async function conRelecturaFresca<T>(expedienteId: string, accion: () => Promise<T>): Promise<T> {
+  try {
+    return await accion()
+  } finally {
+    descartarEnVuelo(claveDelExpediente(expedienteId))
+  }
+}
+
+/**
+ * Respuesta de cancelar / «seguir sin él». `expediente_estado` solo llega cuando sale del estudio quien ya
+ * había aceptado: 'condicionado' = la aprobación contaba con esa persona y el estudio se decidió de nuevo sin ella.
+ */
+export interface RespuestaCancelarCoarrendatario {
+  ok: true
+  expediente_estado?: 'aprobado' | 'condicionado'
+}
+
 export const coarrendatarioService = {
-  /** Solicitante / propietario invita a un coarrendatario. */
-  /** `sustitucionId`: el cambio de persona ya habilitado con el que entra (si aplica). */
+  /**
+   * Solicitante / propietario invita a un coarrendatario.
+   * `sustitucionId`: el cambio de persona ya habilitado con el que entra (si aplica).
+   */
   async invitar(expedienteId: string, input: IInvitarCoarrendatarioInput, sustitucionId?: string): Promise<ICoarrendatario> {
     const cuerpo = sustitucionId ? { ...input, sustitucion_id: sustitucionId } : input
-    const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario`, cuerpo)) as unknown as {
-      data: ICoarrendatario
-    }
-    return res.data
+    return conRelecturaFresca(expedienteId, async () => {
+      const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario`, cuerpo)) as unknown as {
+        data: ICoarrendatario
+      }
+      return res.data
+    })
   },
 
   /**
@@ -142,19 +170,31 @@ export const coarrendatarioService = {
     expedienteId: string,
     input: Partial<IInvitarCoarrendatarioInput> = {},
   ): Promise<ICoarrendatario> {
-    const res = (await apiClient.post(
-      `/expedientes/${expedienteId}/coarrendatario/reenviar`,
-      input,
-    )) as unknown as { data: ICoarrendatario }
-    return res.data
+    return conRelecturaFresca(expedienteId, async () => {
+      const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario/reenviar`, input)) as unknown as {
+        data: ICoarrendatario
+      }
+      return res.data
+    })
   },
 
   /** Cancela la invitación antes de que la acepte: libera el cupo para invitar a otra persona. */
-  async cancelar(expedienteId: string): Promise<{ ok: true }> {
-    const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario/cancelar`, {})) as unknown as {
-      data: { ok: true }
-    }
-    return res.data
+  async cancelar(expedienteId: string): Promise<RespuestaCancelarCoarrendatario> {
+    return conRelecturaFresca(expedienteId, async () => {
+      const res = (await apiClient.post(`/expedientes/${expedienteId}/coarrendatario/cancelar`, {})) as unknown as {
+        data: RespuestaCancelarCoarrendatario
+      }
+      return res.data
+    })
+  },
+
+  /**
+   * «Seguir sin él»: con el estudio aprobado, el segundo firmante sale y el contrato se hace solo con el titular.
+   * El mismo endpoint de cancelar: la API decide si cancela la invitación sin responder o retira a quien ya
+   * aceptó (en evaluación o en verificación), y solo se lo permite a quien gestiona el estudio.
+   */
+  async seguirSinEl(expedienteId: string): Promise<RespuestaCancelarCoarrendatario> {
+    return coarrendatarioService.cancelar(expedienteId)
   },
 
   /**
@@ -162,7 +202,7 @@ export const coarrendatarioService = {
    * coarrendatario y la franja «Qué sigue» del detalle la piden a la vez.
    */
   async getDelExpediente(expedienteId: string): Promise<ICoarrendatario | null> {
-    return coalesceRequest(`coarrendatario-exp:${expedienteId}`, async () => {
+    return coalesceRequest(claveDelExpediente(expedienteId), async () => {
       const res = (await apiClient.get(`/expedientes/${expedienteId}/coarrendatario`)) as unknown as {
         data: ICoarrendatario | null
       }

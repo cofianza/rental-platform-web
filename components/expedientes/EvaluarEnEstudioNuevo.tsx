@@ -29,9 +29,11 @@ interface Props {
   conBorrador?: boolean
   /** Estudio sin propiedad: el inmueble elegido al vincular, que no cupo en el canon aprobado. */
   inmuebleDestinoId?: string
+  /** Estudio sin propiedad (y sin inmueble de destino): el nuevo se arma desde el primer paso, sin nada precargado. */
+  sinInmueble?: boolean
 }
 
-export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador, inmuebleDestinoId }: Props) {
+export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador, inmuebleDestinoId, sinInmueble = false }: Props) {
   const router = useRouter()
   const [abierto, setAbierto] = useState(false)
 
@@ -58,7 +60,7 @@ export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador, inmuebleDesti
 
   return (
     <>
-      <Button tamano="sm" onClick={() => setAbierto(true)}>
+      <Button tamano="sm" className="min-h-10" onClick={() => setAbierto(true)}>
         Crear estudio nuevo <IconArrowRight size={14} />
       </Button>
       <ConfirmDialog
@@ -77,7 +79,10 @@ export function EvaluarEnEstudioNuevo({ expedienteId, conBorrador, inmuebleDesti
               <li>
                 {inmuebleDestinoId
                   ? 'Se abre el estudio nuevo con el inmueble elegido y el mismo arrendatario.'
-                  : 'Se abre el estudio nuevo con el mismo inmueble y el mismo arrendatario.'}
+                  : sinInmueble
+                    ? // Sin propiedad no hay nada que precargar: el asistente abre vacío.
+                      'Se abre un estudio nuevo desde el primer paso; deberá indicar otra vez la persona y el canon.'
+                    : 'Se abre el estudio nuevo con el mismo inmueble y el mismo arrendatario.'}
               </li>
             </ul>
           </div>

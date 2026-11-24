@@ -7,8 +7,8 @@
  *   2. Citas por realizar (confirmada y fecha <= hoy)
  *   3. Estudios por habilitar (cita realizada + estudio_habilitado=false)
  *   4. Contratos por generar (expediente aprobado/condicionado y sin contrato)
- *   5. Aprobados con algo por resolver antes del contrato (traba_contrato: canon o coarrendatario sin
- *      responder). No cuentan como «por generar»; el vencido no va en ninguna: ya no es una acción.
+ *   5. Aprobados con algo por resolver antes del contrato (traba_contrato: canon o segundo firmante sin
+ *      terminar). No cuentan como «por generar»; el vencido no va en ninguna: ya no es una acción.
  *
  * Categoría 4 cubre el gap: tras estudio aprobado, el orchestrator deja el
  * expediente en 'aprobado' SIN contrato y espera que el propietario decida
@@ -39,7 +39,7 @@ export interface AccionesPendientes {
   porRealizar: ICita[]             // estado=confirmada y fecha_confirmada <= hoy
   porHabilitar: ICita[]            // estado=realizada && expediente.estudio_habilitado===false
   porGenerarContrato: IExpediente[] // estado=aprobado/condicionado sin contrato activo
-  /** Aprobados sin contrato con traba_contrato (canon o coarrendatario sin responder); el vencido no entra. */
+  /** Aprobados sin contrato con traba_contrato (canon o segundo firmante sin terminar); el vencido no entra. */
   conTrabaContrato: IExpediente[]
   total: number
   /** Total del filtro «Requieren mi acción» de /expedientes (0 si no se pudo leer). */

@@ -406,6 +406,7 @@ export function EstudioDetailModal({ isOpen, onClose, estudio: initialEstudio, r
               <VerificacionSegundoFirmante
                 estudioId={estudio.id}
                 verificacion={estudio.verificacion_segundo_firmante}
+                estudioAprobado={estudioAprobado}
                 onHecho={async () => {
                   onApelacionCambiada?.()
                   await recargarDetalle()

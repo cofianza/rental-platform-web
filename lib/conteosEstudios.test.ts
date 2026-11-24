@@ -4,7 +4,16 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { chipsVisibles, tasaAprobacion, textoTasaAprobacion, tieneConteosAdenda5 } from './conteosEstudios'
+import {
+  chipsVisibles,
+  desgloseDeCifras,
+  fraseDesgloseAprobacion,
+  tasaAprobacion,
+  tasaLegible,
+  textoTasaAprobacion,
+  tieneConteosAdenda5,
+  type CifrasAprobacion,
+} from './conteosEstudios'
 
 const ids = (c: Parameters<typeof chipsVisibles>[0], activo: Parameters<typeof chipsVisibles>[1] = 'todos') =>
   chipsVisibles(c, activo).map((x) => x.id)
@@ -50,19 +59,19 @@ test('tasa de aprobación: decididos = aprobados + segundo firmante + no aprobab
   assert.deepEqual(tasaAprobacion(c), { tasa: 37.5, aprobados: 12, decididos: 32, conSegundoFirmante: 7, noAprobables: 13, bloqueados: 0 })
   assert.equal(
     textoTasaAprobacion(c),
-    'Tasa de aprobación: 37,5 % (de 32 estudios decididos: 12 aprobados, 7 con segundo firmante y 13 no aprobables).',
+    'Tasa de aprobación: 37,5\u00a0% (de 32 estudios decididos: 12 aprobados, 7 con segundo firmante y 13 no aprobables).',
   )
   // Los bloqueados, al final y solo si hay alguno; el segundo firmante, también en 0.
   assert.equal(
     textoTasaAprobacion({ segundo_firmante: 0, revision_cofianza: 4, bloqueado: 1, aprobado: 12, rechazado: 12 }),
-    'Tasa de aprobación: 48 % (de 25 estudios decididos: 12 aprobados, 0 con segundo firmante, 12 no aprobables y 1 bloqueado por listas).',
+    'Tasa de aprobación: 48\u00a0% (de 25 estudios decididos: 12 aprobados, 0 con segundo firmante, 12 no aprobables y 1 bloqueado por listas).',
   )
   // Lo que revisa Cofianza no está decidido.
   assert.equal(tasaAprobacion({ segundo_firmante: 0, revision_cofianza: 30, aprobado: 1, rechazado: 0 })?.decididos, 1)
   // Singular.
   assert.equal(
     textoTasaAprobacion({ segundo_firmante: 0, aprobado: 1, rechazado: 0 }),
-    'Tasa de aprobación: 100 % (de 1 estudio decidido: 1 aprobado, 0 con segundo firmante y 0 no aprobables).',
+    'Tasa de aprobación: 100\u00a0% (de 1 estudio decidido: 1 aprobado, 0 con segundo firmante y 0 no aprobables).',
   )
 })
 
@@ -70,9 +79,9 @@ test('tasa de aprobación con una API anterior: aprobados / (aprobados + no apro
   // El condicionado (mezcla de revisión y segundo firmante) queda fuera.
   assert.equal(
     textoTasaAprobacion({ condicionado: 7, aprobado: 12, rechazado: 13 }),
-    'Tasa de aprobación: 48 % (de 25 estudios decididos: 12 aprobados y 13 no aprobables).',
+    'Tasa de aprobación: 48\u00a0% (de 25 estudios decididos: 12 aprobados y 13 no aprobables).',
   )
-  assert.equal(textoTasaAprobacion({ aprobado: 1, rechazado: 1 }), 'Tasa de aprobación: 50 % (de 2 estudios decididos: 1 aprobado y 1 no aprobable).')
+  assert.equal(textoTasaAprobacion({ aprobado: 1, rechazado: 1 }), 'Tasa de aprobación: 50\u00a0% (de 2 estudios decididos: 1 aprobado y 1 no aprobable).')
   assert.equal(textoTasaAprobacion({ aprobado: 0, rechazado: 0 }), null)
   assert.equal(textoTasaAprobacion(null), null)
   assert.equal(textoTasaAprobacion(undefined), null)
@@ -90,4 +99,46 @@ test('ayudas: «Requieren su acción» dice qué entra; quien no edita ve el tur
     chipsVisibles(c, 'todos').find((x) => x.id === 'revision_cofianza')?.ayuda,
     'Un analista de Cofianza revisa el estudio o verifica a una persona antes de dar el resultado.',
   )
+})
+
+test('bloque 4: el desglose de la tasa en el inicio y /reportes, con las cifras de la API', () => {
+  // Cifras ficticias. `desglose_aprobacion` de GET /dashboard/summary (trae además decididos y en_revision).
+  const delInicio = desgloseDeCifras({ aprobados: 12, con_segundo_firmante: 7, rechazados: 13, bloqueados: 0, decididos: 32, en_revision: 4 } as CifrasAprobacion)
+  assert.deepEqual(delInicio, { aprobados: 12, decididos: 32, conSegundoFirmante: 7, noAprobables: 13, bloqueados: 0 })
+  assert.equal(fraseDesgloseAprobacion(delInicio!), 'de 32 estudios decididos: 12 aprobados, 7 con segundo firmante y 13 no aprobables')
+  // `decisiones30d` de la analítica de la cartera: las mismas claves, con sus otras cifras.
+  assert.deepEqual(desgloseDeCifras({ aprobados: 12, con_segundo_firmante: 0, bloqueados: 1, condicionados: 3, rechazados: 12, total: 25, tasaAprobacion: 48 } as CifrasAprobacion), {
+    aprobados: 12,
+    decididos: 25,
+    conSegundoFirmante: 0,
+    noAprobables: 12,
+    bloqueados: 1,
+  })
+  // Los totales de GET /reportes/aprobacion, que la página pasa con estos nombres.
+  assert.equal(
+    fraseDesgloseAprobacion(desgloseDeCifras({ aprobados: 1, con_segundo_firmante: 0, rechazados: 0, bloqueados: 2 })!),
+    'de 3 estudios decididos: 1 aprobado, 0 con segundo firmante, 0 no aprobables y 2 bloqueados por listas',
+  )
+  // La misma frase que /estudios, y la misma tasa: aprobados / (aprobados + con segundo firmante + no aprobables + bloqueados).
+  const conteos = { aprobado: 12, segundo_firmante: 7, revision_cofianza: 4, rechazado: 13, bloqueado: 0 }
+  assert.equal(textoTasaAprobacion(conteos), `Tasa de aprobación: 37,5\u00a0% (${fraseDesgloseAprobacion(delInicio!)}).`)
+  assert.equal(tasaAprobacion(conteos)?.decididos, delInicio?.decididos)
+  // API anterior (no cuenta aparte el segundo firmante), sin decididos o sin datos: null, y la pantalla queda como antes.
+  assert.equal(desgloseDeCifras({ aprobados: 12, rechazados: 13 }), null)
+  assert.equal(desgloseDeCifras({ aprobados: 12, con_segundo_firmante: null, rechazados: 13 }), null)
+  assert.equal(desgloseDeCifras({ aprobados: 0, con_segundo_firmante: 0, rechazados: 0 }), null)
+  assert.equal(desgloseDeCifras(undefined), null)
+  assert.equal(desgloseDeCifras(null), null)
+})
+
+test('bloque 4: la tasa se escribe igual en /estudios, el inicio y /reportes («37,5 %»)', () => {
+  // Coma decimal, un decimal como máximo y espacio (duro) antes del signo. La API manda dos decimales.
+  assert.equal(tasaLegible(37.5), '37,5\u00a0%')
+  assert.equal(tasaLegible(37.46), '37,5\u00a0%')
+  assert.equal(tasaLegible(48), '48\u00a0%')
+  assert.equal(tasaLegible(48.04), '48\u00a0%')
+  assert.equal(tasaLegible(0), '0\u00a0%')
+  assert.equal(tasaLegible(100), '100\u00a0%')
+  // La frase de /estudios usa el mismo formato.
+  assert.match(textoTasaAprobacion({ aprobado: 12, segundo_firmante: 7, revision_cofianza: 4, rechazado: 13, bloqueado: 0 }) ?? '', /^Tasa de aprobación: 37,5\u00a0% \(/)
 })

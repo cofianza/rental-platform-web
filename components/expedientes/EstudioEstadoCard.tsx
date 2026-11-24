@@ -40,6 +40,8 @@ import { MarcarRestitucionModal } from './MarcarRestitucionModal'
 import { SustitucionesEstudio } from './SustitucionesEstudio'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { useMarcaEstudio } from '@/hooks/useMarcaEstudio'
+import { useVerificacionSegundoDetalle } from '@/hooks/useVerificacionSegundoFirmante'
+import { ID_VERIFICACION_SEGUNDO, VerificacionSegundoFirmante } from '@/components/estudios/VerificacionSegundoFirmante'
 import {
   ROTULO_EN_ESPERA,
   ROTULO_SIN_EFECTO,
@@ -48,6 +50,7 @@ import {
   cierreDelEstudio,
   comoSePresento,
   esSalidaDelEstudio,
+  estaCerrado,
   estaEnVerificacion,
   evaluacionDeOtroSolicitante,
   insigniaPersona,
@@ -178,8 +181,8 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
     if (e.resultado === 'aprobado') return 'Aprobado'
     if (e.resultado === 'rechazado') return 'No aprobable'
   }
-  // Adenda 4 V3 §12: ya consultado, la decisión espera a que autorice el coarrendatario.
-  if (e.estado === 'en_proceso' && e.espera_autorizacion) return 'Esperando al coarrendatario'
+  // Adenda 4 V3 §12: ya consultado, la decisión espera a que autorice el coarrendatario (el nombre de la etapa).
+  if (e.estado === 'en_proceso' && e.espera_autorizacion) return 'Esperando al segundo firmante'
   return etiquetaEstado(e)
 }
 
@@ -488,7 +491,10 @@ export function EstudioEstadoCard({
         // Los mismos parámetros que ContratoEstadoCard: comparten la petición.
         contratoService.getContratosForExpediente(expedienteId, { limit: 20 }).catch(() => null),
         // El coarrendatario vigente (la misma petición que su tarjeta). undefined = no se pudo leer.
-        coarrendatarioService.getDelExpediente(expedienteId).catch((): ICoarrendatario | null | undefined => undefined),
+        // Gerencia no lo lee (la API le responde 403): no se pide, y queda la evaluación más reciente, como antes.
+        userRol === 'gerencia_consulta'
+          ? Promise.resolve(undefined)
+          : coarrendatarioService.getDelExpediente(expedienteId).catch((): ICoarrendatario | null | undefined => undefined),
       ])
       setTieneContrato(!!contratos?.data.some((c) => c.estado !== 'cancelado'))
       const activos = res.data.filter((e) => e.estado !== 'cancelado')
@@ -513,7 +519,7 @@ export function EstudioEstadoCard({
     } finally {
       setLoading(false)
     }
-  }, [expedienteId])
+  }, [expedienteId, userRol])
 
   useEffect(() => { fetchEstudios() }, [fetchEstudios, version])
 
@@ -597,6 +603,8 @@ export function EstudioEstadoCard({
           sinReintento={!coarrendatarioVigente || coaSalio}
           expedienteEstado={expedienteEstado}
           cierre={cierre}
+          // Verificar al segundo firmante mueve el estudio: encabezado y franja, al día.
+          onExpedienteCambio={onExpedienteCambio}
           // La reasignacion NO se ofrece desde el panel del coarrendatario: lo
           // que se mueve es el INMUEBLE DEL EXPEDIENTE, que es uno solo y ya
           // arrastra los dos estudios. Dos botones para el mismo traslado solo
@@ -639,7 +647,7 @@ interface EstudioPanelProps {
   /** Solo titular: el estudio se reabrió por un reemplazo y espera a la persona nueva. */
   reaperturaAbierta?: boolean
   venceReapertura?: string | null
-  /** Solo titular: tras un cambio de persona, la página recarga el expediente. */
+  /** Tras un cambio de persona (titular) o la verificación del segundo firmante, la página recarga el expediente. */
   onExpedienteCambio?: () => void
 }
 
@@ -753,8 +761,29 @@ function EstudioPanel({
   const esAnalista = userRol === 'administrador' || userRol === 'operador_analista'
   // La persona «En verificación»: al analista se le dice qué hacer, no el texto para quien gestiona.
   const verificaAnalista = esAnalista && estaEnVerificacion(personaA5d)
+  // Bloque 4: el segundo firmante en verificación se resuelve aquí mismo (antes, solo abriendo su detalle).
+  // La API manda `verificacion_segundo_firmante` en el detalle de la evaluación, y solo si hay algo que resolver.
+  const version = useRefrescoExpediente()
+  const segundoPorVerificar =
+    esAnalista &&
+    esCoarrendatario &&
+    estudio.estado === 'completado' &&
+    estudio.resultado === 'condicionado' &&
+    !esSalidaDelEstudio(personaA5d) &&
+    !estaCerrado(cierre)
+  const {
+    verificacion,
+    cargando: cargandoVerificacion,
+    error: errorVerificacion,
+    recargar: recargarVerificacion,
+  } = useVerificacionSegundoDetalle(estudio.id, segundoPorVerificar, version)
+  const [releyendoVerificacion, setReleyendoVerificacion] = useState(false)
   const siguientePasoBase = verificaAnalista
-    ? textoVerificacionAnalista(estudio.listas?.estado)
+    ? // Sin leer la verificación (cargando, o la lectura falló) no se afirma «decida si lo aprueba»: puede que lo suyo
+      // sean los botones de abajo. Si falló, se dice abajo y se ofrece reintentar.
+      (cargandoVerificacion || errorVerificacion) && estudio.listas?.estado !== 'por_confirmar'
+      ? ''
+      : textoVerificacionAnalista(estudio.listas?.estado, verificacion)
     : personaA5d
       ? personaA5d.texto
       : reabierto
@@ -783,7 +812,18 @@ function EstudioPanel({
     (rotulo === 'En revisión de Cofianza' || rotulo === 'En revisión' || estaEnVerificacion(personaA5d)) && !!visible(estudio.observaciones)
   const mostrarFallo = estudio.estado === 'fallido' && !!visible(estudio.observaciones)
 
+  // Destino de «Ir a la verificación» de la franja del turno: la evaluación del segundo firmante en verificación.
+  // También con una coincidencia por confirmar (la API la cuenta en verificación aunque el resultado no sea
+  // «condicionado»): ahí lo que hay que hacer está en «Ver detalle», y el botón igual debe traer hasta aquí.
+  const anclaVerificacion = esCoarrendatario && (verificaAnalista || (segundoPorVerificar && !personaA5d))
+
   return (
+    <div
+      id={anclaVerificacion ? ID_VERIFICACION_SEGUNDO : undefined}
+      tabIndex={anclaVerificacion ? -1 : undefined}
+      // Recibe el foco al llegar con «Ir a la verificación»: con teclado se ve dónde quedó.
+      className="scroll-mt-4 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2"
+    >
     <TarjetaSiguientePaso
       tono={TONO_PASO[tone]}
       icono={iconNode}
@@ -932,6 +972,48 @@ function EstudioPanel({
         {etiqueta === 'Titular' && <TarifaEstudioBlock estudio={estudio} />}
       </div>
 
+      {/* No se pudo leer la verificación: se dice (sin suponer qué hay que hacer) y se ofrece leerla de nuevo. */}
+      {errorVerificacion && (
+        <div className="px-4 pb-4 sm:px-5">
+          <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3">
+            <p className="text-sm text-red-700">No se pudo leer la verificación.</p>
+            <button
+              type="button"
+              disabled={releyendoVerificacion}
+              aria-busy={releyendoVerificacion}
+              onClick={async () => {
+                setReleyendoVerificacion(true)
+                try {
+                  await recargarVerificacion()
+                } finally {
+                  setReleyendoVerificacion(false)
+                }
+              }}
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-300 bg-white px-3 text-sm font-medium text-red-700 hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 disabled:opacity-60"
+            >
+              <IconRefresh size={16} className={releyendoVerificacion ? 'animate-spin' : undefined} />
+              Reintentar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bloque 4: «Dar por verificado» y «Reintentar consulta», a la vista del analista (no solo en el detalle). */}
+      {verificacion && (
+        <div className="px-4 pb-4 sm:px-5">
+          <VerificacionSegundoFirmante
+            estudioId={estudio.id}
+            verificacion={verificacion}
+            estudioAprobado={expedienteEstado === 'aprobado'}
+            onHecho={async () => {
+              await recargarVerificacion()
+              onRetried?.()
+              onExpedienteCambio?.()
+            }}
+          />
+        </div>
+      )}
+
       {puedeReintentar && (
         <SeccionPaso titulo={esPendienteDeEjecutar(estudio) ? 'Ejecutar la consulta' : 'Volver a consultar'}>
           <ReintentarEstudioForm
@@ -1055,6 +1137,7 @@ function EstudioPanel({
         />
       )}
     </TarjetaSiguientePaso>
+    </div>
   )
 }
 
