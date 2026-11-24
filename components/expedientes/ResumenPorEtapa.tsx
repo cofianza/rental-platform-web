@@ -74,7 +74,7 @@ const ORDEN: Record<EtapaEstudio, Orden> = {
     historial: ['autorizacion', 'visita'],
   },
   // Adenda 6 §4: Cofianza termina una verificación del solicitante; el contrato espera.
-  listas_sin_verificar: {
+  solicitante_en_verificacion: {
     ahora: ['vincular', 'contrato', 'coarrendatario'],
     detalle: ['evaluacion'],
     historial: ['autorizacion', 'visita'],

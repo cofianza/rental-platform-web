@@ -43,7 +43,7 @@ export type CodigoTrabaContrato =
   /** Cofianza verifica al segundo firmante ya evaluado: se puede esperar el resultado o seguir sin él. */
   | 'coarrendatario_en_verificacion'
   /** Adenda 6 §4: Cofianza termina una verificación del solicitante (sus listas); quien gestiona solo espera. */
-  | 'listas_sin_verificar'
+  | 'solicitante_en_verificacion'
 
 export interface ITrabaContrato {
   /** Un código que esta versión no conoce se trata como si no hubiera traba. */

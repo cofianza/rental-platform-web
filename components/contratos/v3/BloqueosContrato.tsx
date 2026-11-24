@@ -159,8 +159,8 @@ function frenosDeTraba(traba: ITrabaContrato | null | undefined, ya: Bloqueo[]):
     ]
   }
   // Adenda 6 §4: Cofianza termina la verificación de las listas del solicitante (no tiene salida aquí).
-  if (traba.codigo === 'listas_sin_verificar' && !ya.some((b) => b.codigo === 'LISTAS_SIN_VERIFICAR')) {
-    return [{ codigo: 'LISTAS_SIN_VERIFICAR', mensaje: traba.texto }]
+  if (traba.codigo === 'solicitante_en_verificacion' && !ya.some((b) => b.codigo === 'SOLICITANTE_EN_VERIFICACION')) {
+    return [{ codigo: 'SOLICITANTE_EN_VERIFICACION', mensaje: traba.texto }]
   }
   // Resultado vencido: el mismo punto de «la evaluación ya no sirve», con su estudio nuevo.
   if (traba.codigo === 'vencido' && !ya.some((b) => SOLO_NUEVA_EVALUACION.includes(b.codigo))) {

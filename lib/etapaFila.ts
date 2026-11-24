@@ -129,7 +129,7 @@ export function tomarDisponible(e: IExpediente, etapa: EtapaEstudio = etapaDeFil
   if (etapa === 'decision') return !e.estudio_vigente?.condicion_coarrendatario
   if (etapa === 'coarrendatario_en_verificacion') return true
   // Adenda 6 §4: el analista registra la verificación de las listas del solicitante.
-  if (etapa === 'listas_sin_verificar') return true
+  if (etapa === 'solicitante_en_verificacion') return true
   if (etapa === 'segundo_firmante') return segundoEnVerificacion(e)
   return etapa === 'fallida' || etapa === 'sin_ejecutar'
 }
