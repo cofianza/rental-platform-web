@@ -11,6 +11,8 @@
  *   vuelve a pedir el estado cada 5 s, con tope de 5 min. Durante una copia la
  *   API rechaza con 409 pedir otra, vincular un código o cambiar las
  *   credenciales: ese 409 también pone a la pantalla a seguirla.
+ * - Cuando la API rechaza una acción, lo que se ve puede estar viejo (el
+ *   pendiente ya no existe, la conexión cambió): se vuelve a pedir el estado.
  * - Una respuesta vieja no pisa una nueva: cada lectura o acción invalida las
  *   lecturas anteriores, y el sondeo no lee mientras corre una acción.
  *
@@ -38,12 +40,14 @@ import type {
 
 const INTERVALO_SONDEO_MS = 5_000
 const TOPE_SONDEO_MS = 5 * 60_000
+/** Al conectar, los rechazos que no vienen de lo escrito en el formulario: 404, 409 y 503. */
+const ESTADOS_QUE_CAMBIAN_LA_PANTALLA = [404, 409, 503]
 
 export type AccionNuby = 'conectar' | 'probar' | 'sincronizar' | 'desconectar' | 'vincular'
 
 export type ResultadoNuby<T = undefined> = { ok: true; datos: T } | ({ ok: false } & ErrorNuby)
 
-/** inactivo: no hay copia corriendo · activo: se sigue su avance · agotado: pasó el tope y sigue corriendo. */
+/** inactivo: no hay copia corriendo · activo: se sigue su avance · agotado: pasó el tope sin poder confirmar que terminó. */
 type Sondeo = 'inactivo' | 'activo' | 'agotado'
 
 /**
@@ -143,20 +147,26 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
     const inicio = Date.now()
     let cancelado = false
     let temporizador: ReturnType<typeof setTimeout> | undefined
+    // Solo pasa a «agotado» si sigue activo: una lectura que acaba de traer el fin de la copia manda.
+    const agotar = () => setSondeo((s) => (s === 'activo' ? 'agotado' : s))
     const revisar = async () => {
       if (cancelado) return
-      if (Date.now() - inicio >= TOPE_SONDEO_MS) {
-        setSondeo('agotado')
-        return
-      }
-      // Con una acción en curso no se lee: su respuesta es la que vale.
+      const agotado = Date.now() - inicio >= TOPE_SONDEO_MS
+      // Con una acción en curso no se lee: su respuesta es la que vale. Se lee
+      // también al llegar al tope: la pestaña pudo estar dormida y la copia ya terminó.
       if (!enAccion.current) await refrescar()
-      if (!cancelado) temporizador = setTimeout(revisar, INTERVALO_SONDEO_MS)
+      if (cancelado) return
+      if (agotado) agotar()
+      else temporizador = setTimeout(revisar, INTERVALO_SONDEO_MS)
     }
     temporizador = setTimeout(revisar, INTERVALO_SONDEO_MS)
+    // apiClient no tiene tiempo límite: si una lectura se queda colgada, `revisar`
+    // no vuelve. Este seguro deja igual la salida de «Actualizar estado».
+    const seguro = setTimeout(agotar, TOPE_SONDEO_MS + 30_000)
     return () => {
       cancelado = true
       clearTimeout(temporizador)
+      clearTimeout(seguro)
     }
   }, [sondeo, refrescar])
 
@@ -187,8 +197,8 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
 
   /** Conecta o reemplaza las credenciales: la API prueba la conexión antes de guardar. */
   const conectar = useCallback(
-    (credenciales: CredencialesNuby): Promise<ResultadoNuby> =>
-      ejecutar(
+    async (credenciales: CredencialesNuby): Promise<ResultadoNuby> => {
+      const r = await ejecutar(
         'conectar',
         async (vigente) => {
           const nuevo = await integracionNubyService.conectar(modoFijo, credenciales)
@@ -196,8 +206,13 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
           return undefined
         },
         'No pudimos conectar con nuby. Intente de nuevo.',
-      ),
-    [ejecutar, modoFijo, aplicar],
+      )
+      // Un rechazo que no es por lo escrito en el formulario (copia en curso, la
+      // conexión ya no existe, la función se apagó) cambia lo que hay en pantalla.
+      if (!r.ok && r.statusCode !== undefined && ESTADOS_QUE_CAMBIAN_LA_PANTALLA.includes(r.statusCode)) void refrescar()
+      return r
+    },
+    [ejecutar, modoFijo, aplicar, refrescar],
   )
 
   /** Prueba las credenciales guardadas. */
@@ -213,6 +228,10 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
     const r = await ejecutar(
       'sincronizar',
       async () => {
+        // Antes de lanzarla se lee el estado: la pantalla pudo quedarse abierta
+        // mientras corría una copia automática, y la fecha de la última copia con
+        // la que después se sabe si esta terminó bien no puede ser una vieja.
+        await refrescar()
         await integracionNubyService.sincronizar(modoFijo)
         return undefined
       },
@@ -221,9 +240,12 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
     if (r.ok) {
       setEstado(marcarSincronizando)
       setSondeo('activo')
+    } else if (r.statusCode) {
+      // La API respondió con un rechazo: se trae el estado real (también tras el 409).
+      void refrescar()
     }
     return r
-  }, [ejecutar, modoFijo])
+  }, [ejecutar, modoFijo, refrescar])
 
   /** Los inmuebles se quedan en Cofianza y pasan a editarse ahí. */
   const desconectar = useCallback(async (): Promise<ResultadoNuby> => {
@@ -239,14 +261,16 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
       setEstado((previo) => (previo ? estadoDesconectado(previo) : previo))
       setSondeo('inactivo')
       void refrescar()
+    } else if (r.statusCode) {
+      void refrescar()
     }
     return r
   }, [ejecutar, modoFijo, refrescar])
 
   /** Resuelve un código repetido: cuál inmueble de Cofianza es el de nuby. */
   const vincular = useCallback(
-    (vinculo: VinculoNuby): Promise<ResultadoNuby> =>
-      ejecutar(
+    async (vinculo: VinculoNuby): Promise<ResultadoNuby> => {
+      const r = await ejecutar(
         'vincular',
         async (vigente) => {
           const nuevo = await integracionNubyService.vincular(modoFijo, vinculo)
@@ -254,8 +278,12 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
           return undefined
         },
         'No pudimos vincular el inmueble. Intente de nuevo.',
-      ),
-    [ejecutar, modoFijo, aplicar],
+      )
+      // Rechazado: el pendiente ya no existe, el inmueble ya está vinculado… La lista se trae de nuevo.
+      if (!r.ok && r.statusCode) void refrescar()
+      return r
+    },
+    [ejecutar, modoFijo, aplicar, refrescar],
   )
 
   return {
@@ -266,7 +294,7 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
     accion,
     /** Hay una copia corriendo (la API lo dice o se acaba de lanzar). */
     sincronizando: sigueSincronizando(estado),
-    /** Pasaron 5 min y la copia sigue: ya no se pregunta sola; se ofrece «Actualizar estado». */
+    /** Pasó el tope del sondeo sin confirmar que la copia terminó: ya no se pregunta sola; se ofrece «Actualizar estado». */
     sondeoAgotado: sondeo === 'agotado',
     recargar,
     conectar,

@@ -33,7 +33,7 @@ interface Props {
   accion: AccionNuby | null
   /** Copia en curso: tampoco se cambian las credenciales ni se desconecta (la API responde 409). */
   sincronizando: boolean
-  /** La copia lleva más de lo que la pantalla espera sola. */
+  /** La pantalla dejó de preguntar sin poder confirmar que la copia terminó. */
   sondeoAgotado: boolean
   actualizando: boolean
   onSincronizar: () => void
@@ -108,11 +108,9 @@ export function TarjetaEstadoNuby({
   const id = useId()
   const ocupado = accion !== null
   const { estado, resumen, ultimo_error: ultimoError } = integracion
-  // «Último intento» solo aporta cuando no es la misma copia que terminó bien.
-  const intentoFallido =
-    integracion.ultimo_intento_en && integracion.ultimo_intento_en !== integracion.ultima_sincronizacion_en
-      ? formatDateTime(integracion.ultimo_intento_en)
-      : null
+  // Hora en que empezó el intento que falló. Solo se pinta dentro de los avisos
+  // de error; con una copia en curso, `ultimo_intento_en` ya es el de esa copia.
+  const intentoFallido = !sincronizando && integracion.ultimo_intento_en ? formatDateTime(integracion.ultimo_intento_en) : null
 
   return (
     <section aria-labelledby={`${id}-titulo`} className="rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -165,8 +163,8 @@ export function TarjetaEstadoNuby({
           </Aviso>
         )}
         {sincronizando && sondeoAgotado && (
-          <Aviso tono="gris" titulo="La copia sigue en curso">
-            <p>Con un inventario grande puede tardar. Vuelva en unos minutos o actualice el estado.</p>
+          <Aviso tono="gris" titulo="No pudimos confirmar si la copia terminó">
+            <p>Pulse «Actualizar estado».</p>
             <Button variante="secondary" tamano="sm" onClick={onActualizar} disabled={actualizando} className="mt-1 min-h-10">
               <IconRefresh size={14} className={actualizando ? 'animate-spin' : undefined} />
               Actualizar estado

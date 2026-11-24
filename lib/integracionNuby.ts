@@ -26,27 +26,49 @@ export function baseIntegracionNuby(modo: ModoIntegracionNuby): string {
 
 // ── Dirección de nuby ──────────────────────────────────────────
 
+/** Espacios que no se ven y llegan al copiar y pegar (de ancho cero, BOM…). */
+const INVISIBLES = /[\u200B-\u200D\u2060\uFEFF]/g
+
 /**
  * Deja solo el dominio de lo que se pegó: «https://Mi-Inmobiliaria.nuby.app/login»
- * → «mi-inmobiliaria.nuby.app». Quita espacios, protocolo, usuario, puerto y
- * todo lo que venga después del dominio.
+ * → «mi-inmobiliaria.nuby.app». Quita los espacios de los extremos y los
+ * invisibles, el protocolo, el usuario, el puerto y todo lo que venga después
+ * del dominio. Un espacio en medio NO se quita: «mi inmobiliaria.nuby.app» no
+ * se convierte en silencio en otra dirección; la validación lo señala.
  */
 export function limpiarInstanciaNuby(texto: string): string {
   // El protocolo solo cuenta con «://»: «mi-inmobiliaria.nuby.app:443» no es uno.
   const sinProtocolo = texto
-    .replace(/\s+/g, '')
+    .replace(INVISIBLES, '')
+    .trim()
     .toLowerCase()
     .replace(/^[a-z][a-z0-9+.-]*:\/\//, '')
     .replace(/^\/+/, '')
   const dominio = sinProtocolo.split(/[/?#]/)[0] ?? ''
-  return dominio.replace(/^.*@/, '').replace(/:\d*$/, '').replace(/\.+$/, '')
+  return dominio.replace(/^.*@/, '').replace(/:\d*$/, '').replace(/\.+$/, '').trim()
 }
 
-const INSTANCIA_NUBY = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:nuby\.app|arrendasoft\.co)$/
+// La misma regla de la API: etiquetas de dominio (hasta 63 caracteres, sin guion
+// en los extremos) bajo nuby.app o arrendasoft.co, y 200 caracteres en total.
+const INSTANCIA_NUBY = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.(nuby\.app|arrendasoft\.co)$/
+const LARGO_MAXIMO_INSTANCIA = 200
+const DOMINIO_NUBY = /\.(nuby\.app|arrendasoft\.co)$/
 
 /** La dirección (ya limpia) es de nuby: un subdominio de nuby.app o arrendasoft.co. */
 export function instanciaNubyValida(instancia: string): boolean {
-  return INSTANCIA_NUBY.test(instancia)
+  return instancia.length <= LARGO_MAXIMO_INSTANCIA && INSTANCIA_NUBY.test(instancia)
+}
+
+/** Qué corregir en la dirección (ya limpia), o null si es válida. */
+function problemaInstanciaNuby(instancia: string): string | null {
+  if (!instancia) return 'Escriba la dirección de nuby.'
+  if (instanciaNubyValida(instancia)) return null
+  if (!DOMINIO_NUBY.test(instancia)) {
+    return 'La dirección debe terminar en .nuby.app o .arrendasoft.co (por ejemplo, mi-inmobiliaria.nuby.app).'
+  }
+  if (/[^a-z0-9.-]/.test(instancia)) return 'La dirección solo puede llevar letras, números, guiones y puntos.'
+  // Termina bien y no tiene caracteres raros: sobra o falta algo (demasiado larga, un punto o un guion de más).
+  return 'La dirección no es válida. Revise que esté completa, como mi-inmobiliaria.nuby.app.'
 }
 
 /** Lo que se envía: la dirección limpia y sin los espacios que deja el copiar y pegar. */
@@ -64,10 +86,8 @@ export type ErroresCredencialesNuby = Partial<Record<keyof CredencialesNuby, str
 export function validarCredencialesNuby(c: CredencialesNuby): ErroresCredencialesNuby {
   const limpio = prepararCredencialesNuby(c)
   const errores: ErroresCredencialesNuby = {}
-  if (!limpio.instancia) errores.instancia = 'Escriba la dirección de nuby.'
-  else if (!instanciaNubyValida(limpio.instancia)) {
-    errores.instancia = 'La dirección debe terminar en .nuby.app o .arrendasoft.co (por ejemplo, mi-inmobiliaria.nuby.app).'
-  }
+  const problema = problemaInstanciaNuby(limpio.instancia)
+  if (problema) errores.instancia = problema
   if (!limpio.client_id) errores.client_id = 'Escriba el ID de cliente.'
   if (!limpio.client_secret) errores.client_secret = 'Escriba la clave secreta.'
   return errores
@@ -130,6 +150,24 @@ export function marcarSincronizando(estado: EstadoIntegracionNuby | null): Estad
   return { ...estado, integracion: { ...estado.integracion, sincronizando: true } }
 }
 
+export type DesenlaceCopia = 'bien' | 'error' | 'interrumpida'
+
+/**
+ * Cómo acabó la copia que la pantalla venía siguiendo. Una copia que termina
+ * bien SIEMPRE cambia `ultima_sincronizacion_en`. Si no cambió, o falló (quedó
+ * `ultimo_error`) o se cortó a medias (un despliegue de la API, el proceso
+ * murió y el candado venció): en ese caso no se puede decir que terminó.
+ */
+export function desenlaceDeCopia(copia: {
+  /** `ultima_sincronizacion_en` que había cuando se empezó a seguir la copia. */
+  ultimaCopiaAlEmpezar: string | null
+  ultimaCopiaAhora: string | null
+  ultimoError: string | null
+}): DesenlaceCopia {
+  if (copia.ultimaCopiaAhora && copia.ultimaCopiaAhora !== copia.ultimaCopiaAlEmpezar) return 'bien'
+  return copia.ultimoError ? 'error' : 'interrumpida'
+}
+
 /** Estado tras desconectar: sin conexión ni pendientes (los inmuebles se quedan en Cofianza). */
 export function estadoDesconectado(estado: EstadoIntegracionNuby): EstadoIntegracionNuby {
   return {
@@ -182,6 +220,7 @@ const MOTIVOS_NO_TRAIDO: Record<MotivoFijoNuby, string> = {
   sin_direccion: 'No tiene dirección.',
   sin_municipio: 'No tiene municipio.',
   codigo_invalido: 'Su código tiene caracteres que Cofianza no admite (solo letras, números, espacios y guiones; máximo 30).',
+  datos_no_validos: 'Cofianza no pudo guardar este inmueble con los datos que tiene en nuby.',
 }
 
 /** Por qué un inmueble en arriendo de nuby no entró, en lenguaje claro. */
@@ -191,6 +230,8 @@ export function textoMotivoNoTraido(motivo: string, detalle?: string | null): st
   if (motivo === 'clase_sin_equivalente') {
     return `Su tipo de inmueble en nuby${extra ? ` («${extra}»)` : ''} no tiene equivalente en Cofianza. Avísele a Cofianza para agregarlo.`
   }
+  // Datos que Cofianza no pudo guardar: si la API explica cuál, se muestra su explicación.
+  if (motivo === 'datos_no_validos' && extra) return extra
   // Un motivo que la web todavía no conoce: lo que explique la API, o un texto neutro.
   return MOTIVOS_NO_TRAIDO[motivo as MotivoFijoNuby] ?? (extra || 'No se pudo traer.')
 }

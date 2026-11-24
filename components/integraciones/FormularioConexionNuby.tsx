@@ -151,6 +151,7 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
               autoCorrect="off"
               spellCheck={false}
               required
+              maxLength={300}
               placeholder="mi-inmobiliaria.nuby.app"
               value={instancia}
               onChange={(e) => {
@@ -187,6 +188,7 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
               data-1p-ignore
               data-lpignore="true"
               required
+              maxLength={200}
               value={clientId}
               onChange={(e) => {
                 setClientId(e.target.value)
@@ -219,6 +221,7 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
                 data-1p-ignore
                 data-lpignore="true"
                 required
+                maxLength={500}
                 value={clientSecret}
                 onChange={(e) => {
                   setClientSecret(e.target.value)

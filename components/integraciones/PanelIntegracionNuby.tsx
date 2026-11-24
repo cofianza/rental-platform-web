@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useIntegracionNuby } from '@/hooks/useIntegracionNuby'
-import { CODIGO_SOLO_TITULAR, CODIGO_YA_SINCRONIZANDO } from '@/lib/integracionNuby'
+import { CODIGO_SOLO_TITULAR, CODIGO_YA_SINCRONIZANDO, desenlaceDeCopia } from '@/lib/integracionNuby'
 import type { CandidatoCodigoNuby, CredencialesNuby, ModoIntegracionNuby } from '@/types/integracionNuby'
 import { NubyCargando, NubyErrorCarga, NubyNoDisponible, NubySoloTitular, ReglasNuby } from './AvisosNuby'
 import { FormularioConexionNuby } from './FormularioConexionNuby'
@@ -39,18 +39,47 @@ function Panel({ modo }: Props) {
   const { estado, error, sincronizando } = nuby
   const integracion = estado?.habilitada && estado.conectada ? estado.integracion : null
 
-  // Cuando termina una copia que esta pantalla venía siguiendo, se avisa: el
-  // cambio en la tarjeta (fecha y cifras) pasa fácil inadvertido.
+  // El administrador puede cerrar el diálogo con una acción en vuelo: lo que
+  // iba a mostrarse dentro del panel ya no tiene dónde.
+  const montado = useRef(true)
+  useEffect(() => {
+    montado.current = true
+    return () => {
+      montado.current = false
+    }
+  }, [])
+
+  // Cuando deja de correr una copia que esta pantalla venía siguiendo, se
+  // avisa: el cambio en la tarjeta (fecha y cifras) pasa fácil inadvertido.
+  // «Dejó de correr» no es «terminó»: si la API se reinicia a media copia, el
+  // sondeo trae `sincronizando: false` sin error; lo que confirma que terminó
+  // bien es que cambió la fecha de la última copia.
   const copiaSeguida = useRef(false)
+  const ultimaCopiaAlEmpezar = useRef<string | null>(null)
   const conectada = !!integracion
   const ultimoError = integracion?.ultimo_error ?? null
+  const ultimaCopia = integracion?.ultima_sincronizacion_en ?? null
+  const copiaAutomatica = !!estado?.sincronizacion_automatica
   useEffect(() => {
-    const termino = copiaSeguida.current && !sincronizando
+    const seguia = copiaSeguida.current
     copiaSeguida.current = sincronizando
-    if (!termino || !conectada) return
-    if (ultimoError) toast.error(ultimoError)
-    else toast.success('La copia desde nuby terminó.')
-  }, [sincronizando, conectada, ultimoError])
+    if (sincronizando) {
+      // Empieza a seguirse: se guarda la fecha que había, para comparar al final.
+      if (!seguia) ultimaCopiaAlEmpezar.current = ultimaCopia
+      return
+    }
+    if (!seguia || !conectada) return
+    const desenlace = desenlaceDeCopia({ ultimaCopiaAlEmpezar: ultimaCopiaAlEmpezar.current, ultimaCopiaAhora: ultimaCopia, ultimoError })
+    if (desenlace === 'bien') toast.success('La copia desde nuby terminó.')
+    else if (desenlace === 'error') toast.error(ultimoError ?? 'La copia desde nuby no terminó.')
+    else {
+      toast.info(
+        copiaAutomatica
+          ? 'La copia se interrumpió antes de terminar. Cofianza la retomará sola.'
+          : 'La copia se interrumpió antes de terminar. Pulse «Copiar ahora» para repetirla.',
+      )
+    }
+  }, [sincronizando, conectada, ultimoError, ultimaCopia, copiaAutomatica])
 
   if (!estado) {
     if (nuby.cargando) return <NubyCargando />
@@ -79,6 +108,9 @@ function Panel({ modo }: Props) {
             : 'nuby quedó conectado. Pulse «Copiar ahora» para traer los inmuebles.',
       )
       setCambiando(false)
+    } else if (!montado.current) {
+      // El error iba en línea en un formulario que ya no está (se cerró el diálogo).
+      toast.error(r.mensaje)
     }
     return r
   }

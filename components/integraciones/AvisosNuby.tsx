@@ -3,6 +3,8 @@
  * apagada, miembro que no es titular, fallo de carga) y las reglas en corto.
  */
 
+'use client'
+
 import { IconCheck, IconLock, IconPlug, IconRefresh } from '@/components/icons'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 

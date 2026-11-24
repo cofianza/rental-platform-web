@@ -8,6 +8,7 @@ import {
   baseIntegracionNuby,
   cifrasDeResumen,
   cuantosMas,
+  desenlaceDeCopia,
   estadoDesconectado,
   etiquetaCampoDiferencia,
   etiquetaEstadoCandidato,
@@ -38,9 +39,10 @@ const estadoConectado = (sincronizando = false): EstadoIntegracionNuby => ({
     estado: 'activa',
     conectada_en: '2026-01-15T15:00:00.000Z',
     conectada_por_nombre: null,
+    // `ultimo_intento_en` es cuándo EMPEZÓ el intento; `ultima_sincronizacion_en`, cuándo TERMINÓ bien.
     ultima_sincronizacion_en: '2026-01-16T15:00:00.000Z',
     ultima_revision_completa_en: null,
-    ultimo_intento_en: '2026-01-16T15:00:00.000Z',
+    ultimo_intento_en: '2026-01-16T14:58:30.000Z',
     ultimo_error: null,
     sincronizando,
     resumen: {
@@ -84,7 +86,8 @@ test('la dirección pegada queda en el dominio solo', () => {
     ['http://mi-inmobiliaria.arrendasoft.co:443/admin/', 'mi-inmobiliaria.arrendasoft.co'],
     ['mi-inmobiliaria.nuby.app:443', 'mi-inmobiliaria.nuby.app'],
     ['//mi-inmobiliaria.nuby.app///', 'mi-inmobiliaria.nuby.app'],
-    ['mi-inmobiliaria .nuby.app\n', 'mi-inmobiliaria.nuby.app'],
+    ['\tmi-inmobiliaria.nuby.app\n', 'mi-inmobiliaria.nuby.app'],
+    ['mi-inmobiliaria.nuby.app /login', 'mi-inmobiliaria.nuby.app'],
     ['mi-inmobiliaria.nuby.app.', 'mi-inmobiliaria.nuby.app'],
     ['https://usuario@mi-inmobiliaria.nuby.app', 'mi-inmobiliaria.nuby.app'],
     ['', ''],
@@ -92,6 +95,19 @@ test('la dirección pegada queda en el dominio solo', () => {
     ['https://', ''],
   ]
   for (const [entrada, esperado] of casos) assert.equal(limpiarInstanciaNuby(entrada), esperado, JSON.stringify(entrada))
+})
+
+test('los espacios invisibles del copiar y pegar se quitan', () => {
+  // U+200B (ancho cero), U+200C, U+200D, U+2060 y U+FEFF (BOM), pegados en cualquier parte.
+  assert.equal(limpiarInstanciaNuby('\u200Bmi-inmobiliaria.nuby.app\u200B'), 'mi-inmobiliaria.nuby.app')
+  assert.equal(limpiarInstanciaNuby('\uFEFFhttps://mi-inmo\u200Cbiliaria.nuby\u200D.app\u2060/'), 'mi-inmobiliaria.nuby.app')
+  assert.equal(instanciaNubyValida(limpiarInstanciaNuby('mi-inmobiliaria.nuby.app\u200B')), true)
+})
+
+test('un espacio en medio no se une en silencio: queda y la validación lo señala', () => {
+  assert.equal(limpiarInstanciaNuby(' mi inmobiliaria.nuby.app '), 'mi inmobiliaria.nuby.app')
+  assert.equal(limpiarInstanciaNuby('mi-inmobiliaria .nuby.app\n'), 'mi-inmobiliaria .nuby.app')
+  assert.equal(instanciaNubyValida('mi inmobiliaria.nuby.app'), false)
 })
 
 test('limpiar una dirección ya limpia no la cambia', () => {
@@ -115,9 +131,28 @@ test('solo valen subdominios de nuby.app y arrendasoft.co', () => {
     '-mi.nuby.app',
     'https://mi-inmobiliaria.nuby.app',
     'mi-inmobiliaria.nuby.app/login',
+    'mi inmobiliaria.nuby.app',
+    'mi-inmobiliaria.nuby.app\u200B',
+    'compañia.nuby.app',
+    'mi-.nuby.app',
+    'mi..nuby.app',
   ]) {
     assert.equal(instanciaNubyValida(mal), false, mal)
   }
+})
+
+test('la dirección sigue la regla de la API: etiquetas de hasta 63 caracteres y 200 en total', () => {
+  const etiqueta = (n: number) => 'a'.repeat(n)
+  assert.equal(instanciaNubyValida(`${etiqueta(63)}.nuby.app`), true)
+  assert.equal(instanciaNubyValida(`${etiqueta(64)}.nuby.app`), false)
+
+  const de200 = `${etiqueta(63)}.${etiqueta(63)}.${etiqueta(63)}.nuby.app`
+  const de201 = `${etiqueta(63)}.${etiqueta(63)}.${etiqueta(62)}.a.nuby.app`
+  assert.equal(de200.length, 200)
+  assert.equal(de201.length, 201)
+  assert.equal(instanciaNubyValida(de200), true)
+  // Cada etiqueta es válida: lo único que sobra es el largo total.
+  assert.equal(instanciaNubyValida(de201), false)
 })
 
 test('las credenciales se envían limpias', () => {
@@ -137,6 +172,26 @@ test('el formulario pide los tres datos y una dirección de nuby', () => {
   assert.deepEqual(Object.keys(otraDireccion), ['instancia'])
   assert.match(otraDireccion.instancia ?? '', /\.nuby\.app/)
   assert.match(otraDireccion.instancia ?? '', /\.arrendasoft\.co/)
+})
+
+test('el error de la dirección dice qué corregir', () => {
+  const error = (instancia: string) => validarCredencialesNuby({ instancia, client_id: 'cliente', client_secret: 'clave' }).instancia
+  const dominio = 'La dirección debe terminar en .nuby.app o .arrendasoft.co (por ejemplo, mi-inmobiliaria.nuby.app).'
+  const caracteres = 'La dirección solo puede llevar letras, números, guiones y puntos.'
+  const forma = 'La dirección no es válida. Revise que esté completa, como mi-inmobiliaria.nuby.app.'
+
+  assert.equal(error('mi-inmobiliaria.com'), dominio)
+  assert.equal(error('nuby.app'), dominio)
+  // Termina en el dominio pero lleva algo que no admite: espacio en medio, «ñ», «_».
+  assert.equal(error('mi inmobiliaria.nuby.app'), caracteres)
+  assert.equal(error('compañia.nuby.app'), caracteres)
+  assert.equal(error('mi_inmobiliaria.nuby.app'), caracteres)
+  // Solo caracteres válidos, pero mal formada o demasiado larga.
+  assert.equal(error(`${'a'.repeat(64)}.nuby.app`), forma)
+  assert.equal(error(`${'a'.repeat(63)}.${'a'.repeat(63)}.${'a'.repeat(62)}.a.nuby.app`), forma)
+  assert.equal(error('-mi.nuby.app'), forma)
+  // Un espacio invisible pegado no es un error: se quita al limpiar.
+  assert.equal(error('mi-inmobiliaria.nuby.app\u200B'), undefined)
 })
 
 test('el ID de cliente se muestra oculto salvo el final', () => {
@@ -211,6 +266,30 @@ test('al lanzar la copia se marca en curso sin tocar el estado original', () => 
   assert.equal(marcarSincronizando(sinConexion), sinConexion)
 })
 
+test('la copia terminó bien si cambió la fecha de la última copia', () => {
+  const antes = '2026-01-16T15:00:00.000Z'
+  const despues = '2026-01-16T18:02:10.000Z'
+  assert.equal(desenlaceDeCopia({ ultimaCopiaAlEmpezar: antes, ultimaCopiaAhora: despues, ultimoError: null }), 'bien')
+  // La primera copia de la conexión: antes no había ninguna.
+  assert.equal(desenlaceDeCopia({ ultimaCopiaAlEmpezar: null, ultimaCopiaAhora: despues, ultimoError: null }), 'bien')
+  // Terminó bien aunque quede un error viejo sin limpiar: manda la fecha.
+  assert.equal(desenlaceDeCopia({ ultimaCopiaAlEmpezar: antes, ultimaCopiaAhora: despues, ultimoError: 'nuby no respondió.' }), 'bien')
+})
+
+test('si la fecha no cambió y hay error, la copia falló', () => {
+  const fecha = '2026-01-16T15:00:00.000Z'
+  assert.equal(desenlaceDeCopia({ ultimaCopiaAlEmpezar: fecha, ultimaCopiaAhora: fecha, ultimoError: 'nuby no respondió.' }), 'error')
+  assert.equal(desenlaceDeCopia({ ultimaCopiaAlEmpezar: null, ultimaCopiaAhora: null, ultimoError: 'nuby no respondió.' }), 'error')
+})
+
+test('si la fecha no cambió y no hay error, la copia se interrumpió (no se dice que terminó)', () => {
+  const fecha = '2026-01-16T15:00:00.000Z'
+  // Un despliegue de la API cortó la copia: `sincronizando` vuelve a false sin error ni fecha nueva.
+  assert.equal(desenlaceDeCopia({ ultimaCopiaAlEmpezar: fecha, ultimaCopiaAhora: fecha, ultimoError: null }), 'interrumpida')
+  assert.equal(desenlaceDeCopia({ ultimaCopiaAlEmpezar: null, ultimaCopiaAhora: null, ultimoError: null }), 'interrumpida')
+  assert.equal(desenlaceDeCopia({ ultimaCopiaAlEmpezar: fecha, ultimaCopiaAhora: null, ultimoError: '' }), 'interrumpida')
+})
+
 test('al desconectar no quedan conexión ni pendientes, y se conserva lo de la plataforma', () => {
   const d = estadoDesconectado({ ...estadoConectado(true), sincronizacion_automatica: false })
   assert.equal(d.conectada, false)
@@ -263,6 +342,10 @@ test('cada motivo de «no se trajo» tiene su texto', () => {
     textoMotivoNoTraido('codigo_invalido'),
     'Su código tiene caracteres que Cofianza no admite (solo letras, números, espacios y guiones; máximo 30).',
   )
+  assert.equal(textoMotivoNoTraido('datos_no_validos'), 'Cofianza no pudo guardar este inmueble con los datos que tiene en nuby.')
+  assert.equal(textoMotivoNoTraido('datos_no_validos', '  '), 'Cofianza no pudo guardar este inmueble con los datos que tiene en nuby.')
+  // Si la API explica cuál dato, se muestra su explicación.
+  assert.equal(textoMotivoNoTraido('datos_no_validos', 'El área del inmueble no es un número.'), 'El área del inmueble no es un número.')
 })
 
 test('el tipo sin equivalente nombra el tipo de nuby y pide avisar a Cofianza; los demás motivos no usan el detalle', () => {

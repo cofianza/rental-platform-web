@@ -39,9 +39,10 @@ export interface IntegracionNuby {
   conectada_en: string
   /** «Cofianza» cuando la conectó un administrador de la plataforma. */
   conectada_por_nombre: string | null
-  /** Última copia que terminó bien. */
+  /** Última copia que terminó bien: la hora en que TERMINÓ. Toda copia que termina bien la cambia. */
   ultima_sincronizacion_en: string | null
   ultima_revision_completa_en: string | null
+  /** Hora en que EMPEZÓ el último intento (haya terminado bien o no). */
   ultimo_intento_en: string | null
   /** Texto ya listo para mostrar: qué pasó y, si aplica, si Cofianza reintenta sola. */
   ultimo_error: string | null
@@ -74,7 +75,13 @@ export interface CodigoRepetidoNuby {
   candidatos: CandidatoCodigoNuby[]
 }
 
-export type MotivoNoTraidoNuby = 'sin_canon' | 'clase_sin_equivalente' | 'sin_direccion' | 'sin_municipio' | 'codigo_invalido'
+export type MotivoNoTraidoNuby =
+  | 'sin_canon'
+  | 'clase_sin_equivalente'
+  | 'sin_direccion'
+  | 'sin_municipio'
+  | 'codigo_invalido'
+  | 'datos_no_validos'
 
 /** Inmueble en arriendo de nuby que no se pudo traer. */
 export interface NoTraidoNuby {
