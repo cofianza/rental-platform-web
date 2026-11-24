@@ -346,6 +346,16 @@ const META_A5D: Record<string, MetaParametro> = {
     rige: 'a5d',
     ...DECISION,
   },
+  HORAS_ESPERA_LISTAS: {
+    nombre: 'Espera de las listas restrictivas',
+    seccion: 'a5d_motor',
+    sub: 'Decisión sobre cada persona',
+    unidad: 'horas',
+    queHace:
+      'Si al decidir sobre el solicitante lo único que falta son sus listas restrictivas (Auco no las entregó), la decisión espera estas horas. Si llegan verificadas, el estudio se decide solo; si no, pasa a la revisión de un analista, que las verifica en Auco.',
+    ejemplo: (v) => `Con ${v.HORAS_ESPERA_LISTAS}: si las listas llegan a las 20 horas sin coincidencias, el estudio se decide solo; si a las ${v.HORAS_ESPERA_LISTAS} horas no han llegado, lo revisa un analista.`,
+    rige: 'a5d',
+  },
   SCORE_MINIMO_SOLO: {
     nombre: 'Puntaje mínimo en la central para ir sin segundo firmante',
     seccion: 'a5d_motor',
