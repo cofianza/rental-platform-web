@@ -52,7 +52,9 @@ function StackedBarChart({ data }: { data: AprobacionPeriodo[] }) {
   const chartWidth = data.length * (barWidth + gap)
 
   return (
-    <div className="overflow-x-auto">
+    // flex-row-reverse: cuando la gráfica no cabe (a 390 px se desplaza a los lados), arranca mostrando los meses
+    // más recientes, a la derecha; antes el mes en curso quedaba fuera de la vista. Si cabe, se ve igual.
+    <div className="flex flex-row-reverse items-start overflow-x-auto">
       <svg
         viewBox={`0 0 ${chartWidth} ${chartHeight + 40}`}
         className="w-full min-w-[400px]"
