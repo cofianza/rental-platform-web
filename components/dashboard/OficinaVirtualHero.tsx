@@ -13,6 +13,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { dashboardService, type PortfolioStats } from '@/services/dashboardService'
 import { formatCurrency } from '@/lib/constants'
+import { notaContratosCancelados } from '@/lib/contratosCancelados'
 
 // Formato colombiano: «$1,5 M» y «$850 mil» (antes «$1.5M» y «$850K»).
 function formatCompactCOP(monto: number): string {
@@ -48,6 +49,10 @@ export function OficinaVirtualHero() {
 
   useEffect(() => { cargar() }, [cargar])
 
+  // Adenda 6 §9: un cero porque todos los contratos están cancelados se explica («(4 contratos cancelados)»); una sola
+  // vez, bajo los inquilinos (el canon en $0 de al lado tiene la misma causa).
+  const notaCancelados =
+    stats && !loading ? notaContratosCancelados(stats.inquilinos_cartera, stats.contratos_cancelados, stats.contratos_no_cancelados) : null
   const titulo = 'Su Oficina Virtual'
   const subtitulo = 'Gestione propiedades, inquilinos y recaudos con seguridad y control total.'
 
@@ -75,7 +80,7 @@ export function OficinaVirtualHero() {
 
         <div className="grid grid-cols-3 gap-3 md:gap-4 min-w-0">
           <StatCard label="Propiedades activas" value={loading ? '…' : stats ? String(stats.propiedades_activas) : '—'} />
-          <StatCard label="Inquilinos en cartera" value={loading ? '…' : stats ? String(stats.inquilinos_cartera) : '—'} />
+          <StatCard label="Inquilinos en cartera" value={loading ? '…' : stats ? String(stats.inquilinos_cartera) : '—'} nota={notaCancelados} />
           {/* Suma de cánones de contratos firmados/vigentes, no plata recaudada
               (no mira pagos ni moras): mismo nombre que en el panel del propietario. */}
           <StatCard
@@ -101,11 +106,12 @@ export function OficinaVirtualHero() {
   )
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, nota }: { label: string; value: string; nota?: string | null }) {
   return (
     <div className="bg-white/10 border border-white/15 rounded-xl px-3 py-3 md:px-4 md:py-4 text-center backdrop-blur-sm">
       <div className="text-xl md:text-2xl font-extrabold leading-none mb-1">{value}</div>
       <div className="text-[10px] md:text-xs font-medium text-white/75">{label}</div>
+      {nota && <div className="mt-0.5 text-[10px] md:text-xs font-medium text-white/90">{nota}</div>}
     </div>
   )
 }

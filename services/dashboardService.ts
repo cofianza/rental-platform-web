@@ -44,6 +44,9 @@ export interface PortfolioStats {
   propiedades_activas: number
   inquilinos_cartera: number
   canon_mensual: number
+  /** Adenda 6 §9: contratos de la cartera cancelados y en otro estado (para explicar un cero). Una API anterior no los manda. */
+  contratos_cancelados?: number
+  contratos_no_cancelados?: number
 }
 
 // ── Admin overview (Centro de Control) ──────
@@ -404,7 +407,16 @@ export interface MiInmueble {
 }
 
 export interface MisInmueblesData {
-  resumen: { total: number; arrendados: number; disponibles: number; enVitrina: number; ingresoMes: number }
+  /** contratosCancelados / contratosNoCancelados (Adenda 6 §9): opcionales, una API anterior no los manda. */
+  resumen: {
+    total: number
+    arrendados: number
+    disponibles: number
+    enVitrina: number
+    ingresoMes: number
+    contratosCancelados?: number
+    contratosNoCancelados?: number
+  }
   inmuebles: MiInmueble[]
 }
 
