@@ -503,3 +503,20 @@ test('revisión de UX: «aprobado con segundo firmante» sin nada que hacer (pro
   assert.equal(sinAccionSegundoFirmante({ desenlace: 'aprobado_segundo_firmante' }), false)
   assert.equal(sinAccionSegundoFirmante(null), false)
 })
+
+test('Adenda 6 §4: las listas del solicitante sin verificar en un estudio aprobado', async () => {
+  const { ETAPA_LABEL, PASO_DE_ETAPA, PASOS_DETALLE, esEtapaDeTraba, etapaDeTraba } = await import('./etapaEstudio')
+  const { TEXTO_REGISTRAR_LISTAS_SOLICITANTE } = await import('./ayudaEstudio')
+  const o = { vista: 'gestor' as const, analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false }
+  assert.equal(etapaDeTraba('listas_sin_verificar'), 'listas_sin_verificar')
+  assert.equal(calcularEtapa({ ...base, estado: 'aprobado', trabaCodigo: 'listas_sin_verificar' }), 'listas_sin_verificar')
+  assert.equal(esEtapaDeTraba('listas_sin_verificar'), true)
+  assert.equal(PASOS_DETALLE[PASO_DE_ETAPA.listas_sin_verificar], 'Contrato')
+  assert.equal(ETAPA_LABEL.listas_sin_verificar, 'Aprobado · verificación de Cofianza')
+  // Lo resuelve Cofianza: quien gestiona solo espera, y nunca se le dice que cree el contrato ni se nombran las listas.
+  assert.equal(turnoDeEtapa('listas_sin_verificar', false), 'cofianza')
+  assert.doesNotMatch(queSigue('listas_sin_verificar', o), /cree el contrato|listas/)
+  assert.equal(queSigue('listas_sin_verificar', { ...o, textoTraba: 'Texto de la API.' }), 'Texto de la API.')
+  // Al analista: qué le toca.
+  assert.equal(queSigue('listas_sin_verificar', { ...o, vista: 'cofianza', analista: true }), TEXTO_REGISTRAR_LISTAS_SOLICITANTE)
+})

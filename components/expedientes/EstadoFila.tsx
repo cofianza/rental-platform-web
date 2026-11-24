@@ -47,6 +47,7 @@ const TONO_ETAPA: Record<EtapaEstudio, Tono> = {
   coarrendatario_pendiente: 'ambar',
   coarrendatario_en_evaluacion: 'ambar',
   coarrendatario_en_verificacion: 'ambar',
+  listas_sin_verificar: 'ambar',
   vencido: 'gris',
   firma: 'verde',
   firma_incompleta: 'rojo',

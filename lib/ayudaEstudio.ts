@@ -78,6 +78,8 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
     'El estudio está aprobado, pero el segundo firmante que aceptó todavía no tiene resultado. Puede esperarlo o seguir sin él: el contrato se hará solo con el titular.',
   coarrendatario_en_verificacion:
     'El estudio está aprobado. Cofianza está verificando al segundo firmante: puede esperar el resultado o seguir sin él (sale del estudio y el contrato se hará solo con el titular).',
+  listas_sin_verificar:
+    'El estudio está aprobado. Cofianza está terminando una verificación del solicitante: cuando termine podrá crear el contrato. Le avisaremos.',
   vencido:
     'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Para continuar, cree un estudio nuevo.',
   firma: 'El contrato está en firma electrónica: falta que firmen todas las partes.',
@@ -110,6 +112,8 @@ export const AYUDA_ETAPA_TERCERO: Partial<Record<EtapaEstudio, string>> = {
     'El estudio está aprobado, pero el segundo firmante que aceptó todavía no tiene resultado. La inmobiliaria o el propietario pueden esperarlo o seguir sin él.',
   coarrendatario_en_verificacion:
     'El estudio está aprobado. Cofianza verifica al segundo firmante antes de vincularlo al contrato; la inmobiliaria o el propietario pueden esperar el resultado o seguir sin él.',
+  listas_sin_verificar:
+    'El estudio está aprobado. Cofianza termina una verificación del solicitante antes de que se pueda crear el contrato; la inmobiliaria o el propietario solo esperan.',
   vencido:
     'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Para continuar hace falta un estudio nuevo.',
   firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Falta que la inmobiliaria o el propietario la reenvíen o cancelen el contrato.',
@@ -140,6 +144,8 @@ export const AYUDA_ETAPA_EQUIPO: Partial<Record<EtapaEstudio, string>> = {
     'El estudio está aprobado, pero el segundo firmante que aceptó todavía no tiene resultado. Alguien de su equipo con permiso de edición puede esperarlo o seguir sin él.',
   coarrendatario_en_verificacion:
     'El estudio está aprobado. Cofianza está verificando al segundo firmante: alguien de su equipo con permiso de edición puede esperar el resultado o seguir sin él.',
+  listas_sin_verificar:
+    'El estudio está aprobado. Cofianza está terminando una verificación del solicitante: cuando termine, alguien de su equipo con permiso de edición podrá crear el contrato.',
   vencido:
     'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Alguien de su equipo con permiso de edición puede crear un estudio nuevo.',
   firma_incompleta:
@@ -163,6 +169,10 @@ const TEXTO_SEGUNDO_EN_VERIFICACION_TERCERO = 'Cofianza verifica al segundo firm
  */
 export const TEXTO_VERIFICAR_SEGUNDO_FIRMANTE =
   'Verifique al segundo firmante en su evaluación, aquí abajo: allí están las acciones disponibles.'
+
+/** Adenda 6 §4: al analista, con las listas del solicitante sin verificar en un estudio aprobado. */
+export const TEXTO_REGISTRAR_LISTAS_SOLICITANTE =
+  'Faltan las listas restrictivas del solicitante: verifíquelas en Auco y registre la verificación en su evaluación, aquí abajo.'
 
 /**
  * No aprobable, cuando alguna persona se puede reemplazar: la salida va antes que la apelación. La apelación,
@@ -234,6 +244,9 @@ export function queSigue(
   // Al analista, con el segundo firmante en verificación (también con el estudio ya aprobado): qué le toca.
   if (analista && (etapa === 'coarrendatario_en_verificacion' || (etapa === 'segundo_firmante' && o.segundoEnVerificacion))) {
     return o.enLista ? paraLista(TEXTO_VERIFICAR_SEGUNDO_FIRMANTE) : TEXTO_VERIFICAR_SEGUNDO_FIRMANTE
+  }
+  if (analista && etapa === 'listas_sin_verificar') {
+    return o.enLista ? paraLista(TEXTO_REGISTRAR_LISTAS_SOLICITANTE) : TEXTO_REGISTRAR_LISTAS_SOLICITANTE
   }
   if (etapa === 'segundo_firmante' && o.segundoEnVerificacion) {
     // La API redacta el texto de cada rol (quien gestiona, Cofianza); el respaldo, solo si lo dedujo la web.

@@ -259,3 +259,10 @@ test('bloque 4: «aprobado con segundo firmante» con el segundo en verificació
   // Sin la marca de la API (anterior), como antes.
   assert.equal(tomarDisponible(asf()), false)
 })
+
+test('Adenda 6 §4: las listas del solicitante sin verificar: turno de Cofianza, nunca «crear el contrato»', () => {
+  const listas = fila({ estado: 'aprobado', depende_de: 'cofianza', traba_contrato: { codigo: 'listas_sin_verificar', texto: 'Texto de la API.' } })
+  assert.equal(etapaDeFila(listas), 'listas_sin_verificar')
+  assert.notEqual(accionDeFila(listas, 'listas_sin_verificar'), 'crear el contrato')
+  assert.equal(tomarDisponible(listas), true)
+})

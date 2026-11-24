@@ -139,6 +139,36 @@ export interface IVerificacionSegundoFirmante {
   reintento_automatico?: IReintentoAutomatico
 }
 
+/**
+ * Adenda 6 §4: las listas restrictivas de esta persona (solicitante o segundo firmante) que Auco no entregó. El
+ * analista las verifica directamente en Auco y registra la fecha, el resultado y la evidencia. Solo administrador y
+ * operador (la API la manda solo a ellos y solo cuando hay algo pendiente o ya registrado).
+ */
+export interface IVerificacionListas {
+  pendiente: boolean
+  puede_registrar: boolean
+  /** Por qué no se puede registrar todavía. */
+  motivo: string | null
+  registrada: null | {
+    fecha_consulta: string
+    resultado: ResultadoVerificacionListas
+    en: string
+    nota: string | null
+    evidencia_nombre: string
+    /** Enlace de pocos minutos a la evidencia; null si no se pudo firmar. */
+    evidencia_url: string | null
+  }
+}
+
+export type ResultadoVerificacionListas = 'sin_coincidencias' | 'con_coincidencias'
+
+/** Lo que responde el registro. `listas`: 'confirmada' con coincidencias (bloqueo); 'por_confirmar' si no se pudo confirmar sola. */
+export interface IRegistroVerificacionListas {
+  resultado: ResultadoVerificacionListas
+  listas: 'verificadas' | 'confirmada' | 'por_confirmar'
+  expediente_estado: string | null
+}
+
 /** Lo que le queda al reintento automático de la consulta de antecedentes del segundo firmante. */
 export interface IReintentoAutomatico {
   /** Cuántos intentos automáticos faltan. */
@@ -159,6 +189,8 @@ export interface IEstudio extends IDesenlaceEstudio {
   reintento_saldo_transunion?: IReintentoSaldoTransUnion
   /** Solo administrador y operador analista, en el detalle del segundo firmante en verificación. */
   verificacion_segundo_firmante?: IVerificacionSegundoFirmante
+  /** Adenda 6 §4: las listas de esta persona sin verificar (o el registro del analista). Solo Cofianza. */
+  verificacion_listas?: IVerificacionListas
   expediente_id?: string
   /**
    * Adenda 5: el papel de esta persona en el estudio, con su etiqueta y su texto. Solo en estudios decididos con la

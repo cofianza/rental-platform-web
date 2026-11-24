@@ -28,6 +28,8 @@ export type EtapaEstudio =
   // Bloque 4: el segundo firmante ya aceptó, pero su evaluación sigue en curso o Cofianza lo verifica.
   | 'coarrendatario_en_evaluacion'
   | 'coarrendatario_en_verificacion'
+  // Adenda 6 §4: Cofianza termina la verificación de las listas del solicitante (no tiene salida para quien gestiona).
+  | 'listas_sin_verificar'
   | 'vencido'
   | 'firma'
   | 'firma_incompleta'
@@ -63,6 +65,7 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   coarrendatario_pendiente: 'Aprobado · segundo firmante sin responder',
   coarrendatario_en_evaluacion: 'Aprobado · segundo firmante en evaluación',
   coarrendatario_en_verificacion: 'Aprobado · segundo firmante en verificación',
+  listas_sin_verificar: 'Aprobado · verificación de Cofianza',
   vencido: 'Resultado vencido',
   firma: 'En firma',
   firma_incompleta: 'Firma incompleta',
@@ -114,6 +117,7 @@ export const PASO_DE_ETAPA: Record<EtapaEstudio, number> = {
   coarrendatario_pendiente: 2,
   coarrendatario_en_evaluacion: 2,
   coarrendatario_en_verificacion: 2,
+  listas_sin_verificar: 2,
   firma: 3,
   firma_incompleta: 3,
   vigente: PASOS_DETALLE.length,
@@ -178,6 +182,7 @@ const ETAPAS_DE_TRABA: EtapaEstudio[] = [
   'coarrendatario_pendiente',
   'coarrendatario_en_evaluacion',
   'coarrendatario_en_verificacion',
+  'listas_sin_verificar',
   'vencido',
 ]
 
@@ -490,6 +495,8 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean, segundo
     case 'reapertura':
       return 'prospecto'
     case 'consulta':
+    // Adenda 6 §4: Cofianza termina la verificación de las listas del solicitante; quien gestiona solo espera.
+    case 'listas_sin_verificar':
       return 'cofianza'
     case 'decision':
       return conCondicion ? 'prospecto' : 'cofianza'
