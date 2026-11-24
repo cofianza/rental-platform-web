@@ -338,20 +338,22 @@ export function CoarrendatarioPropietarioCard({
         tono={tono}
         icono={<IconUsers size={18} />}
         titulo={
+          // relative + InfoTip anclada: la burbuja abre desde el inicio del título; desde el ícono se salía de la
+          // tarjeta a 390 px.
           personaA5d ? (
-            <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
+            <span className="relative inline-flex flex-wrap items-center gap-x-1.5 gap-y-1">
               <span className="min-w-0 break-words">
                 {`${coa.nombre} ${coa.apellido}`.trim() || 'Coarrendatario'}
                 {papel && ` · ${papel}`}
               </span>
               {insignia && <span className={cn('rounded-full border bg-white px-2 py-0.5 text-xs font-medium', INSIGNIA_TONO[tono])}>{insignia}</span>}
-              <InfoTip texto={AYUDA.coarrendatario} lado="derecha" />
+              <InfoTip texto={AYUDA.coarrendatario} lado="derecha" anclada />
               {sePresento && <span className="basis-full text-xs font-normal text-gray-600">{sePresento}</span>}
             </span>
           ) : (
-            <span className="inline-flex flex-wrap items-center gap-x-1.5">
+            <span className="relative inline-flex flex-wrap items-center gap-x-1.5">
               <span>Coarrendatario: {estado.label}</span>
-              <InfoTip texto={AYUDA.coarrendatario} lado="derecha" />
+              <InfoTip texto={AYUDA.coarrendatario} lado="derecha" anclada />
             </span>
           )
         }

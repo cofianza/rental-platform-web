@@ -226,10 +226,7 @@ export function AprobarCondicionadoCard({
         tono="revision"
         icono={<IconShieldCheck size={18} />}
         titulo={
-          <span className="inline-flex items-center gap-1">
-            {tituloCondicion}
-            <InfoTip texto={ayudaCondicion} lado="derecha" />
-          </span>
+          <TituloConAyuda ayuda={ayudaCondicion}>{tituloCondicion}</TituloConAyuda>
         }
         descripcion={
           // A Cofianza no se le dice «Escríbanos» (D4).
@@ -271,10 +268,7 @@ export function AprobarCondicionadoCard({
         tono="revision"
         icono={<IconShieldCheck size={18} />}
         titulo={
-          <span className="inline-flex items-center gap-1">
-            {tituloCondicion}
-            <InfoTip texto={ayudaCondicion} lado="derecha" />
-          </span>
+          <TituloConAyuda ayuda={ayudaCondicion}>{tituloCondicion}</TituloConAyuda>
         }
         descripcion={descripcion}
         pie={
@@ -297,10 +291,7 @@ export function AprobarCondicionadoCard({
         tono="revision"
         icono={<IconShieldCheck size={18} />}
         titulo={
-          <span className="inline-flex items-center gap-1">
-            {tituloCondicion}
-            <InfoTip texto={ayudaCondicion} lado="derecha" />
-          </span>
+          <TituloConAyuda ayuda={ayudaCondicion}>{tituloCondicion}</TituloConAyuda>
         }
         descripcion={textoCondicionCoarrendatario(condicion)}
         pie={
@@ -460,11 +451,10 @@ export function AprobarCondicionadoCard({
       tono="revision"
       icono={<IconShieldCheck size={18} />}
       titulo={
-        <span className="inline-flex items-center gap-1">
+        <TituloConAyuda ayuda={AYUDA.condicionado}>
           {/* El mismo nombre del chip y de la franja para todos; «condicionado» es el estado interno. */}
           En revisión de Cofianza: qué sigue
-          <InfoTip texto={AYUDA.condicionado} lado="derecha" />
-        </span>
+        </TituloConAyuda>
       }
       descripcion={
         <>
@@ -800,6 +790,20 @@ export function AprobarCondicionadoCard({
       </div>
     </Modal>
     </>
+  )
+}
+
+/**
+ * Título de la tarjeta con su ayuda, en texto corrido: si baja a dos líneas (a 390 px) el ícono sigue a la
+ * última palabra, no suelto en el borde; y la burbuja se ancla al inicio del título, así no se sale de la
+ * tarjeta (abierta desde el ícono quedaba fuera de la pantalla).
+ */
+function TituloConAyuda({ ayuda, children }: { ayuda: string; children: ReactNode }) {
+  return (
+    <span className="relative block">
+      {children}
+      <InfoTip texto={ayuda} lado="derecha" anclada className="ml-1" />
+    </span>
   )
 }
 

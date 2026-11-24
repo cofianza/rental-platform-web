@@ -74,6 +74,8 @@ export type WhatsappEstado = 'aceptado' | 'fallido' | 'mock' | 'sin_telefono' | 
 export interface IMoraConAviso extends IMoraDetalle {
   whatsapp_estado: WhatsappEstado
   whatsapp_programado_para?: string | null
+  /** El WhatsApp no salió (Meta lo rechazó) y el cobro le llegó al inquilino por correo en su lugar. */
+  cobro_por_correo?: boolean
 }
 
 export interface IMorasStats {

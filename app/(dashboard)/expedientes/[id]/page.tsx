@@ -848,7 +848,8 @@ function ExpedienteDetalleContenido() {
               etiqueta={
                 <span className="inline-flex items-center gap-1">
                   Responsable
-                  <InfoTip texto={AYUDA.responsableAnalista} lado="izquierda" />
+                  {/* Abre a la derecha: el dato queda a la izquierda de la ficha (a 390 y 768 px, hacia la izquierda se salía de la pantalla). */}
+                  <InfoTip texto={AYUDA.responsableAnalista} lado="derecha" />
                 </span>
               }
             >

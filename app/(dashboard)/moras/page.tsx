@@ -96,9 +96,16 @@ const FALLO_WHATSAPP: Record<Exclude<WhatsappEstado, 'aceptado' | 'programado'>,
     'el WhatsApp al inquilino quedó en espera por el horario de cobranza y el envío automático está apagado: no sale hasta que lo enciendan. Si es urgente, avísele por otro medio dentro del horario.',
 }
 
-function avisarResultado(accion: string, r: { whatsapp_estado?: WhatsappEstado; whatsapp_programado_para?: string | null }) {
+function avisarResultado(
+  accion: string,
+  r: { whatsapp_estado?: WhatsappEstado; whatsapp_programado_para?: string | null; cobro_por_correo?: boolean },
+) {
   const estado = r.whatsapp_estado
-  if (estado === 'programado') {
+  if (estado === 'fallido' && r.cobro_por_correo) {
+    // El cobro ya salió por correo en lugar del WhatsApp: pedir «otro medio»
+    // invitaba a un segundo contacto de cobro el mismo día (Ley 2300).
+    toast.success(`${accion}. El WhatsApp no salió; se le envió el cobro al inquilino por correo electrónico.`)
+  } else if (estado === 'programado') {
     // Ley 2300: fuera del horario de cobranza (o antes de 7 días desde el último
     // WhatsApp de cobro al inquilino) el WhatsApp espera; no se pierde.
     const cuando = r.whatsapp_programado_para

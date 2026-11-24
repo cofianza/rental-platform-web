@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { useNubyDisponible } from '@/hooks/useIntegracionNuby'
-import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard, IconPlug } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard, IconPlug, IconAlertTriangle } from '@/components/icons'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad;
 // `soloTitular` la limita además al titular de la inmobiliaria (rol_miembro owner).
@@ -96,6 +96,15 @@ const SECCIONES: Array<{
     descripcion: 'Identidad de COFIANZA como firmante (no son sus datos personales): razón social, NIT y el WhatsApp/email donde le llega el enlace para firmar cada contrato y emitir certificados.',
     icon: IconBuilding2,
     color: 'bg-indigo-100 text-indigo-600',
+    soloRoles: ['administrador'],
+  },
+  {
+    id: 'avisos-servicio',
+    href: '/configuracion/avisos-servicio',
+    titulo: 'Avisos de servicio',
+    descripcion: 'Cuando falle WhatsApp, el correo, los pagos o la firma, publique un banner para inmobiliarias, propietarios o prospectos con qué hacer mientras tanto.',
+    icon: IconAlertTriangle,
+    color: 'bg-rose-100 text-rose-600',
     soloRoles: ['administrador'],
   },
   {
