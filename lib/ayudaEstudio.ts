@@ -79,7 +79,7 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   coarrendatario_en_verificacion:
     'El estudio está aprobado. Cofianza está verificando al segundo firmante: puede esperar el resultado o seguir sin él (sale del estudio y el contrato se hará solo con el titular).',
   solicitante_en_verificacion:
-    'El estudio está aprobado. Cofianza está terminando una verificación del solicitante: cuando termine podrá crear el contrato. Le avisaremos.',
+    'El estudio está aprobado. Cofianza está terminando una verificación del solicitante: cuando termine, podrá continuar con el contrato desde este estudio.',
   vencido:
     'El resultado del estudio ya no sirve para el contrato: venció o ya no alcanza el tiempo para firmar. Para continuar, cree un estudio nuevo.',
   firma: 'El contrato está en firma electrónica: falta que firmen todas las partes.',

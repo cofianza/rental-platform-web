@@ -183,6 +183,8 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
   }
   // Adenda 4 V3 §12: ya consultado, la decisión espera a que autorice el coarrendatario (el nombre de la etapa).
   if (e.estado === 'en_proceso' && e.espera_autorizacion) return 'Esperando al segundo firmante'
+  // Adenda 6 §5: ya consultado, la decisión espera una verificación de Cofianza.
+  if (e.estado === 'en_proceso' && e.espera_listas) return 'Verificación de Cofianza'
   return etiquetaEstado(e)
 }
 
@@ -382,6 +384,11 @@ function getSiguientePaso(
     return 'Evaluación cancelada.'
   }
   if (estudio.estado === 'en_proceso') {
+    // Adenda 6 §5: ya consultado, la decisión espera una verificación de Cofianza (no se nombran las listas).
+    if (estudio.espera_listas) {
+      const hasta = new Date(estudio.espera_listas.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
+      return `Ya se consultaron las centrales. La decisión espera una verificación de Cofianza, a más tardar hasta el ${hasta}: si termina antes, se decide sola; si no, la decide un analista.`
+    }
     // Adenda 4 V3 §12: ya consultado, no se decide al titular solo mientras un coarrendatario no autorice.
     if (estudio.espera_autorizacion) {
       const hasta = new Date(estudio.espera_autorizacion.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })

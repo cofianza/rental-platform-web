@@ -353,7 +353,10 @@ const META_A5D: Record<string, MetaParametro> = {
     unidad: 'horas',
     queHace:
       'Si al decidir sobre el solicitante lo único que falta son sus listas restrictivas (Auco no las entregó), la decisión espera estas horas. Si llegan verificadas, el estudio se decide solo; si no, pasa a la revisión de un analista, que las verifica en Auco.',
-    ejemplo: (v) => `Con ${v.HORAS_ESPERA_LISTAS}: si las listas llegan a las 20 horas sin coincidencias, el estudio se decide solo; si a las ${v.HORAS_ESPERA_LISTAS} horas no han llegado, lo revisa un analista.`,
+    ejemplo: (v) => {
+      const antes = Math.max(1, Math.floor(v.HORAS_ESPERA_LISTAS / 2))
+      return `Con ${v.HORAS_ESPERA_LISTAS}: si las listas llegan a ${antes === 1 ? 'la hora' : `las ${antes} horas`} sin coincidencias, el estudio se decide solo; si a las ${v.HORAS_ESPERA_LISTAS} horas no han llegado, lo revisa un analista.`
+    },
     rige: 'a5d',
   },
   SCORE_MINIMO_SOLO: {

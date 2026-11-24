@@ -253,7 +253,7 @@ function fechaLegible(iso: string, ahoraMs?: number): string {
 }
 
 /** Etapas en que el resultado todavía tiene que servir para el contrato. */
-const CON_VIGENCIA: EtapaEstudio[] = ['contrato', 'canon_excede', ...ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO]
+const CON_VIGENCIA: EtapaEstudio[] = ['contrato', 'canon_excede', ...ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO, 'solicitante_en_verificacion']
 
 /** Días de calendario de Colombia que faltan hasta la fecha, y si ya pasó (una fecha sola sirve todo ese día). null sin fecha válida. */
 function plazoHasta(iso: string, ahoraMs: number): { vencido: boolean; dias: number } | null {

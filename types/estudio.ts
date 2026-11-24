@@ -149,6 +149,8 @@ export interface IVerificacionListas {
   puede_registrar: boolean
   /** Por qué no se puede registrar todavía. */
   motivo: string | null
+  /** El día más antiguo que admite la fecha de la consulta (YYYY-MM-DD). */
+  fecha_minima?: string | null
   registrada: null | {
     fecha_consulta: string
     resultado: ResultadoVerificacionListas
@@ -234,6 +236,8 @@ export interface IEstudio extends IDesenlaceEstudio {
   reconsulta_sin_datos?: boolean
   /** Adenda 4 §12: la evaluación del titular espera a que autoricen sus coarrendatarios (hasta esa hora). */
   espera_autorizacion?: { hasta: string; pendientes: string[] } | null
+  /** Adenda 6 §5: ya consultado, la decisión espera una verificación de Cofianza hasta esa hora. Solo en el listado. */
+  espera_listas?: { hasta: string } | null
   /** Adenda 4 §13: el endeudamiento con que decidió el motor. Solo Cofianza, en el detalle. */
   endeudamiento_motor?: IEndeudamientoMotor | null
   observaciones?: string | null

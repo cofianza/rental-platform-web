@@ -31,15 +31,23 @@ export function useVerificacionListas(estudioId: string, alTerminar?: () => Prom
       try {
         const r = await estudioService.registrarVerificacionListas(estudioId, datos)
         if (r.resultado === 'sin_coincidencias') {
-          toast.success('Verificación de listas registrada: sin coincidencias. El estudio sigue su curso.', { duration: DURACION })
+          toast.success(
+            r.expediente_estado === 'condicionado'
+              ? 'Verificación de listas registrada: sin coincidencias. Si el estudio sigue en revisión de Cofianza, apruébelo.'
+              : 'Verificación de listas registrada: sin coincidencias. El estudio sigue su curso.',
+            { duration: DURACION },
+          )
         } else if (r.listas === 'confirmada') {
-          toast.info('Verificación de listas registrada: con coincidencias. Quedó confirmada y la operación, bloqueada por listas.', {
-            duration: DURACION,
-          })
+          toast.info(
+            r.expediente_estado === 'rechazado'
+              ? 'Verificación de listas registrada: con coincidencias. Quedó confirmada y el estudio, no aprobable.'
+              : 'Verificación de listas registrada: con coincidencias. Quedó confirmada y la operación, bloqueada por listas.',
+            { duration: DURACION },
+          )
+        } else if (r.listas === 'por_confirmar') {
+          toast.info('Verificación de listas registrada: con coincidencias. Confirme la coincidencia en este mismo detalle.', { duration: DURACION })
         } else {
-          toast.info('Verificación de listas registrada: con coincidencias. Confirme la coincidencia en este mismo detalle.', {
-            duration: DURACION,
-          })
+          toast.info('Verificación de listas registrada: con coincidencias. Revise el estado del estudio.', { duration: DURACION })
         }
         ok = true
       } catch (err) {

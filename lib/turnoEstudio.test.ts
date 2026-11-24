@@ -90,3 +90,12 @@ test('analista ajeno: el nombre de quien la tomó, si no es quien mira', () => {
   assert.equal(analistaAjeno(null, 'a1'), null)
   assert.equal(analistaAjeno({ id: 'a1', nombre: '', apellido: null }, 'a2'), 'otro analista')
 })
+
+test('Adenda 6 §4: Cofianza verifica las listas del solicitante en un estudio aprobado', () => {
+  const o = { verificacion: true, verificacionDe: 'solicitante' as const }
+  assert.equal(textoTurno('cofianza', 'cofianza', { ...o, analista: true }), 'Su turno: registrar la verificación de listas')
+  assert.equal(textoTurno('cofianza', 'gestor', o), 'Cofianza verifica al solicitante')
+  assert.equal(textoTurno('cofianza', 'cofianza', { ...o, analista: true, tomadoPor: 'Ana Analista' }), 'Lo verifica Ana Analista')
+  assert.equal(turnoPropio('cofianza', 'cofianza', { ...o, analista: true }), true)
+  assert.equal(turnoPropio('cofianza', 'gestor', o), false)
+})

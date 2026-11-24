@@ -46,21 +46,31 @@ export function VerificacionListas({
   const { registrar, enviando, ultimoError } = useVerificacionListas(estudioId, onHecho)
 
   const archivoGrande = !!archivo && archivo.size > MAX_BYTES
-  const listo = !!fecha && fecha <= hoyBogota() && !!resultado && !!archivo && !archivoGrande
+  const minima = verificacion.fecha_minima ?? undefined
+  const fechaMal = !fecha || fecha > hoyBogota() || (!!minima && fecha < minima)
+  const listo = !fechaMal && !!resultado && !!archivo && !archivoGrande
+  // Lo que falta para registrar (el botón se apaga sin decir por qué, si no).
+  const falta = [
+    fechaMal && (minima ? `una fecha entre el ${minima.split('-').reverse().join('/')} y hoy` : 'una fecha que no sea futura'),
+    !resultado && 'el resultado',
+    (!archivo || archivoGrande) && 'la evidencia (hasta 10 MB)',
+  ].filter((x): x is string => !!x)
 
-  const cerrar = () => {
-    setAbierto(false)
+  const limpiar = () => {
     setResultado(null)
     setArchivo(null)
     setNota('')
     setFecha(hoyBogota())
   }
 
+  // Cerrar no borra lo escrito: si el registro falló, al abrir de nuevo sigue ahí.
+  const cerrar = () => setAbierto(false)
+
   const confirmar = async () => {
     if (!listo || !resultado || !archivo) return
     const ok = await registrar({ fecha_consulta: fecha, resultado, nota, evidencia: archivo })
-    if (ok) cerrar()
-    else setAbierto(false)
+    if (ok) limpiar()
+    setAbierto(false)
   }
 
   const r = verificacion.registrada
@@ -92,11 +102,24 @@ export function VerificacionListas({
         ) : (
           <p className="text-sm text-gray-500">Evidencia: {r.evidencia_nombre} (no se pudo abrir el enlace; recargue el detalle).</p>
         )}
+        {r.evidencia_url && <p className="text-xs text-gray-500">El enlace vence a los 5 minutos; si no abre, recargue el detalle.</p>}
       </section>
     )
   }
 
   if (!verificacion.pendiente) return null
+
+  // No se puede registrar aquí (la persona salió, el estudio se canceló…): solo el motivo, sin pedir nada.
+  if (!verificacion.puede_registrar) {
+    return (
+      <section aria-labelledby={tituloId} className="space-y-1 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <h3 id={tituloId} className="text-sm font-semibold text-gray-900">
+          Listas restrictivas sin verificar
+        </h3>
+        {verificacion.motivo && <p className="text-sm text-gray-700">{verificacion.motivo}</p>}
+      </section>
+    )
+  }
 
   return (
     <section aria-labelledby={tituloId} className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
@@ -105,25 +128,19 @@ export function VerificacionListas({
         Listas restrictivas sin verificar
       </h3>
       <p className="text-sm text-amber-800">
-        Auco no entregó las listas restrictivas de esta persona. Mientras no estén verificadas no se puede generar el contrato. Verifíquelas
-        directamente en Auco y registre la consulta: sin coincidencias, el estudio sigue solo.
+        Auco no entregó las listas restrictivas de esta persona. Mientras no estén verificadas, el contrato no se puede generar ni
+        enviar a firma. Verifíquelas directamente en Auco y registre la consulta: si el estudio solo esperaba esto, sigue solo; si
+        queda en revisión, apruébelo.
       </p>
-      {verificacion.motivo && (
-        <p role="status" className="text-sm font-medium text-amber-900">
-          {verificacion.motivo}
-        </p>
-      )}
-      {verificacion.puede_registrar && (
-        <button
-          type="button"
-          onClick={() => setAbierto(true)}
-          disabled={enviando}
-          className={`${BOTON} border-amber-700 bg-amber-700 text-white hover:bg-amber-800`}
-        >
-          {enviando ? <IconLoader size={16} className="animate-spin" /> : <IconShieldCheck size={16} />}
-          Registrar verificación de listas
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => setAbierto(true)}
+        disabled={enviando}
+        className={`${BOTON} border-amber-700 bg-amber-700 text-white hover:bg-amber-800`}
+      >
+        {enviando ? <IconLoader size={16} className="animate-spin" /> : <IconShieldCheck size={16} />}
+        Registrar verificación de listas
+      </button>
       {ultimoError && (
         <p role="alert" className="text-sm text-red-700">
           {ultimoError}
@@ -133,7 +150,7 @@ export function VerificacionListas({
         isOpen={abierto}
         onClose={cerrar}
         onConfirm={confirmar}
-        title="Registrar la verificación de listas en Auco"
+        title="Registrar la verificación hecha en Auco"
         confirmLabel="Registrar verificación"
         isLoading={enviando}
         confirmDisabled={!listo}
@@ -148,6 +165,7 @@ export function VerificacionListas({
                 id={fechaId}
                 type="date"
                 value={fecha}
+                min={minima}
                 max={hoyBogota()}
                 onChange={(e) => setFecha(e.target.value)}
                 className="min-h-10 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -167,7 +185,10 @@ export function VerificacionListas({
                 </label>
               ))}
               {resultado === 'con_coincidencias' && (
-                <p className="text-sm font-medium text-red-700">Con coincidencias, la coincidencia queda confirmada en este mismo paso y la operación se bloquea por listas.</p>
+                <p className="text-sm font-medium text-red-700">
+                  Con coincidencias, la coincidencia queda confirmada en este mismo paso: con dos personas, la operación queda bloqueada
+                  por listas; con una sola, el estudio queda no aprobable.
+                </p>
               )}
             </fieldset>
             <div className="space-y-1">
@@ -199,6 +220,7 @@ export function VerificacionListas({
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               />
             </div>
+            {falta.length > 0 && <p className="text-xs text-gray-600">Para registrar, falta: {falta.join(', ')}.</p>}
           </div>
         }
       />
