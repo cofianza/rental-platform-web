@@ -22,7 +22,7 @@ export function useVerificacionListas(estudioId: string, alTerminar?: () => Prom
   const enCurso = useRef(false)
 
   const registrar = useCallback(
-    async (datos: { fecha_consulta: string; resultado: ResultadoVerificacionListas; nota?: string; evidencia: File }): Promise<boolean> => {
+    async (datos: { fecha_consulta: string; resultado: ResultadoVerificacionListas; nota?: string; otros_hallazgos?: boolean; evidencia: File }): Promise<boolean> => {
       if (enCurso.current) return false
       enCurso.current = true
       setEnviando(true)

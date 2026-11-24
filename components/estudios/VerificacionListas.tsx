@@ -38,6 +38,7 @@ export function VerificacionListas({
   const [resultado, setResultado] = useState<ResultadoVerificacionListas | null>(null)
   const [archivo, setArchivo] = useState<File | null>(null)
   const [nota, setNota] = useState('')
+  const [otrosHallazgos, setOtrosHallazgos] = useState(false)
   const tituloId = useId()
   const fechaId = useId()
   const archivoId = useId()
@@ -60,6 +61,7 @@ export function VerificacionListas({
     setResultado(null)
     setArchivo(null)
     setNota('')
+    setOtrosHallazgos(false)
     setFecha(hoyBogota())
   }
 
@@ -68,7 +70,7 @@ export function VerificacionListas({
 
   const confirmar = async () => {
     if (!listo || !resultado || !archivo) return
-    const ok = await registrar({ fecha_consulta: fecha, resultado, nota, evidencia: archivo })
+    const ok = await registrar({ fecha_consulta: fecha, resultado, nota, otros_hallazgos: otrosHallazgos, evidencia: archivo })
     if (ok) limpiar()
     setAbierto(false)
   }
@@ -191,6 +193,13 @@ export function VerificacionListas({
                 </p>
               )}
             </fieldset>
+            <label className="flex min-h-10 cursor-pointer items-start gap-2 text-sm text-gray-800">
+              <input type="checkbox" className="mt-1" checked={otrosHallazgos} onChange={(e) => setOtrosHallazgos(e.target.checked)} />
+              <span>
+                El reporte de Auco trae otros hallazgos (Registraduría, Policía, Procuraduría, personas expuestas políticamente…). Con
+                ellos el estudio queda en revisión.
+              </span>
+            </label>
             <div className="space-y-1">
               <label htmlFor={archivoId} className="block text-xs font-medium text-gray-700">
                 Evidencia de la consulta (PDF o imagen)

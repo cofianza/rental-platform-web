@@ -385,6 +385,9 @@ function getSiguientePaso(
   }
   if (estudio.estado === 'en_proceso') {
     // Adenda 6 §5: ya consultado, la decisión espera una verificación de Cofianza (no se nombran las listas).
+    if (estudio.espera_listas?.vencida) {
+      return 'Ya se consultaron las centrales. Un analista de Cofianza está terminando una verificación; el estudio se decide en cuanto termine.'
+    }
     if (estudio.espera_listas) {
       const hasta = new Date(estudio.espera_listas.hasta).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Bogota' })
       return `Ya se consultaron las centrales. La decisión espera una verificación de Cofianza, a más tardar hasta el ${hasta}: si termina antes, se decide sola; si no, la decide un analista.`

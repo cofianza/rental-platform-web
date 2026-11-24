@@ -216,13 +216,14 @@ export const estudioService = {
    */
   async registrarVerificacionListas(
     estudioId: string,
-    datos: { fecha_consulta: string; resultado: ResultadoVerificacionListas; nota?: string; evidencia: File },
+    datos: { fecha_consulta: string; resultado: ResultadoVerificacionListas; nota?: string; otros_hallazgos?: boolean; evidencia: File },
   ): Promise<IRegistroVerificacionListas> {
     const form = new FormData()
     form.append('archivo', datos.evidencia)
     form.append('fecha_consulta', datos.fecha_consulta)
     form.append('resultado', datos.resultado)
     if (datos.nota?.trim()) form.append('nota', datos.nota.trim())
+    if (datos.otros_hallazgos) form.append('otros_hallazgos', 'true')
     const response = await apiClient.raw(`/estudios/${estudioId}/listas/verificacion`, { method: 'POST', body: form })
     return ((await response.json()) as { data: IRegistroVerificacionListas }).data
   },

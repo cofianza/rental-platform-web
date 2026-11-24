@@ -237,7 +237,7 @@ export interface IEstudio extends IDesenlaceEstudio {
   /** Adenda 4 §12: la evaluación del titular espera a que autoricen sus coarrendatarios (hasta esa hora). */
   espera_autorizacion?: { hasta: string; pendientes: string[] } | null
   /** Adenda 6 §5: ya consultado, la decisión espera una verificación de Cofianza hasta esa hora. Solo en el listado. */
-  espera_listas?: { hasta: string } | null
+  espera_listas?: { hasta: string; vencida?: boolean } | null
   /** Adenda 4 §13: el endeudamiento con que decidió el motor. Solo Cofianza, en el detalle. */
   endeudamiento_motor?: IEndeudamientoMotor | null
   observaciones?: string | null
