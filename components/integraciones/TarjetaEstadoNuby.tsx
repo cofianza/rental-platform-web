@@ -26,6 +26,8 @@ import type { AccionNuby } from '@/hooks/useIntegracionNuby'
 import type { EstadoConexionNuby, IntegracionNuby, TotalesNuby } from '@/types/integracionNuby'
 
 interface Props {
+  /** El administrador de plataforma ve la tarjeta de una inmobiliaria: algunas salidas son suyas. */
+  esAdmin: boolean
   integracion: IntegracionNuby
   totales: TotalesNuby
   sincronizacionAutomatica: boolean
@@ -92,6 +94,7 @@ function Aviso({ tono, titulo, children }: { tono: 'rojo' | 'ambar' | 'gris'; ti
 }
 
 export function TarjetaEstadoNuby({
+  esAdmin,
   integracion,
   totales,
   sincronizacionAutomatica,
@@ -206,6 +209,23 @@ export function TarjetaEstadoNuby({
 
       {resumen && (
         <div className="border-t border-gray-100 p-4 sm:p-6">
+          {/* Freno de la copia: demasiados inmuebles pasaron a arrendados o inactivos a la vez. */}
+          {resumen.estados_en_duda > 0 && (
+            <div className="mb-4">
+              <Aviso tono="ambar" titulo="Hay cambios de estado que Cofianza no aplicó">
+                <p>
+                  En la última copia, {resumen.estados_en_duda.toLocaleString('es-CO')} inmuebles aparecían de golpe
+                  como arrendados o inactivos en nuby. Por ser tantos a la vez, Cofianza copió sus datos pero no les
+                  cambió el estado ni los retiró de la vitrina.
+                </p>
+                <p>
+                  {esAdmin
+                    ? 'Si el cambio es correcto, pulse «Copiar ahora»: la copia que lanza un administrador sí lo aplica.'
+                    : 'Si el cambio es correcto, pídale a Cofianza que lo aplique; si no, revise esos inmuebles en nuby.'}
+                </p>
+              </Aviso>
+            </div>
+          )}
           <h3 className="text-sm font-semibold text-gray-900">La última copia en cifras</h3>
           <p className="mt-0.5 text-xs text-gray-500">
             {etiquetaModoCopia(resumen.modo)} · terminó el {formatDateTime(resumen.terminado_en)}

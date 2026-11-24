@@ -154,6 +154,7 @@ function Panel({ modo }: Props) {
       {integracion && !cambiando ? (
         <>
           <TarjetaEstadoNuby
+            esAdmin={esAdmin}
             integracion={integracion}
             totales={estado.totales}
             sincronizacionAutomatica={estado.sincronizacion_automatica}

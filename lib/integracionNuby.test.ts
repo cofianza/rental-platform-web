@@ -60,6 +60,7 @@ const estadoConectado = (sincronizando = false): EstadoIntegracionNuby => ({
       no_traidos: 0,
       fotos_copiadas: 18,
       ausentes: 0,
+      estados_en_duda: 0,
     },
   },
   totales: { vinculados: 11, codigo_repetido: 1, no_traidos: 2, con_diferencias: 1, ausentes: 0 },
@@ -246,6 +247,25 @@ test('si el resumen llega sin las cifras nuevas, cuentan como 0', () => {
   assert.equal(resumen.codigo_repetido, 0)
   assert.equal(resumen.leidos, 40)
   assert.equal(resumen.modo, 'incremental')
+})
+
+test('los estados en duda quedan en 0 si no vienen y se conservan si vienen', () => {
+  const completo = estadoConectado()
+  const conResumen = (resumen: Record<string, unknown>) =>
+    ({ ...completo, integracion: { ...completo.integracion, resumen } }) as unknown as EstadoIntegracionNuby
+
+  // Una API anterior no manda el campo.
+  const sinCampo: Record<string, unknown> = { ...completo.integracion!.resumen }
+  delete sinCampo.estados_en_duda
+  assert.equal(normalizarEstadoNuby(conResumen(sinCampo)).integracion!.resumen!.estados_en_duda, 0)
+  assert.equal(normalizarEstadoNuby(conResumen({ ...sinCampo, estados_en_duda: null })).integracion!.resumen!.estados_en_duda, 0)
+
+  // Si viene, se conserva.
+  const conDuda = normalizarEstadoNuby(conResumen({ ...sinCampo, estados_en_duda: 14 })).integracion!.resumen!
+  assert.equal(conDuda.estados_en_duda, 14)
+  // Y no entra a la tabla de cifras: tiene su propio aviso.
+  assert.equal(cifrasDeResumen(conDuda).some((c) => (c.clave as string) === 'estados_en_duda'), false)
+  assert.equal(cifrasDeResumen(conDuda).length, 12)
 })
 
 test('sigue sincronizando solo si está conectada y la API lo dice', () => {

@@ -28,6 +28,14 @@ export interface ResumenCopiaNuby {
   no_traidos: number
   fotos_copiadas: number
   ausentes: number
+  /**
+   * Inmuebles ya vinculados que en esta copia aparecían de golpe como arrendados
+   * o inactivos en nuby. Por ser tantos a la vez (puede ser un dato raro de
+   * nuby), Cofianza copió sus datos pero NO les cambió el estado ni los retiró
+   * de la vitrina, y tampoco lo hará en las copias siguientes: solo los aplica
+   * la copia que lanza un administrador de Cofianza. 0 normalmente.
+   */
+  estados_en_duda: number
 }
 
 export interface IntegracionNuby {

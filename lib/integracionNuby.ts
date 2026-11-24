@@ -183,7 +183,8 @@ export function etiquetaModoCopia(modo: ResumenCopiaNuby['modo']): string {
   return modo === 'completa' ? 'Revisión completa del inventario' : 'Copia de lo modificado'
 }
 
-type CifraResumen = Exclude<keyof ResumenCopiaNuby, 'modo' | 'terminado_en'>
+// `estados_en_duda` no va en la tabla de cifras: tiene su propio aviso en la tarjeta.
+type CifraResumen = Exclude<keyof ResumenCopiaNuby, 'modo' | 'terminado_en' | 'estados_en_duda'>
 
 const CIFRAS_RESUMEN: Array<[CifraResumen, string]> = [
   ['leidos', 'Leídos en nuby'],
@@ -203,7 +204,7 @@ const CIFRAS_RESUMEN: Array<[CifraResumen, string]> = [
 /** Las cifras del resumen siempre son números: una API anterior puede no traer las más nuevas. */
 function normalizarResumen(resumen: ResumenCopiaNuby): ResumenCopiaNuby {
   const cifras = Object.fromEntries(CIFRAS_RESUMEN.map(([clave]) => [clave, Number(resumen[clave]) || 0])) as Record<CifraResumen, number>
-  return { ...resumen, ...cifras }
+  return { ...resumen, ...cifras, estados_en_duda: Number(resumen.estados_en_duda) || 0 }
 }
 
 /** El resumen de la última copia como filas «etiqueta: cifra», en orden de lectura. */
