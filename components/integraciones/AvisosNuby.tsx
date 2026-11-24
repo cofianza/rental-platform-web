@@ -67,6 +67,7 @@ const GRUPOS_DE_REGLAS = [
     reglas: [
       'Los que en nuby figuran arrendados o inactivos no se crean en Cofianza; entran cuando vuelvan a estar «Activa».',
       'Los inmuebles nuevos entran sin publicar en la vitrina.',
+      'El asesor que tenga el inmueble en nuby queda como responsable en Cofianza, si su correo es el de un miembro de su equipo.',
       'Las fotos se copian una sola vez (hasta 20 por inmueble) y solo si el inmueble no tiene fotos en Cofianza. Los cambios de fotos en nuby no se traen.',
       'Cofianza solo lee: no escribe nada en nuby.',
     ],
