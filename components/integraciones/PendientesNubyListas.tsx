@@ -10,13 +10,14 @@
 
 import { useId, useState } from 'react'
 import Link from 'next/link'
-import { IconChevronRight } from '@/components/icons'
+import { IconChevronRight, IconExternalLink } from '@/components/icons'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   cuantosMas,
   etiquetaCampoDiferencia,
+  etiquetaEstadoCandidato,
   textoMotivoNoTraido,
   textoYMas,
   valorDiferencia,
@@ -26,7 +27,7 @@ import type { CandidatoCodigoNuby, PendientesNuby, TotalesNuby } from '@/types/i
 interface Props {
   pendientes: PendientesNuby
   totales: TotalesNuby
-  /** Hay una acción en curso: no se ofrece vincular. */
+  /** Hay una acción o una copia en curso: no se ofrece vincular (la API responde 409 durante la copia). */
   ocupado: boolean
   onVincular: (codigo: string, candidato: CandidatoCodigoNuby) => Promise<void>
 }
@@ -85,33 +86,54 @@ export function PendientesNubyListas({ pendientes, totales, ocupado, onVincular 
                   En nuby: {[item.titulo, item.direccion].filter(Boolean).join(' · ')}
                 </p>
               )}
-              <ul className="mt-3 space-y-2">
-                {item.candidatos.map((candidato) => (
-                  <li
-                    key={candidato.inmueble_id}
-                    className="flex flex-col gap-3 rounded-lg border border-gray-200 p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="break-words text-sm text-gray-900">{candidato.direccion}</p>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                        <span>{candidato.ciudad}</span>
-                        <Badge estado={candidato.estado} />
-                      </div>
-                    </div>
-                    <Button
-                      variante="secondary"
-                      disabled={ocupado}
-                      onClick={() => setEleccion({ codigo: item.codigo, candidato })}
-                      className="min-h-11 w-full shrink-0 sm:min-h-10 sm:w-auto"
+              {item.candidatos.length === 0 ? (
+                <p className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                  No quedan inmuebles sin vincular con este código. Revíselo con Cofianza.
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {item.candidatos.map((candidato) => (
+                    <li
+                      key={candidato.inmueble_id}
+                      className="flex flex-col gap-2 rounded-lg border border-gray-200 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                     >
-                      Es este
-                      <span className="sr-only">
-                        : {candidato.direccion}, {candidato.ciudad}
-                      </span>
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+                      <div className="min-w-0">
+                        <p className="break-words text-sm text-gray-900">{candidato.direccion}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                          <span>{candidato.ciudad}</span>
+                          <Badge estado={candidato.estado} label={etiquetaEstadoCandidato(candidato.estado)} />
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                        {/* En otra pestaña: se revisa el inmueble sin perder la lista. */}
+                        <Link
+                          href={`/inmuebles/${candidato.inmueble_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex min-h-10 items-center gap-1 self-start rounded text-sm font-medium text-primary-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 sm:self-auto"
+                        >
+                          Ver inmueble
+                          <span className="sr-only">
+                            : {candidato.direccion}, {candidato.ciudad} (se abre en otra pestaña)
+                          </span>
+                          <IconExternalLink size={14} />
+                        </Link>
+                        <Button
+                          variante="secondary"
+                          disabled={ocupado}
+                          onClick={() => setEleccion({ codigo: item.codigo, candidato })}
+                          className="min-h-11 w-full sm:min-h-10 sm:w-auto"
+                        >
+                          Es este
+                          <span className="sr-only">
+                            : {candidato.direccion}, {candidato.ciudad}
+                          </span>
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </Lista>
@@ -121,7 +143,7 @@ export function PendientesNubyListas({ pendientes, totales, ocupado, onVincular 
         <Lista
           titulo="No se trajeron"
           total={Math.max(totales.no_traidos, noTraidos.length)}
-          descripcion="Están en arriendo en nuby, pero no pudieron entrar a Cofianza. Si falta un dato, complételo en nuby: el inmueble entra en una copia siguiente."
+          descripcion="Están en arriendo y «Activa» en nuby, pero no pudieron entrar a Cofianza. Cuando se corrija en nuby, el inmueble entra en una copia siguiente."
           faltan={cuantosMas(totales.no_traidos, noTraidos.length)}
         >
           {noTraidos.map((item, i) => (
@@ -152,7 +174,7 @@ export function PendientesNubyListas({ pendientes, totales, ocupado, onVincular 
                 </p>
                 <Link
                   href={`/inmuebles/${item.inmueble_id}`}
-                  className="inline-flex min-h-9 shrink-0 items-center gap-1 self-start rounded text-sm font-medium text-primary-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
+                  className="inline-flex min-h-10 shrink-0 items-center gap-1 self-start rounded text-sm font-medium text-primary-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500"
                 >
                   Ver inmueble
                   <span className="sr-only"> {item.codigo}</span>
@@ -188,11 +210,17 @@ export function PendientesNubyListas({ pendientes, totales, ocupado, onVincular 
         title="Vincular con nuby"
         message={
           eleccion ? (
-            <p>
-              El inmueble de <strong>{eleccion.candidato.direccion}</strong> ({eleccion.candidato.ciudad}) quedará
-              vinculado con el código <strong className="break-all">{eleccion.codigo}</strong> de nuby. Los demás
-              inmuebles con ese código quedan sin vincular.
-            </p>
+            <div className="space-y-2">
+              <p>
+                El inmueble de <strong>{eleccion.candidato.direccion}</strong> ({eleccion.candidato.ciudad}) quedará
+                vinculado con el código <strong className="break-all">{eleccion.codigo}</strong> de nuby.
+              </p>
+              <p>
+                Desde la siguiente copia, sus datos y su estado se actualizarán con lo que diga nuby. Los demás
+                inmuebles con ese código quedan sin vincular.
+              </p>
+              <p>Esta elección no se puede deshacer desde aquí.</p>
+            </div>
           ) : (
             ''
           )

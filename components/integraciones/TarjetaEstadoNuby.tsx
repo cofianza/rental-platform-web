@@ -31,6 +31,7 @@ interface Props {
   sincronizacionAutomatica: boolean
   /** Acción en curso (deshabilita las demás). */
   accion: AccionNuby | null
+  /** Copia en curso: tampoco se cambian las credenciales ni se desconecta (la API responde 409). */
   sincronizando: boolean
   /** La copia lleva más de lo que la pantalla espera sola. */
   sondeoAgotado: boolean
@@ -134,18 +135,21 @@ export function TarjetaEstadoNuby({
         </div>
 
         {estado === 'error' && (
-          <Aviso tono="rojo" titulo="La conexión con nuby tiene un error">
+          <Aviso tono="rojo" titulo="La copia desde nuby está detenida">
             {ultimoError && <p>{ultimoError}</p>}
             {intentoFallido && <p>Último intento: {intentoFallido}</p>}
             <p>
-              Para resolverlo, cree una clave nueva en nuby (Configuraciones → API nuby → «Crear Cliente», con permiso
-              de lectura) y regístrela aquí con «Cambiar credenciales».
+              Cuando lo corrija en nuby, pulse «Probar conexión»: si la prueba pasa, la conexión vuelve a quedar
+              activa. Si creó un cliente nuevo en nuby, regístrelo con «Cambiar credenciales».
             </p>
           </Aviso>
         )}
         {estado === 'pausada' && (
           <Aviso tono="ambar" titulo="La conexión con nuby está pausada">
-            <p>Mientras siga pausada, Cofianza no copia inmuebles desde nuby.</p>
+            <p>
+              Cofianza no copia sola mientras la conexión esté pausada. Si pulsa «Copiar ahora» y la copia termina
+              bien, vuelve a quedar activa.
+            </p>
             {ultimoError && <p>{ultimoError}</p>}
           </Aviso>
         )}
@@ -157,13 +161,13 @@ export function TarjetaEstadoNuby({
         )}
         {!sincronizacionAutomatica && (
           <Aviso tono="gris" titulo="La copia automática está apagada por ahora">
-            <p>Los inmuebles solo se actualizan cuando se pulsa «Sincronizar ahora».</p>
+            <p>Los inmuebles solo se actualizan cuando se pulsa «Copiar ahora».</p>
           </Aviso>
         )}
         {sincronizando && sondeoAgotado && (
           <Aviso tono="gris" titulo="La copia sigue en curso">
             <p>Con un inventario grande puede tardar. Vuelva en unos minutos o actualice el estado.</p>
-            <Button variante="secondary" tamano="sm" onClick={onActualizar} disabled={actualizando} className="mt-1 min-h-9">
+            <Button variante="secondary" tamano="sm" onClick={onActualizar} disabled={actualizando} className="mt-1 min-h-10">
               <IconRefresh size={14} className={actualizando ? 'animate-spin' : undefined} />
               Actualizar estado
             </Button>
@@ -196,7 +200,7 @@ export function TarjetaEstadoNuby({
           </Dato>
           {totales.ausentes > 0 && (
             <Dato etiqueta="Ya no aparecen en nuby">
-              {totales.ausentes.toLocaleString('es-CO')} · salieron de la vitrina, no se borraron
+              {totales.ausentes.toLocaleString('es-CO')} · siguen en Cofianza, fuera de la vitrina
             </Dato>
           )}
         </dl>
@@ -227,7 +231,7 @@ export function TarjetaEstadoNuby({
           className="min-h-11 w-full sm:min-h-10 sm:w-auto"
         >
           {sincronizando || accion === 'sincronizar' ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
-          {sincronizando ? 'Sincronizando…' : 'Sincronizar ahora'}
+          {sincronizando ? 'Copiando…' : 'Copiar ahora'}
         </Button>
         <Button
           variante="secondary"
@@ -239,14 +243,19 @@ export function TarjetaEstadoNuby({
           {accion === 'probar' ? <IconLoader size={16} className="animate-spin" /> : <IconCheckCircle size={16} />}
           {accion === 'probar' ? 'Probando…' : 'Probar conexión'}
         </Button>
-        <Button variante="secondary" onClick={onCambiar} disabled={ocupado} className="min-h-11 w-full sm:min-h-10 sm:w-auto">
+        <Button
+          variante="secondary"
+          onClick={onCambiar}
+          disabled={ocupado || sincronizando}
+          className="min-h-11 w-full sm:min-h-10 sm:w-auto"
+        >
           <IconPencil size={16} />
           Cambiar credenciales
         </Button>
         <Button
           variante="secondary"
           onClick={onDesconectar}
-          disabled={ocupado}
+          disabled={ocupado || sincronizando}
           className="min-h-11 w-full border-red-200 text-red-700 hover:bg-red-50 sm:ml-auto sm:min-h-10 sm:w-auto"
         >
           <IconPower size={16} />

@@ -15,7 +15,7 @@ import type {
   MotivoNoTraidoNuby,
   ResumenCopiaNuby,
 } from '@/types/integracionNuby'
-import { ESTADOS_INMUEBLE, formatCurrency, type EstadoInmueble } from './constants'
+import { ERROR_MESSAGES, formatCurrency } from './constants'
 
 /** Ruta base de la API según quién opera (relativa a NEXT_PUBLIC_API_URL). */
 export function baseIntegracionNuby(modo: ModoIntegracionNuby): string {
@@ -101,7 +101,9 @@ export function normalizarEstadoNuby(estado: EstadoIntegracionNuby): EstadoInteg
   const numero = (v: unknown) => Number(v) || 0
   return {
     ...estado,
-    integracion: estado.integracion ?? null,
+    integracion: estado.integracion
+      ? { ...estado.integracion, resumen: estado.integracion.resumen ? normalizarResumen(estado.integracion.resumen) : null }
+      : null,
     totales: {
       vinculados: numero(totales.vinculados),
       codigo_repetido: numero(totales.codigo_repetido),
@@ -139,13 +141,6 @@ export function estadoDesconectado(estado: EstadoIntegracionNuby): EstadoIntegra
   }
 }
 
-/** Lo que se le dice al titular cuando la prueba de las credenciales guardadas sale bien. */
-export function textoPruebaCorrecta(inmueblesMuestra: number | null | undefined): string {
-  const n = Math.floor(Number(inmueblesMuestra))
-  if (!Number.isFinite(n) || n <= 0) return 'La conexión con nuby funciona.'
-  return `La conexión con nuby funciona: respondió con ${n} ${n === 1 ? 'inmueble' : 'inmuebles'} de muestra.`
-}
-
 export function etiquetaModoCopia(modo: ResumenCopiaNuby['modo']): string {
   return modo === 'completa' ? 'Revisión completa del inventario' : 'Copia de lo modificado'
 }
@@ -160,10 +155,18 @@ const CIFRAS_RESUMEN: Array<[CifraResumen, string]> = [
   ['vinculados', 'Vinculados con uno que ya existía'],
   ['sin_cambios', 'Sin cambios'],
   ['protegidos', 'Sin tocar (con estudio o contrato)'],
+  ['no_activas', 'No se crearon (no están «Activa» en nuby)'],
+  ['codigo_repetido', 'Con código repetido'],
   ['no_traidos', 'No se trajeron'],
   ['ausentes', 'Ya no aparecen en nuby'],
   ['fotos_copiadas', 'Fotos copiadas'],
 ]
+
+/** Las cifras del resumen siempre son números: una API anterior puede no traer las más nuevas. */
+function normalizarResumen(resumen: ResumenCopiaNuby): ResumenCopiaNuby {
+  const cifras = Object.fromEntries(CIFRAS_RESUMEN.map(([clave]) => [clave, Number(resumen[clave]) || 0])) as Record<CifraResumen, number>
+  return { ...resumen, ...cifras }
+}
 
 /** El resumen de la última copia como filas «etiqueta: cifra», en orden de lectura. */
 export function cifrasDeResumen(resumen: ResumenCopiaNuby): Array<{ clave: CifraResumen; etiqueta: string; valor: number }> {
@@ -172,21 +175,37 @@ export function cifrasDeResumen(resumen: ResumenCopiaNuby): Array<{ clave: Cifra
 
 // ── Pendientes ─────────────────────────────────────────────────
 
-const MOTIVOS_NO_TRAIDO: Record<MotivoNoTraidoNuby, string> = {
-  sin_canon: 'No tiene canon de arriendo',
-  clase_sin_equivalente: 'Su tipo de inmueble no tiene equivalente en Cofianza',
-  sin_direccion: 'No tiene dirección',
-  sin_municipio: 'No tiene municipio',
-  codigo_invalido: 'Su código no es válido',
+type MotivoFijoNuby = Exclude<MotivoNoTraidoNuby, 'clase_sin_equivalente'>
+
+const MOTIVOS_NO_TRAIDO: Record<MotivoFijoNuby, string> = {
+  sin_canon: 'No tiene canon de arriendo.',
+  sin_direccion: 'No tiene dirección.',
+  sin_municipio: 'No tiene municipio.',
+  codigo_invalido: 'Su código tiene caracteres que Cofianza no admite (solo letras, números, espacios y guiones; máximo 30).',
 }
 
 /** Por qué un inmueble en arriendo de nuby no entró, en lenguaje claro. */
 export function textoMotivoNoTraido(motivo: string, detalle?: string | null): string {
-  const base = MOTIVOS_NO_TRAIDO[motivo as MotivoNoTraidoNuby]
   const extra = detalle?.trim()
+  // El tipo sin equivalente no lo arregla la inmobiliaria en nuby: lo agrega Cofianza. `detalle` es el tipo.
+  if (motivo === 'clase_sin_equivalente') {
+    return `Su tipo de inmueble en nuby${extra ? ` («${extra}»)` : ''} no tiene equivalente en Cofianza. Avísele a Cofianza para agregarlo.`
+  }
   // Un motivo que la web todavía no conoce: lo que explique la API, o un texto neutro.
-  if (!base) return extra || 'No se pudo traer'
-  return motivo === 'clase_sin_equivalente' && extra ? `${base}: ${extra}` : base
+  return MOTIVOS_NO_TRAIDO[motivo as MotivoFijoNuby] ?? (extra || 'No se pudo traer.')
+}
+
+/** Estado en Cofianza de un inmueble candidato (códigos repetidos), como se le dice a la inmobiliaria. */
+const ESTADOS_CANDIDATO: Record<string, string> = {
+  disponible: 'Disponible',
+  en_estudio: 'En estudio',
+  ocupado: 'Arrendada o reservada',
+  inactivo: 'Inactiva',
+}
+
+/** undefined = un estado que la web no conoce (se muestra el valor tal como llega). */
+export function etiquetaEstadoCandidato(estado: string): string | undefined {
+  return ESTADOS_CANDIDATO[estado]
 }
 
 /** Cuántos quedaron fuera de una lista que llegó recortada (0 si llegó completa). */
@@ -209,14 +228,14 @@ export function etiquetaCampoDiferencia(campo: string): string {
 }
 
 /**
- * Valor de una diferencia para mostrar: un canon numérico sale como pesos y un
- * estado de inmueble de Cofianza con su etiqueta; lo demás, tal como llega.
+ * Valor de una diferencia para mostrar: un canon numérico sale como pesos. El
+ * estado llega de la API ya con su etiqueta («Arrendada o reservada», «Ya no
+ * está en arriendo»…) y se muestra tal cual.
  */
 export function valorDiferencia(campo: string, valor: string | null | undefined): string {
   const v = (valor ?? '').trim()
   if (!v) return '—'
   if (campo === 'canon' && /^\d+(\.\d+)?$/.test(v)) return formatCurrency(Number(v))
-  if (campo === 'estado') return ESTADOS_INMUEBLE[v as EstadoInmueble]?.label ?? v
   return v
 }
 
@@ -230,22 +249,25 @@ export interface ErrorNuby {
 
 /** Miembro que no es titular: la API responde 403 en todo. */
 export const CODIGO_SOLO_TITULAR = 'SOLO_TITULAR'
-/** Ya hay una copia en curso (409 al pedir otra). */
+/** Hay una copia en curso: 409 al pedir otra, al vincular un código o al cambiar las credenciales. */
 export const CODIGO_YA_SINCRONIZANDO = 'NUBY_SINCRONIZANDO'
 
 /**
  * Lee el error que lanza apiClient (ApiClientError: `message`, `code`,
- * `statusCode`). Se muestra el mensaje de la API, que ya viene listo; el 429
- * no siempre trae uno propio, así que lleva el suyo. Cualquier otro error (uno
- * de programación, en inglés) no se le muestra a la persona: va el texto por defecto.
+ * `statusCode`). Se muestra el mensaje de la API, que ya viene listo; también
+ * en el 429, que dice cuánto esperar («…en una hora», «Espere un minuto…»).
+ * Cualquier otro error (uno de programación, en inglés) no se le muestra a la
+ * persona: va el texto por defecto.
  */
 export function leerErrorNuby(err: unknown, porDefecto: string): ErrorNuby {
   const e = (err ?? {}) as { message?: unknown; code?: unknown; statusCode?: unknown }
   const code = typeof e.code === 'string' ? e.code : undefined
   const statusCode = typeof e.statusCode === 'number' ? e.statusCode : undefined
-  if (statusCode === 429) {
-    return { mensaje: 'Hubo demasiadas solicitudes seguidas. Espere unos minutos y vuelva a intentarlo.', code, statusCode }
-  }
   const deLaApi = statusCode !== undefined && typeof e.message === 'string' ? e.message.trim() : ''
+  if (statusCode === 429) {
+    // Un 429 sin mensaje propio llega con el genérico de apiClient («Error en el servidor…»), que aquí confunde.
+    const propio = deLaApi === ERROR_MESSAGES.SERVER_ERROR ? '' : deLaApi
+    return { mensaje: propio || 'Hizo muchos intentos seguidos. Espere unos minutos y vuelva a intentarlo.', code, statusCode }
+  }
   return { mensaje: deLaApi || porDefecto, code, statusCode }
 }

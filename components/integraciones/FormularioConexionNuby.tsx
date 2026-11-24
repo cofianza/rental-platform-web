@@ -1,12 +1,16 @@
 /**
  * Integración nuby: formulario para conectar (o cambiar las credenciales).
- * La clave secreta vive solo en el estado de este formulario: no se guarda en
- * el navegador ni en un store, y se borra apenas la conexión queda hecha.
+ * La clave secreta vive solo en el estado de este formulario: la web no la
+ * guarda (ni en localStorage ni en un store) y la borra apenas la conexión
+ * queda hecha. Los campos le piden al navegador y a los gestores de
+ * contraseñas que no los traten como el acceso a Cofianza (`new-password`,
+ * `data-1p-ignore`, `data-lpignore`); que aun así ofrezcan guardarla depende
+ * de cada uno.
  */
 
 'use client'
 
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { IconAlertTriangle, IconEye, IconEyeOff, IconLoader } from '@/components/icons'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
@@ -49,6 +53,20 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
 
   const deQuien = esAdmin ? 'del nuby de la inmobiliaria' : 'de su nuby'
 
+  // Cambiar de dirección es cambiar de nuby: se avisa antes de guardar.
+  const direccionEscrita = limpiarInstanciaNuby(instancia)
+  const cambiaDeNuby = cambiando && direccionEscrita !== '' && direccionEscrita !== limpiarInstanciaNuby(instanciaActual ?? '')
+
+  // Cuando la API rechaza la dirección, el formulario sigue deshabilitado hasta
+  // el siguiente render y un campo deshabilitado no recibe el foco: se enfoca
+  // apenas vuelve a estar habilitado.
+  const enfocarInstancia = useRef(false)
+  useEffect(() => {
+    if (enviando || !enfocarInstancia.current) return
+    enfocarInstancia.current = false
+    instanciaRef.current?.focus()
+  }, [enviando, errores.instancia])
+
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
     if (enviando) return
@@ -74,8 +92,8 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
     }
     // Si falló se conserva lo escrito: nuby muestra la clave una sola vez.
     if (r.code === 'NUBY_INSTANCIA_INVALIDA') {
+      enfocarInstancia.current = true
       setErrores({ instancia: r.mensaje })
-      instanciaRef.current?.focus()
     } else {
       setErrorApi(r.mensaje)
     }
@@ -95,8 +113,8 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
         ) : (
           <>
             <p className="mt-1 text-sm text-gray-600">
-              Cofianza copia los inmuebles en arriendo que {esAdmin ? 'la inmobiliaria' : 'usted'} lleva en nuby y los
-              mantiene al día. Se conecta una sola vez, en tres pasos:
+              Cofianza copia los inmuebles que {esAdmin ? 'la inmobiliaria' : 'usted'} tiene disponibles para arrendar
+              en nuby (estado «Activa»). Se conecta una sola vez, en tres pasos:
             </p>
             <ol className="mt-4 space-y-3">
               <Paso numero={1} titulo="Cree el cliente en nuby">
@@ -166,6 +184,8 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
+              data-1p-ignore
+              data-lpignore="true"
               required
               value={clientId}
               onChange={(e) => {
@@ -192,10 +212,12 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
                 ref={clientSecretRef}
                 id={`${id}-client-secret`}
                 type={verClave ? 'text' : 'password'}
-                autoComplete="off"
+                autoComplete="new-password"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
+                data-1p-ignore
+                data-lpignore="true"
                 required
                 value={clientSecret}
                 onChange={(e) => {
@@ -226,6 +248,17 @@ export function FormularioConexionNuby({ esAdmin, instanciaActual, enviando, onC
               </p>
             )}
           </div>
+
+          {cambiaDeNuby && (
+            <div role="status" className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
+              <p className="min-w-0 text-sm text-amber-800">
+                Esta dirección es distinta de la que está conectada. Al guardar, Cofianza olvida los vínculos con el
+                nuby anterior: los inmuebles ya copiados se quedan en Cofianza, pero solo seguirán actualizándose los
+                que tengan el mismo código en el nuevo nuby.
+              </p>
+            </div>
+          )}
 
           {errorApi && (
             <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3">

@@ -60,11 +60,26 @@ export function NubyErrorCarga({ mensaje, onReintentar }: { mensaje: string; onR
   )
 }
 
-const REGLAS = [
-  'Los inmuebles nuevos entran sin publicar en la vitrina.',
-  'Un inmueble con estudio en curso o con contrato en Cofianza no se toca.',
-  'Si un inmueble ya no aparece en nuby, sale de la vitrina, pero no se borra.',
-  'Cofianza solo lee: no escribe nada en nuby.',
+// Las reglas van en dos grupos cortos: juntas eran una lista larga a 390 px.
+const GRUPOS_DE_REGLAS = [
+  {
+    titulo: 'Qué se trae',
+    reglas: [
+      'Los que en nuby figuran arrendados o inactivos no se crean en Cofianza; entran cuando vuelvan a estar «Activa».',
+      'Los inmuebles nuevos entran sin publicar en la vitrina.',
+      'Las fotos se copian una sola vez (hasta 20 por inmueble) y solo si el inmueble no tiene fotos en Cofianza. Los cambios de fotos en nuby no se traen.',
+      'Cofianza solo lee: no escribe nada en nuby.',
+    ],
+  },
+  {
+    titulo: 'Qué pasa después',
+    reglas: [
+      'Los datos se cambian en nuby: lo que edite en Cofianza en un inmueble que viene de nuby se reemplaza en una copia siguiente.',
+      'Un inmueble con estudio en curso o con contrato en Cofianza no se toca.',
+      'Si en nuby un inmueble pasa a arrendado o inactivo, en Cofianza cambia de estado y sale de la vitrina. Cofianza nunca publica por su cuenta.',
+      'Si un inmueble ya no aparece en nuby, sale de la vitrina, pero no se borra.',
+    ],
+  },
 ]
 
 /** Las reglas de la copia, en corto. */
@@ -73,19 +88,26 @@ export function ReglasNuby({ sincronizacionAutomatica }: { sincronizacionAutomat
     <section className={`${TARJETA} p-4 sm:p-6`}>
       <h2 className="text-sm font-semibold text-gray-900">Cómo funciona la copia</h2>
       <p className="mt-1 text-sm text-gray-600">
-        Cofianza trae los inmuebles que están en arriendo en nuby
+        Cofianza trae los inmuebles en arriendo que están en estado «Activa» en nuby
         {sincronizacionAutomatica
           ? ': copia sola lo modificado cada 3 horas y revisa el inventario completo una vez al día.'
-          : '.'}
+          : '. La copia automática está apagada por ahora: los inmuebles se traen cuando se pulsa «Copiar ahora».'}
       </p>
-      <ul className="mt-3 space-y-2">
-        {REGLAS.map((regla) => (
-          <li key={regla} className="flex items-start gap-2 text-sm text-gray-700">
-            <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-700" />
-            <span>{regla}</span>
-          </li>
+      <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
+        {GRUPOS_DE_REGLAS.map((grupo) => (
+          <div key={grupo.titulo}>
+            <h3 className="text-sm font-medium text-gray-900">{grupo.titulo}</h3>
+            <ul className="mt-2 space-y-2">
+              {grupo.reglas.map((regla) => (
+                <li key={regla} className="flex items-start gap-2 text-sm text-gray-700">
+                  <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-700" />
+                  <span>{regla}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
     </section>
   )
 }

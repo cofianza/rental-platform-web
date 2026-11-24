@@ -10,6 +10,7 @@ import {
   cuantosMas,
   estadoDesconectado,
   etiquetaCampoDiferencia,
+  etiquetaEstadoCandidato,
   etiquetaEstadoNuby,
   idClienteOculto,
   instanciaNubyValida,
@@ -20,11 +21,11 @@ import {
   prepararCredencialesNuby,
   sigueSincronizando,
   textoMotivoNoTraido,
-  textoPruebaCorrecta,
   textoYMas,
   validarCredencialesNuby,
   valorDiferencia,
 } from './integracionNuby'
+import { ERROR_MESSAGES } from './constants'
 import type { EstadoIntegracionNuby } from '@/types/integracionNuby'
 
 const estadoConectado = (sincronizando = false): EstadoIntegracionNuby => ({
@@ -52,6 +53,8 @@ const estadoConectado = (sincronizando = false): EstadoIntegracionNuby => ({
       vinculados: 1,
       sin_cambios: 5,
       protegidos: 1,
+      no_activas: 4,
+      codigo_repetido: 1,
       no_traidos: 0,
       fotos_copiadas: 18,
       ausentes: 0,
@@ -177,6 +180,19 @@ test('si la API omite totales o listas, la pantalla recibe vacíos', () => {
   assert.deepEqual(n.pendientes.no_traidos, [])
 })
 
+test('si el resumen llega sin las cifras nuevas, cuentan como 0', () => {
+  const completo = estadoConectado()
+  const resumenViejo: Record<string, unknown> = { ...completo.integracion!.resumen }
+  delete resumenViejo.no_activas
+  delete resumenViejo.codigo_repetido
+  const viejo = { ...completo, integracion: { ...completo.integracion, resumen: resumenViejo } } as unknown as EstadoIntegracionNuby
+  const resumen = normalizarEstadoNuby(viejo).integracion!.resumen!
+  assert.equal(resumen.no_activas, 0)
+  assert.equal(resumen.codigo_repetido, 0)
+  assert.equal(resumen.leidos, 40)
+  assert.equal(resumen.modo, 'incremental')
+})
+
 test('sigue sincronizando solo si está conectada y la API lo dice', () => {
   assert.equal(sigueSincronizando(null), false)
   assert.equal(sigueSincronizando(estadoConectado(false)), false)
@@ -211,38 +227,68 @@ test('el resumen de la copia sale completo, en orden y con cifras', () => {
   const cifras = cifrasDeResumen(resumen)
   assert.deepEqual(
     cifras.map((c) => c.clave),
-    ['leidos', 'en_arriendo', 'creados', 'actualizados', 'vinculados', 'sin_cambios', 'protegidos', 'no_traidos', 'ausentes', 'fotos_copiadas'],
+    [
+      'leidos',
+      'en_arriendo',
+      'creados',
+      'actualizados',
+      'vinculados',
+      'sin_cambios',
+      'protegidos',
+      'no_activas',
+      'codigo_repetido',
+      'no_traidos',
+      'ausentes',
+      'fotos_copiadas',
+    ],
   )
   assert.equal(cifras.find((c) => c.clave === 'fotos_copiadas')?.valor, 18)
+  assert.deepEqual(cifras.find((c) => c.clave === 'no_activas'), {
+    clave: 'no_activas',
+    etiqueta: 'No se crearon (no están «Activa» en nuby)',
+    valor: 4,
+  })
+  assert.deepEqual(cifras.find((c) => c.clave === 'codigo_repetido'), { clave: 'codigo_repetido', etiqueta: 'Con código repetido', valor: 1 })
   assert.ok(cifras.every((c) => c.etiqueta.length > 0 && Number.isFinite(c.valor)))
   // Una cifra que no llegó cuenta como 0, no como «NaN».
   const incompleto = { ...resumen, creados: undefined as unknown as number }
   assert.equal(cifrasDeResumen(incompleto).find((c) => c.clave === 'creados')?.valor, 0)
 })
 
-test('la prueba correcta dice cuántos inmuebles de muestra respondió nuby', () => {
-  assert.equal(textoPruebaCorrecta(0), 'La conexión con nuby funciona.')
-  assert.equal(textoPruebaCorrecta(undefined), 'La conexión con nuby funciona.')
-  assert.match(textoPruebaCorrecta(1), /1 inmueble de muestra/)
-  assert.match(textoPruebaCorrecta(5), /5 inmuebles de muestra/)
-})
-
 test('cada motivo de «no se trajo» tiene su texto', () => {
-  assert.equal(textoMotivoNoTraido('sin_canon'), 'No tiene canon de arriendo')
-  assert.equal(textoMotivoNoTraido('sin_direccion', null), 'No tiene dirección')
-  assert.equal(textoMotivoNoTraido('sin_municipio'), 'No tiene municipio')
-  assert.equal(textoMotivoNoTraido('codigo_invalido'), 'Su código no es válido')
+  assert.equal(textoMotivoNoTraido('sin_canon'), 'No tiene canon de arriendo.')
+  assert.equal(textoMotivoNoTraido('sin_direccion', null), 'No tiene dirección.')
+  assert.equal(textoMotivoNoTraido('sin_municipio'), 'No tiene municipio.')
+  assert.equal(
+    textoMotivoNoTraido('codigo_invalido'),
+    'Su código tiene caracteres que Cofianza no admite (solo letras, números, espacios y guiones; máximo 30).',
+  )
 })
 
-test('el tipo sin equivalente muestra el detalle; los demás motivos no', () => {
-  assert.equal(textoMotivoNoTraido('clase_sin_equivalente', 'Parqueadero'), 'Su tipo de inmueble no tiene equivalente en Cofianza: Parqueadero')
-  assert.equal(textoMotivoNoTraido('clase_sin_equivalente', '  '), 'Su tipo de inmueble no tiene equivalente en Cofianza')
-  assert.equal(textoMotivoNoTraido('sin_canon', 'dato interno'), 'No tiene canon de arriendo')
+test('el tipo sin equivalente nombra el tipo de nuby y pide avisar a Cofianza; los demás motivos no usan el detalle', () => {
+  assert.equal(
+    textoMotivoNoTraido('clase_sin_equivalente', 'Parqueadero'),
+    'Su tipo de inmueble en nuby («Parqueadero») no tiene equivalente en Cofianza. Avísele a Cofianza para agregarlo.',
+  )
+  assert.equal(
+    textoMotivoNoTraido('clase_sin_equivalente', '  '),
+    'Su tipo de inmueble en nuby no tiene equivalente en Cofianza. Avísele a Cofianza para agregarlo.',
+  )
+  assert.equal(textoMotivoNoTraido('sin_canon', 'dato interno'), 'No tiene canon de arriendo.')
 })
 
 test('un motivo que la web no conoce no rompe la lista', () => {
   assert.equal(textoMotivoNoTraido('motivo_nuevo', 'Explicación de la API'), 'Explicación de la API')
-  assert.equal(textoMotivoNoTraido('motivo_nuevo', null), 'No se pudo traer')
+  assert.equal(textoMotivoNoTraido('motivo_nuevo', null), 'No se pudo traer.')
+})
+
+test('el estado de un candidato se dice como en el resto de la integración', () => {
+  assert.equal(etiquetaEstadoCandidato('disponible'), 'Disponible')
+  assert.equal(etiquetaEstadoCandidato('en_estudio'), 'En estudio')
+  assert.equal(etiquetaEstadoCandidato('ocupado'), 'Arrendada o reservada')
+  assert.equal(etiquetaEstadoCandidato('inactivo'), 'Inactiva')
+  // Un estado que la web no conoce: sin etiqueta propia (se muestra el valor que llega).
+  assert.equal(etiquetaEstadoCandidato('otro'), undefined)
 })
 
 test('«y N más» sale solo cuando la lista llegó recortada', () => {
@@ -263,8 +309,9 @@ test('las diferencias se muestran con etiqueta y valor legibles', () => {
   assert.equal(valorDiferencia('canon', '1500000.00'), '$1.500.000')
   // Si la API ya lo manda con formato, no se toca.
   assert.equal(valorDiferencia('canon', '$1.500.000'), '$1.500.000')
-  assert.equal(valorDiferencia('estado', 'arrendado'), 'Arrendado')
-  assert.equal(valorDiferencia('estado', 'Retirado'), 'Retirado')
+  // El estado llega de la API ya con su etiqueta: se muestra tal cual.
+  assert.equal(valorDiferencia('estado', 'Arrendada o reservada'), 'Arrendada o reservada')
+  assert.equal(valorDiferencia('estado', 'Ya no está en arriendo'), 'Ya no está en arriendo')
   assert.equal(valorDiferencia('estado', ''), '—')
   assert.equal(valorDiferencia('canon', null), '—')
 })
@@ -292,8 +339,18 @@ test('un error que no viene de la API no se muestra tal cual', () => {
   assert.equal(e.mensaje, 'No pudimos cargar la conexión con nuby.')
 })
 
-test('el 429 siempre pide esperar unos minutos', () => {
-  const e = leerErrorNuby({ message: 'Error en el servidor.', statusCode: 429 }, 'No pudimos iniciar la copia.')
-  assert.match(e.mensaje, /Espere unos minutos/)
-  assert.equal(e.statusCode, 429)
+test('en el 429 se muestra el mensaje de la API, que dice cuánto esperar', () => {
+  const e = leerErrorNuby(
+    { message: 'Acaba de correr una copia. Espere un minuto antes de lanzar otra.', code: 'NUBY_ESPERE', statusCode: 429 },
+    'No pudimos iniciar la copia.',
+  )
+  assert.deepEqual(e, { mensaje: 'Acaba de correr una copia. Espere un minuto antes de lanzar otra.', code: 'NUBY_ESPERE', statusCode: 429 })
+})
+
+test('un 429 sin mensaje propio lleva el texto de respaldo, no el genérico del servidor', () => {
+  const respaldo = 'Hizo muchos intentos seguidos. Espere unos minutos y vuelva a intentarlo.'
+  // Sin cuerpo, apiClient deja su mensaje genérico de error en el servidor.
+  assert.equal(leerErrorNuby({ message: ERROR_MESSAGES.SERVER_ERROR, code: 'UNKNOWN_ERROR', statusCode: 429 }, 'No pudimos iniciar la copia.').mensaje, respaldo)
+  assert.equal(leerErrorNuby({ message: '  ', statusCode: 429 }, 'No pudimos iniciar la copia.').mensaje, respaldo)
+  assert.equal(leerErrorNuby({ statusCode: 429 }, 'No pudimos iniciar la copia.').statusCode, 429)
 })

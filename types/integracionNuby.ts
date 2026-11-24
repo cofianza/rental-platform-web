@@ -1,6 +1,7 @@
 /**
- * Integración nuby → Cofianza (solo lectura): Cofianza copia los inmuebles en
- * arriendo que la inmobiliaria lleva en nuby. Tipos del contrato de la API
+ * Integración nuby → Cofianza (solo lectura): Cofianza copia los inmuebles que
+ * la inmobiliaria tiene disponibles para arrendar en nuby (en arriendo y en
+ * estado «Activa»). Tipos del contrato de la API
  * (`/inmobiliaria/integraciones/nuby` y `/admin/inmobiliarias/{id}/integraciones/nuby`).
  */
 
@@ -20,6 +21,10 @@ export interface ResumenCopiaNuby {
   vinculados: number
   sin_cambios: number
   protegidos: number
+  /** En arriendo pero no «Activa» en nuby (arrendados, inactivos…): no se crean en Cofianza. */
+  no_activas: number
+  /** Su código está en 2+ inmuebles de Cofianza: esperan a que se elija cuál es. */
+  codigo_repetido: number
   no_traidos: number
   fotos_copiadas: number
   ausentes: number
@@ -32,12 +37,13 @@ export interface IntegracionNuby {
   client_id_final: string
   estado: EstadoConexionNuby
   conectada_en: string
+  /** «Cofianza» cuando la conectó un administrador de la plataforma. */
   conectada_por_nombre: string | null
   /** Última copia que terminó bien. */
   ultima_sincronizacion_en: string | null
   ultima_revision_completa_en: string | null
   ultimo_intento_en: string | null
-  /** Texto ya listo para mostrar. */
+  /** Texto ya listo para mostrar: qué pasó y, si aplica, si Cofianza reintenta sola. */
   ultimo_error: string | null
   sincronizando: boolean
   resumen: ResumenCopiaNuby | null
@@ -56,6 +62,7 @@ export interface CandidatoCodigoNuby {
   codigo: string
   direccion: string
   ciudad: string
+  /** Estado del inmueble en Cofianza: disponible | en_estudio | ocupado | inactivo. */
   estado: string
 }
 
@@ -102,7 +109,7 @@ export interface PendientesNuby {
 export interface EstadoIntegracionNuby {
   /** false = la función está apagada en la plataforma: no se muestra el formulario. */
   habilitada: boolean
-  /** false = la copia automática está apagada; solo corre con «Sincronizar ahora». */
+  /** false = la copia automática está apagada; solo corre con «Copiar ahora». */
   sincronizacion_automatica: boolean
   conectada: boolean
   integracion: IntegracionNuby | null

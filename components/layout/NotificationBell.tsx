@@ -36,6 +36,7 @@ import {
   IconUsers,
   IconClock,
   IconTrendingUp,
+  IconPlug,
   type IconProps,
 } from '@/components/icons'
 import { cn, sinReferenciasInternas } from '@/lib/utils'
@@ -94,6 +95,8 @@ const TIPO_ICON: Record<string, NotifIconEntry> = {
   'inmobiliaria.miembro_salio': { icon: IconUserX, badge: 'bg-amber-50 text-amber-600' },
   'inmobiliaria.miembro_acepto': { icon: IconUsers, badge: 'bg-emerald-50 text-emerald-600' },
   'solicitud.vitrina': { icon: IconHome, badge: 'bg-sky-50 text-sky-600' },
+  // Integración nuby: avisos de la copia (mismo tono que la entrada de Configuración).
+  'integracion.nuby': { icon: IconPlug, badge: 'bg-orange-50 text-orange-600' },
 }
 
 const FALLBACK_ICON: NotifIconEntry = { icon: IconBell, badge: 'bg-slate-50 text-slate-500' }

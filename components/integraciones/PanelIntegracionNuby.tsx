@@ -9,11 +9,11 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useIntegracionNuby } from '@/hooks/useIntegracionNuby'
-import { CODIGO_SOLO_TITULAR, CODIGO_YA_SINCRONIZANDO, textoPruebaCorrecta } from '@/lib/integracionNuby'
+import { CODIGO_SOLO_TITULAR, CODIGO_YA_SINCRONIZANDO } from '@/lib/integracionNuby'
 import type { CandidatoCodigoNuby, CredencialesNuby, ModoIntegracionNuby } from '@/types/integracionNuby'
 import { NubyCargando, NubyErrorCarga, NubyNoDisponible, NubySoloTitular, ReglasNuby } from './AvisosNuby'
 import { FormularioConexionNuby } from './FormularioConexionNuby'
@@ -36,7 +36,21 @@ function Panel({ modo }: Props) {
   const [cambiando, setCambiando] = useState(false)
   const [confirmarDesconexion, setConfirmarDesconexion] = useState(false)
 
-  const { estado, error } = nuby
+  const { estado, error, sincronizando } = nuby
+  const integracion = estado?.habilitada && estado.conectada ? estado.integracion : null
+
+  // Cuando termina una copia que esta pantalla venía siguiendo, se avisa: el
+  // cambio en la tarjeta (fecha y cifras) pasa fácil inadvertido.
+  const copiaSeguida = useRef(false)
+  const conectada = !!integracion
+  const ultimoError = integracion?.ultimo_error ?? null
+  useEffect(() => {
+    const termino = copiaSeguida.current && !sincronizando
+    copiaSeguida.current = sincronizando
+    if (!termino || !conectada) return
+    if (ultimoError) toast.error(ultimoError)
+    else toast.success('La copia desde nuby terminó.')
+  }, [sincronizando, conectada, ultimoError])
 
   if (!estado) {
     if (nuby.cargando) return <NubyCargando />
@@ -53,12 +67,17 @@ function Panel({ modo }: Props) {
 
   if (!estado.habilitada) return <NubyNoDisponible />
 
-  const integracion = estado.conectada ? estado.integracion : null
-
   const conectar = async (credenciales: CredencialesNuby) => {
     const r = await nuby.conectar(credenciales)
     if (r.ok) {
-      toast.success(cambiando ? 'Credenciales de nuby actualizadas.' : 'nuby quedó conectado.')
+      // Sin copia automática, conectar no trae nada todavía: se dice qué sigue.
+      toast.success(
+        cambiando
+          ? 'Los datos de acceso a nuby quedaron actualizados.'
+          : estado.sincronizacion_automatica
+            ? 'nuby quedó conectado.'
+            : 'nuby quedó conectado. Pulse «Copiar ahora» para traer los inmuebles.',
+      )
       setCambiando(false)
     }
     return r
@@ -73,7 +92,7 @@ function Panel({ modo }: Props) {
 
   const probar = async () => {
     const r = await nuby.probar()
-    if (r.ok) toast.success(textoPruebaCorrecta(r.datos?.inmuebles_muestra))
+    if (r.ok) toast.success('La conexión con nuby funciona.')
     else toast.error(r.mensaje)
   }
 
@@ -107,7 +126,7 @@ function Panel({ modo }: Props) {
             totales={estado.totales}
             sincronizacionAutomatica={estado.sincronizacion_automatica}
             accion={nuby.accion}
-            sincronizando={nuby.sincronizando}
+            sincronizando={sincronizando}
             sondeoAgotado={nuby.sondeoAgotado}
             actualizando={nuby.cargando}
             onSincronizar={() => void sincronizar()}
@@ -119,7 +138,7 @@ function Panel({ modo }: Props) {
           <PendientesNubyListas
             pendientes={estado.pendientes}
             totales={estado.totales}
-            ocupado={nuby.accion !== null}
+            ocupado={nuby.accion !== null || sincronizando}
             onVincular={vincular}
           />
         </>

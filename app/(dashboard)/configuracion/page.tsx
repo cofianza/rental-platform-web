@@ -70,19 +70,6 @@ const SECCIONES: Array<{
     soloRoles: ['inmobiliaria'],
   },
   {
-    // Conexión con nuby (solo lectura). Solo el titular: al resto del equipo la
-    // API le responde 403 en todo, así que no se le muestra la entrada.
-    id: 'integraciones',
-    href: '/configuracion/integraciones',
-    titulo: 'Integraciones',
-    descripcion: 'Conecte nuby para traer a Cofianza los inmuebles que tiene en arriendo.',
-    icon: IconPlug,
-    color: 'bg-orange-100 text-orange-600',
-    soloRoles: ['inmobiliaria'],
-    soloTitular: true,
-    requiereNuby: true,
-  },
-  {
     id: 'disponibilidad',
     href: '/disponibilidad',
     titulo: 'Disponibilidad de visitas',
@@ -168,6 +155,20 @@ const SECCIONES: Array<{
     icon: IconUsers,
     color: 'bg-green-100 text-green-600',
     soloRoles: ['administrador'],
+  },
+  {
+    // Conexión con nuby (solo lectura). Solo el titular: al resto del equipo la
+    // API le responde 403 en todo, así que no se le muestra la entrada.
+    // Va al final: aparece cuando responde la API y, más arriba, corría las filas de abajo.
+    id: 'integraciones',
+    href: '/configuracion/integraciones',
+    titulo: 'Integraciones',
+    descripcion: 'Conecte nuby para traer a Cofianza los inmuebles que tiene disponibles para arrendar.',
+    icon: IconPlug,
+    color: 'bg-orange-100 text-orange-600',
+    soloRoles: ['inmobiliaria'],
+    soloTitular: true,
+    requiereNuby: true,
   },
 ]
 

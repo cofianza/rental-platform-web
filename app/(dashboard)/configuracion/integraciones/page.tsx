@@ -1,8 +1,9 @@
 /**
  * Integraciones de la inmobiliaria: conexión con nuby (solo lectura), el
  * software donde algunas inmobiliarias llevan su inventario. Cofianza copia
- * los inmuebles en arriendo. La conecta y la gestiona solo el titular; la API
- * lo valida (403 SOLO_TITULAR al resto del equipo).
+ * los inmuebles disponibles para arrendar (en arriendo y «Activa» en nuby).
+ * La conecta y la gestiona solo el titular; la API lo valida (403
+ * SOLO_TITULAR al resto del equipo).
  */
 
 'use client'
@@ -35,7 +36,7 @@ export default function IntegracionesPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         title="Integraciones"
-        subtitle="Conecte nuby para traer a Cofianza los inmuebles que tiene en arriendo y mantenerlos al día."
+        subtitle="Conecte nuby para traer a Cofianza los inmuebles que tiene disponibles para arrendar."
       />
       {rol !== 'inmobiliaria' ? <NubyCargando /> : noEsTitular ? <NubySoloTitular /> : <PanelIntegracionNuby modo={MODO_TITULAR} />}
     </div>

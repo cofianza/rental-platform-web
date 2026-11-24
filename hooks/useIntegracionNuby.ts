@@ -8,7 +8,9 @@
  * - Las acciones no lanzan: devuelven `{ ok }` con el mensaje de la API, y la
  *   pantalla decide cómo mostrarlo.
  * - La copia corre en segundo plano: mientras la API diga `sincronizando`, se
- *   vuelve a pedir el estado cada 5 s, con tope de 5 min.
+ *   vuelve a pedir el estado cada 5 s, con tope de 5 min. Durante una copia la
+ *   API rechaza con 409 pedir otra, vincular un código o cambiar las
+ *   credenciales: ese 409 también pone a la pantalla a seguirla.
  * - Una respuesta vieja no pisa una nueva: cada lectura o acción invalida las
  *   lecturas anteriores, y el sondeo no lee mientras corre una acción.
  *
@@ -168,7 +170,13 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
       try {
         return { ok: true, datos: await tarea(vigente) }
       } catch (err) {
-        return { ok: false, ...leerErrorNuby(err, siFalla) }
+        const fallo = leerErrorNuby(err, siFalla)
+        // 409: hay una copia en curso que la pantalla no conocía. Se empieza a seguirla.
+        if (fallo.code === CODIGO_YA_SINCRONIZANDO) {
+          setEstado(marcarSincronizando)
+          setSondeo('activo')
+        }
+        return { ok: false, ...fallo }
       } finally {
         enAccion.current = false
         setAccion(null)
@@ -200,7 +208,7 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
     return r
   }, [ejecutar, modoFijo, refrescar])
 
-  /** Lanza la copia y sigue su avance. Si ya había una en curso (409), también se sigue. */
+  /** Lanza la copia y sigue su avance. Si ya había una en curso (409), `ejecutar` también la sigue. */
   const sincronizar = useCallback(async (): Promise<ResultadoNuby> => {
     const r = await ejecutar(
       'sincronizar',
@@ -210,7 +218,7 @@ export function useIntegracionNuby(modo: ModoIntegracionNuby) {
       },
       'No pudimos iniciar la copia. Intente de nuevo.',
     )
-    if (r.ok || r.code === CODIGO_YA_SINCRONIZANDO) {
+    if (r.ok) {
       setEstado(marcarSincronizando)
       setSondeo('activo')
     }
