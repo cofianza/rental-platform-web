@@ -8,9 +8,10 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard, IconPlug } from '@/components/icons'
 
-// Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
+// Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad;
+// `soloTitular` la limita además al titular de la inmobiliaria (rol_miembro owner).
 const SECCIONES: Array<{
   id: string
   href: string
@@ -19,6 +20,7 @@ const SECCIONES: Array<{
   icon: typeof IconBuilding2
   color: string
   soloRoles?: string[]
+  soloTitular?: boolean
 }> = [
   {
     id: 'cuenta',
@@ -63,6 +65,18 @@ const SECCIONES: Array<{
     icon: IconReceipt,
     color: 'bg-emerald-100 text-emerald-600',
     soloRoles: ['inmobiliaria'],
+  },
+  {
+    // Conexión con nuby (solo lectura). Solo el titular: al resto del equipo la
+    // API le responde 403 en todo, así que no se le muestra la entrada.
+    id: 'integraciones',
+    href: '/configuracion/integraciones',
+    titulo: 'Integraciones',
+    descripcion: 'Conecte nuby para traer a Cofianza los inmuebles que tiene en arriendo.',
+    icon: IconPlug,
+    color: 'bg-orange-100 text-orange-600',
+    soloRoles: ['inmobiliaria'],
+    soloTitular: true,
   },
   {
     id: 'disponibilidad',
@@ -156,8 +170,9 @@ const SECCIONES: Array<{
 export default function ConfiguracionPage() {
   const { user } = useAuth()
   const rol = user?.rol
+  const esTitular = user?.rol_miembro === 'owner'
   const seccionesVisibles = SECCIONES.filter(
-    (s) => !s.soloRoles || (rol && s.soloRoles.includes(rol)),
+    (s) => (!s.soloRoles || (rol && s.soloRoles.includes(rol))) && (!s.soloTitular || esTitular),
   )
 
   return (

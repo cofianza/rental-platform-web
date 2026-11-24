@@ -1,0 +1,251 @@
+/**
+ * Integración nuby: reglas de pantalla (lógica pura, probada con node:test).
+ * Limpieza de la dirección que pega el titular, validación del formulario,
+ * textos de los pendientes y lectura de los errores de la API. La API es la
+ * que decide; esto solo evita enviar algo que siempre fallaría y pone los
+ * textos en claro.
+ */
+
+import type {
+  CampoDiferenciaNuby,
+  CredencialesNuby,
+  EstadoConexionNuby,
+  EstadoIntegracionNuby,
+  ModoIntegracionNuby,
+  MotivoNoTraidoNuby,
+  ResumenCopiaNuby,
+} from '@/types/integracionNuby'
+import { ESTADOS_INMUEBLE, formatCurrency, type EstadoInmueble } from './constants'
+
+/** Ruta base de la API según quién opera (relativa a NEXT_PUBLIC_API_URL). */
+export function baseIntegracionNuby(modo: ModoIntegracionNuby): string {
+  return modo.tipo === 'admin'
+    ? `/admin/inmobiliarias/${encodeURIComponent(modo.orgId)}/integraciones/nuby`
+    : '/inmobiliaria/integraciones/nuby'
+}
+
+// ── Dirección de nuby ──────────────────────────────────────────
+
+/**
+ * Deja solo el dominio de lo que se pegó: «https://Mi-Inmobiliaria.nuby.app/login»
+ * → «mi-inmobiliaria.nuby.app». Quita espacios, protocolo, usuario, puerto y
+ * todo lo que venga después del dominio.
+ */
+export function limpiarInstanciaNuby(texto: string): string {
+  // El protocolo solo cuenta con «://»: «mi-inmobiliaria.nuby.app:443» no es uno.
+  const sinProtocolo = texto
+    .replace(/\s+/g, '')
+    .toLowerCase()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//, '')
+    .replace(/^\/+/, '')
+  const dominio = sinProtocolo.split(/[/?#]/)[0] ?? ''
+  return dominio.replace(/^.*@/, '').replace(/:\d*$/, '').replace(/\.+$/, '')
+}
+
+const INSTANCIA_NUBY = /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:nuby\.app|arrendasoft\.co)$/
+
+/** La dirección (ya limpia) es de nuby: un subdominio de nuby.app o arrendasoft.co. */
+export function instanciaNubyValida(instancia: string): boolean {
+  return INSTANCIA_NUBY.test(instancia)
+}
+
+/** Lo que se envía: la dirección limpia y sin los espacios que deja el copiar y pegar. */
+export function prepararCredencialesNuby(c: CredencialesNuby): CredencialesNuby {
+  return {
+    instancia: limpiarInstanciaNuby(c.instancia),
+    client_id: c.client_id.trim(),
+    client_secret: c.client_secret.trim(),
+  }
+}
+
+export type ErroresCredencialesNuby = Partial<Record<keyof CredencialesNuby, string>>
+
+/** Errores por campo del formulario (vacío = se puede enviar). */
+export function validarCredencialesNuby(c: CredencialesNuby): ErroresCredencialesNuby {
+  const limpio = prepararCredencialesNuby(c)
+  const errores: ErroresCredencialesNuby = {}
+  if (!limpio.instancia) errores.instancia = 'Escriba la dirección de nuby.'
+  else if (!instanciaNubyValida(limpio.instancia)) {
+    errores.instancia = 'La dirección debe terminar en .nuby.app o .arrendasoft.co (por ejemplo, mi-inmobiliaria.nuby.app).'
+  }
+  if (!limpio.client_id) errores.client_id = 'Escriba el ID de cliente.'
+  if (!limpio.client_secret) errores.client_secret = 'Escriba la clave secreta.'
+  return errores
+}
+
+/** El ID de cliente nunca vuelve completo: solo sus últimos caracteres. */
+export function idClienteOculto(final: string | null | undefined): string {
+  return `••••${(final ?? '').trim()}`
+}
+
+// ── Estado de la conexión y resumen de la copia ────────────────
+
+const ESTADOS_CONEXION: Record<EstadoConexionNuby, string> = {
+  activa: 'Activa',
+  error: 'Con error',
+  pausada: 'Pausada',
+}
+
+export function etiquetaEstadoNuby(estado: string): string {
+  return ESTADOS_CONEXION[estado as EstadoConexionNuby] ?? estado
+}
+
+/**
+ * La API manda siempre los totales y las tres listas. Si algo faltara (la API y
+ * la web se publican por separado), se completa con vacíos para que la
+ * pantalla no se caiga; lo que sí llega no se toca.
+ */
+export function normalizarEstadoNuby(estado: EstadoIntegracionNuby): EstadoIntegracionNuby {
+  const totales: Partial<EstadoIntegracionNuby['totales']> = estado.totales ?? {}
+  const pendientes: Partial<EstadoIntegracionNuby['pendientes']> = estado.pendientes ?? {}
+  const numero = (v: unknown) => Number(v) || 0
+  return {
+    ...estado,
+    integracion: estado.integracion ?? null,
+    totales: {
+      vinculados: numero(totales.vinculados),
+      codigo_repetido: numero(totales.codigo_repetido),
+      no_traidos: numero(totales.no_traidos),
+      con_diferencias: numero(totales.con_diferencias),
+      ausentes: numero(totales.ausentes),
+    },
+    pendientes: {
+      codigo_repetido: (pendientes.codigo_repetido ?? []).map((c) => ({ ...c, candidatos: c.candidatos ?? [] })),
+      no_traidos: pendientes.no_traidos ?? [],
+      con_diferencias: (pendientes.con_diferencias ?? []).map((c) => ({ ...c, diferencias: c.diferencias ?? [] })),
+    },
+  }
+}
+
+/** ¿Hay una copia corriendo? Mientras sea así, la pantalla vuelve a pedir el estado. */
+export function sigueSincronizando(estado: EstadoIntegracionNuby | null | undefined): boolean {
+  return !!estado?.conectada && !!estado.integracion?.sincronizando
+}
+
+/** Marca la copia como en curso apenas la API la acepta (el siguiente sondeo trae el dato real). */
+export function marcarSincronizando(estado: EstadoIntegracionNuby | null): EstadoIntegracionNuby | null {
+  if (!estado?.integracion) return estado
+  return { ...estado, integracion: { ...estado.integracion, sincronizando: true } }
+}
+
+/** Estado tras desconectar: sin conexión ni pendientes (los inmuebles se quedan en Cofianza). */
+export function estadoDesconectado(estado: EstadoIntegracionNuby): EstadoIntegracionNuby {
+  return {
+    ...estado,
+    conectada: false,
+    integracion: null,
+    totales: { vinculados: 0, codigo_repetido: 0, no_traidos: 0, con_diferencias: 0, ausentes: 0 },
+    pendientes: { codigo_repetido: [], no_traidos: [], con_diferencias: [] },
+  }
+}
+
+/** Lo que se le dice al titular cuando la prueba de las credenciales guardadas sale bien. */
+export function textoPruebaCorrecta(inmueblesMuestra: number | null | undefined): string {
+  const n = Math.floor(Number(inmueblesMuestra))
+  if (!Number.isFinite(n) || n <= 0) return 'La conexión con nuby funciona.'
+  return `La conexión con nuby funciona: respondió con ${n} ${n === 1 ? 'inmueble' : 'inmuebles'} de muestra.`
+}
+
+export function etiquetaModoCopia(modo: ResumenCopiaNuby['modo']): string {
+  return modo === 'completa' ? 'Revisión completa del inventario' : 'Copia de lo modificado'
+}
+
+type CifraResumen = Exclude<keyof ResumenCopiaNuby, 'modo' | 'terminado_en'>
+
+const CIFRAS_RESUMEN: Array<[CifraResumen, string]> = [
+  ['leidos', 'Leídos en nuby'],
+  ['en_arriendo', 'En arriendo'],
+  ['creados', 'Nuevos en Cofianza'],
+  ['actualizados', 'Actualizados'],
+  ['vinculados', 'Vinculados con uno que ya existía'],
+  ['sin_cambios', 'Sin cambios'],
+  ['protegidos', 'Sin tocar (con estudio o contrato)'],
+  ['no_traidos', 'No se trajeron'],
+  ['ausentes', 'Ya no aparecen en nuby'],
+  ['fotos_copiadas', 'Fotos copiadas'],
+]
+
+/** El resumen de la última copia como filas «etiqueta: cifra», en orden de lectura. */
+export function cifrasDeResumen(resumen: ResumenCopiaNuby): Array<{ clave: CifraResumen; etiqueta: string; valor: number }> {
+  return CIFRAS_RESUMEN.map(([clave, etiqueta]) => ({ clave, etiqueta, valor: Number(resumen[clave]) || 0 }))
+}
+
+// ── Pendientes ─────────────────────────────────────────────────
+
+const MOTIVOS_NO_TRAIDO: Record<MotivoNoTraidoNuby, string> = {
+  sin_canon: 'No tiene canon de arriendo',
+  clase_sin_equivalente: 'Su tipo de inmueble no tiene equivalente en Cofianza',
+  sin_direccion: 'No tiene dirección',
+  sin_municipio: 'No tiene municipio',
+  codigo_invalido: 'Su código no es válido',
+}
+
+/** Por qué un inmueble en arriendo de nuby no entró, en lenguaje claro. */
+export function textoMotivoNoTraido(motivo: string, detalle?: string | null): string {
+  const base = MOTIVOS_NO_TRAIDO[motivo as MotivoNoTraidoNuby]
+  const extra = detalle?.trim()
+  // Un motivo que la web todavía no conoce: lo que explique la API, o un texto neutro.
+  if (!base) return extra || 'No se pudo traer'
+  return motivo === 'clase_sin_equivalente' && extra ? `${base}: ${extra}` : base
+}
+
+/** Cuántos quedaron fuera de una lista que llegó recortada (0 si llegó completa). */
+export function cuantosMas(total: number | null | undefined, mostrados: number): number {
+  const t = Math.floor(Number(total))
+  return Number.isFinite(t) && t > mostrados ? t - mostrados : 0
+}
+
+export function textoYMas(n: number): string {
+  return `y ${n} más`
+}
+
+const CAMPOS_DIFERENCIA: Record<CampoDiferenciaNuby, string> = {
+  canon: 'Canon',
+  estado: 'Estado',
+}
+
+export function etiquetaCampoDiferencia(campo: string): string {
+  return CAMPOS_DIFERENCIA[campo as CampoDiferenciaNuby] ?? campo
+}
+
+/**
+ * Valor de una diferencia para mostrar: un canon numérico sale como pesos y un
+ * estado de inmueble de Cofianza con su etiqueta; lo demás, tal como llega.
+ */
+export function valorDiferencia(campo: string, valor: string | null | undefined): string {
+  const v = (valor ?? '').trim()
+  if (!v) return '—'
+  if (campo === 'canon' && /^\d+(\.\d+)?$/.test(v)) return formatCurrency(Number(v))
+  if (campo === 'estado') return ESTADOS_INMUEBLE[v as EstadoInmueble]?.label ?? v
+  return v
+}
+
+// ── Errores de la API ──────────────────────────────────────────
+
+export interface ErrorNuby {
+  mensaje: string
+  code?: string
+  statusCode?: number
+}
+
+/** Miembro que no es titular: la API responde 403 en todo. */
+export const CODIGO_SOLO_TITULAR = 'SOLO_TITULAR'
+/** Ya hay una copia en curso (409 al pedir otra). */
+export const CODIGO_YA_SINCRONIZANDO = 'NUBY_SINCRONIZANDO'
+
+/**
+ * Lee el error que lanza apiClient (ApiClientError: `message`, `code`,
+ * `statusCode`). Se muestra el mensaje de la API, que ya viene listo; el 429
+ * no siempre trae uno propio, así que lleva el suyo. Cualquier otro error (uno
+ * de programación, en inglés) no se le muestra a la persona: va el texto por defecto.
+ */
+export function leerErrorNuby(err: unknown, porDefecto: string): ErrorNuby {
+  const e = (err ?? {}) as { message?: unknown; code?: unknown; statusCode?: unknown }
+  const code = typeof e.code === 'string' ? e.code : undefined
+  const statusCode = typeof e.statusCode === 'number' ? e.statusCode : undefined
+  if (statusCode === 429) {
+    return { mensaje: 'Hubo demasiadas solicitudes seguidas. Espere unos minutos y vuelva a intentarlo.', code, statusCode }
+  }
+  const deLaApi = statusCode !== undefined && typeof e.message === 'string' ? e.message.trim() : ''
+  return { mensaje: deLaApi || porDefecto, code, statusCode }
+}
