@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { IconSearch, IconHome, IconChevronLeft, IconChevronRight, IconX, IconAlertTriangle, IconRefresh } from '@/components/icons'
+import { IconHome, IconChevronLeft, IconChevronRight, IconAlertTriangle, IconRefresh } from '@/components/icons'
 import {
   getPublicProperties,
   getPublicPropertyFilters,
@@ -19,32 +19,35 @@ import {
 import { VitrinaVacia } from './VitrinaVacia'
 import { PropertyCard } from './VitrinaPreview'
 import { LeadInteresModal } from './LeadInteresModal'
+import {
+  ConsolaBusqueda,
+  BarraResultados,
+  FILTROS_VACIOS,
+  esOrden,
+  hayFiltros,
+  ordenAQuery,
+  type FiltrosVitrinaValor,
+} from './FiltrosVitrina'
 
+/** Espera antes de buscar mientras se escribe (búsqueda y canon); los selects buscan de una vez. */
 const DEBOUNCE_MS = 300
 const LIMIT = 12
 
-// ── Tipo inmueble labels ────────────────────
-
-const TIPO_LABELS: Record<string, string> = {
-  apartamento: 'Apartamento',
-  apartaestudio: 'Apartaestudio',
-  casa: 'Casa',
-  casa_finca: 'Casa Finca',
-  finca: 'Finca',
-  oficina: 'Oficina',
-  local: 'Local',
-  bodega: 'Bodega',
-  lote: 'Lote',
-  parqueadero: 'Parqueadero',
+/** Los filtros que trae la URL (un enlace compartido abre la misma búsqueda). */
+function filtrosDeUrl(sp: URLSearchParams): FiltrosVitrinaValor {
+  const digitos = (k: string) => (sp.get(k) || '').replace(/\D/g, '').slice(0, 12)
+  const orden = sp.get('orden')
+  return {
+    search: sp.get('search') || '',
+    ciudad: sp.get('ciudad') || '',
+    tipo: sp.get('tipo') || '',
+    habitaciones: digitos('habitaciones'),
+    precioMin: digitos('precio_min'),
+    precioMax: digitos('precio_max'),
+    estrato: digitos('estrato'),
+    orden: esOrden(orden) ? orden : 'recientes',
+  }
 }
-
-const HAB_OPTIONS = [
-  { label: 'Todas', value: '' },
-  { label: '1+', value: '1' },
-  { label: '2+', value: '2' },
-  { label: '3+', value: '3' },
-  { label: '4+', value: '4' },
-]
 
 // ── Main Component ──────────────────────────
 
@@ -53,13 +56,8 @@ export function PropertyGrid() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Filters state (synced from URL on mount)
-  const [search, setSearch] = useState(searchParams.get('search') || '')
-  const [ciudad, setCiudad] = useState(searchParams.get('ciudad') || '')
-  const [tipo, setTipo] = useState(searchParams.get('tipo') || '')
-  const [habitaciones, setHabitaciones] = useState(searchParams.get('habitaciones') || '')
-  const [precioMin, setPrecioMin] = useState((searchParams.get('precio_min') || '').replace(/\D/g, ''))
-  const [precioMax, setPrecioMax] = useState((searchParams.get('precio_max') || '').replace(/\D/g, ''))
+  // Filtros (leídos de la URL al montar) y página.
+  const [filtros, setFiltros] = useState<FiltrosVitrinaValor>(() => filtrosDeUrl(new URLSearchParams(searchParams.toString())))
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1)
 
   // Data state
@@ -80,7 +78,7 @@ export function PropertyGrid() {
   // Inmueble sobre el que el visitante sin cuenta dijo «Me interesa».
   const [lead, setLead] = useState<{ id: string; resumen: string } | null>(null)
 
-  const hasActiveFilters = !!(search || ciudad || tipo || habitaciones || precioMin || precioMax)
+  const hasActiveFilters = hayFiltros(filtros)
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // La primera carga va sin debounce (antes esperaba 300 ms).
@@ -98,15 +96,16 @@ export function PropertyGrid() {
   // ── Build query from state ──────────────────
 
   const buildQuery = useCallback((): PublicPropertiesQuery => {
-    const q: PublicPropertiesQuery = { page, limit: LIMIT }
-    if (search.trim()) q.search = search.trim()
-    if (ciudad) q.ciudad = ciudad
-    if (tipo) q.tipo = tipo
-    if (habitaciones) q.habitaciones = Number(habitaciones)
-    if (precioMin) q.precio_min = Number(precioMin)
-    if (precioMax) q.precio_max = Number(precioMax)
+    const q: PublicPropertiesQuery = { page, limit: LIMIT, ...ordenAQuery(filtros.orden) }
+    if (filtros.search.trim()) q.search = filtros.search.trim()
+    if (filtros.ciudad) q.ciudad = filtros.ciudad
+    if (filtros.tipo) q.tipo = filtros.tipo
+    if (filtros.habitaciones) q.habitaciones = Number(filtros.habitaciones)
+    if (filtros.precioMin) q.precio_min = Number(filtros.precioMin)
+    if (filtros.precioMax) q.precio_max = Number(filtros.precioMax)
+    if (filtros.estrato) q.estrato = Number(filtros.estrato)
     return q
-  }, [search, ciudad, tipo, habitaciones, precioMin, precioMax, page])
+  }, [filtros, page])
 
   // ── Fetch properties ────────────────────────
 
@@ -147,39 +146,42 @@ export function PropertyGrid() {
 
   const syncUrl = useCallback(() => {
     const params = new URLSearchParams()
-    if (search.trim()) params.set('search', search.trim())
-    if (ciudad) params.set('ciudad', ciudad)
-    if (tipo) params.set('tipo', tipo)
-    if (habitaciones) params.set('habitaciones', habitaciones)
-    if (precioMin) params.set('precio_min', precioMin)
-    if (precioMax) params.set('precio_max', precioMax)
+    if (filtros.search.trim()) params.set('search', filtros.search.trim())
+    if (filtros.ciudad) params.set('ciudad', filtros.ciudad)
+    if (filtros.tipo) params.set('tipo', filtros.tipo)
+    if (filtros.habitaciones) params.set('habitaciones', filtros.habitaciones)
+    if (filtros.precioMin) params.set('precio_min', filtros.precioMin)
+    if (filtros.precioMax) params.set('precio_max', filtros.precioMax)
+    if (filtros.estrato) params.set('estrato', filtros.estrato)
+    if (filtros.orden !== 'recientes') params.set('orden', filtros.orden)
     if (page > 1) params.set('page', String(page))
     const qs = params.toString()
     router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
-  }, [search, ciudad, tipo, habitaciones, precioMin, precioMax, page, pathname, router])
+  }, [filtros, page, pathname, router])
 
   // ── Debounced fetch + URL sync ──────────────
 
+  // Solo se espera cuando cambió algo que se escribe (búsqueda o canon): un select busca de una vez.
+  const claveTexto = `${filtros.search.trim()}|${filtros.precioMin}|${filtros.precioMax}`
+  const claveTextoRef = useRef(claveTexto)
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    const espera = primeraCargaRef.current ? 0 : DEBOUNCE_MS
+    const escribiendo = claveTextoRef.current !== claveTexto
+    claveTextoRef.current = claveTexto
+    const espera = primeraCargaRef.current ? 0 : escribiendo ? DEBOUNCE_MS : 0
     primeraCargaRef.current = false
     debounceRef.current = setTimeout(() => {
       fetchProperties()
       syncUrl()
     }, espera)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [fetchProperties, syncUrl])
+  }, [fetchProperties, syncUrl, claveTexto])
 
   // ── Filter change resets page ───────────────
 
-  const handleFilterChange = (setter: (v: string) => void) => (value: string) => {
-    setter(value)
-    setPage(1)
-  }
-
-  const handleSearchChange = (value: string) => {
-    setSearch(value)
+  // Todo cambio de filtro u orden vuelve a la primera página.
+  const cambiarFiltros = (parcial: Partial<FiltrosVitrinaValor>) => {
+    setFiltros((f) => ({ ...f, ...parcial }))
     setPage(1)
   }
 
@@ -191,13 +193,9 @@ export function PropertyGrid() {
     resultadosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  // Limpiar no toca el orden: es una preferencia, no un filtro.
   const clearFilters = () => {
-    setSearch('')
-    setCiudad('')
-    setTipo('')
-    setHabitaciones('')
-    setPrecioMin('')
-    setPrecioMax('')
+    setFiltros((f) => ({ ...FILTROS_VACIOS, orden: f.orden }))
     setPage(1)
   }
 
@@ -209,116 +207,26 @@ export function PropertyGrid() {
 
   return (
     <div className="space-y-6">
-      {/* Search bar */}
-      <div className="relative">
-        <IconSearch size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          // La API separa términos por comas y espacios, sin tildes y con el tipo en plural («apartamentos Laureles»).
-          placeholder="Ej.: Laureles, Medellín"
-          aria-label="Buscar inmuebles por barrio, ciudad o tipo"
-          className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 shadow-sm"
+      {/* Buscador y filtros: sube sobre el borde del encabezado de /vitrina. */}
+      <ConsolaBusqueda
+        valor={filtros}
+        onCambiar={cambiarFiltros}
+        opciones={filterOptions}
+        total={total}
+        cargando={loading}
+        error={error}
+        vitrinaVacia={vitrinaVacia}
+        className="-mt-12 md:-mt-14"
+      />
+
+      <div ref={resultadosRef} className="scroll-mt-24">
+        <BarraResultados
+          valor={filtros}
+          onCambiar={cambiarFiltros}
+          onLimpiar={clearFilters}
+          total={loading && properties.length === 0 ? null : total}
+          sinConteo={!loading && (error || vitrinaVacia)}
         />
-      </div>
-
-      {/* Filters row */}
-      <div className="flex flex-wrap gap-3 items-end">
-        {/* Ciudad */}
-        <div className="flex-1 min-w-[140px]">
-          <label htmlFor="property-grid-ciudad" className="block text-xs font-medium text-gray-500 mb-1">Ciudad</label>
-          <select id="property-grid-ciudad"
-            value={ciudad}
-            onChange={(e) => handleFilterChange(setCiudad)(e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">Todas</option>
-            {filterOptions.ciudades.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Tipo */}
-        <div className="flex-1 min-w-[140px]">
-          <label htmlFor="property-grid-tipo" className="block text-xs font-medium text-gray-500 mb-1">Tipo</label>
-          <select id="property-grid-tipo"
-            value={tipo}
-            onChange={(e) => handleFilterChange(setTipo)(e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            <option value="">Todos</option>
-            {filterOptions.tipos.map((t) => (
-              <option key={t} value={t}>{TIPO_LABELS[t] || t}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Habitaciones */}
-        <div className="min-w-[100px]">
-          <label htmlFor="property-grid-habitaciones" className="block text-xs font-medium text-gray-500 mb-1">Habitaciones</label>
-          <select id="property-grid-habitaciones"
-            value={habitaciones}
-            onChange={(e) => handleFilterChange(setHabitaciones)(e.target.value)}
-            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          >
-            {HAB_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Precio min — flex-1 (aquí y en el máximo): sin él cada campo mide lo
-            que mida su letra (~250 px con Outfit) y en celulares de 390 px ya
-            no cabía junto a «Habitaciones»: los filtros ocupaban una fila más. */}
-        <div className="flex-1 min-w-[120px]">
-          <label htmlFor="property-grid-precio-min" className="block text-xs font-medium text-gray-500 mb-1">Precio mínimo</label>
-          {/* Texto con separador de miles, no type="number": ahí "150.000" quedaba en $150 y "2.600.000" en blanco. */}
-          <input id="property-grid-precio-min"
-            type="text"
-            inputMode="numeric"
-            value={precioMin ? Number(precioMin).toLocaleString('es-CO') : ''}
-            onChange={(e) => handleFilterChange(setPrecioMin)(e.target.value.replace(/\D/g, '').slice(0, 12))}
-            placeholder="$0"
-            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
-
-        {/* Precio max */}
-        <div className="flex-1 min-w-[120px]">
-          <label htmlFor="property-grid-precio-max" className="block text-xs font-medium text-gray-500 mb-1">Precio máximo</label>
-          <input id="property-grid-precio-max"
-            type="text"
-            inputMode="numeric"
-            value={precioMax ? Number(precioMax).toLocaleString('es-CO') : ''}
-            onChange={(e) => handleFilterChange(setPrecioMax)(e.target.value.replace(/\D/g, '').slice(0, 12))}
-            placeholder="Sin límite"
-            className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-        </div>
-
-        {/* Clear filters */}
-        {hasActiveFilters && (
-          <button
-            onClick={clearFilters}
-            className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200"
-          >
-            <IconX size={14} />
-            Limpiar
-          </button>
-        )}
-      </div>
-
-      {/* Results count */}
-      <div ref={resultadosRef} className="flex items-center justify-between scroll-mt-24">
-        <p className="text-sm text-gray-600">
-          {loading && properties.length === 0 ? (
-            <span className="inline-block w-40 h-4 bg-gray-200 rounded animate-pulse" />
-          ) : error || vitrinaVacia ? null : (
-            <><span className="font-semibold text-gray-900">{total}</span> {total === 1 ? 'propiedad encontrada' : 'propiedades encontradas'}</>
-          )}
-        </p>
       </div>
 
       {/* Grid */}
@@ -350,7 +258,7 @@ export function PropertyGrid() {
           <IconHome size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay resultados</h3>
           <p className="text-sm text-gray-500 mb-4">
-            {search.trim()
+            {filtros.search.trim()
               ? 'No encontramos inmuebles con esa búsqueda. Pruebe con menos palabras, por ejemplo solo el barrio o la ciudad.'
               : 'No encontramos inmuebles con los filtros actuales. Intente ampliar su búsqueda.'}
           </p>

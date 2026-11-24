@@ -1,8 +1,10 @@
 /**
  * /vitrina — Catalogo publico de inmuebles disponibles.
  *
- * Reutiliza PropertyGrid (busqueda + filtros + grid + paginacion sincronizada
- * a la URL) que tambien aparece en la landing. Aqui es el contenido principal.
+ * PropertyGrid (buscador + filtros + grid + paginacion sincronizada a la URL)
+ * es el contenido principal. Su consola de busqueda sube sobre el borde
+ * inferior del encabezado: por eso el encabezado lleva mas relleno abajo y el
+ * contenido no lleva relleno arriba.
  */
 
 import { Suspense } from 'react'
@@ -26,7 +28,7 @@ export default function VitrinaPage() {
 
       {/* Hero compacto */}
       <section className="bg-gradient-to-br from-gray-950 via-gray-900 to-primary-950 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-24 md:pt-16 md:pb-28">
           <div className="max-w-2xl">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs font-medium text-white/70 mb-4">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -46,10 +48,15 @@ export default function VitrinaPage() {
 
       {/* Grid de propiedades */}
       <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 md:pb-14">
           <Suspense
             fallback={
-              <SkeletonCards cantidad={6} etiqueta="Cargando inmuebles…" />
+              // El lugar de la consola (sube sobre el encabezado) y debajo las tarjetas: nada salta al cargar.
+              <div className="space-y-6">
+                <div className="relative z-10 -mt-12 h-[7.5rem] rounded-2xl border border-gray-200 bg-white shadow-[0_18px_40px_-20px_rgba(2,44,34,0.35)] md:-mt-14 md:h-[7.75rem]" aria-hidden />
+                <div className="h-10" aria-hidden />
+                <SkeletonCards cantidad={6} etiqueta="Cargando inmuebles…" />
+              </div>
             }
           >
             <PropertyGrid />
