@@ -558,10 +558,15 @@ function IntentosGuardados({
                 </p>
               )}
               {motivo && <p className="mt-0.5 break-words text-gray-700">{motivo}</p>}
-              {h.motivo_auco && (
-                <p className="mt-0.5 break-all text-xs text-gray-500">
-                  Detalle técnico de Auco: <span className="font-mono">{h.motivo_auco}</span>
-                </p>
+              {/* Adenda 6 §2: vencido su plazo, el resultado se suprime y el detalle de Auco queda en «SUPRIMIDO». */}
+              {h.motivo_auco === 'SUPRIMIDO' ? (
+                <p className="mt-0.5 text-xs text-gray-500">El resultado de este intento se suprimió al vencer su plazo de conservación.</p>
+              ) : (
+                h.motivo_auco && (
+                  <p className="mt-0.5 break-all text-xs text-gray-500">
+                    Detalle técnico de Auco: <span className="font-mono">{h.motivo_auco}</span>
+                  </p>
+                )
               )}
             </li>
           )
