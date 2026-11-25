@@ -19,7 +19,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { formatCurrency } from '@/lib/constants'
 import type { ICotizacionSustitucion, ISustitucionCreada } from '@/types/sustitucion'
-import { avisoReemplazoEnRechazado } from '@/lib/personaEstudio'
+import { avisoReemplazoEnRechazado, textoFirmarHastaCambio } from '@/lib/personaEstudio'
 
 interface SustituirPersonaModalProps {
   isOpen: boolean
@@ -46,6 +46,8 @@ export function SustituirPersonaModal({ isOpen, onClose, cotizacion, onConfirmar
   const pago = creada?.pago ?? null
   // Estudio rechazado: vuelve a revisión con la persona nueva. Lo que el aviso de la API ya dice no se repite.
   const avisoRechazado = estudioRechazado && cotizacion.puede_sustituir ? avisoReemplazoEnRechazado(cotizacion) : null
+  // Adenda 6 §7: la fecha límite real para enviar a firma con el resultado de este estudio (la manda la API).
+  const firmarHasta = cotizacion.puede_sustituir ? textoFirmarHastaCambio(cotizacion.firmar_hasta) : null
 
   return (
     <>
@@ -111,6 +113,12 @@ export function SustituirPersonaModal({ isOpen, onClose, cotizacion, onConfirmar
               <p className="flex gap-2">
                 <IconInfo size={18} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
                 <span>{avisoRechazado}</span>
+              </p>
+            )}
+            {firmarHasta && (
+              <p className="flex gap-2">
+                <IconInfo size={18} className="mt-0.5 shrink-0 text-gray-500" aria-hidden="true" />
+                <span>{firmarHasta}</span>
               </p>
             )}
             <p

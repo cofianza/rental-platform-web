@@ -59,3 +59,15 @@ test('Ver o Cambiar según el permiso', () => {
   assert.equal(verboParametro({ editable: true, min: 0, max: 100 }), 'Cambiar')
   assert.equal(verboParametro(undefined), 'Cambiar')
 })
+
+// Revisión de lógica de la Adenda 6 §7 (punto 8): la vigencia del resultado no pasa de los días que se reutiliza el
+// reporte (el API también lo exige en validarCoherencia).
+test('Adenda 6 §7: la vigencia del resultado no pasa de los días que se reutiliza el reporte, se mueva cualquiera', () => {
+  const v = { ...HOY, DIAS_VIGENCIA_RESULTADO: 30, DIAS_VIGENCIA_REPORTE: 30 }
+  assert.equal(coherenciaA5d('DIAS_VIGENCIA_RESULTADO', 30, v), null)
+  assert.equal(coherenciaA5d('DIAS_VIGENCIA_RESULTADO', 20, v), null)
+  assert.match(coherenciaA5d('DIAS_VIGENCIA_REPORTE', 20, v) ?? '', /^«?Vigencia del resultado»? \(30 días\) no puede pasar de «días que se reutiliza el reporte de la central» \(20 días\)/)
+  assert.match(coherenciaA5d('DIAS_VIGENCIA_RESULTADO', 25, { ...v, DIAS_VIGENCIA_REPORTE: 20 }) ?? '', /no puede pasar de/)
+  // Otra clave no la mira.
+  assert.equal(coherenciaA5d('VIGENCIA_CRC_DIAS', 60, { ...v, DIAS_VIGENCIA_REPORTE: 20 }), null)
+})

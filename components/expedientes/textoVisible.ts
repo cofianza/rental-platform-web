@@ -199,6 +199,18 @@ export function tipoFallo(e: { observaciones?: string | null; desenlace_consulta
   return 'tecnico'
 }
 
+/**
+ * El cierre «qué hacer» con que la API termina cada motivo de una evaluación que ya no sirve para el contrato (vencida,
+ * CRC vencido o sin margen para firmar). Bajo el encabezado «La evaluación crediticia actual ya no sirve…» sobra: la
+ * nota ya dice que la evaluación nueva es un estudio nuevo con su cobro. Adenda 6 §7: también los textos nuevos
+ * («Para continuar, cree un estudio nuevo (con su propio cobro).», «Se requiere una evaluación nueva: cree…»).
+ */
+const CIERRE_EVALUACION_NUEVA =
+  /\s*(?:Se requiere (?:una )?nueva evaluación|Hay que renovar la evaluación|Para continuar, cree un estudio nuevo \(con su propio cobro\)|Se requiere una evaluación nueva: cree un estudio nuevo \(con su propio cobro\))\.$/
+
+/** El motivo sin su cierre «qué hacer» (CIERRE_EVALUACION_NUEVA). Puro. */
+export const sinCierreEvaluacionNueva = (mensaje: string): string => mensaje.replace(CIERRE_EVALUACION_NUEVA, '')
+
 /** Roles de Cofianza: ven el detalle del caso (en lenguaje claro). */
 export function esRolInterno(rol?: string | null): boolean {
   return rol === 'administrador' || rol === 'operador_analista' || rol === 'gerencia_consulta'

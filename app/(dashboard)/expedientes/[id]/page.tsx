@@ -718,6 +718,8 @@ function ExpedienteDetalleContenido() {
                     expediente.traba_contrato?.canon_habilitado_cop ??
                     (titular.desenlace ? (titular.canon_habilitado_cop ?? null) : undefined),
                   hastaCanon: titular.hasta_canon === true,
+                  // Adenda 6 §7: sin el dato de la API no se promete «sin costo».
+                  reevaluacionSinCosto: expediente.reevaluacion_sin_costo === true,
                 }
               : null,
           onReasignado: fetchExpediente,
@@ -1321,6 +1323,7 @@ function ExpedienteDetalleContenido() {
                       cierre={cierreDelEstudio(expediente.estado, expediente.estado_pre_cancelacion)}
                       reaperturaAbierta={!!expediente.reapertura_abierta}
                       venceReapertura={expediente.vence_reapertura ?? null}
+                      reevaluacionSinCosto={expediente.reevaluacion_sin_costo === true}
                       // Un cambio de persona mueve el estado del estudio: encabezado, banner y tarjeta, coherentes.
                       onExpedienteCambio={fetchExpediente}
                     />

@@ -31,6 +31,7 @@ import {
   rotuloCoarrendatario,
   terminoSinAprobar,
   textoCoarrendatario,
+  textoFirmarHastaCambio,
   textoPlazoReapertura,
   textoVerificacionAnalista,
   titularEstudioTerminado,
@@ -361,4 +362,14 @@ test('bloque 4: segundo firmante en verificación (respaldo cuando la API no man
   assert.equal(coarrendatarioEnVerificacion({ estado: 'pendiente_aceptacion' }), false)
   assert.equal(coarrendatarioEnVerificacion({ estado: 'retirado', estudio: { estado: 'completado', resultado: 'condicionado' } }), false)
   assert.equal(coarrendatarioEnVerificacion(null), false)
+})
+
+// Revisión de lógica de la Adenda 6 §7 (punto 1): la cotización del cambio de persona trae hasta cuándo el resultado
+// permite enviar a firma (`firmar_hasta`): la web lo dice con fecha y hora de Colombia, sin calcular nada.
+test('textoFirmarHastaCambio: la fecha y la hora que manda la API; sin fecha, nada', () => {
+  const t = textoFirmarHastaCambio('2026-12-07T14:00:00Z') ?? ''
+  assert.match(t, /^El resultado de este estudio permite enviar el contrato a firma hasta el 7 de diciembre de 2026 a las 9:00\s?a\.\s?m\.; cambiar a la persona no amplía ese plazo\.$/)
+  assert.equal(textoFirmarHastaCambio(null), null)
+  assert.equal(textoFirmarHastaCambio(undefined), null)
+  assert.equal(textoFirmarHastaCambio('no es fecha'), null)
 })

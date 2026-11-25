@@ -1218,6 +1218,8 @@ export const META: Record<string, MetaParametro> = {
     unidad: 'dias',
     queHace:
       'Los resultados emitidos antes de que existiera «Vigencia del resultado» valen estos días desde la evaluación; los posteriores conservan la suya. Sin la Adenda 5, todos los resultados valen estos días. Vencidos, no se firma contrato con ellos y hace falta un estudio nuevo.',
+    // Revisión de lógica de la Adenda 6 §7: los resultados que miden con este valor no lo congelaron (se lee al vuelo).
+    nota: 'Cambiarlo afecta de inmediato a todos los resultados ya emitidos que lo usan (los anteriores a «Vigencia del resultado» y, sin la Adenda 5, todos): en ellos no quedó congelado. Acortarlo puede dejar vencidos estudios que hoy están vigentes.',
     rige: 'siempre',
   },
   MAX_INTENTOS_DOCUMENTO: {
@@ -1608,6 +1610,9 @@ export function coherenciaA5d(clave: string, nuevo: number, v: Valores): string 
     if (c.UMBRAL_CASCADA_APROBACION < c.UMBRAL_APROBACION_AUTOMATICA)
       return `${capital(nom('UMBRAL_CASCADA_APROBACION'))} no puede quedar por debajo de ${nom('UMBRAL_APROBACION_AUTOMATICA')}.`
   }
+  // Adenda 6 §7: la vigencia del resultado no pasa de los días que se reutiliza el reporte (el API también lo exige).
+  if (toca('DIAS_VIGENCIA_RESULTADO', 'DIAS_VIGENCIA_REPORTE') && hay('DIAS_VIGENCIA_RESULTADO', 'DIAS_VIGENCIA_REPORTE') && c.DIAS_VIGENCIA_RESULTADO > c.DIAS_VIGENCIA_REPORTE)
+    return `${capital(nom('DIAS_VIGENCIA_RESULTADO'))} no puede pasar de ${nom('DIAS_VIGENCIA_REPORTE')}: dentro de la vigencia, evaluar de nuevo por un canon mayor no tiene costo y usa ese reporte.`
   if (toca('TARIFA_VIA_AUTOMATICA', 'TARIFA_VIA_NO_AUTOMATICA') && hay('TARIFA_VIA_AUTOMATICA', 'TARIFA_VIA_NO_AUTOMATICA') && c.TARIFA_VIA_AUTOMATICA > c.TARIFA_VIA_NO_AUTOMATICA)
     return `${capital(nom('TARIFA_VIA_AUTOMATICA'))} no puede superar a ${nom('TARIFA_VIA_NO_AUTOMATICA')}.`
   if (clave === 'ADENDA5_DEF' && nuevo === 1 && (c.ADENDA3_V2 !== 1 || c.ADENDA4 !== 1))

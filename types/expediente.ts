@@ -198,6 +198,12 @@ export interface IExpediente {
    */
   firmar_hasta?: string | null
   /**
+   * Adenda 6 §7: evaluar de nuevo el estudio por un canon mayor (al reasignarlo o desde el contrato) no tiene costo
+   * hoy. false: requeriría una consulta adicional o el resultado ya venció. Solo en un aprobado evaluado con la Adenda
+   * 5; ausente en los demás (o con una API anterior): sin el dato no se promete «sin costo».
+   */
+  reevaluacion_sin_costo?: boolean
+  /**
    * Lista y detalle: Cofianza verifica al segundo firmante ya evaluado (el turno es de Cofianza y quien gestiona
    * no puede invitar ni reemplazar a nadie mientras tanto). Ausente con una API anterior.
    */
