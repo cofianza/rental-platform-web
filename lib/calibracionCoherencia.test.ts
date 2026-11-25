@@ -71,3 +71,28 @@ test('Adenda 6 §7: la vigencia del resultado no pasa de los días que se reutil
   // Otra clave no la mira.
   assert.equal(coherenciaA5d('VIGENCIA_CRC_DIAS', 60, { ...v, DIAS_VIGENCIA_REPORTE: 20 }), null)
 })
+
+// Segunda revisión de la Adenda 6 §7 (punto 6): con menos de 4 días todo resultado nace sin tiempo para firmar (el
+// proceso de firma necesita más de 3 días de vigencia), y el plazo del segundo firmante termina al menos 4 días antes
+// del resultado (el API también lo exige en validarCoherencia).
+test('Adenda 6 §7: vigencia del resultado ≥ 4 y plazo del coarrendatario ≤ vigencia − 4, se mueva cualquiera', () => {
+  // Los valores por defecto (30 y 15) pasan.
+  const v = { ...HOY, DIAS_VIGENCIA_RESULTADO: 30, DIAS_VIGENCIA_REPORTE: 30, VIGENCIA_CONDICION_COARRENDATARIO_DIAS: 15 }
+  assert.equal(coherenciaA5d('DIAS_VIGENCIA_RESULTADO', 30, v), null)
+  assert.equal(coherenciaA5d('VIGENCIA_CONDICION_COARRENDATARIO_DIAS', 15, v), null)
+  // La vigencia no baja de 4 días.
+  assert.match(
+    coherenciaA5d('DIAS_VIGENCIA_RESULTADO', 3, { ...v, VIGENCIA_CONDICION_COARRENDATARIO_DIAS: 1 }) ?? '',
+    /^«?Vigencia del resultado»? \(3 días\) no puede quedar por debajo de 4 días/,
+  )
+  // El plazo: 26 con 30 sí, 27 no; y bajar la vigencia también lo mira.
+  assert.equal(coherenciaA5d('VIGENCIA_CONDICION_COARRENDATARIO_DIAS', 26, v), null)
+  assert.match(
+    coherenciaA5d('VIGENCIA_CONDICION_COARRENDATARIO_DIAS', 27, v) ?? '',
+    /^«Plazo para presentar el coarrendatario» \(27 días\) no puede pasar de 26 días con «vigencia del resultado» \(30 días\)/,
+  )
+  assert.match(coherenciaA5d('DIAS_VIGENCIA_RESULTADO', 18, v) ?? '', /no puede pasar de 14 días/)
+  assert.equal(coherenciaA5d('DIAS_VIGENCIA_RESULTADO', 19, v), null)
+  // Otra clave no la mira.
+  assert.equal(coherenciaA5d('VIGENCIA_CRC_DIAS', 60, { ...v, DIAS_VIGENCIA_RESULTADO: 3 }), null)
+})

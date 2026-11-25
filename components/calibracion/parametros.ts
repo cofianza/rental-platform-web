@@ -1558,6 +1558,9 @@ export const humanizar = (texto: string) =>
 
 const capital = (t: string) => t.replace(/^(«?)(\p{L})/u, (_m, a: string, b: string) => a + b.toUpperCase())
 
+/** Adenda 6 §7: días enteros que cubren lo que necesita el proceso de firma (3 días y una hora; DIAS_MARGEN_FIRMA del API). */
+const DIAS_MARGEN_FIRMA = 4
+
 /**
  * Las reglas de coherencia del API para la Adenda 5 (y las parejas de hoy de
  * la revisión del 11-nov), antes de enviar: así el error sale al escribir y no
@@ -1613,6 +1616,17 @@ export function coherenciaA5d(clave: string, nuevo: number, v: Valores): string 
   // Adenda 6 §7: la vigencia del resultado no pasa de los días que se reutiliza el reporte (el API también lo exige).
   if (toca('DIAS_VIGENCIA_RESULTADO', 'DIAS_VIGENCIA_REPORTE') && hay('DIAS_VIGENCIA_RESULTADO', 'DIAS_VIGENCIA_REPORTE') && c.DIAS_VIGENCIA_RESULTADO > c.DIAS_VIGENCIA_REPORTE)
     return `${capital(nom('DIAS_VIGENCIA_RESULTADO'))} no puede pasar de ${nom('DIAS_VIGENCIA_REPORTE')}: dentro de la vigencia, evaluar de nuevo por un canon mayor no tiene costo y usa ese reporte.`
+  // Adenda 6 §7 (segunda revisión): el proceso de firma necesita más de 3 días de vigencia. Con menos de 4, todo
+  // resultado nacería sin tiempo para firmar; y el plazo del segundo firmante termina al menos 4 días antes (el API
+  // también lo exige).
+  if (clave === 'DIAS_VIGENCIA_RESULTADO' && hay('DIAS_VIGENCIA_RESULTADO') && c.DIAS_VIGENCIA_RESULTADO < DIAS_MARGEN_FIRMA)
+    return `${capital(nom('DIAS_VIGENCIA_RESULTADO'))} no puede quedar por debajo de ${DIAS_MARGEN_FIRMA} días: el proceso de firma necesita más de 3 días de vigencia, así que todo resultado nacería sin tiempo para firmar el contrato.`
+  if (
+    toca('VIGENCIA_CONDICION_COARRENDATARIO_DIAS', 'DIAS_VIGENCIA_RESULTADO') &&
+    hay('VIGENCIA_CONDICION_COARRENDATARIO_DIAS', 'DIAS_VIGENCIA_RESULTADO') &&
+    c.VIGENCIA_CONDICION_COARRENDATARIO_DIAS > c.DIAS_VIGENCIA_RESULTADO - DIAS_MARGEN_FIRMA
+  )
+    return `${capital(nom('VIGENCIA_CONDICION_COARRENDATARIO_DIAS'))} no puede pasar de ${c.DIAS_VIGENCIA_RESULTADO - DIAS_MARGEN_FIRMA} días con ${nom('DIAS_VIGENCIA_RESULTADO')}: tiene que terminar al menos ${DIAS_MARGEN_FIRMA} días antes de que venza el resultado, que es lo que necesita el proceso de firma del contrato.`
   if (toca('TARIFA_VIA_AUTOMATICA', 'TARIFA_VIA_NO_AUTOMATICA') && hay('TARIFA_VIA_AUTOMATICA', 'TARIFA_VIA_NO_AUTOMATICA') && c.TARIFA_VIA_AUTOMATICA > c.TARIFA_VIA_NO_AUTOMATICA)
     return `${capital(nom('TARIFA_VIA_AUTOMATICA'))} no puede superar a ${nom('TARIFA_VIA_NO_AUTOMATICA')}.`
   if (clave === 'ADENDA5_DEF' && nuevo === 1 && (c.ADENDA3_V2 !== 1 || c.ADENDA4 !== 1))
