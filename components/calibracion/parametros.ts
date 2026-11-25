@@ -24,6 +24,7 @@ export type Unidad =
   | 'dias'
   | 'dias_habiles'
   | 'meses'
+  | 'anios'
   | 'mes'
   | 'onoff'
   | 'criterio'
@@ -145,7 +146,7 @@ export const SECCIONES: Seccion[] = [
   {
     id: 'plazos',
     titulo: 'Autorización y plazos',
-    ayuda: 'Cuánto duran el enlace de autorización, el estudio y el certificado, y los límites del documento.',
+    ayuda: 'Cuánto duran el enlace de autorización, el estudio y el certificado, la conservación de las imágenes del cotejo y los límites del documento.',
   },
   { id: 'contratos', titulo: 'Canon y contratos', ayuda: 'Hasta qué canon se afianza, cuánto puede subir y los plazos del contrato.' },
   { id: 'migracion', titulo: 'Migración de cartera', ayuda: 'Reglas para traer contratos que ya estaban afianzados por fuera de la plataforma.' },
@@ -358,6 +359,29 @@ const META_A5D: Record<string, MetaParametro> = {
       return `Con ${v.HORAS_ESPERA_LISTAS}: si las listas llegan a ${antes === 1 ? 'la hora' : `las ${antes} horas`} sin coincidencias, el estudio se decide solo; si a las ${v.HORAS_ESPERA_LISTAS} horas no han llegado, lo revisa un analista.`
     },
     rige: 'a5d',
+  },
+  // Adenda 6 §2 y §10 (en la Adenda: AÑOS_CONSERVACION_COTEJO_*): las imágenes de los cotejos de la autorización V3.
+  ANIOS_CONSERVACION_COTEJO_APROBADO: {
+    nombre: 'Conservación de las imágenes de un cotejo aprobado',
+    seccion: 'plazos',
+    unidad: 'anios',
+    queHace:
+      'Años que Cofianza conserva las imágenes y el resultado de un cotejo biométrico aprobado, contados desde la terminación de la fianza. Mientras la fianza esté vigente se conservan. La autorización de datos promete hasta 5 años: no se puede subir.',
+    ejemplo: (v) =>
+      `Con ${v.ANIOS_CONSERVACION_COTEJO_APROBADO}: si la fianza termina el 1 de marzo de 2028, las imágenes se eliminan el 1 de marzo de ${2028 + v.ANIOS_CONSERVACION_COTEJO_APROBADO}.`,
+    rige: 'parcial',
+    notaRige: 'Rige con la autorización de datos versión 3, cuando Cofianza la active.',
+  },
+  ANIOS_CONSERVACION_COTEJO_FALLIDO: {
+    nombre: 'Conservación de las imágenes de un cotejo fallido',
+    seccion: 'plazos',
+    unidad: 'anios',
+    queHace:
+      'Años que Cofianza conserva las imágenes y el resultado de un cotejo biométrico fallido, contados desde el intento (si un administrador las vincula a una denuncia o un proceso, hasta que termine). Las de un cotejo aprobado que no llegó a fianza se conservan este mismo plazo. La autorización de datos promete 2 años: no se puede subir.',
+    ejemplo: (v) =>
+      `Con ${v.ANIOS_CONSERVACION_COTEJO_FALLIDO}: un cotejo fallido del 10 de enero de 2027 se elimina el 10 de enero de ${2027 + v.ANIOS_CONSERVACION_COTEJO_FALLIDO}.`,
+    rige: 'parcial',
+    notaRige: 'Rige con la autorización de datos versión 3, cuando Cofianza la active.',
   },
   SCORE_MINIMO_SOLO: {
     nombre: 'Puntaje mínimo en la central para ir sin segundo firmante',
@@ -1504,6 +1528,8 @@ export function conUnidad(n: number, p: Pick<IParametroCalibracion, 'clave' | 'e
       return `${v} ${n === 1 ? 'día hábil' : 'días hábiles'}`
     case 'meses':
       return `${v} ${n === 1 ? 'mes' : 'meses'}`
+    case 'anios':
+      return `${v} ${n === 1 ? 'año' : 'años'}`
     case 'veces':
       return `${v} ${n === 1 ? 'vez' : 'veces'}`
     case 'consultas':

@@ -266,15 +266,33 @@ export interface IResumenBiometriaRespuesta {
  */
 export interface IIntentoConFotos {
   id: string
-  /** El número de ese intento en `resumen.historial`, o null si no se pudo cruzar. */
+  /**
+   * El número de ese intento en `resumen.historial`, o null si no se pudo cruzar. En las de la Adenda 6, el número
+   * entre los intentos de esa persona.
+   */
   numero: number | null
   fecha: string
   estado: EstadoBiometria
   similitud: number | null
   documento_coincide: boolean | null
-  /** Hasta cuándo se conservan como mucho (se borran antes si se decide el estudio). */
-  borrar_antes_de: string
+  /** Hasta cuándo se conservan como mucho (se borran antes si se decide el estudio). null en las de la Adenda 6. */
+  borrar_antes_de: string | null
+  /** Adenda 6 §2: de quién es el cotejo, si quedó aprobado y si se conserva con los plazos de la autorización V3. Ausentes en APIs anteriores. */
+  persona?: 'solicitante' | 'coarrendatario'
+  aprobado?: boolean
+  adenda6?: boolean
+  /** Cotejos fallidos vinculados a una denuncia o proceso: no se suprimen mientras esté. */
+  retencion?: { desde: string; motivo: string } | null
+  /** Lo que dijo Auco del documento (p. ej. DOCUMENT_FAKE). */
+  motivo_auco?: string | null
+  /**
+   * Adenda 6: hasta cuándo se conserva hoy. `hasta` null con `mientras_fianza` = mientras la fianza esté vigente; con
+   * `por_proceso` = hasta que termine la denuncia o el proceso.
+   */
+  conservacion?: { hasta: string | null; mientras_fianza: boolean; por_proceso: boolean } | null
 }
+
+export type PersonaCotejo = 'solicitante' | 'coarrendatario'
 
 /** GET /expedientes/:id/biometria/evidencia: se pide al abrir, nunca antes. */
 export interface IEvidenciaBiometria {
@@ -285,6 +303,8 @@ export interface IEvidenciaBiometria {
   consultado_en: string
   /** Días que se conservan como máximo. Ausente con una API anterior. */
   dias_conservacion?: number
+  /** Adenda 6: los años del panel (null si no hay fotos de la autorización V3). */
+  anios_conservacion?: { aprobado: number; fallido: number } | null
 }
 
 export type CualFotoBiometria = 'selfie' | 'documento'

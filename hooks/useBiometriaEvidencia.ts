@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { biometriaService } from '@/services/biometriaService'
 import { useUltimaPeticion } from '@/hooks/useUltimaPeticion'
 import { ApiClientError } from '@/lib/api'
-import type { CualFotoBiometria, IEvidenciaBiometria, IResumenBiometriaAnalista } from '@/types/autorizacion'
+import type { CualFotoBiometria, IEvidenciaBiometria, IResumenBiometriaAnalista, PersonaCotejo } from '@/types/autorizacion'
 
 export function useResumenBiometria(expedienteId: string | undefined, habilitado: boolean) {
   const [conEvidencia, setConEvidencia] = useState(false)
@@ -71,6 +71,16 @@ export function useEvidenciaBiometria(expedienteId: string) {
     return r
   }, [expedienteId, consultar])
 
+  /** Adenda 6 §2: marca (o quita) la denuncia o proceso de una persona. Lanza si falla; quien llama avisa. */
+  const retencionPorProceso = useCallback(
+    async (persona: PersonaCotejo, motivo: string | null) => {
+      const r = await biometriaService.retencionPorProceso(expedienteId, persona, motivo)
+      await consultar()
+      return r
+    },
+    [expedienteId, consultar],
+  )
+
   /** Al cerrar se olvida todo: al volver a abrir se pide de nuevo. */
   const limpiar = useCallback(() => {
     iniciar()
@@ -79,7 +89,7 @@ export function useEvidenciaBiometria(expedienteId: string) {
     setCargando(false)
   }, [iniciar])
 
-  return { datos, cargando, error, consultar, limpiar, eliminarFotos }
+  return { datos, cargando, error, consultar, limpiar, eliminarFotos, retencionPorProceso }
 }
 
 /**

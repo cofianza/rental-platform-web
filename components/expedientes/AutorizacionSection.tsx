@@ -26,6 +26,7 @@ import { EVENTO_BLOQUEOS } from '@/components/expedientes/BloqueosPendientesBann
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { fechaCompleta } from '@/lib/constants'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
+import { VerBiometria } from '@/components/expedientes/VerBiometria'
 
 interface AutorizacionSectionProps {
   expedienteId: string
@@ -1037,6 +1038,11 @@ export function AutorizacionSection({
         }
         confirmLabel="Registrar revocación"
       />
+
+      {/* Adenda 6 §2: las fotos de los cotejos (de las dos personas) se consultan aquí en cualquier estado de la
+          autorización: el cotejo del solicitante corre antes de firmar, y las fotos de un intento fallido se conservan
+          aunque nadie firme. El botón solo aparece para Cofianza y si hay algo que ver (VerBiometria lo decide). */}
+      <VerBiometria expedienteId={expedienteId} contenedor="mt-3 flex justify-end" />
 
       {showOtraPersona && <OtraPersonaModal isOpen onClose={() => setShowOtraPersona(false)} expedienteId={expedienteId} />}
 

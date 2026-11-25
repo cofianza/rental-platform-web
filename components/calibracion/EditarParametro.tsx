@@ -399,6 +399,7 @@ function sufijo(unidad: string, n: number): string {
       dias: uno ? 'día' : 'días',
       dias_habiles: uno ? 'día hábil' : 'días hábiles',
       meses: uno ? 'mes' : 'meses',
+      anios: uno ? 'año' : 'años',
       veces: 'veces',
       consultas: uno ? 'consulta' : 'consultas',
       obligaciones: uno ? 'obligación' : 'obligaciones',
