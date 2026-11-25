@@ -41,7 +41,7 @@
 
 import { useRef, useState } from 'react'
 import { autorizacionPublicService } from '@/services/autorizacionService'
-import type { EstadoBiometria } from '@/types/autorizacion'
+import type { EstadoBiometria, IBiometriaResponse } from '@/types/autorizacion'
 import { buttonClasses } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import {
@@ -236,7 +236,20 @@ interface Props {
   documentoNombre?: string
   /** Texto 3.3-biometria: si el cotejo no confirma la identidad, Cofianza conserva las fotos (lo dice la API). */
   conservaFotos?: boolean
+  /**
+   * Adenda 6 §2 (texto V3): el cotejo es opcional (casilla 4A) y no cambia el estudio; sin él, el contrato se
+   * firma en notaría. Cambia los textos y avisa a la API que la persona marcó la 4A.
+   */
+  v3?: boolean
+  /** Otro destino para el cotejo (el segundo firmante usa el suyo). Por omisión, el del enlace de autorización. */
+  servicio?: {
+    verificar: (input: { documentImage: string; photo: string }) => Promise<IBiometriaResponse>
+    omitir: () => Promise<unknown>
+  }
 }
+
+/** Adenda 6 §2: lo que pasa sin el cotejo, dicho igual en todos los textos de la V3. */
+const SIN_COTEJO_V3 = 'Su estudio se evalúa igual con el cotejo o sin él; sin el cotejo aprobado, el contrato se firma con firma autenticada en notaría, a su costo.'
 
 export function CapturaBiometrica({
   token,
@@ -246,6 +259,8 @@ export function CapturaBiometrica({
   onResultado,
   documentoNombre = 'documento',
   conservaFotos = false,
+  v3 = false,
+  servicio,
 }: Props) {
   const [documento, setDocumento] = useState<string | null>(null)
   const [selfie, setSelfie] = useState<string | null>(null)
@@ -266,10 +281,10 @@ export function CapturaBiometrica({
     setEnviando(true)
     setMensaje('')
     try {
-      const r = await autorizacionPublicService.verificarBiometria(token, {
-        documentImage: documento,
-        photo: selfie,
-      })
+      const input = { documentImage: documento!, photo: selfie! }
+      const r = servicio
+        ? await servicio.verificar(input)
+        : await autorizacionPublicService.verificarBiometria(token, { ...input, ...(v3 ? { acepta_cotejo: true } : {}) })
       setResultado(r.estado)
       onResultado?.(r.estado)
       setMensaje(r.motivo ?? '')
@@ -283,7 +298,11 @@ export function CapturaBiometrica({
       onResultado?.('no_verificada')
       // B3: sin veredicto no se sabe si Auco cobró el cotejo: reintentar exige otra selfie.
       setSelfie(null)
-      setMensaje('No pudimos completar la verificación en este momento. Puede continuar: alguien de nuestro equipo revisará su caso.')
+      setMensaje(
+        v3
+          ? `No pudimos completar el cotejo en este momento. Puede intentarlo de nuevo o continuar sin él. ${SIN_COTEJO_V3}`
+          : 'No pudimos completar la verificación en este momento. Puede continuar: alguien de nuestro equipo revisará su caso.',
+      )
     } finally {
       setEnviando(false)
     }
@@ -292,7 +311,8 @@ export function CapturaBiometrica({
   async function omitir() {
     setEnviando(true)
     try {
-      await autorizacionPublicService.omitirBiometria(token)
+      if (servicio) await servicio.omitir()
+      else await autorizacionPublicService.omitirBiometria(token)
       onResultado?.('omitida')
     } catch {
       // El registro del "no autorizo" es best-effort: si falla, la API lo
@@ -399,13 +419,15 @@ export function CapturaBiometrica({
           disabled={enviando}
           className={buttonClasses('secondary', 'lg', 'w-full')}
         >
-          Prefiero no tomarme la foto
+          {v3 ? 'Seguir sin el cotejo' : 'Prefiero no tomarme la foto'}
         </button>
       )}
 
       {!verificada && (
         <p className="text-center text-xs text-gray-500">
-          {conservaFotos
+          {v3
+            ? `El cotejo es opcional (numeral 4A de la autorización): ${SIN_COTEJO_V3} Las imágenes y el resultado se conservan como lo dice ese numeral y no se comparten con la inmobiliaria.`
+            : conservaFotos
             ? 'Su foto solo se usa para confirmar su identidad y no se comparte con la inmobiliaria. Si no logramos confirmarla, Cofianza guarda las fotos cifradas para que nuestro equipo revise su caso y las elimina al decidir su estudio o, a más tardar, a los 30 días. No está obligado a tomarla: su estudio sigue y lo revisa una persona de nuestro equipo.'
             : 'Su foto solo se usa para confirmar su identidad. No se guarda en Cofianza ni se comparte con la inmobiliaria. No está obligado a tomarla: su estudio sigue y lo revisa una persona de nuestro equipo.'}
         </p>

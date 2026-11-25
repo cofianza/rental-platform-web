@@ -105,6 +105,9 @@ const MOTIVOS_REPORTE: Array<{ key: 'no_soy_yo' | 'datos_incorrectos'; label: st
 const SIN_DATOS_SENSIBLES = 'No tratamos datos sensibles ni de menores; el servicio es solo para mayores de 18 años.'
 const CON_BIOMETRIA =
   'La foto de su rostro es un dato sensible: la usamos solo para confirmar que usted es el titular del documento y no está obligado a darla. No tratamos datos de menores; el servicio es solo para mayores de 18 años.'
+// Adenda 6 §2 (texto V3): el único dato sensible es el del cotejo opcional del numeral 4A.
+const CON_COTEJO_V3 =
+  'Solo tratamos un dato sensible si usted lo autoriza: la foto de su rostro, para el cotejo de identidad opcional del numeral 4A. No tratamos datos de menores; el servicio es solo para mayores de 18 años.'
 
 const FINALIDADES = [
   {
@@ -247,6 +250,8 @@ export default function AutorizarPage() {
   // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
   // Este `false` es normativo — no lo cambies a true ni lo derives de nada.
   const [acepta, setAcepta] = useState(false)
+  // Adenda 6 §2 (texto V3): la casilla 4A, opcional. También desmarcada por defecto (dato sensible, Ley 1581 art. 6).
+  const [aceptaCotejo, setAceptaCotejo] = useState(false)
   // El correo donde quiere recibir el resultado de su evaluación: solo si la API lo pide
   // (contacto_resultado). Se prellena al confirmar su documento con el de su ficha.
   const [correoResultado, setCorreoResultado] = useState('')
@@ -362,20 +367,27 @@ export default function AutorizarPage() {
     setErrorMessage('')
   }, [irAPaso])
 
-  // Salida del paso 3. Si el backend pide biometría, se intercala el cotejo
-  // antes de la confirmación final.
+  // Adenda 6 §2 (texto V3): la casilla 4A se muestra; el cotejo se hace solo si la marca (y si se puede hacer).
+  const casilla4a = !!data?.biometria?.casilla_4a
+  const cotejoV3 = casilla4a && !!data?.biometria?.opcional && aceptaCotejo
+  // Con la V3 el numeral 5.2 solo trae dos finalidades opcionales: la tercera no se ofrece.
+  const beneficios = casilla4a ? BENEFICIOS.filter((b) => b.key !== 'historial_referencia') : BENEFICIOS
+
+  // Salida del paso 3. Si el backend pide biometría (o, con la V3, la persona
+  // marcó la 4A), se intercala el cotejo antes de la confirmación final.
   const salirDeBeneficios = useCallback(() => {
     // B4: quien ya se negó ('omitida') tampoco vuelve al paso; ahí vería «reintentar».
-    if (data?.biometria?.requerida && data.biometria.estado !== 'verificada' && data.biometria.estado !== 'omitida') {
+    const pideCotejo = !!data?.biometria?.requerida || cotejoV3
+    if (pideCotejo && data?.biometria?.estado !== 'verificada' && data?.biometria?.estado !== 'omitida') {
       irAPaso('bio')
       return
     }
     irAFirma()
-  }, [data?.biometria?.requerida, data?.biometria?.estado, irAFirma, irAPaso])
+  }, [data?.biometria?.requerida, data?.biometria?.estado, cotejoV3, irAFirma, irAPaso])
 
   // Barra de progreso: 4 tramos, o 5 cuando el backend pide el cotejo. El
   // índice traduce el paso 'bio' a su posición para poder compararlo.
-  const conBiometria = !!data?.biometria?.requerida
+  const conBiometria = !!data?.biometria?.requerida || cotejoV3
   const pasosBarra = conBiometria
     ? ['Autorización', 'Sobre usted', 'Beneficios', 'Identidad', 'Confirmar']
     : ['Autorización', 'Sobre usted', 'Beneficios', 'Confirmar']
@@ -591,7 +603,10 @@ export default function AutorizarPage() {
         // §8.1: el mismo documento que la API ya aceptó en el paso 1; la firma
         // lo vuelve a comparar (un POST directo no se salta la confirmación).
         numero_documento: documento.trim(),
-        consentimientos_opcionales: consents,
+        // Adenda 6 §2 (texto V3): las dos finalidades del 5.2 y la casilla 4A.
+        consentimientos_opcionales: casilla4a
+          ? { analitica: consents.analitica, comercial: consents.comercial, cotejo_biometrico: aceptaCotejo }
+          : consents,
         ...correoParaEnviar(data?.contacto_resultado?.requerido, correoResultado),
       })
       setHashDocumento(result.hash_documento)
@@ -892,7 +907,11 @@ export default function AutorizarPage() {
     { txt: 'Consulta y reporte a centrales de riesgo', lock: 'Obligatorio', on: true },
     { txt: 'Historial de comportamiento de pago', lock: 'Obligatorio', on: true },
     // B6: los opcionales con los mismos títulos del paso 3 (texto legal §5.2).
-    ...BENEFICIOS.map((b) => ({ txt: b.titulo, lock: 'Opcional', on: consents[b.key] })),
+    ...beneficios.map((b) => ({ txt: b.titulo, lock: 'Opcional', on: consents[b.key] })),
+    // Adenda 6 §2: la casilla 4A, con lo que significa no marcarla.
+    ...(casilla4a
+      ? [{ txt: aceptaCotejo ? 'Cotejo biométrico de identidad (numeral 4A)' : 'Sin cotejo biométrico: el contrato se firma en notaría', lock: 'Opcional', on: aceptaCotejo }]
+      : []),
   ]
 
   return (
@@ -1130,7 +1149,7 @@ export default function AutorizarPage() {
                         {f.detalle.map((d) => (
                           <li key={d} className="flex gap-2">
                             <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary-500" />
-                            <span>{d === SIN_DATOS_SENSIBLES && conBiometria ? CON_BIOMETRIA : d}</span>
+                            <span>{d === SIN_DATOS_SENSIBLES && casilla4a ? CON_COTEJO_V3 : d === SIN_DATOS_SENSIBLES && conBiometria ? CON_BIOMETRIA : d}</span>
                           </li>
                         ))}
                       </ul>
@@ -1201,6 +1220,26 @@ export default function AutorizarPage() {
                 </a>
               </span>
             </label>
+
+            {/* Adenda 6 §2 (texto V3): la casilla 4A, opcional y desmarcada. Su texto es el del numeral 4A. */}
+            {casilla4a && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-white p-3.5">
+                <input
+                  type="checkbox"
+                  checked={aceptaCotejo}
+                  onChange={(e) => setAceptaCotejo(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <strong>Opcional (numeral 4A):</strong> autorizo el tratamiento de mis datos biométricos para el cotejo de
+                  identidad descrito en ese numeral.
+                  <span className="mt-1 block text-xs text-gray-500">
+                    Si no la marca, su solicitud se estudia igual, pero el contrato se firmará con firma autenticada en
+                    notaría, a su costo, en lugar de la firma digital.
+                  </span>
+                </span>
+              </label>
+            )}
 
             <button
               type="button"
@@ -1558,7 +1597,7 @@ export default function AutorizarPage() {
               {/* M12: «Beneficios», el mismo nombre que usa el texto legal para este paso. */}
               <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Beneficios opcionales</h2>
               <p className="mt-1 text-sm text-gray-500">
-                {BENEFICIOS.length === 3 ? 'Tres' : BENEFICIOS.length} autorizaciones opcionales. Usted elige cuáles
+                {beneficios.length === 3 ? 'Tres' : beneficios.length === 2 ? 'Dos' : beneficios.length} autorizaciones opcionales. Usted elige cuáles
                 encender y las cambia cuando quiera. Su fianza funciona igual, las active o no.
               </p>
             </div>
@@ -1569,7 +1608,7 @@ export default function AutorizarPage() {
             </div>
 
             <div className="space-y-3">
-              {BENEFICIOS.map((b) => {
+              {beneficios.map((b) => {
                 const on = consents[b.key]
                 return (
                   <div key={b.key} className="rounded-xl border border-gray-200 bg-white p-4">
@@ -1637,6 +1676,7 @@ export default function AutorizarPage() {
             estadoPrevio={data?.biometria?.estado ?? null}
             documentoNombre={nombreDocumento(data?.solicitante.tipo_documento)}
             conservaFotos={!!data?.biometria?.conserva_fotos}
+            v3={casilla4a}
             onContinuar={irAFirma}
             onVolver={volverPaso}
             onResultado={(estado) =>

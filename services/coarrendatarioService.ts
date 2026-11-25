@@ -9,6 +9,7 @@ import type { IPersonaA5d } from '@/types/estudio'
 import { apiClient } from '@/lib/api'
 import { coalesceRequest, descartarEnVuelo } from '@/lib/requestCoalesce'
 import type { Habitara } from '@/lib/habitara'
+import type { EstadoBiometria, IBiometriaResponse } from '@/types/autorizacion'
 
 export type CoarrendatarioEstado =
   | 'pendiente_aceptacion'
@@ -126,6 +127,12 @@ export interface ICoarrendatarioPublicView {
    */
   texto_legal: string
   version_terminos: string
+  /**
+   * Adenda 6 §2 (texto V3): la casilla 4A y el cotejo después de aceptar. Ausente con un texto anterior.
+   * `opcional`: el cotejo se puede hacer; `autorizado`: ya aceptó y marcó la 4A (null antes de aceptar);
+   * `estado`: el veredicto guardado.
+   */
+  cotejo?: { opcional: boolean; autorizado: boolean | null; estado: EstadoBiometria | null }
 }
 
 /** La clave con que se comparte la lectura del coarrendatario de un estudio. */
@@ -240,13 +247,34 @@ export const coarrendatarioService = {
     notificacion?: { direccion: string; municipio: string; habitara_inmueble?: Habitara },
     /** Solo si la pantalla lo pide (contacto_resultado): el correo para el resultado de su evaluación y su documento. */
     contacto?: { correo_resultado?: string; numero_documento?: string },
+    /**
+     * Adenda 6 §2 (texto V3): la versión que la pantalla mostró, la casilla 4A y las dos finalidades opcionales.
+     */
+    autorizacion?: {
+      version_terminos?: string
+      acepta_cotejo_biometrico?: boolean
+      consentimientos_opcionales?: { analitica?: boolean; comercial?: boolean }
+    },
   ): Promise<{ ok: true; estudio_id: string | null; mensaje: string }> {
     const res = (await apiClient.post(`/public/coarrendatario/${token}/aceptar`, {
       acepta_terminos: true,
       acepta_datos: true,
       ...notificacion,
       ...contacto,
+      ...autorizacion,
     })) as unknown as { data: { ok: true; estudio_id: string | null; mensaje: string } }
+    return res.data
+  },
+
+  /** Adenda 6 §2: cotejo con foto del segundo firmante, después de aceptar (solo con la casilla 4A). */
+  async verificarBiometria(token: string, input: { documentImage: string; photo: string }): Promise<IBiometriaResponse> {
+    const res = (await apiClient.post(`/public/coarrendatario/${token}/biometria`, input)) as unknown as { data: IBiometriaResponse }
+    return res.data
+  },
+
+  /** Adenda 6 §2: sigue sin el cotejo (el contrato se firmará en notaría). */
+  async omitirBiometria(token: string): Promise<IBiometriaResponse> {
+    const res = (await apiClient.post(`/public/coarrendatario/${token}/biometria/omitir`, {})) as unknown as { data: IBiometriaResponse }
     return res.data
   },
 

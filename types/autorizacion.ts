@@ -171,6 +171,13 @@ export interface IAutorizacionPublicData {
    */
   biometria?: {
     requerida: boolean
+    /**
+     * Adenda 6 §2 (texto V3): el texto trae la casilla 4A, cotejo biométrico opcional. La pantalla la muestra
+     * desmarcada; sin ella no hay cotejo y el contrato se firma en notaría.
+     */
+    casilla_4a?: boolean
+    /** Adenda 6 §2: el cotejo se puede hacer (solo si la persona marca la 4A). */
+    opcional?: boolean
     estado: EstadoBiometria | null
     /** Texto 3.3-biometria con el guardado encendido: si el cotejo falla, Cofianza conserva las fotos. */
     conserva_fotos?: boolean
@@ -293,6 +300,8 @@ export interface IFirmarInput {
     analitica?: boolean
     comercial?: boolean
     historial_referencia?: boolean
+    /** Adenda 6 §2 (texto V3): la casilla 4A. */
+    cotejo_biometrico?: boolean
   }
 }
 

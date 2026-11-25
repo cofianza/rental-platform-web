@@ -158,7 +158,8 @@ export const autorizacionPublicService = {
    *  prospecto puede seguir; el estudio pasa a revisión manual. */
   async verificarBiometria(
     token: string,
-    input: { documentImage: string; photo: string },
+    /** `acepta_cotejo`: Adenda 6 §2, con el texto V3 la persona marcó la casilla 4A (sin ella la API no coteja). */
+    input: { documentImage: string; photo: string; acepta_cotejo?: boolean },
   ): Promise<IBiometriaResponse> {
     const res = await publicClient.post<IBiometriaResponse>(
       `/public/autorizar/${token}/biometria`,
