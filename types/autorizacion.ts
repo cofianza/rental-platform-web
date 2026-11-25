@@ -180,6 +180,8 @@ export interface IAutorizacionPublicData {
     casilla_4a?: boolean
     /** Adenda 6 §2: el cotejo se puede hacer (solo si la persona marca la 4A). */
     opcional?: boolean
+    /** Adenda 6 §2: no se ofrece porque Auco no coteja su tipo de documento. Ausente por otra razón o en APIs viejas. */
+    no_cotejable?: 'tipo_documento'
     /** Adenda 6 §2: ya marcó la 4A (su constancia quedó al tomarse las fotos): la casilla no se desmarca. */
     autorizo_4a?: boolean
     /** Adenda 6 §2: el cotejo quedó aprobado (rostro y documento): habilita la firma digital. */

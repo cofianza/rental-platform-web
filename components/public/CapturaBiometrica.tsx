@@ -231,8 +231,12 @@ interface Props {
   /** Avanza al paso de firma. Se llama pase lo que pase con el cotejo. */
   onContinuar: () => void
   onVolver: () => void
-  /** El veredicto sube a la página: al volver a este paso se muestra sin repetir (ni cobrar) el cotejo. */
-  onResultado?: (estado: EstadoBiometria, aprobado?: boolean) => void
+  /**
+   * El veredicto sube a la página: al volver a este paso se muestra sin repetir (ni cobrar) el cotejo. `registrado`:
+   * la API respondió y guardó el veredicto (con la V3, con la constancia de la casilla 4A); ante un error (red, 503)
+   * es false: la página no puede dar por registrada la 4A.
+   */
+  onResultado?: (estado: EstadoBiometria, aprobado?: boolean, registrado?: boolean) => void
   /** Cómo se llama el documento del prospecto («cédula de ciudadanía», «pasaporte»…). */
   documentoNombre?: string
   /** Texto 3.3-biometria: si el cotejo no confirma la identidad, Cofianza conserva las fotos (lo dice la API). */
@@ -256,7 +260,7 @@ interface Props {
   /** Otro destino para el cotejo (el segundo firmante usa el suyo). Por omisión, el del enlace de autorización. */
   servicio?: {
     verificar: (input: { documentImage: string; photo: string }) => Promise<IBiometriaResponse>
-    omitir: () => Promise<unknown>
+    omitir: () => Promise<IBiometriaResponse>
   }
 }
 
@@ -308,7 +312,7 @@ export function CapturaBiometrica({
       const ok = r.estado === 'verificada' && (!v3 || r.aprobado === true)
       setResultado(r.estado)
       setAprobado(v3 ? r.aprobado === true : null)
-      onResultado?.(r.estado, v3 ? r.aprobado === true : undefined)
+      onResultado?.(r.estado, v3 ? r.aprobado === true : undefined, r.guardado === true)
       setMensaje(r.motivo ?? '')
       if (ok) onContinuar()
       // La misma selfie daría el mismo resultado (y otro cobro): se pide una nueva.
@@ -317,7 +321,8 @@ export function CapturaBiometrica({
       // Ni siquiera un error de red puede dejarlo atrapado: se marca como no
       // verificada (que es la verdad) y aparece «Continuar».
       setResultado('no_verificada')
-      onResultado?.('no_verificada', v3 ? false : undefined)
+      // Sin respuesta de la API no hay veredicto guardado ni constancia de la 4A (registrado = false).
+      onResultado?.('no_verificada', v3 ? false : undefined, false)
       // B3: sin veredicto no se sabe si Auco cobró el cotejo: reintentar exige otra selfie.
       setSelfie(null)
       // Adenda 6 §2: si la API dice que el cotejo ya no está disponible (plazo, estudio cerrado, sin la 4A), se
@@ -341,9 +346,11 @@ export function CapturaBiometrica({
   async function omitir() {
     setEnviando(true)
     try {
-      if (servicio) await servicio.omitir()
-      else await autorizacionPublicService.omitirBiometria(token)
-      onResultado?.('omitida', v3 ? false : undefined)
+      const r = servicio ? await servicio.omitir() : await autorizacionPublicService.omitirBiometria(token)
+      // Adenda 6 §2: si el cotejo ya quedó aprobado (p. ej. en otra pestaña), la API no lo pisa y lo dice
+      // (`estado: 'verificada'`, `aprobado: true`): se sigue con ese veredicto (firma digital), no con notaría.
+      if (v3 && r?.estado === 'verificada' && r.aprobado !== false) onResultado?.('verificada', true, true)
+      else onResultado?.('omitida', v3 ? false : undefined, r?.guardado === true)
     } catch {
       // El registro del "no autorizo" es best-effort: si falla, la API lo
       // registra como "no verificada" al firmar (firmarAutorizacion) y el
