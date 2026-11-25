@@ -13,6 +13,7 @@ import {
   motivoCoarrendatario,
   partirObservaciones,
   seCierraSiVence,
+  sinCierreEvaluacionNueva,
   textoCondicionCoarrendatario,
   textoVisible,
 } from '../components/expedientes/textoVisible'
@@ -125,4 +126,21 @@ test('partirObservaciones: el aviso de listas por confirmar no es una viñeta', 
 test('partirObservaciones: la condición vencida no es motivo', () => {
   const r = partirObservaciones('Resultado de TransUnion: puntaje 702. El caso pasa a revisión de un analista de Cofianza. Condición pendiente: coarrendatario. El ingreso no alcanza.')
   assert.deepEqual(r.motivos, ['El ingreso no alcanza.'])
+})
+
+// Revisión de lógica de la Adenda 6 §7 (punto 4): bajo «La evaluación crediticia actual ya no sirve…» el cierre «qué
+// hacer» de cada motivo sobra (la nota ya dice que es un estudio nuevo con su cobro), también con los textos nuevos.
+test('sinCierreEvaluacionNueva: quita el cierre de los motivos de una evaluación que ya no sirve', () => {
+  const base = 'La evaluación se completó el 25/11/2026 y ya tiene más de 30 días calendario.'
+  assert.equal(sinCierreEvaluacionNueva(`${base} Para continuar, cree un estudio nuevo (con su propio cobro).`), base)
+  assert.equal(sinCierreEvaluacionNueva(`${base} Se requiere una evaluación nueva: cree un estudio nuevo (con su propio cobro).`), base)
+  // Los de antes siguen.
+  assert.equal(sinCierreEvaluacionNueva(`${base} Se requiere nueva evaluación.`), base)
+  assert.equal(sinCierreEvaluacionNueva(`${base} Se requiere una nueva evaluación.`), base)
+  assert.equal(sinCierreEvaluacionNueva(`${base} Hay que renovar la evaluación.`), base)
+  // Solo al final, y nada más.
+  const crc = 'Al certificado de riesgo (CRC) le quedan menos de tres días de vigencia (vence el 18/09/2026 a las 11:00): no alcanza para el proceso de firma.'
+  assert.equal(sinCierreEvaluacionNueva(`${crc} Para continuar, cree un estudio nuevo (con su propio cobro).`), crc)
+  assert.equal(sinCierreEvaluacionNueva(base), base)
+  assert.equal(sinCierreEvaluacionNueva('Para continuar, cree un estudio nuevo (con su propio cobro). Escríbanos.'), 'Para continuar, cree un estudio nuevo (con su propio cobro). Escríbanos.')
 })

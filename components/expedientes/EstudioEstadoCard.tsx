@@ -119,6 +119,8 @@ interface EstudioEstadoCardProps {
   reaperturaAbierta?: boolean
   /** Con la reapertura: hasta cuándo debe autorizar la persona nueva (ISO, lo manda la API). */
   venceReapertura?: string | null
+  /** Adenda 6 §7: evaluar de nuevo por un canon mayor no tiene costo hoy (`reevaluacion_sin_costo` del estudio). */
+  reevaluacionSinCosto?: boolean
   /**
    * Un cambio de persona (cargar, cancelar, retirar) mueve el estado del estudio: la página recarga el
    * expediente para que el encabezado, el banner del rechazo y esta tarjeta digan lo mismo.
@@ -476,6 +478,7 @@ export function EstudioEstadoCard({
   cierre: cierreProp,
   reaperturaAbierta = false,
   venceReapertura = null,
+  reevaluacionSinCosto,
   onExpedienteCambio,
 }: EstudioEstadoCardProps) {
   const cierre = cierreProp !== undefined ? cierreProp : cierreDelEstudio(expedienteEstado)
@@ -595,6 +598,7 @@ export function EstudioEstadoCard({
           inmuebleActualId={inmuebleActualId}
           canonAprobado={canonAprobado}
           destinacion={destinacion}
+          reevaluacionSinCosto={reevaluacionSinCosto}
           onReasignado={reasignable ? () => {
             fetchEstudios()
             onReasignado?.()
@@ -643,6 +647,8 @@ interface EstudioPanelProps {
   inmuebleActualId?: string | null
   canonAprobado?: number | null
   destinacion?: string | null
+  /** Solo titular (Adenda 6 §7): evaluar de nuevo por un canon mayor no tiene costo hoy. */
+  reevaluacionSinCosto?: boolean
   /** Solo titular: pedir una autorización nueva si firmó con otro documento. */
   expedienteId?: string
   onReasignado?: () => void
@@ -681,6 +687,7 @@ function EstudioPanel({
   inmuebleActualId,
   canonAprobado,
   destinacion,
+  reevaluacionSinCosto,
   onReasignado,
   expedienteId,
   segundoFirmante,
@@ -1142,6 +1149,7 @@ function EstudioPanel({
           canonEvaluado={estudio.canon_evaluado}
           canonHabilitado={estudio.desenlace ? (estudio.canon_habilitado_cop ?? null) : undefined}
           sinReevaluacion={estudio.hasta_canon === true}
+          reevaluacionSinCosto={reevaluacionSinCosto}
           canonAprobado={canonAprobado}
           destinacion={destinacion}
           expedienteId={expedienteId}

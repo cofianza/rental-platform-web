@@ -607,7 +607,7 @@ const META_A5D: Record<string, MetaParametro> = {
     sub: 'Consulta adicional',
     unidad: 'dias',
     queHace:
-      'Días desde la consulta a la central en que su resultado se reutiliza sin consultar de nuevo: se conserva a la persona que ya pasó cuando se sustituye a la otra, y un inmueble de canon mayor se reevalúa sin cobro. Vencidos, la nueva consulta se cobra como consulta adicional. También fija hasta cuándo sirve el reporte para decidir una apelación.',
+      'Días desde la consulta a la central en que su resultado se reutiliza sin consultar de nuevo: se conserva a la persona que ya pasó cuando se sustituye a la otra. Vencidos, la nueva consulta se cobra como consulta adicional. También fija hasta cuándo sirve el reporte para decidir una apelación. Un inmueble de canon mayor se reevalúa sin cobro mientras el resultado del estudio esté vigente (en los resultados anteriores a «Vigencia del resultado», mientras lo esté el reporte).',
     ejemplo: (v) =>
       `Con ${v.DIAS_VIGENCIA_REPORTE}: si a los ${v.DIAS_VIGENCIA_REPORTE + 5} días de la consulta se cambia a la otra persona, quien ya pasó se consulta de nuevo y se cobra.`,
     rige: 'a5d',
@@ -1223,12 +1223,27 @@ export const META: Record<string, MetaParametro> = {
     nota: 'Acortarlo aplica también a los estudios ya creados: los que ya pasen el plazo nuevo sin la autorización del solicitante se cierran en la siguiente revisión automática (cada hora). Alargarlo no reabre los cerrados.',
     rige: 'a4',
   },
-  VIGENCIA_CRC_DIAS: {
-    nombre: 'Días que vale el certificado de riesgo',
+  DIAS_VIGENCIA_RESULTADO: {
+    nombre: 'Vigencia del resultado',
     seccion: 'plazos',
     sub: 'Plazos',
     unidad: 'dias',
-    queHace: 'El certificado de riesgo vale estos días desde la consulta a la central. Vencido, no se firma contrato con él y hay que consultar de nuevo.',
+    queHace:
+      'Días que vale el resultado de un estudio desde la evaluación. Vencido, no se puede crear el contrato ni se renueva: hace falta un estudio nuevo, con su propio cobro. Dentro de la vigencia, evaluar de nuevo por un canon mayor no tiene costo.',
+    nota: 'Cada resultado conserva los días con que se emitió: cambiar este valor solo afecta a los que se emitan después.',
+    ejemplo: (v) =>
+      `Con ${v.DIAS_VIGENCIA_RESULTADO}: un resultado de hoy permite generar el contrato y enviarlo a firma hasta unos 3 días antes de cumplir los ${v.DIAS_VIGENCIA_RESULTADO} días; después ya no alcanza el tiempo para firmar.`,
+    rige: 'a5d',
+  },
+  VIGENCIA_CRC_DIAS: {
+    nombre: 'Vigencia de los resultados anteriores',
+    seccion: 'plazos',
+    sub: 'Plazos',
+    unidad: 'dias',
+    queHace:
+      'Los resultados emitidos antes de que existiera «Vigencia del resultado» valen estos días desde la evaluación; los posteriores conservan la suya. Sin la Adenda 5, todos los resultados valen estos días. Vencidos, no se firma contrato con ellos y hace falta un estudio nuevo.',
+    // Revisión de lógica de la Adenda 6 §7: los resultados que miden con este valor no lo congelaron (se lee al vuelo).
+    nota: 'Cambiarlo afecta de inmediato a todos los resultados ya emitidos que lo usan (los anteriores a «Vigencia del resultado» y, sin la Adenda 5, todos): en ellos no quedó congelado. Acortarlo puede dejar vencidos estudios que hoy están vigentes.',
     rige: 'siempre',
   },
   MAX_INTENTOS_DOCUMENTO: {
@@ -1289,7 +1304,7 @@ export const META: Record<string, MetaParametro> = {
     ...DECISION,
   },
   TOLERANCIA_CANON: {
-    saleConA5d: 'en lugar del margen, un canon igual o menor al aprobado no se reevalúa y uno mayor se reevalúa sin cobro mientras el reporte de la central esté vigente',
+    saleConA5d: 'en lugar del margen, un canon igual o menor al aprobado no se reevalúa y uno mayor se reevalúa sin cobro mientras el resultado del estudio esté vigente',
     nombre: 'Cuánto puede subir el canon sin nueva evaluación',
     seccion: 'contratos',
     sub: 'Topes de canon',
@@ -1569,6 +1584,9 @@ export const humanizar = (texto: string) =>
 
 const capital = (t: string) => t.replace(/^(«?)(\p{L})/u, (_m, a: string, b: string) => a + b.toUpperCase())
 
+/** Adenda 6 §7: días enteros que cubren lo que necesita el proceso de firma (3 días y una hora; DIAS_MARGEN_FIRMA del API). */
+const DIAS_MARGEN_FIRMA = 4
+
 /**
  * Las reglas de coherencia del API para la Adenda 5 (y las parejas de hoy de
  * la revisión del 11-nov), antes de enviar: así el error sale al escribir y no
@@ -1621,6 +1639,20 @@ export function coherenciaA5d(clave: string, nuevo: number, v: Valores): string 
     if (c.UMBRAL_CASCADA_APROBACION < c.UMBRAL_APROBACION_AUTOMATICA)
       return `${capital(nom('UMBRAL_CASCADA_APROBACION'))} no puede quedar por debajo de ${nom('UMBRAL_APROBACION_AUTOMATICA')}.`
   }
+  // Adenda 6 §7: la vigencia del resultado no pasa de los días que se reutiliza el reporte (el API también lo exige).
+  if (toca('DIAS_VIGENCIA_RESULTADO', 'DIAS_VIGENCIA_REPORTE') && hay('DIAS_VIGENCIA_RESULTADO', 'DIAS_VIGENCIA_REPORTE') && c.DIAS_VIGENCIA_RESULTADO > c.DIAS_VIGENCIA_REPORTE)
+    return `${capital(nom('DIAS_VIGENCIA_RESULTADO'))} no puede pasar de ${nom('DIAS_VIGENCIA_REPORTE')}: dentro de la vigencia, evaluar de nuevo por un canon mayor no tiene costo y usa ese reporte.`
+  // Adenda 6 §7 (segunda revisión): el proceso de firma necesita más de 3 días de vigencia. Con menos de 4, todo
+  // resultado nacería sin tiempo para firmar; y el plazo del segundo firmante termina al menos 4 días antes (el API
+  // también lo exige).
+  if (clave === 'DIAS_VIGENCIA_RESULTADO' && hay('DIAS_VIGENCIA_RESULTADO') && c.DIAS_VIGENCIA_RESULTADO < DIAS_MARGEN_FIRMA)
+    return `${capital(nom('DIAS_VIGENCIA_RESULTADO'))} no puede quedar por debajo de ${DIAS_MARGEN_FIRMA} días: el proceso de firma necesita más de 3 días de vigencia, así que todo resultado nacería sin tiempo para firmar el contrato.`
+  if (
+    toca('VIGENCIA_CONDICION_COARRENDATARIO_DIAS', 'DIAS_VIGENCIA_RESULTADO') &&
+    hay('VIGENCIA_CONDICION_COARRENDATARIO_DIAS', 'DIAS_VIGENCIA_RESULTADO') &&
+    c.VIGENCIA_CONDICION_COARRENDATARIO_DIAS > c.DIAS_VIGENCIA_RESULTADO - DIAS_MARGEN_FIRMA
+  )
+    return `${capital(nom('VIGENCIA_CONDICION_COARRENDATARIO_DIAS'))} no puede pasar de ${c.DIAS_VIGENCIA_RESULTADO - DIAS_MARGEN_FIRMA} días con ${nom('DIAS_VIGENCIA_RESULTADO')}: tiene que terminar al menos ${DIAS_MARGEN_FIRMA} días antes de que venza el resultado, que es lo que necesita el proceso de firma del contrato.`
   if (toca('TARIFA_VIA_AUTOMATICA', 'TARIFA_VIA_NO_AUTOMATICA') && hay('TARIFA_VIA_AUTOMATICA', 'TARIFA_VIA_NO_AUTOMATICA') && c.TARIFA_VIA_AUTOMATICA > c.TARIFA_VIA_NO_AUTOMATICA)
     return `${capital(nom('TARIFA_VIA_AUTOMATICA'))} no puede superar a ${nom('TARIFA_VIA_NO_AUTOMATICA')}.`
   if (clave === 'ADENDA5_DEF' && nuevo === 1 && (c.ADENDA3_V2 !== 1 || c.ADENDA4 !== 1))

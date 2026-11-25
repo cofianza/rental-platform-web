@@ -1,7 +1,7 @@
 /**
  * Datos de la empresa (Cofianza) — edición por el administrador.
- * Nombre, NIT, dirección, teléfono, email y web. La vigencia del CRC NO se
- * edita aquí: es VIGENCIA_CRC_DIAS en /admin/calibracion.
+ * Nombre, NIT, dirección, teléfono, email y web. La vigencia del resultado NO se
+ * edita aquí: es DIAS_VIGENCIA_RESULTADO (VIGENCIA_CRC_DIAS, la de los resultados anteriores) en /admin/calibracion.
  * Estos datos alimentan los certificados de estudio y la firma de Cofianza.
  */
 
