@@ -91,6 +91,17 @@ export const contratoV3Service = {
     const res = await apiClient.get<{ url: string | null }>(`${ruta(expedienteId)}/crc`)
     return res.data.url
   },
+  /**
+   * Adenda 6 §2: carga el contrato con firma autenticada en notaría (PDF) tras aceptar el aviso; la carga activa la
+   * fianza. Multipart por apiClient.raw.
+   */
+  async cargarNotaria(expedienteId: string, archivo: File): Promise<EstadoAsistente> {
+    const form = new FormData()
+    form.append('acepta_aviso', 'true')
+    form.append('archivo', archivo)
+    const res = await apiClient.raw(`${ruta(expedienteId)}/notaria`, { method: 'POST', body: form })
+    return ((await res.json()) as ApiResponse<EstadoAsistente>).data
+  },
   /** Saca el contrato de borrador y crea el proceso de firma en Auco. */
   async enviar(expedienteId: string, body: EnviarBody): Promise<EstadoAsistente> {
     const res = await apiClient.post<EstadoAsistente>(`${ruta(expedienteId)}/enviar`, body)

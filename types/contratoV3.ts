@@ -97,6 +97,8 @@ export interface EstadoAsistente {
     rutaBFirmaHabilitada: boolean;
     /** Adenda 2 §9: con la biometría de firma, primero va el correo de verificación de identidad y después Auco. */
     biometriaFirma: boolean;
+    /** Adenda 6 §2: con lo que hay hoy, el contrato se firmará en notaría (lo decide del todo el envío). */
+    firmaNotaria?: boolean;
     adicionales: {
       maximo: number; ordinales: string[] /* 25, desde la 1.ª adicional de ESTE contrato */;
       /** texto = responsabilidad (solo propias); modelos = los modelos sin cambios son texto de Cofianza (Adenda 1 contratos, resp. 13). */
@@ -192,6 +194,11 @@ export interface EnvioV3 {
    * `hasta` = el plazo nuevo si se prorroga ahora; `usadaEn` = cuándo se prorrogó.
    */
   prorroga: null | { puede: boolean; motivo: string | null; hasta: string | null; usadaEn: string | null };
+  /**
+   * Adenda 6 §2: el contrato se firma con firma autenticada en notaría (alguna persona sin cotejo aprobado). La
+   * inmobiliaria lo carga firmado tras aceptar `aviso`; `cargado` = ya lo cargó. null/ausente = Auco.
+   */
+  notaria?: null | { motivo: string; aviso: string; cargado: null | { nombre: string; en: string } };
   /** Verificaciones de identidad que faltan antes de crear el sobre (0 sin biometría). */
   identidadPendientes: number;
   /** FIRMA INCOMPLETA + estudio vigente (§11.7.5). */

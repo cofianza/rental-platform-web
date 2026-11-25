@@ -286,7 +286,13 @@ export function VistaPreviaContrato({
             aria-describedby={motivoNoEnviar ? motivoId : undefined}
           >
             {v3.accion === 'enviar' && <IconLoader size={16} className="animate-spin" />}
-            {v3.accion === 'enviar' ? 'Enviando…' : 'Enviar a firma'}
+            {v3.accion === 'enviar'
+              ? contrato.firmaNotaria
+                ? 'Preparando…'
+                : 'Enviando…'
+              : contrato.firmaNotaria
+                ? 'Preparar para notaría'
+                : 'Enviar a firma'}
           </Button>
         </div>
       </div>

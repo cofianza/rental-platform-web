@@ -22,6 +22,8 @@ export interface ConfirmDialogProps {
   isLoading?: boolean
   /** Falta algo que se pide dentro del mensaje (p. ej. un motivo obligatorio). */
   confirmDisabled?: boolean
+  /** El foco empieza en «Cancelar» (p. ej. un aviso legal que no se acepta con un Enter sin leerlo). */
+  focoEnCancelar?: boolean
 }
 
 export function ConfirmDialog({
@@ -35,6 +37,7 @@ export function ConfirmDialog({
   variant = 'default',
   isLoading = false,
   confirmDisabled = false,
+  focoEnCancelar = false,
 }: ConfirmDialogProps) {
   // Esperamos a que onConfirm termine antes de cerrar. Asi:
   //   - Si el padre setea isLoading=true al inicio de la accion, el boton
@@ -78,7 +81,7 @@ export function ConfirmDialog({
         <ModalAcciones>
           <button
             type="button"
-            autoFocus={variant === 'danger'}
+            autoFocus={variant === 'danger' || focoEnCancelar}
             onClick={onClose}
             disabled={bloqueado}
             className={botonModal('secondary')}
@@ -87,7 +90,7 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
-            autoFocus={variant !== 'danger'}
+            autoFocus={variant !== 'danger' && !focoEnCancelar}
             onClick={handleConfirm}
             disabled={bloqueado || confirmDisabled}
             aria-busy={bloqueado || undefined}

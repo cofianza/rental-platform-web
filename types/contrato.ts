@@ -58,6 +58,18 @@ export interface IContrato {
   migracion?: IContratoMigracion | null
   created_at: string
   updated_at: string
+  /**
+   * Adenda 6 §2: el contrato se firma en notaría (alguna persona arrendataria sin el cotejo aprobado). Ausente si no
+   * rige o no se pudo saber. El listado manda true/false; el detalle del flujo anterior, false o el motivo, el aviso
+   * literal y lo que hoy impide cargarlo (`freno`).
+   */
+  firma_notaria?: boolean | IFirmaNotaria
+}
+
+export interface IFirmaNotaria {
+  motivo: string
+  aviso: string
+  freno: string | null
 }
 
 /** Bloque de migración de cartera que GET /contratos/:id agrega a los migrados. */

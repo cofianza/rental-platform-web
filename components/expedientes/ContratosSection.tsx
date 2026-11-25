@@ -291,6 +291,15 @@ export function ContratosSection({
     onContratoActualizado?.()
   }
 
+  // Adenda 6 §2: sin el cotejo aprobado no hay firma digital; la carga se hace desde el detalle del contrato.
+  function avisarNotaria(contratoId: string) {
+    setFirmaPreview(null)
+    toast.info('Este contrato se firma con firma autenticada en notaría: ábralo para descargarlo y cargarlo firmado.', {
+      action: { label: 'Abrir el contrato', onClick: () => window.location.assign(`/contratos/${contratoId}`) },
+    })
+    fetchContratos()
+  }
+
   // Envío efectivo a firma (Auco). Propaga errores; los callers muestran el toast.
   async function doEnviarAFirma(contrato: IContrato) {
     const res = await contratoService.enviarAFirma(contrato.id)
@@ -314,7 +323,8 @@ export function ContratosSection({
         setFirmaPreview({ contrato, data: preview })
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo enviar a firma')
+      if ((err as { code?: string }).code === 'FIRMA_EN_NOTARIA') avisarNotaria(contrato.id)
+      else toast.error(err instanceof Error ? err.message : 'No se pudo enviar a firma')
     } finally {
       setEnviandoFirmaId(null)
     }
@@ -332,6 +342,8 @@ export function ContratosSection({
       if (bloqueo) {
         setFirmaPreview(null)
         setEvaluacionVencida(bloqueo)
+      } else if ((err as { code?: string }).code === 'FIRMA_EN_NOTARIA') {
+        avisarNotaria(contrato.id)
       } else if ((err as { code?: string }).code === 'CONTRATO_YA_FIRMADO') {
         // Todas las partes ya habían firmado el envío anterior: quedó firmado.
         toast.info(message)
@@ -484,7 +496,14 @@ export function ContratosSection({
             Continuar
           </Link>
         )}
-        {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && (
+        {/* Adenda 6 §2: el contrato que va a notaría no se envía a firma: se carga firmado desde su detalle. */}
+        {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && c.firma_notaria === true && (
+          <Link href={`/contratos/${c.id}`} className={cn(BOTON_FILA, BOTON_PRINCIPAL)} title="Descargar el contrato y cargarlo firmado en notaría">
+            <IconArrowRight size={16} />
+            Firma en notaría
+          </Link>
+        )}
+        {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && c.firma_notaria !== true && (
           <button
             type="button"
             onClick={() => handleEnviarAFirma(c)}
