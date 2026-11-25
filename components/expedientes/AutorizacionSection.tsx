@@ -164,6 +164,8 @@ export function AutorizacionSection({
   // Con el enlace vencido ya no hay firma que esperar (el backend la marca
   // 'expirado' solo cuando alguien abre el link), y con la pestaña oculta no
   // se pregunta.
+  // Adenda 6 §2: la autorización se firmó con el texto V3 de Mario (casilla 4A, dos finalidades opcionales).
+  const esV3 = /^V3(-|$)/.test(autorizacion?.version_terminos ?? '')
   const tokenExpiracion = autorizacion?.token_expiracion
   useEffect(() => {
     if (autorizacion?.estado !== 'pendiente') return
@@ -685,8 +687,8 @@ export function AutorizacionSection({
             </div>
           </div>
 
-          {/* Consentimientos del solicitante: los 3 obligatorios van implícitos
-              en la firma; los 3 opcionales quedan tal como él los eligió. */}
+          {/* Consentimientos del solicitante: los obligatorios van implícitos
+              en la firma; los opcionales quedan tal como él los eligió. */}
           <div className="border border-gray-200 rounded-lg p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Consentimientos otorgados
@@ -698,7 +700,10 @@ export function AutorizacionSection({
                 { txt: 'Historial de comportamiento de pago', on: true, oblig: true },
                 { txt: 'Analítica y personalización', on: !!autorizacion?.consent_analitica, oblig: false },
                 { txt: 'Ofertas y comunicaciones comerciales', on: !!autorizacion?.consent_comercial, oblig: false },
-                { txt: 'Historial como referencia ante terceros', on: !!autorizacion?.consent_historial_referencia, oblig: false },
+                // Adenda 6 §2: el texto V3 no ofrece la tercera finalidad y trae la casilla 4A (cotejo biométrico).
+                ...(esV3
+                  ? [{ txt: 'Cotejo biométrico (numeral 4A)', on: !!autorizacion?.consent_cotejo_biometrico, oblig: false }]
+                  : [{ txt: 'Historial como referencia ante terceros', on: !!autorizacion?.consent_historial_referencia, oblig: false }]),
               ].map((c) => (
                 <div key={c.txt} className="flex items-center justify-between gap-2">
                   <span className={`flex items-center gap-1.5 ${c.on ? 'text-gray-800' : 'text-gray-500'}`}>

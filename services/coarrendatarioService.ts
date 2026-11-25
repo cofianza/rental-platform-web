@@ -132,7 +132,15 @@ export interface ICoarrendatarioPublicView {
    * `opcional`: el cotejo se puede hacer; `autorizado`: ya aceptó y marcó la 4A (null antes de aceptar);
    * `estado`: el veredicto guardado.
    */
-  cotejo?: { opcional: boolean; autorizado: boolean | null; estado: EstadoBiometria | null }
+  cotejo?: {
+    opcional: boolean
+    /** Tras aceptar: hasta cuándo puede hacer el cotejo con este enlace. */
+    vence_en?: string | null
+    /** El cotejo quedó aprobado (rostro y documento). */
+    aprobado?: boolean
+    autorizado: boolean | null
+    estado: EstadoBiometria | null
+  }
 }
 
 /** La clave con que se comparte la lectura del coarrendatario de un estudio. */

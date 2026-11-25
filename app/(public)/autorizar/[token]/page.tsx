@@ -68,6 +68,7 @@ import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
 import { correoParaEnviar, correoResultadoValido } from '@/lib/correoResultado'
 import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
 import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
+import { CASILLAS_5_2_V3, SIN_COTEJO_NOTARIA, versionVisible } from '@/lib/autorizacionV3'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -291,6 +292,8 @@ export default function AutorizarPage() {
       .getData(token)
       .then((result) => {
         setData(result)
+        // Adenda 6 §2: si ya marcó la 4A (la constancia quedó al tomarse las fotos), vuelve marcada y bloqueada.
+        if (result.biometria?.autorizo_4a) setAceptaCotejo(true)
         setSolicitadoPor(result.solicitado_por ?? null)
         setPageState('form')
       })
@@ -343,14 +346,20 @@ export default function AutorizarPage() {
     // del historial de la entrada en la que estaba).
     window.history.replaceState({ ...window.history.state, paso: 1 }, '')
   }, [])
+  // Adenda 6 §2 (texto V3): la casilla 4A se muestra; el cotejo se hace solo si la marca (y si se puede hacer).
+  const casilla4a = !!data?.biometria?.casilla_4a
+  const cotejoV3 = casilla4a && !!data?.biometria?.opcional && aceptaCotejo
+  const pideCotejo = !!data?.biometria?.requerida || cotejoV3
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
       const p = ((e.state as { paso?: Paso } | null)?.paso ?? 1) as Paso
-      setPaso(p !== 1 && !(identidadOk && acepta) ? 1 : p)
+      // Adenda 6 §2: «Adelante» del navegador no lleva al paso de la foto sin la casilla 4A (ni sin que se pida).
+      const destino = p === 'bio' && !pideCotejo ? 3 : p
+      setPaso(destino !== 1 && !(identidadOk && acepta) ? 1 : destino)
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
-  }, [identidadOk, acepta])
+  }, [identidadOk, acepta, pideCotejo])
 
   // El paso 1 mide varios miles de px (texto legal íntegro + acordeones) y el
   // botón vive al fondo: sin este reset, al pasar al paso 2 el navegador clampa
@@ -367,11 +376,13 @@ export default function AutorizarPage() {
     setErrorMessage('')
   }, [irAPaso])
 
-  // Adenda 6 §2 (texto V3): la casilla 4A se muestra; el cotejo se hace solo si la marca (y si se puede hacer).
-  const casilla4a = !!data?.biometria?.casilla_4a
-  const cotejoV3 = casilla4a && !!data?.biometria?.opcional && aceptaCotejo
   // Con la V3 el numeral 5.2 solo trae dos finalidades opcionales: la tercera no se ofrece.
-  const beneficios = casilla4a ? BENEFICIOS.filter((b) => b.key !== 'historial_referencia') : BENEFICIOS
+  // y sus descripciones son las casillas literales del texto V3 (la casilla es el consentimiento: no se recorta).
+  const beneficios = casilla4a
+    ? BENEFICIOS.filter((b) => b.key !== 'historial_referencia').map((b) =>
+        b.key === 'analitica' || b.key === 'comercial' ? { ...b, desc: CASILLAS_5_2_V3[b.key] } : b,
+      )
+    : BENEFICIOS
 
   // Salida del paso 3. Si el backend pide biometría (o, con la V3, la persona
   // marcó la 4A), se intercala el cotejo antes de la confirmación final.
@@ -908,11 +919,10 @@ export default function AutorizarPage() {
     { txt: 'Historial de comportamiento de pago', lock: 'Obligatorio', on: true },
     // B6: los opcionales con los mismos títulos del paso 3 (texto legal §5.2).
     ...beneficios.map((b) => ({ txt: b.titulo, lock: 'Opcional', on: consents[b.key] })),
-    // Adenda 6 §2: la casilla 4A, con lo que significa no marcarla.
-    ...(casilla4a
-      ? [{ txt: aceptaCotejo ? 'Cotejo biométrico de identidad (numeral 4A)' : 'Sin cotejo biométrico: el contrato se firma en notaría', lock: 'Opcional', on: aceptaCotejo }]
-      : []),
+    // Adenda 6 §2: la casilla 4A (lo que significa sin el cotejo aprobado va debajo de la lista).
+    ...(casilla4a ? [{ txt: 'Cotejo biométrico (numeral 4A)', lock: 'Opcional', on: aceptaCotejo }] : []),
   ]
+  const cotejoAprobadoV3 = casilla4a && data?.biometria?.aprobado === true
 
   return (
     <Card>
@@ -1170,7 +1180,8 @@ export default function AutorizarPage() {
               <div className="border-b border-gray-100 px-4 py-3">
                 <h2 className="text-sm font-semibold text-gray-900">Autorización legal completa</h2>
                 <p className="mt-0.5 text-[11px] text-gray-500">
-                  Este es el texto íntegro que está aceptando. Versión {data.version_terminos}.
+                  Este es el texto íntegro que está aceptando. Versión {versionVisible(data.version_terminos)}.
+                  {casilla4a && ' Las casillas de este texto se marcan más abajo.'}
                 </p>
               </div>
               <div className="whitespace-pre-wrap break-words bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
@@ -1222,23 +1233,31 @@ export default function AutorizarPage() {
             </label>
 
             {/* Adenda 6 §2 (texto V3): la casilla 4A, opcional y desmarcada. Su texto es el del numeral 4A. */}
-            {casilla4a && (
+            {casilla4a && data.biometria?.opcional && (
               <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-white p-3.5">
                 <input
                   type="checkbox"
                   checked={aceptaCotejo}
+                  disabled={!!data.biometria?.autorizo_4a}
                   onChange={(e) => setAceptaCotejo(e.target.checked)}
-                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:opacity-60"
                 />
                 <span className="text-sm text-gray-700">
                   <strong>Opcional (numeral 4A):</strong> autorizo el tratamiento de mis datos biométricos para el cotejo de
                   identidad descrito en ese numeral.
-                  <span className="mt-1 block text-xs text-gray-500">
-                    Si no la marca, su solicitud se estudia igual, pero el contrato se firmará con firma autenticada en
-                    notaría, a su costo, en lugar de la firma digital.
+                  <span className="mt-1 block text-xs text-gray-600">
+                    {data.biometria?.autorizo_4a
+                      ? 'Ya autorizó el cotejo al tomarse las fotos.'
+                      : 'Si no la marca, su solicitud se estudia igual, pero el contrato se firmará con firma autenticada en notaría, a su costo, en lugar de la firma digital.'}
                   </span>
                 </span>
               </label>
+            )}
+            {/* Adenda 6 §2: sin cotejo disponible, la 4A no cambiaría nada: se dice cómo se firmará. */}
+            {casilla4a && !data.biometria?.opcional && (
+              <p className="rounded-xl border border-gray-200 bg-gray-50 p-3.5 text-xs leading-relaxed text-gray-600">
+                El cotejo con foto del numeral 4A no está disponible en este momento. {SIN_COTEJO_NOTARIA}
+              </p>
             )}
 
             <button
@@ -1677,10 +1696,16 @@ export default function AutorizarPage() {
             documentoNombre={nombreDocumento(data?.solicitante.tipo_documento)}
             conservaFotos={!!data?.biometria?.conserva_fotos}
             v3={casilla4a}
+            aceptaCotejo={aceptaCotejo}
+            aprobadoPrevio={data?.biometria?.aprobado}
             onContinuar={irAFirma}
             onVolver={volverPaso}
-            onResultado={(estado) =>
-              setData((d) => (d?.biometria ? { ...d, biometria: { ...d.biometria, estado } } : d))
+            onResultado={(estado, aprobado) =>
+              setData((d) =>
+                d?.biometria
+                  ? { ...d, biometria: { ...d.biometria, estado, ...(aprobado !== undefined ? { aprobado } : {}), ...(casilla4a && estado !== 'omitida' ? { autorizo_4a: true } : {}) } }
+                  : d,
+              )
             }
           />
         )}
@@ -1734,6 +1759,16 @@ export default function AutorizarPage() {
                   </li>
                 ))}
               </ul>
+              {/* Adenda 6 §2: cómo se firmará el contrato según el cotejo. */}
+              {casilla4a && (
+                <p className="mt-3 border-t border-gray-100 pt-3 text-xs leading-relaxed text-gray-600">
+                  {cotejoAprobadoV3
+                    ? 'Su cotejo quedó aprobado. El contrato se firma digitalmente si todas las personas del contrato tienen el cotejo aprobado; si no, se firma con firma autenticada en notaría, a su costo.'
+                    : aceptaCotejo
+                      ? `Autorizó el cotejo, pero no quedó aprobado. ${SIN_COTEJO_NOTARIA}`
+                      : SIN_COTEJO_NOTARIA}
+                </p>
+              )}
             </div>
 
             {errorMessage && (

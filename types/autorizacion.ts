@@ -21,6 +21,8 @@ export interface IAutorizacion {
   consent_analitica?: boolean
   consent_comercial?: boolean
   consent_historial_referencia?: boolean
+  /** Adenda 6 §2 (texto V3): la casilla 4A, cotejo biométrico. Solo viaja con la V3 vigente. */
+  consent_cotejo_biometrico?: boolean
   // Evidencia de la firma (soporte legal Ley 527/1999).
   ip_autorizacion?: string | null
   user_agent?: string | null
@@ -178,6 +180,10 @@ export interface IAutorizacionPublicData {
     casilla_4a?: boolean
     /** Adenda 6 §2: el cotejo se puede hacer (solo si la persona marca la 4A). */
     opcional?: boolean
+    /** Adenda 6 §2: ya marcó la 4A (su constancia quedó al tomarse las fotos): la casilla no se desmarca. */
+    autorizo_4a?: boolean
+    /** Adenda 6 §2: el cotejo quedó aprobado (rostro y documento): habilita la firma digital. */
+    aprobado?: boolean
     estado: EstadoBiometria | null
     /** Texto 3.3-biometria con el guardado encendido: si el cotejo falla, Cofianza conserva las fotos. */
     conserva_fotos?: boolean
@@ -212,6 +218,8 @@ export interface IBiometriaResponse {
   umbral?: number
   motivo?: string | null
   guardado?: boolean
+  /** Adenda 6 §2 (texto V3): el cotejo quedó aprobado. Un «verificada» sin documento confirmado no lo está. */
+  aprobado?: boolean
 }
 
 // «Ver biometría» en la revisión manual: solo administrador y operador.
