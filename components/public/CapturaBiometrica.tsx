@@ -248,6 +248,11 @@ interface Props {
   aceptaCotejo?: boolean
   /** Texto del botón de abajo (por omisión «Volver»). */
   textoVolver?: string
+  /**
+   * Adenda 6 §2: la API dijo que el cotejo no se puede hacer (COTEJO_NO_DISPONIBLE, COTEJO_SIN_AUTORIZACION). La
+   * página vuelve a pedir la vista para no ofrecer otra vez el cotejo con datos viejos.
+   */
+  onNoDisponible?: () => void
   /** Otro destino para el cotejo (el segundo firmante usa el suyo). Por omisión, el del enlace de autorización. */
   servicio?: {
     verificar: (input: { documentImage: string; photo: string }) => Promise<IBiometriaResponse>
@@ -271,6 +276,7 @@ export function CapturaBiometrica({
   aceptaCotejo = false,
   textoVolver = 'Volver',
   servicio,
+  onNoDisponible,
 }: Props) {
   const [documento, setDocumento] = useState<string | null>(null)
   const [selfie, setSelfie] = useState<string | null>(null)
@@ -319,6 +325,7 @@ export function CapturaBiometrica({
       const codigo = (err as { code?: string } | null)?.code
       const definitivo = v3 && (codigo === 'COTEJO_NO_DISPONIBLE' || codigo === 'COTEJO_SIN_AUTORIZACION')
       setSinReintento(definitivo)
+      if (definitivo) onNoDisponible?.()
       setMensaje(
         definitivo
           ? (err as { message?: string }).message ?? SIN_COTEJO_NOTARIA
