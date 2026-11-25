@@ -188,6 +188,11 @@ export interface IAutorizacionPublicData {
    * piden los datos del coarrendatario. Ausente = un API anterior (se piden como siempre).
    */
   admite_segundo_firmante?: boolean
+  /**
+   * Factura electrónica del pago del estudio: al prospecto le toca pagar y a su ficha le falta la
+   * dirección o el municipio. Ausente = no se pide nada (o un API anterior).
+   */
+  datos_factura?: { pide_direccion: boolean; pide_municipio: boolean }
 }
 
 /** Vocabulario del cotejo. `omitida` = el titular ejerció su derecho a negarse. */
@@ -289,6 +294,11 @@ export interface IFirmarInput {
   codigo_otp?: string
   /** El correo donde quiere recibir el resultado (solo si la pantalla lo pide). */
   correo_resultado?: string
+  /** Factura electrónica del pago (solo si la API los pide en `datos_factura`). */
+  direccion_factura?: string
+  /** Código DANE de 5 dígitos. */
+  municipio_codigo?: string
+  municipio_nombre?: string
   consentimientos_opcionales?: {
     analitica?: boolean
     comercial?: boolean
