@@ -5,6 +5,7 @@
 
 import type { IExpediente, IExpedienteFilters } from '@/types/expediente'
 import { ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO, etapaCondicionado, etapaDeTraba, type EtapaEstudio } from './etapaEstudio'
+import { ACCION_CARGA_NOTARIA } from './turnoEstudio'
 
 const CONTRATO_FIRMADO = ['firmado', 'vigente', 'finalizado']
 const CONSULTA = ['en_proceso', 'completado', 'pagado', 'formulario_completado', 'documentos_cargados']
@@ -41,6 +42,13 @@ export function etapaDeFila(e: IExpediente): EtapaEstudio {
   }
   return 'autorizacion'
 }
+
+/**
+ * Adenda 6 §2: el contrato V3 de la fila está en firma esperando la carga del documento firmado en notaría
+ * (`firma_notaria` del RPC). El turno es de quien gestiona, no «Esperando las firmas». Pura.
+ */
+export const esperaCargaNotaria = (e: Pick<IExpediente, 'contrato_estado' | 'firma_notaria'>): boolean =>
+  e.contrato_estado === 'pendiente_firma' && e.firma_notaria === true
 
 /**
  * Lo que hay que hacer cuando depende_de === 'gestor'. En minúscula y en infinitivo: sigue a
@@ -106,6 +114,8 @@ export function accionSegundoFirmante(ev: DatosAccionSegundoFirmante | null | un
 export const TURNO_GESTOR_TRABA: EtapaEstudio[] = ['canon_excede', ...ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO]
 
 export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | undefined {
+  // Adenda 6 §2: en notaría no hay firma que revisar ni firmas que esperar: hay que cargar el documento firmado.
+  if (etapa === 'firma' && esperaCargaNotaria(e)) return ACCION_CARGA_NOTARIA
   if (e.depende_de !== 'gestor' && !(e.depende_de && TURNO_GESTOR_TRABA.includes(etapa))) return undefined
   if (etapa === 'segundo_firmante') return accionSegundoFirmante(e.estudio_vigente)
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'bloqueado_documento') return 'corregir el documento'

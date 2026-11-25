@@ -70,6 +70,8 @@ export interface IFirmaNotaria {
   motivo: string
   aviso: string
   freno: string | null
+  /** Hasta cuándo se puede cargar (ISO): el fin del resultado, como en el V3. null o ausente = sin dato. */
+  vence?: string | null
 }
 
 /** Bloque de migración de cartera que GET /contratos/:id agrega a los migrados. */

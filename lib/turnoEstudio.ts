@@ -39,7 +39,15 @@ export interface OpcionesTurno {
   verificacion?: boolean
   /** Adenda 6 §4: a quién verifica Cofianza (las listas del solicitante en un estudio aprobado). Ausente = el segundo firmante. */
   verificacionDe?: 'segundo' | 'solicitante'
+  /**
+   * Adenda 6 §2: el contrato en firma espera la carga del documento firmado en notaría. No se esperan firmas en la
+   * plataforma: el turno es de quien gestiona (turnoDeEtapa ya lo da; aquí, por si llega como 'firmas').
+   */
+  firmaNotaria?: boolean
 }
+
+/** Adenda 6 §2: lo que le toca a quien gestiona con el contrato en firma en notaría (tras «Su turno:»). */
+export const ACCION_CARGA_NOTARIA = 'cargar el contrato firmado en notaría'
 
 /** «Nombre Apellido» del analista asignado si no es quien mira; null si es él o no hay. */
 export function analistaAjeno(
@@ -100,6 +108,8 @@ export function textoTurno(turno: Turno, vista: VistaTurno, o: OpcionesTurno = {
       }
       return 'Cofianza procesando'
     case 'firmas':
+      // Adenda 6 §2: en notaría nadie firma en la plataforma; falta la carga de quien gestiona.
+      if (o.firmaNotaria) return textoTurno('gestor', vista, { ...o, firmaNotaria: false, accion: ACCION_CARGA_NOTARIA })
       return 'Esperando las firmas'
   }
 }

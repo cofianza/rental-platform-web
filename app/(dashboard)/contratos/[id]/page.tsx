@@ -584,6 +584,7 @@ export default function ContratoDetallePage() {
           motivo={notaria.motivo}
           aviso={notaria.aviso}
           freno={notaria.freno}
+          vence={notaria.vence}
           puedeCargar={puedeEditar && (user?.rol === 'propietario' || user?.rol === 'inmobiliaria' || user?.rol === 'administrador')}
           quienCarga={
             user?.rol === 'inmobiliaria'

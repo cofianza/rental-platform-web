@@ -20,7 +20,7 @@ import {
   type VistaTurno,
 } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
-import { etapaDeFila, accionDeFila, revisionDemorada, segundoEnVerificacion, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
+import { etapaDeFila, accionDeFila, esperaCargaNotaria, revisionDemorada, segundoEnVerificacion, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
 import { IconClock } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { InfoTip } from '@/components/ui/InfoTip'
@@ -203,16 +203,19 @@ export function datosEstadoFila(
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
   const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
+  // Adenda 6 §2: en notaría no se esperan firmas: cargar el contrato firmado le toca a quien gestiona.
   // Con el canon que excede o el segundo firmante en curso, decide quien gestiona (como turnoDeEtapa).
   // «Aprobado con segundo firmante» con el segundo en verificación: de Cofianza, diga lo que diga depende_de.
   const turno: Turno | null | undefined =
-    etapa === 'firma' && expediente.depende_de === 'prospecto'
-      ? 'firmas'
-      : expediente.depende_de && TURNO_GESTOR_TRABA.includes(etapa)
-        ? 'gestor'
-        : verificacion && etapa === 'segundo_firmante'
-          ? 'cofianza'
-          : expediente.depende_de
+    etapa === 'firma' && esperaCargaNotaria(expediente)
+      ? 'gestor'
+      : etapa === 'firma' && expediente.depende_de === 'prospecto'
+        ? 'firmas'
+        : expediente.depende_de && TURNO_GESTOR_TRABA.includes(etapa)
+          ? 'gestor'
+          : verificacion && etapa === 'segundo_firmante'
+            ? 'cofianza'
+            : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
   // En la espera, la etapa ya dice a quién se espera: «Esperando al prospecto» la contradecía.
   // U8: fuera de Cofianza la etapa ya dice «En revisión de Cofianza»; la pastilla de turno lo repetía.
@@ -242,6 +245,7 @@ export function datosEstadoFila(
       textoApi: ev?.siguiente_accion_texto ?? null,
       textoTraba: expediente.traba_contrato?.texto ?? null,
       segundoEnVerificacion: verificacion ? 'api' : false,
+      firmaNotaria: esperaCargaNotaria(expediente),
     }),
     score,
     turno:

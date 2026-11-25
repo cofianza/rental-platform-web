@@ -467,7 +467,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         {incompleta && editable && notaria && (
           // Adenda 6 §2: vencido el plazo de carga, también venció el resultado: no hay plazo que reabrir (la API
           // tampoco lo deja). El motivo, arriba, ya dice hasta cuándo iba.
-          <p className="text-sm text-gray-600">Para seguir, cancele el contrato y haga una nueva evaluación.</p>
+          <p className="text-sm text-gray-600">Para seguir, cancele el contrato y cree un estudio nuevo (con su propio cobro).</p>
         )}
         {incompleta && editable && !notaria && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">

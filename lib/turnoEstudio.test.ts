@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { analistaAjeno, textoTurno, turnoPropio } from './turnoEstudio'
+import { ACCION_CARGA_NOTARIA, analistaAjeno, textoTurno, turnoPropio } from './turnoEstudio'
 
 test('turno de quien gestiona: «Su turno», «Turno del gestor» o «Turno de su equipo», con la acción', () => {
   assert.equal(textoTurno('gestor', 'gestor', { accion: 'crear el contrato' }), 'Su turno: crear el contrato')
@@ -98,4 +98,14 @@ test('Adenda 6 §4: Cofianza verifica las listas del solicitante en un estudio a
   assert.equal(textoTurno('cofianza', 'cofianza', { ...o, analista: true, tomadoPor: 'Ana Analista' }), 'Lo verifica Ana Analista')
   assert.equal(turnoPropio('cofianza', 'cofianza', { ...o, analista: true }), true)
   assert.equal(turnoPropio('cofianza', 'gestor', o), false)
+})
+
+test('Adenda 6 §2: en notaría no se esperan firmas: «Su turno: cargar el contrato firmado en notaría»', () => {
+  assert.equal(ACCION_CARGA_NOTARIA, 'cargar el contrato firmado en notaría')
+  assert.equal(textoTurno('gestor', 'gestor', { accion: ACCION_CARGA_NOTARIA }), 'Su turno: cargar el contrato firmado en notaría')
+  assert.equal(textoTurno('gestor', 'cofianza', { accion: ACCION_CARGA_NOTARIA }), 'Turno del gestor: cargar el contrato firmado en notaría')
+  // Si llega como 'firmas' con la marca, tampoco dice «Esperando las firmas».
+  assert.equal(textoTurno('firmas', 'gestor', { firmaNotaria: true }), 'Su turno: cargar el contrato firmado en notaría')
+  assert.equal(textoTurno('firmas', 'equipo', { firmaNotaria: true }), 'Turno de su equipo: cargar el contrato firmado en notaría')
+  assert.equal(textoTurno('firmas', 'gestor'), 'Esperando las firmas')
 })

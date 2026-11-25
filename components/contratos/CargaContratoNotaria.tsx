@@ -92,7 +92,7 @@ export function CargaContratoNotaria({
         <p role="status" className="flex items-start gap-2 rounded-lg border border-amber-300 bg-white p-3 text-sm text-amber-900">
           <IconAlertTriangle size={16} className="mt-0.5 shrink-0" />
           Venció el plazo para cargar el contrato firmado, que llegaba hasta el fin de la vigencia del resultado del
-          estudio. Para seguir, cancele el contrato y haga una nueva evaluación.
+          estudio. Para seguir, cancele el contrato y cree un estudio nuevo (con su propio cobro).
         </p>
       ) : freno ? (
         <p role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-white p-3 text-sm text-red-800">
