@@ -277,6 +277,18 @@ export function textoPlazoReapertura(venceReapertura: string | null | undefined)
   return fecha ? `La persona nueva debe autorizar a más tardar el ${fecha}.` : null
 }
 
+/**
+ * Adenda 6 §7: hasta cuándo el resultado del estudio permite enviar el contrato a firma, con la hora (es un instante:
+ * el fin del resultado menos lo que necesita el proceso de firma). La fecha la manda la API (`firmar_hasta` de la
+ * cotización del cambio de persona); el cambio no la amplía. null sin fecha.
+ */
+export function textoFirmarHastaCambio(firmarHasta: string | null | undefined): string | null {
+  const fecha = fechaColombia(firmarHasta)
+  if (!fecha) return null
+  const hora = new Date(Date.parse(firmarHasta as string)).toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Bogota' })
+  return `El resultado de este estudio permite enviar el contrato a firma hasta el ${fecha} a las ${hora}; cambiar a la persona no amplía ese plazo.`
+}
+
 /** Antes de reemplazar a una persona en un estudio no aprobable: qué pasa al cargar a la nueva. */
 export const TEXTO_AVISO_REAPERTURA = 'Al cargar a la persona nueva, el estudio se reabre y se decide de nuevo con su evaluación.'
 

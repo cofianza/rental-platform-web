@@ -310,7 +310,7 @@ export function VigenciaFila({
       title={vigencia.titulo}
       className={cn(
         'inline-flex items-center gap-1 font-medium',
-        // rounded-xl: en una línea se ve igual que rounded-full; «Envíe a firma antes del…» puede bajar a dos
+        // rounded-xl: en una línea se ve igual que rounded-full; «Vence en N días · envíe a firma antes del…» puede bajar a dos
         // líneas a 390 px, y ahí no queda una cápsula estirada.
         pastilla ? cn('rounded-xl border px-2.5 py-1 text-xs', PASTILLA_VIGENCIA[vigencia.tono]) : cn('text-[11px]', TONO_VIGENCIA[vigencia.tono]),
         className,

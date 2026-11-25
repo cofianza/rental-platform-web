@@ -24,7 +24,7 @@ import { estudioService } from '@/services/estudioService'
 import { ApiClientError } from '@/lib/api'
 import { useReevaluarCanon } from '@/hooks/useReevaluarCanon'
 import { useUsuarioVista } from '@/components/expedientes/VerComo'
-import { esRolInterno } from '@/components/expedientes/textoVisible'
+import { esRolInterno, sinCierreEvaluacionNueva } from '@/components/expedientes/textoVisible'
 import { miembroDebeCompletarPerfil } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import type { Bloqueo, NumeroPaso } from '@/types/contratoV3'
@@ -62,6 +62,8 @@ export interface SalidasCanon {
     /** Como en la tarjeta de la evaluación: undefined = sin el dato de la API. */
     canonHabilitado?: number | null
     hastaCanon?: boolean
+    /** Adenda 6 §7: evaluar de nuevo por un canon mayor no tiene costo hoy (`reevaluacion_sin_costo`). */
+    reevaluacionSinCosto?: boolean
   } | null
   onReasignado?: () => void
 }
@@ -237,10 +239,8 @@ function puntosDe(bloqueos: Bloqueo[], evaluadoA5D?: boolean): Punto[] {
       out.push({
         key: 'nueva-evaluacion',
         texto: 'La evaluación crediticia actual ya no sirve para el contrato:',
-        // El «Se requiere nueva evaluación.» de cada motivo sobra bajo este encabezado.
-        razones: evaluacion.map((e) =>
-          e.mensaje.replace(/\s*(Se requiere (una )?nueva evaluación|Hay que renovar la evaluación)\.$/, ''),
-        ),
+        // El cierre «qué hacer» de cada motivo («Para continuar, cree un estudio nuevo…») sobra bajo este encabezado.
+        razones: evaluacion.map((e) => sinCierreEvaluacionNueva(e.mensaje)),
         nota:
           'La evaluación nueva se hace en un estudio nuevo, con su cobro' +
           (juntos.length > evaluacion.length ? '; al aprobarse emite sola su certificado de riesgo (CRC).' : '.'),
@@ -572,6 +572,7 @@ function SalidasCanonEnEstudio({
             canonEvaluado={salidas.estudio.canonEvaluado}
             canonHabilitado={salidas.estudio.canonHabilitado}
             sinReevaluacion={salidas.estudio.hastaCanon}
+            reevaluacionSinCosto={salidas.estudio.reevaluacionSinCosto}
             expedienteId={expedienteId}
             onReasignado={salidas.onReasignado}
           />

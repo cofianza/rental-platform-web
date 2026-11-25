@@ -8,7 +8,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { vigenciaDesdeLaConsulta } from './vigenciaReporte'
+import { textoReasignarConReevaluacion, vigenciaDesdeLaConsulta } from './vigenciaReporte'
 
 test('con los días de la API: el paréntesis con esa cifra (con 30, el texto de hoy)', () => {
   assert.equal(vigenciaDesdeLaConsulta(30), ' (30 días desde la consulta)')
@@ -19,5 +19,16 @@ test('con los días de la API: el paréntesis con esa cifra (con 30, el texto de
 test('sin dato (historial sin leer, API anterior) o con un valor raro: el texto de siempre', () => {
   for (const v of [undefined, null, 0, -3, 2.5, Number.NaN]) {
     assert.equal(vigenciaDesdeLaConsulta(v), ' (30 días desde la consulta)')
+  }
+})
+
+// Revisión de lógica de la Adenda 6 §7 (punto 3): reasignar a un canon mayor solo promete «sin costo» si la API lo dice.
+test('reasignar con reevaluación: «sin costo» solo con reevaluacion_sin_costo = true; sin el dato, no se promete', () => {
+  assert.match(textoReasignarConReevaluacion(true), /antes de trasladarlo, sin costo\./)
+  for (const sinDato of [false, null, undefined]) {
+    const t = textoReasignarConReevaluacion(sinDato)
+    assert.doesNotMatch(t, /sin costo/)
+    assert.match(t, /Si eso requiere una consulta adicional, verá su valor antes de pagarla/)
+    assert.match(t, /si la evaluación ya no está vigente, no se traslada ni se cobra nada\.$/)
   }
 })
