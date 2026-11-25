@@ -56,9 +56,12 @@ function esEnlaceReemplazado(err: unknown): boolean {
   return e?.statusCode === 404 && e?.code === 'COARRENDATARIO_NOT_FOUND'
 }
 
-/** Adenda 6 §2: aceptó con la 4A, el cotejo se puede hacer y todavía no lo hizo ni dijo que seguía sin él. */
+/**
+ * Adenda 6 §2: aceptó con la 4A, el cotejo se puede hacer y todavía no quedó aprobado ni dijo que seguía sin él
+ * (un «verificada» sin documento confirmado no está aprobado: puede reintentar).
+ */
 function cotejoPendiente(c: ICoarrendatarioPublicView['cotejo']): boolean {
-  return !!c?.opcional && c.autorizado === true && c.estado !== 'verificada' && c.estado !== 'omitida'
+  return !!c?.opcional && c.autorizado === true && c.aprobado !== true && c.estado !== 'omitida'
 }
 
 type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'cotejo' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'retirado' | 'error'
@@ -156,6 +159,20 @@ export default function CoarrendatarioPublicPage() {
   }, [token])
 
   useEffect(() => { fetchView() }, [fetchView])
+
+  // Adenda 6 §2: la API dijo que el cotejo no se puede hacer. Se vuelve a pedir la vista sin cambiar de pantalla
+  // (el aviso de la API sigue a la vista) para no ofrecer otra vez «Hacer el cotejo con foto» con datos viejos.
+  const refrescarCotejo = useCallback(async () => {
+    if (!token) return
+    try {
+      const data = await coarrendatarioService.getPublicByToken(token)
+      setView(data)
+      setCotejoEstado(data.cotejo?.estado ?? null)
+      setCotejoOk(data.cotejo?.aprobado === true)
+    } catch {
+      // Se queda lo que había: el aviso de la API ya está a la vista.
+    }
+  }, [token])
 
   const pideDocumento = !!view?.contacto_resultado?.documento_requerido
 
@@ -377,6 +394,7 @@ export default function CoarrendatarioPublicPage() {
             }}
             onContinuar={() => setPhase('aceptado')}
             onVolver={() => setPhase('aceptado')}
+            onNoDisponible={refrescarCotejo}
             textoVolver="Hacerlo después"
           />
         </div>
@@ -406,7 +424,7 @@ export default function CoarrendatarioPublicPage() {
               : SIN_COTEJO_NOTARIA}
           </p>
         )}
-        {view?.cotejo && !cotejoOk && cotejoPendiente({ ...view.cotejo, estado: cotejoEstado }) && (
+        {view?.cotejo && !cotejoOk && cotejoPendiente({ ...view.cotejo, estado: cotejoEstado, aprobado: cotejoOk }) && (
           <div className="mt-4">
             <button
               type="button"

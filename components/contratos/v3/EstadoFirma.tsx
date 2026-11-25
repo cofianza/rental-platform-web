@@ -74,7 +74,10 @@ function motivoDe(s: EnvioV3['sobre'], interno: boolean, notaria: boolean): stri
   if (!s) return null
   switch (s.motivo) {
     case 'EXPIRED':
-      return notaria ? 'Venció el plazo para cargar el contrato firmado en notaría.' : 'Venció el plazo para firmar.'
+      // Adenda 6 §2: el plazo de carga llegaba hasta el fin de la vigencia del resultado (no se puede reabrir).
+      return notaria
+        ? 'Venció el plazo para cargar el contrato firmado en notaría, que llegaba hasta el fin de la vigencia del resultado del estudio.'
+        : 'Venció el plazo para firmar.'
     case 'IDENTIDAD':
       return `Venció el plazo para firmar sin que se completara la verificación de identidad${s.motivoDetalle ? ` (${s.motivoDetalle})` : ''}.`
     case 'FUERA_PLAZO':
@@ -334,11 +337,12 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
             Contrato cargado el {formatDateTime(notaria.cargado.en)} (hora de Colombia). La fianza se activa en unos minutos.
           </Aviso>
         )}
-        {enFirma && notaria && !notaria.cargado && (
+        {/* Solo con el plazo de carga vivo: un último proceso cancelado o incompleto no espera la carga. */}
+        {enFirma && notaria && !notaria.cargado && s?.estado === 'en_firma' && (
           <CargaContratoNotaria
             motivo={notaria.motivo}
             aviso={notaria.aviso}
-            vence={s?.estado === 'en_firma' ? s.expiraEn : null}
+            vence={s.expiraEn}
             puedeCargar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
             quienCarga={
               rol === 'inmobiliaria'
@@ -460,7 +464,12 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           </Aviso>
         )}
 
-        {incompleta && editable && (
+        {incompleta && editable && notaria && (
+          // Adenda 6 §2: vencido el plazo de carga, también venció el resultado: no hay plazo que reabrir (la API
+          // tampoco lo deja). El motivo, arriba, ya dice hasta cuándo iba.
+          <p className="text-sm text-gray-600">Para seguir, cancele el contrato y haga una nueva evaluación.</p>
+        )}
+        {incompleta && editable && !notaria && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Button
               variante="accent"
@@ -469,7 +478,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
               aria-describedby={e.reenvio.motivo || bloqueoAcuse ? reenvioId : undefined}
             >
               {accion === 'reenviar' ? <IconLoader size={16} className="animate-spin" /> : <IconRotateCw size={16} />}
-              {notaria ? 'Reabrir el plazo de carga' : 'Reenviar a firma'}
+              Reenviar a firma
             </Button>
             {(e.reenvio.motivo || bloqueoAcuse) && (
               <p id={reenvioId} className="text-sm text-gray-600">
@@ -574,17 +583,14 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         isOpen={confirmarReenvio}
         onClose={() => setConfirmarReenvio(false)}
         onConfirm={async () => {
-          if (await v3.reenviar())
-            toast.success(notaria ? 'Plazo reabierto: cargue el contrato firmado en notaría' : `Contrato ${e.numero} reenviado a firma`)
+          if (await v3.reenviar()) toast.success(`Contrato ${e.numero} reenviado a firma`)
         }}
-        title={notaria ? '¿Reabrir el plazo de carga?' : '¿Reenviar a firma?'}
+        title="¿Reenviar a firma?"
         message={
-          notaria
-            ? 'Se abre un plazo nuevo para cargar el contrato firmado en notaría, hasta el fin de la vigencia del resultado del estudio. Si ya lo tiene firmado, cárguelo apenas se reabra.'
-            : // A la inmobiliaria y al propietario, sin el proveedor ni el crédito de firma (costo de Cofianza).
-              `${e.identidadPendientes > 0 ? 'Primero le llega un correo nuevo para verificar su identidad a quien no lo ha hecho. Cuando todos terminen, se crea' : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
+          // A la inmobiliaria y al propietario, sin el proveedor ni el crédito de firma (costo de Cofianza).
+          `${e.identidadPendientes > 0 ? 'Primero le llega un correo nuevo para verificar su identidad a quien no lo ha hecho. Cuando todos terminen, se crea' : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
         }
-        confirmLabel={notaria ? 'Reabrir plazo' : 'Reenviar a firma'}
+        confirmLabel="Reenviar a firma"
         isLoading={accion === 'reenviar'}
       />
       <ConfirmDialog

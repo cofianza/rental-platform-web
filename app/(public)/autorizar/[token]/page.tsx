@@ -235,6 +235,9 @@ export default function AutorizarPage() {
   const [presentacion, setPresentacion] = useState<'solo' | 'acompanado' | null>(null)
   // Adenda 6 §8: tres opciones; por defecto «Prefiero no indicarlo» (quien tramita ve «No lo indicó»).
   const [habitara, setHabitara] = useState<Habitara>(HABITARA_POR_DEFECTO)
+  // Se envía solo si la persona respondió en esta visita: el «Prefiero no indicarlo» que trae por defecto no borra un
+  // «Sí» o un «No» que dejó antes (enlace reenviado, página cerrada antes de firmar).
+  const [habitaraRespondida, setHabitaraRespondida] = useState(false)
   const [coaNombre, setCoaNombre] = useState('')
   const [coaApellido, setCoaApellido] = useState('')
   const [coaEmail, setCoaEmail] = useState('')
@@ -327,6 +330,18 @@ export default function AutorizarPage() {
       })
   }, [token, sincronizarPago])
 
+  // Adenda 6 §2: la API dijo que el cotejo no se puede hacer. Se vuelve a pedir la vista, sin pantalla de carga,
+  // para no ofrecer otra vez el cotejo (ni la casilla 4A como si se pudiera) con datos viejos. Si falla, queda lo que había.
+  const refrescarVista = useCallback(() => {
+    autorizacionPublicService
+      .getData(token)
+      .then((result) => {
+        setData(result)
+        if (result.biometria?.autorizo_4a) setAceptaCotejo(true)
+      })
+      .catch(() => undefined)
+  }, [token])
+
   useEffect(() => {
     cargar()
   }, [cargar])
@@ -388,13 +403,19 @@ export default function AutorizarPage() {
   // marcó la 4A), se intercala el cotejo antes de la confirmación final.
   const salirDeBeneficios = useCallback(() => {
     // B4: quien ya se negó ('omitida') tampoco vuelve al paso; ahí vería «reintentar».
+    // Adenda 6 §2: con la V3 lo que salta el paso es el cotejo APROBADO: un «verificada» sin documento confirmado
+    // puede reintentar.
     const pideCotejo = !!data?.biometria?.requerida || cotejoV3
-    if (pideCotejo && data?.biometria?.estado !== 'verificada' && data?.biometria?.estado !== 'omitida') {
+    const estado = data?.biometria?.estado
+    const resuelto = casilla4a
+      ? estado === 'omitida' || data?.biometria?.aprobado === true
+      : estado === 'verificada' || estado === 'omitida'
+    if (pideCotejo && !resuelto) {
       irAPaso('bio')
       return
     }
     irAFirma()
-  }, [data?.biometria?.requerida, data?.biometria?.estado, cotejoV3, irAFirma, irAPaso])
+  }, [data?.biometria?.requerida, data?.biometria?.estado, data?.biometria?.aprobado, casilla4a, cotejoV3, irAFirma, irAPaso])
 
   // Barra de progreso: 4 tramos, o 5 cuando el backend pide el cotejo. El
   // índice traduce el paso 'bio' a su posición para poder compararlo.
@@ -444,7 +465,7 @@ export default function AutorizarPage() {
       ...(situacion === 'independiente' && tieneRut !== null ? { tiene_rut: tieneRut } : {}),
       ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
       ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
-      habitara_inmueble: habitara,
+      ...(habitaraRespondida ? { habitara_inmueble: habitara } : {}),
       ...(presentacion ? { presentacion } : {}),
       ...(!sinCoarrendatario && presentacion === 'acompanado' && coaNombre.trim() && coaApellido.trim() && (coaEmail.trim() || coaTelefono.trim())
         ? {
@@ -1406,7 +1427,14 @@ export default function AutorizarPage() {
             </div>
 
             {/* Adenda 6 §8: informativo; la evaluación no lo usa. */}
-            <PreguntaHabitara valor={habitara} onCambio={setHabitara} disabled={guardandoPerfil} />
+            <PreguntaHabitara
+              valor={habitara}
+              onCambio={(v) => {
+                setHabitara(v)
+                setHabitaraRespondida(true)
+              }}
+              disabled={guardandoPerfil}
+            />
 
             {/* §8.3 Solo o acompañado */}
             <div>
@@ -1700,6 +1728,7 @@ export default function AutorizarPage() {
             aprobadoPrevio={data?.biometria?.aprobado}
             onContinuar={irAFirma}
             onVolver={volverPaso}
+            onNoDisponible={refrescarVista}
             onResultado={(estado, aprobado) =>
               setData((d) =>
                 d?.biometria
