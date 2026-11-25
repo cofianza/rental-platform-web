@@ -327,6 +327,18 @@ export default function AutorizarPage() {
       })
   }, [token, sincronizarPago])
 
+  // Adenda 6 §2: la API dijo que el cotejo no se puede hacer. Se vuelve a pedir la vista, sin pantalla de carga,
+  // para no ofrecer otra vez el cotejo (ni la casilla 4A como si se pudiera) con datos viejos. Si falla, queda lo que había.
+  const refrescarVista = useCallback(() => {
+    autorizacionPublicService
+      .getData(token)
+      .then((result) => {
+        setData(result)
+        if (result.biometria?.autorizo_4a) setAceptaCotejo(true)
+      })
+      .catch(() => undefined)
+  }, [token])
+
   useEffect(() => {
     cargar()
   }, [cargar])
@@ -388,13 +400,19 @@ export default function AutorizarPage() {
   // marcó la 4A), se intercala el cotejo antes de la confirmación final.
   const salirDeBeneficios = useCallback(() => {
     // B4: quien ya se negó ('omitida') tampoco vuelve al paso; ahí vería «reintentar».
+    // Adenda 6 §2: con la V3 lo que salta el paso es el cotejo APROBADO: un «verificada» sin documento confirmado
+    // puede reintentar.
     const pideCotejo = !!data?.biometria?.requerida || cotejoV3
-    if (pideCotejo && data?.biometria?.estado !== 'verificada' && data?.biometria?.estado !== 'omitida') {
+    const estado = data?.biometria?.estado
+    const resuelto = casilla4a
+      ? estado === 'omitida' || data?.biometria?.aprobado === true
+      : estado === 'verificada' || estado === 'omitida'
+    if (pideCotejo && !resuelto) {
       irAPaso('bio')
       return
     }
     irAFirma()
-  }, [data?.biometria?.requerida, data?.biometria?.estado, cotejoV3, irAFirma, irAPaso])
+  }, [data?.biometria?.requerida, data?.biometria?.estado, data?.biometria?.aprobado, casilla4a, cotejoV3, irAFirma, irAPaso])
 
   // Barra de progreso: 4 tramos, o 5 cuando el backend pide el cotejo. El
   // índice traduce el paso 'bio' a su posición para poder compararlo.
@@ -1700,6 +1718,7 @@ export default function AutorizarPage() {
             aprobadoPrevio={data?.biometria?.aprobado}
             onContinuar={irAFirma}
             onVolver={volverPaso}
+            onNoDisponible={refrescarVista}
             onResultado={(estado, aprobado) =>
               setData((d) =>
                 d?.biometria
