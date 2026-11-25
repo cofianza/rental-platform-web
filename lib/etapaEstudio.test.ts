@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { calcularEtapa, turnoDeEtapa, type DatosEtapa } from './etapaEstudio'
+import { calcularEtapa, esperaCargaNotariaContratos, turnoDeEtapa, type DatosEtapa } from './etapaEstudio'
 import { queSigue } from './ayudaEstudio'
 
 const base: DatosEtapa = {
@@ -519,4 +519,19 @@ test('Adenda 6 §4: las listas del solicitante sin verificar en un estudio aprob
   assert.equal(queSigue('solicitante_en_verificacion', { ...o, textoTraba: 'Texto de la API.' }), 'Texto de la API.')
   // Al analista: qué le toca.
   assert.equal(queSigue('solicitante_en_verificacion', { ...o, vista: 'cofianza', analista: true }), TEXTO_REGISTRAR_LISTAS_SOLICITANTE)
+})
+
+test('Adenda 6 §2: en firma esperan las partes; en notaría, el turno es de quien gestiona (revisión de integración, punto 1)', () => {
+  assert.equal(turnoDeEtapa('firma', false), 'firmas')
+  assert.equal(turnoDeEtapa('firma', false, {}, { firmaNotaria: true }), 'gestor')
+  // La marca solo cambia la etapa de firma.
+  assert.equal(turnoDeEtapa('vigente', false, {}, { firmaNotaria: true }), null)
+  // Del listado de contratos del estudio: el V3 en firma con firma_notaria (la misma regla que la lista de estudios).
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'pendiente_firma', destinacion: 'vivienda', firma_notaria: true }]), true)
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'pendiente_firma', destinacion: 'vivienda', firma_notaria: false }]), false)
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'pendiente_firma', destinacion: 'vivienda' }]), false)
+  // El flujo anterior (sin destinación) no cuenta: allí la carga la ofrece el contrato, sin turno en la lista.
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'pendiente_firma', destinacion: null, firma_notaria: true }]), false)
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'vigente', destinacion: 'vivienda', firma_notaria: true }]), false)
+  assert.equal(esperaCargaNotariaContratos([]), false)
 })

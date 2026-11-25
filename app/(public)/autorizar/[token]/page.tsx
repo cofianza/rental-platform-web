@@ -68,7 +68,7 @@ import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
 import { correoParaEnviar, correoResultadoValido } from '@/lib/correoResultado'
 import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
 import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
-import { CASILLAS_5_2_V3, SIN_COTEJO_NOTARIA, versionVisible } from '@/lib/autorizacionV3'
+import { CASILLAS_5_2_V3, SIN_COTEJO_NOTARIA, cotejoNoDisponible, versionVisible } from '@/lib/autorizacionV3'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -907,7 +907,10 @@ export default function AutorizarPage() {
                   ? 'Si se aprueba, le contamos por correo los siguientes pasos.'
                   : data.expediente.inmueble === null
                     ? 'Si se aprueba, le decimos hasta qué canon puede arrendar.'
-                    : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
+                    : data.biometria?.casilla_4a
+                      ? // Adenda 6 §2: la firma es digital o en notaría según el cotejo de todas las personas.
+                        `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le indica cómo firmarlo.`
+                      : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
               </li>
             </ol>
             <p className="mt-3 text-sm text-gray-500">Puede cerrar esta página.</p>
@@ -1274,10 +1277,10 @@ export default function AutorizarPage() {
                 </span>
               </label>
             )}
-            {/* Adenda 6 §2: sin cotejo disponible, la 4A no cambiaría nada: se dice cómo se firmará. */}
+            {/* Adenda 6 §2: sin cotejo disponible, la 4A no cambiaría nada: se dice por qué y cómo se firmará. */}
             {casilla4a && !data.biometria?.opcional && (
               <p className="rounded-xl border border-gray-200 bg-gray-50 p-3.5 text-xs leading-relaxed text-gray-600">
-                El cotejo con foto del numeral 4A no está disponible en este momento. {SIN_COTEJO_NOTARIA}
+                {cotejoNoDisponible(data.biometria?.no_cotejable)} {SIN_COTEJO_NOTARIA}
               </p>
             )}
 
@@ -1729,10 +1732,20 @@ export default function AutorizarPage() {
             onContinuar={irAFirma}
             onVolver={volverPaso}
             onNoDisponible={refrescarVista}
-            onResultado={(estado, aprobado) =>
+            onResultado={(estado, aprobado, registrado) =>
               setData((d) =>
                 d?.biometria
-                  ? { ...d, biometria: { ...d.biometria, estado, ...(aprobado !== undefined ? { aprobado } : {}), ...(casilla4a && estado !== 'omitida' ? { autorizo_4a: true } : {}) } }
+                  ? {
+                      ...d,
+                      biometria: {
+                        ...d.biometria,
+                        estado,
+                        ...(aprobado !== undefined ? { aprobado } : {}),
+                        // Adenda 6 §2: la 4A queda fija solo si la API guardó el veredicto (con su constancia); un
+                        // error del cotejo (red, 503) no la registró y la casilla se puede desmarcar.
+                        ...(casilla4a && estado !== 'omitida' && registrado ? { autorizo_4a: true } : {}),
+                      },
+                    }
                   : d,
               )
             }

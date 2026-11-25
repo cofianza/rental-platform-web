@@ -67,6 +67,7 @@ import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudio
 import { ID_VERIFICACION_SEGUNDO } from '@/components/estudios/VerificacionSegundoFirmante'
 import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
 import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
+import { ACCION_CARGA_NOTARIA } from '@/lib/turnoEstudio'
 import { ACCION_GESTOR, accionSegundoFirmante, revisionDemorada } from '@/lib/etapaFila'
 import { sinAccionSegundoFirmante } from '@/lib/etapaEstudio'
 import { cierreDelEstudio, coarrendatarioEnCurso, coarrendatarioEnVerificacion, ofreceReemplazo, personaA5dUsable } from '@/lib/personaEstudio'
@@ -176,7 +177,7 @@ function ExpedienteDetalleContenido() {
   // refrescan en sitio (sin desmontarse ni pasar por el skeleton de página).
   const [cargas, setCargas] = useState(0)
   // Etapa real del estudio (revisión del Resumen, 23-oct): ordena el Resumen, la barra y el chip.
-  const { etapa, esperaHasta, coaFallido, citaActiva } = useEtapaEstudio(
+  const { etapa, esperaHasta, coaFallido, citaActiva, firmaNotaria } = useEtapaEstudio(
     user?.rol === 'solicitante' ? null : expediente,
     user?.rol !== 'gerencia_consulta',
     cargas,
@@ -667,11 +668,17 @@ function ExpedienteDetalleContenido() {
   // Reabierto por un reemplazo, igual: la franja ya dice que se espera a la persona nueva.
   const turnoBase =
     etapaTurno && etapaTurno !== 'espera_coarrendatario' && etapaTurno !== 'reapertura'
-      ? turnoDeEtapa(etapaTurno, !!condicionCoa, {
-          coarrendatarioEnCurso: apelacionLeida ? (coaEsperaLeida?.enCurso ?? null) : null,
-          apelacion: apelacionRadicada,
-          enVerificacion: !!segundoEnVerificacion,
-        })
+      ? turnoDeEtapa(
+          etapaTurno,
+          !!condicionCoa,
+          {
+            coarrendatarioEnCurso: apelacionLeida ? (coaEsperaLeida?.enCurso ?? null) : null,
+            apelacion: apelacionRadicada,
+            enVerificacion: !!segundoEnVerificacion,
+          },
+          // Adenda 6 §2: el contrato en firma espera la carga en notaría: el turno es de quien gestiona.
+          { firmaNotaria },
+        )
       : null
   // La lista no le pone turno a la visita (como el RPC), pero a la inmobiliaria y al
   // propietario sí les toca: agendarla o marcarla como hecha. Sin esto la franja no decía de quién era.
@@ -960,7 +967,10 @@ function ExpedienteDetalleContenido() {
                   ? accionSegundoFirmante(titularCondicionado)
                   : esEtapaDeTraba(etapaTurno)
                     ? ACCION_GESTOR[etapaTurno]
-                    : undefined,
+                    : etapaTurno === 'firma' && firmaNotaria
+                      ? // Adenda 6 §2: «Su turno: cargar el contrato firmado en notaría» (como la lista).
+                        ACCION_CARGA_NOTARIA
+                      : undefined,
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» (o «Lo verifica X») y sin coral.
             tomadoPor: (revisionAnalista || verificacion) && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
           }
@@ -1006,6 +1016,7 @@ function ExpedienteDetalleContenido() {
                     textoTraba: expediente.traba_contrato?.texto ?? null,
                     segundoEnVerificacion,
                     reemplazoPosible,
+                    firmaNotaria,
                   })}
                 </p>
               </div>

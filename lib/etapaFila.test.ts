@@ -4,7 +4,18 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ACCION_GESTOR, accionSegundoFirmante, etapaDeFila, accionDeFila, tomarDisponible, actividadConAlerta, revisionDemorada, siguienteOrdenActividad } from './etapaFila'
+import {
+  ACCION_GESTOR,
+  accionSegundoFirmante,
+  esperaCargaNotaria,
+  etapaDeFila,
+  accionDeFila,
+  tomarDisponible,
+  actividadConAlerta,
+  revisionDemorada,
+  siguienteOrdenActividad,
+} from './etapaFila'
+import { queSigue } from './ayudaEstudio'
 import type { IExpediente, IEstudioVigente } from '@/types/expediente'
 
 const fila = (o: Partial<IExpediente> = {}, ev?: Partial<IEstudioVigente> | null): IExpediente =>
@@ -265,4 +276,44 @@ test('Adenda 6 §4: las listas del solicitante sin verificar: turno de Cofianza,
   assert.equal(etapaDeFila(listas), 'solicitante_en_verificacion')
   assert.notEqual(accionDeFila(listas, 'solicitante_en_verificacion'), 'crear el contrato')
   assert.equal(tomarDisponible(listas), true)
+})
+
+test('Adenda 6 §2: el contrato V3 que espera la carga en notaría es turno de quien gestiona (revisión de integración, punto 1)', () => {
+  const enNotaria = fila({ estado: 'aprobado', contrato_estado: 'pendiente_firma', depende_de: 'gestor', firma_notaria: true })
+  assert.equal(etapaDeFila(enNotaria), 'firma')
+  assert.equal(esperaCargaNotaria(enNotaria), true)
+  assert.equal(accionDeFila(enNotaria, 'firma'), 'cargar el contrato firmado en notaría')
+  // Aunque el turno llegue de una lista anterior: la marca manda (nunca «revisar la firma del contrato»).
+  assert.equal(accionDeFila({ ...enNotaria, depende_de: 'prospecto' }, 'firma'), 'cargar el contrato firmado en notaría')
+  // Firma digital o una API anterior (sin la marca): como siempre.
+  const digital = fila({ estado: 'aprobado', contrato_estado: 'pendiente_firma', depende_de: 'gestor', firma_notaria: false })
+  assert.equal(esperaCargaNotaria(digital), false)
+  assert.equal(accionDeFila(digital, 'firma'), ACCION_GESTOR.firma)
+  assert.equal(esperaCargaNotaria(fila({ contrato_estado: 'pendiente_firma' })), false)
+  // Ya cargado (el contrato salió de la firma) no se pide cargarlo otra vez.
+  assert.equal(esperaCargaNotaria(fila({ contrato_estado: 'vigente', firma_notaria: true })), false)
+})
+
+test('Adenda 6 §2: «Qué sigue» en notaría no habla de firma electrónica', () => {
+  const o = { analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false, firmaNotaria: true }
+  assert.match(queSigue('firma', { ...o, vista: 'gestor' }), /^El contrato se firma en notaría: descárguelo, hágalo firmar con firma autenticada y cárguelo/)
+  assert.match(queSigue('firma', { ...o, vista: 'equipo' }), /alguien de su equipo con permiso de edición/)
+  assert.match(queSigue('firma', { ...o, vista: 'cofianza' }), /falta que quien gestiona el estudio cargue el contrato firmado/)
+  for (const vista of ['gestor', 'equipo', 'cofianza'] as const) assert.doesNotMatch(queSigue('firma', { ...o, vista }), /firma electrónica|firmen todas/)
+  // Sin la marca, el de siempre.
+  assert.equal(queSigue('firma', { ...o, vista: 'gestor', firmaNotaria: false }), 'El contrato está en firma electrónica: falta que firmen todas las partes.')
+})
+
+test('Adenda 6 §2: textos de notaría con la salida de todo el sistema (revisión de integración, puntos 5 y 6)', async () => {
+  const { readFileSync } = await import('node:fs')
+  const leer = (ruta: string) => readFileSync(new URL(ruta, import.meta.url), 'utf8')
+  for (const ruta of ['../components/contratos/CargaContratoNotaria.tsx', '../components/contratos/v3/EstadoFirma.tsx']) {
+    const fuente = leer(ruta)
+    assert.doesNotMatch(fuente, /haga una nueva evaluación/, ruta)
+    assert.match(fuente, /cancele el contrato y cree un estudio nuevo \(con su propio cobro\)/, ruta)
+  }
+  // Al solicitante no se le dice que el contrato lo carga él.
+  const solicitante = leer('../components/expedientes/ContratoSolicitanteCard.tsx')
+  assert.doesNotMatch(solicitante, /la fianza se activa cuando cargue el contrato firmado/)
+  assert.match(solicitante, /la fianza se activa cuando quien tramita su arriendo cargue el contrato firmado/)
 })

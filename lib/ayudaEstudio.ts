@@ -238,6 +238,8 @@ export function queSigue(
     segundoEnVerificacion?: 'api' | 'web' | false
     /** No aprobable: alguna persona del estudio se puede reemplazar (lo dice el texto de `persona_a5d`). */
     reemplazoPosible?: boolean
+    /** Adenda 6 §2: el contrato en firma espera la carga del documento firmado en notaría (no hay firma electrónica). */
+    firmaNotaria?: boolean
   },
 ): string {
   const analista = o.vista === 'cofianza' && o.analista
@@ -289,8 +291,18 @@ export function paraLista(texto: string): string {
   return EN_LISTA.reduce((t, [re, por]) => t.replace(re, por), texto)
 }
 
+/** Adenda 6 §2: el contrato en firma espera la carga en notaría; lo hace quien gestiona el estudio. */
+const FIRMA_NOTARIA: Record<VistaTurno, string> = {
+  gestor:
+    'El contrato se firma en notaría: descárguelo, hágalo firmar con firma autenticada y cárguelo firmado en el contrato antes de que venza el plazo. La fianza se activa con la carga.',
+  equipo:
+    'El contrato se firma en notaría: alguien de su equipo con permiso de edición lo descarga, lo hace firmar con firma autenticada y lo carga firmado. La fianza se activa con la carga.',
+  cofianza: 'El contrato se firma en notaría: falta que quien gestiona el estudio cargue el contrato firmado. La fianza se activa con la carga.',
+}
+
 function queSigueBase(etapa: EtapaEstudio, o: Parameters<typeof queSigue>[1]): string {
   const gestor = o.vista === 'gestor'
+  if (etapa === 'firma' && o.firmaNotaria) return FIRMA_NOTARIA[o.vista]
   if (etapa === 'visita' && o.citaActiva && o.vista !== 'cofianza') {
     return o.vista === 'gestor'
       ? 'La visita ya está agendada. Cuando se haga, márquela como realizada en la tarjeta de la cita, aquí abajo.'

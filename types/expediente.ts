@@ -149,6 +149,11 @@ export interface IExpediente {
   depende_de?: 'gestor' | 'prospecto' | 'cofianza' | null
   /** Lista (RPC): estado del último contrato no cancelado, para el paso de la fila. */
   contrato_estado?: string | null
+  /**
+   * Lista (RPC, Adenda 6 §2): el contrato V3 en firma espera la carga del documento firmado en notaría. No hay firmas
+   * que esperar: el turno es de quien gestiona («cargar el contrato firmado en notaría»). Ausente con una API anterior.
+   */
+  firma_notaria?: boolean
   /** Adenda de precios §8.2: prioridad en la cola del analista (el caso R2 va 'baja'). */
   prioridad_revision?: 'baja' | 'normal' | 'alta'
   /** Solo Cofianza, en revisión: desde cuándo (lista y detalle; «En revisión hace N días»). */

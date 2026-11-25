@@ -430,6 +430,14 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
   return 'consulta'
 }
 
+/**
+ * Adenda 6 §2: el contrato V3 en firma espera la carga del documento firmado en notaría (`firma_notaria` del listado
+ * de contratos del estudio: la misma regla que `firma_notaria` de la lista de estudios). Pura.
+ */
+export const esperaCargaNotariaContratos = (
+  contratos: ReadonlyArray<{ estado: string; destinacion?: string | null; firma_notaria?: unknown }>,
+): boolean => contratos.some((c) => c.estado === 'pendiente_firma' && !!c.destinacion && c.firma_notaria === true)
+
 /** De quién es el siguiente paso. */
 export type Turno = 'gestor' | 'prospecto' | 'cofianza' | 'firmas'
 
@@ -468,7 +476,13 @@ export function turnoSegundoFirmante(o: DatosTurnoSegundoFirmante = {}): Turno |
  * hay turno (cerrado o sin paso pendiente de alguien). `segundo`: lo que decide el
  * turno del aprobado con segundo firmante (turnoSegundoFirmante).
  */
-export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean, segundo: DatosTurnoSegundoFirmante = {}): Turno | null {
+export function turnoDeEtapa(
+  etapa: EtapaEstudio,
+  conCondicion: boolean,
+  segundo: DatosTurnoSegundoFirmante = {},
+  /** Adenda 6 §2: el contrato en firma espera la carga del documento firmado en notaría (lo dice la API). */
+  o: { firmaNotaria?: boolean } = {},
+): Turno | null {
   if (etapa === 'segundo_firmante') return turnoSegundoFirmante(segundo)
   switch (etapa) {
     case 'habilitar':
@@ -501,7 +515,8 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean, segundo
     case 'decision':
       return conCondicion ? 'prospecto' : 'cofianza'
     case 'firma':
-      return 'firmas'
+      // En notaría no hay firmas que esperar: descargarlo, hacerlo firmar y cargarlo le toca a quien gestiona.
+      return o.firmaNotaria ? 'gestor' : 'firmas'
     default:
       return null
   }

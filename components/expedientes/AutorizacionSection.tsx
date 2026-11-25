@@ -703,7 +703,17 @@ export function AutorizacionSection({
                 { txt: 'Ofertas y comunicaciones comerciales', on: !!autorizacion?.consent_comercial, oblig: false },
                 // Adenda 6 §2: el texto V3 no ofrece la tercera finalidad y trae la casilla 4A (cotejo biométrico).
                 ...(esV3
-                  ? [{ txt: 'Cotejo biométrico (numeral 4A)', on: !!autorizacion?.consent_cotejo_biometrico, oblig: false }]
+                  ? [
+                      {
+                        // Sin el dato (no se pudo leer) no se afirma que no lo autorizó.
+                        txt:
+                          autorizacion?.consent_cotejo_biometrico === undefined
+                            ? 'Cotejo biométrico (numeral 4A): no se pudo consultar'
+                            : 'Cotejo biométrico (numeral 4A)',
+                        on: !!autorizacion?.consent_cotejo_biometrico,
+                        oblig: false,
+                      },
+                    ]
                   : [{ txt: 'Historial como referencia ante terceros', on: !!autorizacion?.consent_historial_referencia, oblig: false }]),
               ].map((c) => (
                 <div key={c.txt} className="flex items-center justify-between gap-2">

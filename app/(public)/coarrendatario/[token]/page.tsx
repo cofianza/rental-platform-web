@@ -28,7 +28,7 @@ import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
 import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
 import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import type { EstadoBiometria } from '@/types/autorizacion'
-import { CASILLAS_5_2_V3, SIN_COTEJO_NOTARIA, versionVisible } from '@/lib/autorizacionV3'
+import { CASILLAS_5_2_V3, SIN_COTEJO_NOTARIA, cotejoNoDisponible, versionVisible } from '@/lib/autorizacionV3'
 
 /** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
 const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
@@ -413,8 +413,18 @@ export default function CoarrendatarioPublicPage() {
           {resultMsg || 'Aceptación registrada. Estamos procesando su evaluación.'}
         </p>
         <p className="text-sm text-gray-700 mt-2">
-          Si el arriendo se aprueba, le enviaremos el contrato para firmarlo junto con{' '}
-          {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+          {/* Adenda 6 §2: sin el cotejo aprobado no hay enlace de firma (el contrato se firma en notaría). */}
+          {view?.cotejo && !cotejoOk ? (
+            <>
+              Si el arriendo se aprueba, quien tramita el arriendo le indicará cómo firmar el contrato junto con{' '}
+              {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+            </>
+          ) : (
+            <>
+              Si el arriendo se aprueba, le enviaremos el contrato para firmarlo junto con{' '}
+              {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+            </>
+          )}
         </p>
         {/* Adenda 6 §2: cómo se firmará el contrato, según el cotejo (y, si quedó pendiente, hasta cuándo puede hacerlo). */}
         {view?.cotejo && (
@@ -732,7 +742,7 @@ export default function CoarrendatarioPublicPage() {
                   </span>
                 </label>
               ) : (
-                <p className="text-xs text-gray-600">El cotejo con foto del numeral 4A no está disponible en este momento. {SIN_COTEJO_NOTARIA}</p>
+                <p className="text-xs text-gray-600">{cotejoNoDisponible(view.cotejo.no_cotejable)} {SIN_COTEJO_NOTARIA}</p>
               )}
               <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
                 <input
