@@ -413,8 +413,18 @@ export default function CoarrendatarioPublicPage() {
           {resultMsg || 'Aceptación registrada. Estamos procesando su evaluación.'}
         </p>
         <p className="text-sm text-gray-700 mt-2">
-          Si el arriendo se aprueba, le enviaremos el contrato para firmarlo junto con{' '}
-          {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+          {/* Adenda 6 §2: sin el cotejo aprobado no hay enlace de firma (el contrato se firma en notaría). */}
+          {view?.cotejo && !cotejoOk ? (
+            <>
+              Si el arriendo se aprueba, quien tramita el arriendo le indicará cómo firmar el contrato junto con{' '}
+              {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+            </>
+          ) : (
+            <>
+              Si el arriendo se aprueba, le enviaremos el contrato para firmarlo junto con{' '}
+              {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+            </>
+          )}
         </p>
         {/* Adenda 6 §2: cómo se firmará el contrato, según el cotejo (y, si quedó pendiente, hasta cuándo puede hacerlo). */}
         {view?.cotejo && (

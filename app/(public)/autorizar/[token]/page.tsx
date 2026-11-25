@@ -907,7 +907,10 @@ export default function AutorizarPage() {
                   ? 'Si se aprueba, le contamos por correo los siguientes pasos.'
                   : data.expediente.inmueble === null
                     ? 'Si se aprueba, le decimos hasta qué canon puede arrendar.'
-                    : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
+                    : data.biometria?.casilla_4a
+                      ? // Adenda 6 §2: la firma es digital o en notaría según el cotejo de todas las personas.
+                        `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le indica cómo firmarlo.`
+                      : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
               </li>
             </ol>
             <p className="mt-3 text-sm text-gray-500">Puede cerrar esta página.</p>
