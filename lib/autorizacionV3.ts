@@ -1,5 +1,5 @@
 /**
- * Adenda 6 §2: la autorización de datos V3 de Mario. Nuestra versión interna es 'V3' (y 'V3-coarrendatario'); a la
+ * Adenda 6 §2: la autorización de datos V3. Nuestra versión interna es 'V3' (y 'V3-coarrendatario'); a la
  * persona se le muestra «Versión 3», como dice el propio texto.
  */
 export function versionVisible(version: string | null | undefined): string {

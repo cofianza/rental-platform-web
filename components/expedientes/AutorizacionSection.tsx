@@ -164,7 +164,7 @@ export function AutorizacionSection({
   // Con el enlace vencido ya no hay firma que esperar (el backend la marca
   // 'expirado' solo cuando alguien abre el link), y con la pestaña oculta no
   // se pregunta.
-  // Adenda 6 §2: la autorización se firmó con el texto V3 de Mario (casilla 4A, dos finalidades opcionales).
+  // Adenda 6 §2: la autorización se firmó con el texto V3 (casilla 4A, dos finalidades opcionales).
   const esV3 = /^V3(-|$)/.test(autorizacion?.version_terminos ?? '')
   const tokenExpiracion = autorizacion?.token_expiracion
   useEffect(() => {
