@@ -110,6 +110,7 @@ import {
   type RolVista,
 } from '@/components/expedientes/VerComo'
 import { setVerComoApi } from '@/lib/api'
+import { textoHabitara } from '@/lib/habitara'
 
 function ExpedienteDetalleContenido() {
   const params = useParams()
@@ -1543,12 +1544,8 @@ function ExpedienteDetalleContenido() {
                     {expediente.solicitante.nivel_educativo && (
                       <InfoRow label="Nivel educativo" value={expediente.solicitante.nivel_educativo} />
                     )}
-                    {expediente.solicitante.habitara_inmueble !== null && (
-                      <InfoRow
-                        label="Habitará el inmueble"
-                        value={expediente.solicitante.habitara_inmueble ? 'Sí' : 'No'}
-                      />
-                    )}
+                    {/* Adenda 6 §8: lo que la persona respondió al autorizar este estudio; sin respuesta, «No lo indicó». */}
+                    <InfoRow label="Habitará el inmueble" value={textoHabitara(expediente.solicitante.habitara_inmueble)} />
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">Sin solicitante asociado</p>

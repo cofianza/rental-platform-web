@@ -341,6 +341,8 @@ export interface IPerfilProspectoInput {
   tiene_rut?: boolean
   donde_labora?: string
   ingreso_declarado_cop?: number
+  /** Adenda 6 §8: si vivirá en el inmueble ('no_indicado' por defecto). */
+  habitara_inmueble?: 'si' | 'no' | 'no_indicado'
   presentacion?: 'solo' | 'acompanado'
   coarrendatario?: {
     nombre: string

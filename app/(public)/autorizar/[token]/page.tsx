@@ -66,6 +66,8 @@ import { buttonClasses } from '@/components/ui/Button'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
 import { correoParaEnviar, correoResultadoValido } from '@/lib/correoResultado'
+import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
+import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -227,6 +229,8 @@ export default function AutorizarPage() {
   const [dondeLabora, setDondeLabora] = useState('')
   const [ingreso, setIngreso] = useState('')
   const [presentacion, setPresentacion] = useState<'solo' | 'acompanado' | null>(null)
+  // Adenda 6 §8: tres opciones; por defecto «Prefiero no indicarlo» (quien tramita ve «No lo indicó»).
+  const [habitara, setHabitara] = useState<Habitara>(HABITARA_POR_DEFECTO)
   const [coaNombre, setCoaNombre] = useState('')
   const [coaApellido, setCoaApellido] = useState('')
   const [coaEmail, setCoaEmail] = useState('')
@@ -417,6 +421,7 @@ export default function AutorizarPage() {
       ...(situacion === 'independiente' && tieneRut !== null ? { tiene_rut: tieneRut } : {}),
       ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
       ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
+      habitara_inmueble: habitara,
       ...(presentacion ? { presentacion } : {}),
       ...(!sinCoarrendatario && presentacion === 'acompanado' && coaNombre.trim() && coaApellido.trim() && (coaEmail.trim() || coaTelefono.trim())
         ? {
@@ -1342,6 +1347,9 @@ export default function AutorizarPage() {
               </p>
             </div>
 
+            {/* Adenda 6 §8: informativo; la evaluación no lo usa. */}
+            <PreguntaHabitara valor={habitara} onCambio={setHabitara} disabled={guardandoPerfil} />
+
             {/* §8.3 Solo o acompañado */}
             <div>
               <p className="text-sm font-bold text-gray-900">¿Presenta el estudio solo o acompañado?</p>
@@ -1523,7 +1531,7 @@ export default function AutorizarPage() {
               disabled={guardandoPerfil}
               className={buttonClasses('secondary', 'lg', 'w-full')}
             >
-              {[situacion, presentacion, dondeLabora.trim(), ingreso, coaNombre.trim(), coaApellido.trim(), coaEmail.trim(), coaTelefono.trim()].some(Boolean)
+              {[situacion, presentacion, dondeLabora.trim(), ingreso, coaNombre.trim(), coaApellido.trim(), coaEmail.trim(), coaTelefono.trim(), habitara !== HABITARA_POR_DEFECTO].some(Boolean)
                 ? 'Saltar sin guardar lo que escribió'
                 : 'Saltar este paso'}
             </button>

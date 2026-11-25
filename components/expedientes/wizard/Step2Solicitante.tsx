@@ -160,7 +160,6 @@ export function Step2Solicitante({
       ingresos_mensuales: s.ingresos_mensuales ?? undefined,
       nivel_educativo: s.nivel_educativo ?? undefined,
       parentesco: s.parentesco ?? undefined,
-      habitara_inmueble: s.habitara_inmueble,
     }
     setEditForm(initial)
     setEditBaseline(initial)
@@ -1146,20 +1145,7 @@ function SolicitanteForm({
             />
           </div>
 
-          {/* Habitara el inmueble */}
-          <div className="md:col-span-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.habitara_inmueble || false}
-                onChange={(e) => onUpdateField('habitara_inmueble', e.target.checked)}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                {WIZARD_MESSAGES.LABEL_HABITARA_INMUEBLE}
-              </span>
-            </label>
-          </div>
+          {/* Adenda 6 §8: «Habitará el inmueble» ya no va aquí: se lo pregunta a cada persona al autorizar. */}
         </div>
       </section>
         </>

@@ -24,6 +24,8 @@ import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
 import { CampoComprobarDocumento } from '@/components/public/CampoComprobarDocumento'
 import { correoParaEnviar, correoResultadoValido, destinoDelCorreo, documentoParaEnviar } from '@/lib/correoResultado'
 import { esInvitacionRetirada, faseInicialInvitacion, TEXTO_YA_NO_HACE_PARTE } from '@/lib/coarrendatarioPublico'
+import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
+import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
 
 /** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
 const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
@@ -90,6 +92,8 @@ export default function CoarrendatarioPublicPage() {
   // Sus datos de notificación: el contrato los imprime (cláusula de notificaciones).
   const [direccion, setDireccion] = useState('')
   const [municipio, setMunicipio] = useState('')
+  // Adenda 6 §8: tres opciones; por defecto «Prefiero no indicarlo» (quien tramita ve «No lo indicó»).
+  const [habitara, setHabitara] = useState<Habitara>(HABITARA_POR_DEFECTO)
   // El correo para el resultado de su evaluación: solo si la API lo pide (prellenado con el de la invitación).
   const [correoResultado, setCorreoResultado] = useState('')
   const [errorCorreo, setErrorCorreo] = useState(false)
@@ -165,7 +169,7 @@ export default function CoarrendatarioPublicPage() {
     try {
       const r = await coarrendatarioService.aceptar(
         token,
-        { direccion: direccion.trim(), municipio: municipio.trim() },
+        { direccion: direccion.trim(), municipio: municipio.trim(), habitara_inmueble: habitara },
         {
           ...correoParaEnviar(view?.contacto_resultado?.requerido, correoResultado),
           ...documentoParaEnviar(pideDocumento, numeroDocumento),
@@ -543,6 +547,14 @@ export default function CoarrendatarioPublicPage() {
                 : 'A esta dirección, a su correo y a su celular llegarán las notificaciones del contrato.'}
             </p>
           </div>
+
+          {/* Adenda 6 §8: informativo; la evaluación no lo usa. */}
+          <PreguntaHabitara
+            valor={habitara}
+            onCambio={setHabitara}
+            disabled={procesando}
+            className="rounded-xl border border-gray-200 bg-white p-3.5"
+          />
 
           {view?.contacto_resultado?.requerido && (!pideDocumento || documentoConfirmado) && (
             <CampoCorreoResultado
