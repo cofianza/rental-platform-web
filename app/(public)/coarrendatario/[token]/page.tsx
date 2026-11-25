@@ -28,7 +28,7 @@ import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
 import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
 import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
 import type { EstadoBiometria } from '@/types/autorizacion'
-import { CASILLAS_5_2_V3, SIN_COTEJO_NOTARIA, versionVisible } from '@/lib/autorizacionV3'
+import { CASILLAS_5_2_V3, SIN_COTEJO_NOTARIA, cotejoNoDisponible, versionVisible } from '@/lib/autorizacionV3'
 
 /** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
 const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
@@ -732,7 +732,7 @@ export default function CoarrendatarioPublicPage() {
                   </span>
                 </label>
               ) : (
-                <p className="text-xs text-gray-600">El cotejo con foto del numeral 4A no está disponible en este momento. {SIN_COTEJO_NOTARIA}</p>
+                <p className="text-xs text-gray-600">{cotejoNoDisponible(view.cotejo.no_cotejable)} {SIN_COTEJO_NOTARIA}</p>
               )}
               <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
                 <input

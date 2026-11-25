@@ -140,6 +140,8 @@ export interface ICoarrendatarioPublicView {
     aprobado?: boolean
     autorizado: boolean | null
     estado: EstadoBiometria | null
+    /** No se ofrece porque Auco no coteja su tipo de documento. Ausente por otra razón o en APIs viejas. */
+    no_cotejable?: 'tipo_documento'
   }
 }
 
