@@ -34,11 +34,18 @@ export const biometriaService = {
    * Adenda 6 §2: vincula las imágenes de los cotejos FALLIDOS de una persona (autorización V3) a una denuncia o
    * proceso — se conservan hasta que termine — o quita esa marca (motivo null). Solo administrador; queda en la bitácora.
    */
-  async retencionPorProceso(expedienteId: string, persona: PersonaCotejo, motivo: string | null): Promise<{ filas: number }> {
+  async retencionPorProceso(
+    expedienteId: string,
+    persona: PersonaCotejo,
+    clave: string | null,
+    motivo: string | null,
+  ): Promise<{ filas: number }> {
     const url = `/expedientes/${expedienteId}/biometria/fotos/retencion`
     const response = motivo
-      ? await apiClient.post<{ filas: number }>(url, { motivo, persona })
-      : await apiClient.delete<{ filas: number }>(`${url}?persona=${persona}`)
+      ? await apiClient.post<{ filas: number }>(url, { motivo, persona, ...(clave ? { clave } : {}) })
+      : await apiClient.delete<{ filas: number }>(
+          `${url}?${new URLSearchParams({ persona, ...(clave ? { clave } : {}) }).toString()}`,
+        )
     return response.data
   },
 

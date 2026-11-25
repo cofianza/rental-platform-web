@@ -73,8 +73,8 @@ export function useEvidenciaBiometria(expedienteId: string) {
 
   /** Adenda 6 §2: marca (o quita) la denuncia o proceso de una persona. Lanza si falla; quien llama avisa. */
   const retencionPorProceso = useCallback(
-    async (persona: PersonaCotejo, motivo: string | null) => {
-      const r = await biometriaService.retencionPorProceso(expedienteId, persona, motivo)
+    async (persona: PersonaCotejo, clave: string | null, motivo: string | null) => {
+      const r = await biometriaService.retencionPorProceso(expedienteId, persona, clave, motivo)
       await consultar()
       return r
     },

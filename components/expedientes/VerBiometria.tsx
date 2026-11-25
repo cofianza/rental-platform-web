@@ -49,6 +49,20 @@ import type {
 const NOMBRE_PERSONA: Record<PersonaCotejo, string> = { solicitante: 'el solicitante', coarrendatario: 'el segundo firmante' }
 const DE_PERSONA: Record<PersonaCotejo, string> = { solicitante: 'del solicitante', coarrendatario: 'del segundo firmante' }
 
+/** Una persona real del estudio con cotejos fallidos de la autorización V3 (la marca de denuncia es suya). */
+interface PersonaConFallidos {
+  persona: PersonaCotejo
+  clave: string | null
+  /** Sigue en el estudio (false = salió por un cambio de persona). */
+  actual: boolean
+  fallidos: number
+  marca: { desde: string; motivo: string } | null
+  sinMarca: boolean
+}
+
+const dePersona = (p: Pick<PersonaConFallidos, 'persona' | 'actual'>) =>
+  p.actual ? DE_PERSONA[p.persona] : p.persona === 'coarrendatario' ? 'de un segundo firmante anterior' : 'del solicitante anterior'
+
 const VERDE = 'bg-primary-50 text-primary-800 ring-primary-200'
 const ROJO = 'bg-red-50 text-red-800 ring-red-200'
 const AMBAR = 'bg-amber-50 text-amber-900 ring-amber-200'
@@ -132,8 +146,8 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
   const [eliminando, setEliminando] = useState(false)
   // Adenda 6 §2: la marca de denuncia o proceso (solo administrador).
   const esAdmin = hasRole(['administrador'])
-  const [pedirRetencion, setPedirRetencion] = useState<PersonaCotejo | null>(null)
-  const [quitarRetencion, setQuitarRetencion] = useState<PersonaCotejo | null>(null)
+  const [pedirRetencion, setPedirRetencion] = useState<PersonaConFallidos | null>(null)
+  const [quitarRetencion, setQuitarRetencion] = useState<PersonaConFallidos | null>(null)
   const [guardandoRetencion, setGuardandoRetencion] = useState(false)
 
   if (!conEvidencia) return null
@@ -162,26 +176,29 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
   const intentosA6 = (datos?.intentos ?? []).filter((i) => i.adenda6)
   const intentos30 = (datos?.intentos ?? []).filter((i) => !i.adenda6)
   const anios = datos?.anios_conservacion ?? null
-  // La marca de denuncia o proceso es de los cotejos FALLIDOS de una persona (Adenda 6 §2).
-  const fallidosPorPersona = (['solicitante', 'coarrendatario'] as const)
-    .map((persona) => {
-      const fallidos = intentosA6.filter((i) => (i.persona ?? 'solicitante') === persona && !i.aprobado)
-      return {
-        persona,
-        fallidos: fallidos.length,
-        marca: fallidos.find((i) => i.retencion)?.retencion ?? null,
-        sinMarca: fallidos.some((i) => !i.retencion),
-      }
-    })
-    .filter((g) => g.fallidos > 0)
-  const guardarRetencion = async (persona: PersonaCotejo, motivo: string | null): Promise<boolean> => {
+  // La marca de denuncia o proceso es de los cotejos FALLIDOS de una persona real (Adenda 6 §2): con un cambio de
+  // solicitante o de segundo firmante, cada persona va aparte.
+  const fallidosPorPersona: PersonaConFallidos[] = []
+  for (const i of intentosA6.filter((x) => !x.aprobado)) {
+    const persona: PersonaCotejo = i.persona ?? 'solicitante'
+    const clave = i.clave_persona ?? null
+    let g = fallidosPorPersona.find((x) => x.persona === persona && x.clave === clave)
+    if (!g) {
+      g = { persona, clave, actual: i.actual !== false, fallidos: 0, marca: null, sinMarca: false }
+      fallidosPorPersona.push(g)
+    }
+    g.fallidos += 1
+    if (i.retencion && !g.marca) g.marca = i.retencion
+    if (!i.retencion) g.sinMarca = true
+  }
+  const guardarRetencion = async (g: PersonaConFallidos, motivo: string | null): Promise<boolean> => {
     setGuardandoRetencion(true)
     try {
-      await retencionPorProceso(persona, motivo)
+      await retencionPorProceso(g.persona, g.clave, motivo)
       toast.success(
         motivo
-          ? `Los cotejos fallidos ${DE_PERSONA[persona]} quedaron vinculados a la denuncia o el proceso.`
-          : `Se quitó la marca de denuncia o proceso ${DE_PERSONA[persona]}.`,
+          ? `Los cotejos fallidos ${dePersona(g)} quedaron vinculados a la denuncia o el proceso.`
+          : `Se quitó la marca de denuncia o proceso ${dePersona(g)}.`,
       )
       setPedirRetencion(null)
       setQuitarRetencion(null)
@@ -304,10 +321,10 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
                         </span>
                       </p>
                       {fallidosPorPersona.map((g) => (
-                        <div key={g.persona} className="space-y-1">
+                        <div key={`${g.persona}:${g.clave ?? ''}`} className="space-y-1">
                           {g.marca && (
                             <p className="break-words font-medium text-gray-900">
-                              Cotejos fallidos {DE_PERSONA[g.persona]} vinculados a una denuncia o proceso desde el{' '}
+                              Cotejos fallidos {dePersona(g)} vinculados a una denuncia o proceso desde el{' '}
                               {fecha(g.marca.desde)}: {g.marca.motivo}
                             </p>
                           )}
@@ -316,16 +333,16 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
                               {g.sinMarca && (
                                 <button
                                   type="button"
-                                  onClick={() => setPedirRetencion(g.persona)}
+                                  onClick={() => setPedirRetencion(g)}
                                   className="inline-flex min-h-10 items-center text-left font-semibold text-primary-700 underline"
                                 >
-                                  Vincular los cotejos fallidos {DE_PERSONA[g.persona]} a una denuncia o proceso
+                                  Vincular los cotejos fallidos {dePersona(g)} a una denuncia o proceso
                                 </button>
                               )}
                               {g.marca && (
                                 <button
                                   type="button"
-                                  onClick={() => setQuitarRetencion(g.persona)}
+                                  onClick={() => setQuitarRetencion(g)}
                                   className="inline-flex min-h-10 items-center text-left font-semibold text-primary-700 underline"
                                 >
                                   Quitar la marca (la denuncia o el proceso terminó)
@@ -358,11 +375,13 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
       </Modal>
 
       <MotivoDialog
+        // Un diálogo por persona: el motivo escrito para una no aparece al abrirlo para la otra.
+        key={pedirRetencion ? `${pedirRetencion.persona}:${pedirRetencion.clave ?? ''}` : 'cerrado'}
         isOpen={pedirRetencion !== null}
         onClose={() => setPedirRetencion(null)}
         onConfirm={async (motivo) => (pedirRetencion ? guardarRetencion(pedirRetencion, motivo) : false)}
         title="Vincular a una denuncia o proceso"
-        descripcion={`Mientras esté la marca, las fotos de los cotejos fallidos ${pedirRetencion ? DE_PERSONA[pedirRetencion] : ''} de la autorización de datos versión 3 no se eliminan al vencer su plazo. Indique de qué denuncia o proceso se trata (entidad, número de radicado y fecha).`}
+        descripcion={`Mientras esté la marca, las fotos de los cotejos fallidos ${pedirRetencion ? dePersona(pedirRetencion) : ''} de la autorización de datos versión 3 no se eliminan al vencer su plazo. Indique de qué denuncia o proceso se trata (entidad, número de radicado y fecha).`}
         label="Denuncia o proceso"
         placeholder="Por ejemplo: denuncia por suplantación ante la Fiscalía, radicado 000-0000, del 3 de diciembre"
         confirmLabel="Vincular"
@@ -376,7 +395,7 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
         title="¿Quitar la marca de denuncia o proceso?"
         message={
           <p>
-            Las fotos de los cotejos fallidos {quitarRetencion ? DE_PERSONA[quitarRetencion] : ''} vuelven a sus plazos de
+            Las fotos de los cotejos fallidos {quitarRetencion ? dePersona(quitarRetencion) : ''} vuelven a sus plazos de
             conservación. Las que ya cumplieron su plazo se eliminan en los próximos minutos y no se pueden recuperar. Queda
             en la bitácora.
           </p>
@@ -569,7 +588,16 @@ function IntentoConFotos({
       : { texto: 'No aprobado', clase: ROJO }
     : estadoVisible(intento, DE_PERSONA[persona])
   const porQue = intento.adenda6 && !intento.aprobado ? motivoNoAprobado(intento, persona) : null
-  const titulo = `${persona === 'coarrendatario' ? 'Segundo firmante · ' : intento.adenda6 ? 'Solicitante · ' : ''}${intento.numero != null ? `Intento ${intento.numero}` : 'Intento'}`
+  const quien = !intento.adenda6
+    ? ''
+    : intento.actual === false
+      ? persona === 'coarrendatario'
+        ? 'Segundo firmante anterior · '
+        : 'Solicitante anterior · '
+      : persona === 'coarrendatario'
+        ? 'Segundo firmante · '
+        : 'Solicitante · '
+  const titulo = `${quien}${intento.numero != null ? `Intento ${intento.numero}` : 'Intento'}`
   const bajoMinimo = intento.similitud != null && umbral != null && intento.similitud < umbral
   return (
     <li className="rounded-lg border border-gray-200 p-3">
@@ -598,9 +626,7 @@ function IntentoConFotos({
       {intento.adenda6 ? (
         <div className="mt-2 space-y-1 text-sm">
           <p className="font-medium text-gray-800">
-            {intento.aprobado
-              ? 'Cotejo aprobado: cuenta para la firma digital, que exige el cotejo aprobado de todas las personas del contrato.'
-              : `Cotejo no aprobado${porQue ? `: ${porQue}` : '.'}`}
+            {intento.aprobado ? 'Cotejo aprobado.' : `Cotejo no aprobado${porQue ? `: ${porQue}` : '.'}`}
           </p>
           <p className="text-xs text-gray-600">{conservacionVisible(intento)}</p>
         </div>

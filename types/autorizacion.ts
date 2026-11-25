@@ -285,6 +285,10 @@ export interface IIntentoConFotos {
   retencion?: { desde: string; motivo: string } | null
   /** Lo que dijo Auco del documento (p. ej. DOCUMENT_FAKE). */
   motivo_auco?: string | null
+  /** Adenda 6: la persona real (para agrupar y marcar); null en las del texto anterior. */
+  clave_persona?: string | null
+  /** Adenda 6: la persona sigue en el estudio (false = salió por un cambio de persona). */
+  actual?: boolean
   /**
    * Adenda 6: hasta cuándo se conserva hoy. `hasta` null con `mientras_fianza` = mientras la fianza esté vigente; con
    * `por_proceso` = hasta que termine la denuncia o el proceso.
