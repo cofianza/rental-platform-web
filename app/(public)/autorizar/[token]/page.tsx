@@ -235,6 +235,9 @@ export default function AutorizarPage() {
   const [presentacion, setPresentacion] = useState<'solo' | 'acompanado' | null>(null)
   // Adenda 6 §8: tres opciones; por defecto «Prefiero no indicarlo» (quien tramita ve «No lo indicó»).
   const [habitara, setHabitara] = useState<Habitara>(HABITARA_POR_DEFECTO)
+  // Se envía solo si la persona respondió en esta visita: el «Prefiero no indicarlo» que trae por defecto no borra un
+  // «Sí» o un «No» que dejó antes (enlace reenviado, página cerrada antes de firmar).
+  const [habitaraRespondida, setHabitaraRespondida] = useState(false)
   const [coaNombre, setCoaNombre] = useState('')
   const [coaApellido, setCoaApellido] = useState('')
   const [coaEmail, setCoaEmail] = useState('')
@@ -462,7 +465,7 @@ export default function AutorizarPage() {
       ...(situacion === 'independiente' && tieneRut !== null ? { tiene_rut: tieneRut } : {}),
       ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
       ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
-      habitara_inmueble: habitara,
+      ...(habitaraRespondida ? { habitara_inmueble: habitara } : {}),
       ...(presentacion ? { presentacion } : {}),
       ...(!sinCoarrendatario && presentacion === 'acompanado' && coaNombre.trim() && coaApellido.trim() && (coaEmail.trim() || coaTelefono.trim())
         ? {
@@ -1424,7 +1427,14 @@ export default function AutorizarPage() {
             </div>
 
             {/* Adenda 6 §8: informativo; la evaluación no lo usa. */}
-            <PreguntaHabitara valor={habitara} onCambio={setHabitara} disabled={guardandoPerfil} />
+            <PreguntaHabitara
+              valor={habitara}
+              onCambio={(v) => {
+                setHabitara(v)
+                setHabitaraRespondida(true)
+              }}
+              disabled={guardandoPerfil}
+            />
 
             {/* §8.3 Solo o acompañado */}
             <div>
