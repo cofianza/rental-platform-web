@@ -13,6 +13,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { IconAlertTriangle, IconArrowRight } from '@/components/icons'
 import type { IPerfilCompletitud } from '@/services/perfilArrendadorService'
+import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
+import { useAuth } from '@/hooks/useAuth'
 
 interface Props {
   completitud: IPerfilCompletitud | null
@@ -22,11 +24,12 @@ interface Props {
 
 export function PerfilIncompletoBanner({ completitud, compact = false }: Props) {
   const pathname = usePathname()
+  const { user } = useAuth()
   if (!completitud || completitud.completo) return null
 
   // Pasamos el path actual como returnTo asi al terminar de completar el
   // perfil, el usuario vuelve a donde estaba (lista o /inmuebles/nuevo).
-  const returnTo = pathname && pathname !== '/configuracion/datos-contrato'
+  const returnTo = pathname && pathname !== RUTA_DATOS_INMOBILIARIA
     ? `?returnTo=${encodeURIComponent(pathname)}`
     : ''
 
@@ -39,7 +42,7 @@ export function PerfilIncompletoBanner({ completitud, compact = false }: Props) 
       <IconAlertTriangle size={20} className="text-amber-600 mt-0.5 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-amber-900">
-          Complete sus Datos para contrato antes de publicar inmuebles
+          Complete {user?.rol === 'propietario' ? 'sus datos de propietario' : 'los datos de su inmobiliaria'} antes de publicar inmuebles
         </p>
         <p className="text-xs text-amber-800 mt-1">
           Sin estos datos los contratos de arrendamiento que se generen para sus inmuebles van a salir con campos en blanco.
@@ -58,7 +61,7 @@ export function PerfilIncompletoBanner({ completitud, compact = false }: Props) 
           </div>
         )}
         <Link
-          href={`/configuracion/datos-contrato${returnTo}`}
+          href={`${RUTA_DATOS_INMOBILIARIA}${returnTo}`}
           className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-amber-600 text-white text-xs font-medium rounded hover:bg-amber-700 transition-colors"
         >
           Completar ahora

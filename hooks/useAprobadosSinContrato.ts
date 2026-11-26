@@ -63,7 +63,8 @@ export function useAprobadosSinContrato() {
     setIsLoading(true)
     setError(null)
     try {
-      setExpedientes(await cargarAprobadosSinContrato(50))
+      // El máximo de la API por página; el contador de la pestaña es el total (GET /oficina-virtual/conteos).
+      setExpedientes(await cargarAprobadosSinContrato(100))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar los estudios aprobados')
       setExpedientes([])

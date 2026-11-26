@@ -31,6 +31,7 @@ import {
   rotuloCoarrendatario,
   terminoSinAprobar,
   textoCoarrendatario,
+  textoFirmarHastaCambio,
   textoPlazoReapertura,
   textoVerificacionAnalista,
   titularEstudioTerminado,
@@ -73,7 +74,7 @@ test('coarrendatario sin persona_a5d, estudio en curso: los textos de la Adenda 
   assert.equal(textoCoarrendatario('condicionado', null), 'La evaluación del coarrendatario la revisa un analista de Cofianza.')
 })
 
-test('rótulo del coarrendatario: ni «Válido» con el estudio no aprobable ni «En revisión» con el estudio terminado', () => {
+test('rótulo del coarrendatario: ni «Válido» con el estudio no aprobado ni «En revisión» con el estudio terminado', () => {
   assert.equal(rotuloCoarrendatario('aprobado', null), 'Válido')
   assert.equal(rotuloCoarrendatario('rechazado', null), 'No califica')
   assert.equal(rotuloCoarrendatario('condicionado', null), 'En revisión')
@@ -101,7 +102,7 @@ test('titular sin persona_a5d: sin «Aprobado» junto a «terminó sin aprobar»
   assert.deepEqual(titularEstudioTerminado(titular({ resultado: 'condicionado' }), 'cerrado'), { rotulo: ROTULO_SIN_EFECTO, texto: TEXTO_ESTUDIO_CERRADO })
   assert.deepEqual(titularEstudioTerminado(titular({ resultado: 'condicionado' }), 'cerrado_sin_aprobar'), { rotulo: ROTULO_SIN_EFECTO, texto: TEXTO_ESTUDIO_CERRADO })
   assert.deepEqual(titularEstudioTerminado(titular(), 'cerrado_sin_aprobar'), { rotulo: ROTULO_SIN_EFECTO, texto: TEXTO_ESTUDIO_CERRADO })
-  // Lo de siempre: estudio en curso, cerrado con la evaluación aprobada, no aprobable, negada por el analista,
+  // Lo de siempre: estudio en curso, cerrado con la evaluación aprobada, no aprobado, negada por el analista,
   // con el resultado que envía la API o con la condición del coarrendatario.
   assert.equal(titularEstudioTerminado(titular(), null), null)
   assert.equal(titularEstudioTerminado(titular(), 'cerrado'), null)
@@ -204,7 +205,7 @@ test('bloque 4: verificado el segundo firmante, qué pasa (con el estudio ya apr
   for (const texto of [efectoVerificacionSegundo(true), fraseResultadoLimpio(true)]) assert.doesNotMatch(texto, /esta persona queda vinculada/)
 })
 
-test('bloque 4: no aprobable con salida, cuando la API dice que a una persona se la puede reemplazar', async () => {
+test('bloque 4: no aprobado con salida, cuando la API dice que a una persona se la puede reemplazar', async () => {
   const { ofreceReemplazo, personaA5dUsable } = await import('./personaEstudio')
   const persona = (extra: Partial<IPersonaA5d> = {}): IPersonaA5d => ({ papel: 'sin_papel', etiqueta: 'No pasó', texto: 'No pasó la evaluación: puede reemplazarla por otra persona.', ...extra })
   // El campo de la API (solo viaja con true), que sobrevive a personaA5dUsable.
@@ -275,17 +276,17 @@ test('plazo de la reapertura después de cargar a la persona: la fecha de la API
 test('textos de la reapertura', () => {
   assert.equal(
     TEXTO_CANCELAR_REAPERTURA,
-    'El estudio vuelve a quedar no aprobable y Cofianza devuelve el pago si la consulta no se hizo. La persona anterior no vuelve al estudio.',
+    'El estudio vuelve a quedar no aprobado y Cofianza devuelve el pago si la consulta no se hizo. La persona anterior no vuelve al estudio.',
   )
   // Bloque 4: la devolución, condicionada (no todo cambio cobra una consulta adicional); el enlace vencido no la promete.
   assert.equal(
     TEXTO_CANCELAR_INVITACION_REAPERTURA,
-    'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobable y, si pagó la consulta adicional, Cofianza devuelve el pago.',
+    'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobado y, si pagó la consulta adicional, Cofianza devuelve el pago.',
   )
-  assert.equal(TOAST_INVITACION_CANCELADA_REAPERTURA, 'Invitación cancelada. El estudio volvió a no aprobable.')
+  assert.equal(TOAST_INVITACION_CANCELADA_REAPERTURA, 'Invitación cancelada. El estudio volvió a quedar no aprobado.')
   assert.equal(
     TEXTO_ENLACE_VENCIDO_REAPERTURA,
-    'Venció el enlace: el cambio se cierra y el estudio vuelve a no aprobable; si pagó la consulta adicional, Cofianza devuelve el pago.',
+    'Venció el enlace: el cambio se cierra y el estudio vuelve a quedar no aprobado; si pagó la consulta adicional, Cofianza devuelve el pago.',
   )
   // La devolución nunca sin condición.
   assert.doesNotMatch(TEXTO_ENLACE_VENCIDO_REAPERTURA, /devolverá el pago\.$|y Cofianza devuelve/)
@@ -361,4 +362,14 @@ test('bloque 4: segundo firmante en verificación (respaldo cuando la API no man
   assert.equal(coarrendatarioEnVerificacion({ estado: 'pendiente_aceptacion' }), false)
   assert.equal(coarrendatarioEnVerificacion({ estado: 'retirado', estudio: { estado: 'completado', resultado: 'condicionado' } }), false)
   assert.equal(coarrendatarioEnVerificacion(null), false)
+})
+
+// Revisión de lógica de la Adenda 6 §7 (punto 1): la cotización del cambio de persona trae hasta cuándo el resultado
+// permite enviar a firma (`firmar_hasta`): la web lo dice con fecha y hora de Colombia, sin calcular nada.
+test('textoFirmarHastaCambio: la fecha y la hora que manda la API; sin fecha, nada', () => {
+  const t = textoFirmarHastaCambio('2026-12-07T14:00:00Z') ?? ''
+  assert.match(t, /^El resultado de este estudio permite enviar el contrato a firma hasta el 7 de diciembre de 2026 a las 9:00\s?a\.\s?m\.; cambiar a la persona no amplía ese plazo\.$/)
+  assert.equal(textoFirmarHastaCambio(null), null)
+  assert.equal(textoFirmarHastaCambio(undefined), null)
+  assert.equal(textoFirmarHastaCambio('no es fecha'), null)
 })

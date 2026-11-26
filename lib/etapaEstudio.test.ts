@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { calcularEtapa, turnoDeEtapa, type DatosEtapa } from './etapaEstudio'
+import { calcularEtapa, esperaCargaNotariaContratos, turnoDeEtapa, type DatosEtapa } from './etapaEstudio'
 import { queSigue } from './ayudaEstudio'
 
 const base: DatosEtapa = {
@@ -214,7 +214,7 @@ test('punto 7: vencimiento del resultado en días de Colombia', async () => {
   assert.equal(v('2026-11-30T15:00:00Z')?.titulo, 'El resultado sirve hasta el 30 de noviembre de 2026')
 })
 
-test('estudio reabierto por un reemplazo: espera a la persona nueva, nunca «No aprobable» ni «En evaluación»', async () => {
+test('estudio reabierto por un reemplazo: espera a la persona nueva, nunca «No aprobado» ni «En evaluación»', async () => {
   const { ETAPA_LABEL } = await import('./etapaEstudio')
   const reabierto = { ...base, estado: 'en_revision' as DatosEtapa['estado'], titularEstado: 'completado', reaperturaAbierta: true }
   assert.equal(calcularEtapa(reabierto), 'reapertura')
@@ -254,7 +254,7 @@ test('punto 11: cuatro pasos fijos, el mismo nombre en todos los casos', async (
   // Todas las etapas tienen paso.
   for (const e of Object.keys(ETAPA_LABEL) as Etapa[]) assert.equal(typeof PASO_DE_ETAPA[e], 'number', e)
 
-  // El nombre no cambia con la etapa: ni «Aprobado» en el contrato ni «No aprobable» en el resultado.
+  // El nombre no cambia con la etapa: ni «Aprobado» en el contrato ni «No aprobado» en el resultado.
   assert.equal(rotuloPaso(2, 'contrato'), 'Contrato')
   assert.equal(rotuloPaso(2, 'no_aprobado'), 'Contrato')
   assert.equal(rotuloPaso(PASO_RESULTADO, 'no_aprobado'), 'Resultado')
@@ -268,7 +268,7 @@ test('punto 11: cuatro pasos fijos, el mismo nombre en todos los casos', async (
   assert.equal(rotuloPaso(PASO_RESULTADO, null), 'Resultado')
   assert.equal(rotuloPaso(PASO_RESULTADO, 'no_aprobado', true), 'Resultado')
 
-  // El no aprobable marca el resultado en rojo; el vencido en gris; lo demás, como siempre.
+  // El no aprobado marca el resultado en rojo; el vencido en gris; lo demás, como siempre.
   assert.equal(tonoDelPaso('no_aprobado'), 'rojo')
   assert.equal(tonoDelPaso('vencido'), 'gris')
   assert.equal(tonoDelPaso('decision'), 'normal')
@@ -397,19 +397,19 @@ test('bloque 4: el vencimiento se cuenta contra firmar_hasta (el margen que nece
   const v = (firmarHasta: string | null | undefined, etapa: Parameters<typeof vigenciaResultado>[0] = 'contrato') =>
     vigenciaResultado(etapa, { hasta, firmarHasta, ahoraMs })
   const con = v('2026-12-10T14:00:00Z')
-  assert.equal(con?.texto, 'Envíe a firma antes del 10 de diciembre (17 días)')
+  assert.equal(con?.texto, 'Vence en 20 días · envíe a firma antes del 10 de diciembre')
   assert.equal(con?.tono, 'gris')
   assert.equal(con?.titulo, 'Después de esa fecha ya no alcanza el tiempo para firmar; el resultado vence el 13 de diciembre de 2026')
-  // Ámbar desde los 7 días para firmar (aunque al resultado le queden 10).
-  assert.equal(v('2026-11-30T14:00:00Z')?.texto, 'Envíe a firma antes del 30 de noviembre (7 días)')
+  // Ámbar desde los 7 días para firmar (aunque al resultado le queden más).
+  assert.equal(v('2026-11-30T14:00:00Z')?.texto, 'Vence en 20 días · envíe a firma antes del 30 de noviembre')
   assert.equal(v('2026-11-30T14:00:00Z')?.tono, 'ambar')
-  assert.equal(v('2026-11-24T14:00:00Z')?.texto, 'Envíe a firma antes del 24 de noviembre (1 día)')
+  assert.equal(v('2026-11-24T14:00:00Z')?.texto, 'Vence en 20 días · envíe a firma antes del 24 de noviembre')
   // Más tarde hoy, en hora de Colombia.
-  assert.equal(v('2026-11-24T03:00:00Z')?.texto, 'Envíe a firma hoy')
+  assert.equal(v('2026-11-24T03:00:00Z')?.texto, 'Vence en 20 días · envíe a firma hoy')
   // De otro año, con el año.
   assert.match(
     vigenciaResultado('contrato', { hasta: '2027-01-08T15:00:00Z', firmarHasta: '2027-01-05T14:00:00Z', ahoraMs })?.texto ?? '',
-    /^Envíe a firma antes del 5 de enero de 2027 \(43 días\)$/,
+    /^Vence en 46 días · envíe a firma antes del 5 de enero de 2027$/,
   )
   // Ya pasó el margen y la API todavía no marcó la traba: nunca un plazo como si alcanzara.
   const sinMargen = v('2026-11-23T14:00:00Z')
@@ -420,7 +420,7 @@ test('bloque 4: el vencimiento se cuenta contra firmar_hasta (el margen que nece
   assert.equal(v(undefined)?.titulo, 'El resultado sirve hasta el 13 de diciembre de 2026')
   assert.equal(v('no es fecha')?.texto, 'Vence en 20 días')
   // Vale igual en las etapas con traba; con el resultado ya vencido manda «Vencido».
-  assert.equal(v('2026-12-10T14:00:00Z', 'canon_excede')?.texto, 'Envíe a firma antes del 10 de diciembre (17 días)')
+  assert.equal(v('2026-12-10T14:00:00Z', 'canon_excede')?.texto, 'Vence en 20 días · envíe a firma antes del 10 de diciembre')
   assert.equal(v('2026-12-10T14:00:00Z', 'firma'), null)
   assert.equal(vigenciaResultado('contrato', { hasta: '2026-11-22T15:00:00Z', firmarHasta: '2026-11-19T14:00:00Z', ahoraMs })?.texto, 'Vencido')
   // La etapa «vencido» no cambia: la decide la traba de la API.
@@ -455,11 +455,11 @@ test('bloque 4: aviso al aprobar: si algo impide el contrato, se dice eso', asyn
   assert.equal(avisoEstudioAprobado(null, { sinInmueble: true }), 'Estudio aprobado. Para crear el contrato, primero vincule el inmueble.')
 })
 
-test('bloque 4: no aprobable con una persona reemplazable: la salida va antes que la apelación', () => {
+test('bloque 4: no aprobado con una persona reemplazable: la salida va antes que la apelación', () => {
   const o = { vista: 'gestor' as const, analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false }
   assert.equal(
     queSigue('no_aprobado', { ...o, reemplazoPosible: true }),
-    'El estudio no quedó aprobable. Puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
+    'El estudio no quedó aprobado. Puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
   )
   assert.match(queSigue('no_aprobado', { ...o, vista: 'equipo', reemplazoPosible: true }), /Alguien de su equipo con permiso de edición puede reemplazar/)
   assert.match(queSigue('no_aprobado', { ...o, vista: 'cofianza', reemplazoPosible: true }), /La inmobiliaria o el propietario pueden reemplazar/)
@@ -469,8 +469,8 @@ test('bloque 4: no aprobable con una persona reemplazable: la salida va antes qu
   }
   assert.doesNotMatch(queSigue('no_aprobado', { ...o, reemplazoPosible: true, enLista: true }), /aquí abajo|vea abajo/)
   // Sin reemplazo posible, como antes.
-  assert.equal(queSigue('no_aprobado', o), 'El estudio no quedó aprobable. Abajo están el motivo y, si aplica, cómo apelar.')
-  // Solo en el no aprobable.
+  assert.equal(queSigue('no_aprobado', o), 'El estudio no quedó aprobado. Abajo están el motivo y, si aplica, cómo apelar.')
+  // Solo en el no aprobado.
   assert.doesNotMatch(queSigue('contrato', { ...o, reemplazoPosible: true }), /reemplazar/)
 })
 
@@ -519,4 +519,19 @@ test('Adenda 6 §4: las listas del solicitante sin verificar en un estudio aprob
   assert.equal(queSigue('solicitante_en_verificacion', { ...o, textoTraba: 'Texto de la API.' }), 'Texto de la API.')
   // Al analista: qué le toca.
   assert.equal(queSigue('solicitante_en_verificacion', { ...o, vista: 'cofianza', analista: true }), TEXTO_REGISTRAR_LISTAS_SOLICITANTE)
+})
+
+test('Adenda 6 §2: en firma esperan las partes; en notaría, el turno es de quien gestiona (revisión de integración, punto 1)', () => {
+  assert.equal(turnoDeEtapa('firma', false), 'firmas')
+  assert.equal(turnoDeEtapa('firma', false, {}, { firmaNotaria: true }), 'gestor')
+  // La marca solo cambia la etapa de firma.
+  assert.equal(turnoDeEtapa('vigente', false, {}, { firmaNotaria: true }), null)
+  // Del listado de contratos del estudio: el V3 en firma con firma_notaria (la misma regla que la lista de estudios).
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'pendiente_firma', destinacion: 'vivienda', firma_notaria: true }]), true)
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'pendiente_firma', destinacion: 'vivienda', firma_notaria: false }]), false)
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'pendiente_firma', destinacion: 'vivienda' }]), false)
+  // El flujo anterior (sin destinación) no cuenta: allí la carga la ofrece el contrato, sin turno en la lista.
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'pendiente_firma', destinacion: null, firma_notaria: true }]), false)
+  assert.equal(esperaCargaNotariaContratos([{ estado: 'vigente', destinacion: 'vivienda', firma_notaria: true }]), false)
+  assert.equal(esperaCargaNotariaContratos([]), false)
 })

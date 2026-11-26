@@ -71,7 +71,7 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   firma_incompleta: 'Firma incompleta',
   vigente: 'Contrato vigente',
   finalizado: 'Finalizado',
-  no_aprobado: 'No aprobable',
+  no_aprobado: 'No aprobado',
   cancelado: 'Cancelado',
   // Un solo nombre para el estudio reabierto (la persona nueva puede ser el solicitante o el segundo firmante).
   reapertura: 'Reabierto: esperando a la persona nueva',
@@ -208,7 +208,7 @@ export const ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO: EtapaEstudio[] = [
 ]
 
 /** Pesos sin decimales y sin el espacio duro de Intl (como formatCurrency, sin importar constants: es pura). */
-const pesos = (cop: number) =>
+export const pesos = (cop: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 })
     .format(cop)
     .replace(/\u00a0/g, '')
@@ -266,15 +266,13 @@ function plazoHasta(iso: string, ahoraMs: number): { vencido: boolean; dias: num
 
 const venceEn = (dias: number) => (dias <= 0 ? 'Vence hoy' : `Vence en ${dias} ${dias === 1 ? 'día' : 'días'}`)
 
-const enDias = (dias: number) => `${dias} ${dias === 1 ? 'día' : 'días'}`
-
 /**
  * Hasta cuándo sirve el resultado (punto 7 del reporte de Gerencia, 21-nov), en días de calendario de
  * Colombia; ámbar con DIAS_ALERTA_VIGENCIA o menos, rojo vencido.
- * - Con `firmarHasta` (la API: fin de la vigencia menos el margen que necesita la firma) se cuenta contra
- *   esa fecha, que es la que de verdad le queda a quien gestiona: «Envíe a firma antes del 10 de diciembre
- *   (5 días)» o «Envíe a firma hoy». Pasada esa fecha sin que la API haya marcado la traba, «Vence en N
- *   días · ya no alcanza para firmar».
+ * - Con `firmarHasta` (la API: fin de la vigencia menos el margen que necesita la firma), las dos fechas
+ *   (Adenda 6 §7): «Vence en 8 días · envíe a firma antes del 10 de diciembre» o «Vence en 3 días · envíe a
+ *   firma hoy»; el tono se cuenta contra la de la firma, que es la que de verdad le queda a quien gestiona.
+ *   Pasada esa fecha sin que la API haya marcado la traba, «Vence en N días · ya no alcanza para firmar».
  * - Sin `firmarHasta` (API anterior): «Vence en N días», «Vence hoy» o «Vencido», contra el fin de la vigencia.
  * - Con la etapa 'vencido': «Vencido» (gris, como la etapa) o, si todavía no vence pero ya no alcanza para
  *   firmar (`sinMargen`), «Vence en N días · ya no alcanza para firmar»: nunca un plazo como si sirviera.
@@ -310,7 +308,7 @@ export function vigenciaResultado(
       }
     }
     return {
-      texto: firma.dias <= 0 ? 'Envíe a firma hoy' : `Envíe a firma antes del ${fechaLegible(o.firmarHasta, o.ahoraMs)} (${enDias(firma.dias)})`,
+      texto: `${venceEn(plazo.dias)} · ${firma.dias <= 0 ? 'envíe a firma hoy' : `envíe a firma antes del ${fechaLegible(o.firmarHasta, o.ahoraMs)}`}`,
       tono: firma.dias <= DIAS_ALERTA_VIGENCIA ? 'ambar' : 'gris',
       titulo: `Después de esa fecha ya no alcanza el tiempo para firmar; el resultado vence el ${fechaLegible(o.hasta)}`,
     }
@@ -430,6 +428,14 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
   return 'consulta'
 }
 
+/**
+ * Adenda 6 §2 y 6.1 §4: el contrato V3 en firma espera el registro del contrato firmado en notaría (`firma_notaria` del listado
+ * de contratos del estudio: la misma regla que `firma_notaria` de la lista de estudios). Pura.
+ */
+export const esperaCargaNotariaContratos = (
+  contratos: ReadonlyArray<{ estado: string; destinacion?: string | null; firma_notaria?: unknown }>,
+): boolean => contratos.some((c) => c.estado === 'pendiente_firma' && !!c.destinacion && c.firma_notaria === true)
+
 /** De quién es el siguiente paso. */
 export type Turno = 'gestor' | 'prospecto' | 'cofianza' | 'firmas'
 
@@ -468,7 +474,13 @@ export function turnoSegundoFirmante(o: DatosTurnoSegundoFirmante = {}): Turno |
  * hay turno (cerrado o sin paso pendiente de alguien). `segundo`: lo que decide el
  * turno del aprobado con segundo firmante (turnoSegundoFirmante).
  */
-export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean, segundo: DatosTurnoSegundoFirmante = {}): Turno | null {
+export function turnoDeEtapa(
+  etapa: EtapaEstudio,
+  conCondicion: boolean,
+  segundo: DatosTurnoSegundoFirmante = {},
+  /** Adenda 6.1 §4: el contrato en firma espera el registro del contrato firmado en notaría (lo dice la API). */
+  o: { firmaNotaria?: boolean } = {},
+): Turno | null {
   if (etapa === 'segundo_firmante') return turnoSegundoFirmante(segundo)
   switch (etapa) {
     case 'habilitar':
@@ -501,7 +513,8 @@ export function turnoDeEtapa(etapa: EtapaEstudio, conCondicion: boolean, segundo
     case 'decision':
       return conCondicion ? 'prospecto' : 'cofianza'
     case 'firma':
-      return 'firmas'
+      // En notaría no hay firmas que esperar: descargarlo, hacerlo autenticar y registrarlo le toca a quien gestiona.
+      return o.firmaNotaria ? 'gestor' : 'firmas'
     default:
       return null
   }

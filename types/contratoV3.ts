@@ -97,6 +97,13 @@ export interface EstadoAsistente {
     rutaBFirmaHabilitada: boolean;
     /** Adenda 2 §9: con la biometría de firma, primero va el correo de verificación de identidad y después Auco. */
     biometriaFirma: boolean;
+    /** Adenda 6 §2: con lo que hay hoy, el contrato se firmará en notaría (lo decide del todo el envío). */
+    firmaNotaria?: boolean;
+    /**
+     * Adenda 6.1 §3: al enviarlo, cada persona arrendataria hace el cotejo de identidad (enlace por correo): con todas
+     * aprobadas sale a firma digital; si alguna no lo completa, a notaría. Ausente si no rige.
+     */
+    cotejoFirma?: boolean;
     adicionales: {
       maximo: number; ordinales: string[] /* 25, desde la 1.ª adicional de ESTE contrato */;
       /** texto = responsabilidad (solo propias); modelos = los modelos sin cambios son texto de Cofianza (Adenda 1 contratos, resp. 13). */
@@ -192,8 +199,26 @@ export interface EnvioV3 {
    * `hasta` = el plazo nuevo si se prorroga ahora; `usadaEn` = cuándo se prorrogó.
    */
   prorroga: null | { puede: boolean; motivo: string | null; hasta: string | null; usadaEn: string | null };
-  /** Verificaciones de identidad que faltan antes de crear el sobre (0 sin biometría). */
+  /**
+   * Adenda 6 §2 y 6.1 §4: el contrato se firma con firma autenticada en notaría (alguna persona sin cotejo aprobado).
+   * La inmobiliaria lo REGISTRA con la fecha de autenticación (dentro de `rango`) tras aceptar `aviso`; el PDF es
+   * opcional. `registro` = la constancia (activó la fianza) y el documento si ya se cargó. null/ausente = Auco.
+   */
+  notaria?: null | {
+    motivo: string;
+    aviso: string;
+    rango: null | { desde: string; hasta: string; dias: number; maximo: string };
+    registro: null | {
+      fechaAutenticacion: string;
+      en: string;
+      avisoVersion: string;
+      documento: null | { nombre: string; en: string | null };
+    };
+  };
+  /** Verificaciones (Adenda 2 §9) o cotejos de identidad (Adenda 6.1) que faltan antes de crear el sobre. */
   identidadPendientes: number;
+  /** Adenda 6.1 §3: el avance del cotejo de identidad al firmar, sin el resultado de nadie. Ausente sin cotejos. */
+  cotejo?: null | { total: number; aprobados: number; pendientes: number };
   /** FIRMA INCOMPLETA + estudio vigente (§11.7.5). */
   reenvio: { puede: boolean; motivo: string | null };
   /** EN FIRMA sin sobre vivo ni identidad pendiente: el envío falló y se puede reintentar. */

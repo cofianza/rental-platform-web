@@ -8,6 +8,10 @@
  *   - Habilitar evaluacion → /expedientes/[id] (detalle del estudio)
  *   - Generar contrato → /expedientes/[id] (donde vive AccionContratoPendienteCard)
  * No duplicamos modales aqui — el usuario ejecuta desde el destino.
+ *
+ * Reporte de la Oficina Virtual (25-nov), punto 1: cada grupo dice su TOTAL (el de su lista, de la API) aunque
+ * muestre hasta 5 filas, con «Ver los N» hacia la lista completa: el inicio contaba las filas que mostraba (5) y
+ * Contratos el total.
  */
 
 'use client'
@@ -82,7 +86,8 @@ function AccionesPendientes() {
           href="/citas"
           className="min-h-10 text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
         >
-          Ver todas las citas
+          {/* Reporte de la Oficina Virtual (25-nov), punto 13: «Ver todas las citas» → «Ver mis visitas». */}
+          Ver mis visitas
           <IconChevronRight size={14} />
         </Link>
       </div>
@@ -102,54 +107,103 @@ function AccionesPendientes() {
         </Link>
       )}
 
-      {data.porConfirmar.length > 0 && (
+      {data.totales.porConfirmar > 0 && (
         <CitaSection
-          title="Citas por confirmar"
+          title="Visitas por confirmar"
           icon={<IconCalendar size={16} className="text-blue-600" />}
           items={data.porConfirmar}
+          total={data.totales.porConfirmar}
+          verTodas="/citas"
           ctaLabel="Confirmar"
           destino="cita"
         />
       )}
 
-      {data.porRealizar.length > 0 && (
+      {data.totales.porRealizar > 0 && (
         <CitaSection
-          title="Citas por realizar"
+          title="Visitas por realizar"
           icon={<IconClock size={16} className="text-amber-600" />}
           items={data.porRealizar}
+          total={data.totales.porRealizar}
+          verTodas="/citas"
           ctaLabel="Marcar realizada"
           destino="cita"
         />
       )}
 
-      {data.porHabilitar.length > 0 && (
+      {data.totales.porHabilitar > 0 && (
         <CitaSection
           title="Evaluaciones por habilitar"
           icon={<IconShieldCheck size={16} className="text-green-600" />}
           items={data.porHabilitar}
+          total={data.totales.porHabilitar}
+          verTodas="/citas"
           ctaLabel="Habilitar evaluación"
           destino="expediente"
         />
       )}
 
-      {data.porGenerarContrato.length > 0 && (
+      {data.totales.porGenerarContrato > 0 && (
         <ExpedienteSection
           title="Contratos por generar"
           icon={<IconFolderOpen size={16} className="text-primary-600" />}
           items={data.porGenerarContrato}
+          total={data.totales.porGenerarContrato}
+          verTodas="/contratos"
           ctaLabel="Generar contrato"
         />
       )}
 
       {/* Reporte de Gerencia (21-nov): aprobados que todavía no pueden pasar al contrato; sin «Generar contrato».
           El mismo nombre que su panel de la pestaña Contratos (ContratosInmobiliariaView). */}
-      {data.conTrabaContrato.length > 0 && (
+      {data.totales.conTrabaContrato > 0 && (
         <ExpedienteSection
           title="Aprobados con algo por resolver"
           icon={<IconFolderOpen size={16} className="text-amber-600" />}
           items={data.conTrabaContrato}
+          total={data.totales.conTrabaContrato}
+          verTodas="/contratos"
           ctaLabel="Ver qué falta"
         />
+      )}
+    </div>
+  )
+}
+
+/** El encabezado del grupo con su TOTAL y, si hay más que las filas que se ven, «Ver los N» hacia la lista completa. */
+function EncabezadoGrupo({
+  title,
+  icon,
+  total,
+  vistos,
+  verTodas,
+  femenino = false,
+}: {
+  title: string
+  icon: React.ReactNode
+  total: number
+  vistos: number
+  verTodas: string
+  /** «Ver las 7» (citas, evaluaciones) o «Ver los 7» (contratos, aprobados). */
+  femenino?: boolean
+}) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3">
+      <div className="flex items-center gap-2">
+        {icon}
+        <h3 className="text-sm font-semibold text-gray-700">
+          {title} <span className="font-normal text-gray-500">({total.toLocaleString('es-CO')})</span>
+        </h3>
+      </div>
+      {total > vistos && (
+        <Link
+          href={verTodas}
+          aria-label={`Ver ${femenino ? 'las' : 'los'} ${total.toLocaleString('es-CO')}: ${title.toLowerCase()}`}
+          className="inline-flex min-h-10 items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800"
+        >
+          {vistos > 0 ? `Ver ${femenino ? 'las' : 'los'} ${total.toLocaleString('es-CO')}` : 'Ver la lista'}
+          <IconChevronRight size={14} />
+        </Link>
       )}
     </div>
   )
@@ -159,34 +213,37 @@ function CitaSection({
   title,
   icon,
   items,
+  total,
+  verTodas,
   ctaLabel,
   destino,
 }: {
   title: string
   icon: React.ReactNode
   items: ICita[]
+  /** El total del grupo (puede ser mayor que las filas). */
+  total: number
+  verTodas: string
   ctaLabel: string
   /** Donde se ejecuta la accion: la tarjeta del kanban o el detalle del estudio. */
   destino: 'expediente' | 'cita'
 }) {
   return (
     <div>
-      <div className="flex items-center gap-2 mb-3">
-        {icon}
-        <h3 className="text-sm font-semibold text-gray-700">
-          {title} <span className="text-gray-500 font-normal">({items.length})</span>
-        </h3>
-      </div>
-      <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
-        {items.map((cita) => (
-          <CitaItemRow key={cita.id} cita={cita} ctaLabel={ctaLabel} destino={destino} />
-        ))}
-      </ul>
+      <EncabezadoGrupo title={title} icon={icon} total={total} vistos={items.length} verTodas={verTodas} femenino />
+      {items.length > 0 && (
+        <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+          {items.map((cita) => (
+            <CitaItemRow key={cita.id} cita={cita} ctaLabel={ctaLabel} destino={destino} />
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
 
-function CitaItemRow({
+/** Una visita con su acción (también la usa el Inicio de la inmobiliaria, TareasInicio). */
+export function CitaItemRow({
   cita,
   ctaLabel,
   destino,
@@ -245,31 +302,34 @@ function ExpedienteSection({
   title,
   icon,
   items,
+  total,
+  verTodas,
   ctaLabel,
 }: {
   title: string
   icon: React.ReactNode
   items: IExpediente[]
+  /** El total del grupo (puede ser mayor que las filas). */
+  total: number
+  verTodas: string
   ctaLabel: string
 }) {
   return (
     <div>
-      <div className="flex items-center gap-2 mb-3">
-        {icon}
-        <h3 className="text-sm font-semibold text-gray-700">
-          {title} <span className="text-gray-500 font-normal">({items.length})</span>
-        </h3>
-      </div>
-      <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
-        {items.map((exp) => (
-          <ExpedienteItemRow key={exp.id} expediente={exp} ctaLabel={ctaLabel} />
-        ))}
-      </ul>
+      <EncabezadoGrupo title={title} icon={icon} total={total} vistos={items.length} verTodas={verTodas} />
+      {items.length > 0 && (
+        <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
+          {items.map((exp) => (
+            <ExpedienteItemRow key={exp.id} expediente={exp} ctaLabel={ctaLabel} />
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
 
-function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; ctaLabel: string }) {
+/** Un estudio aprobado sin contrato con su acción (también la usa el Inicio de la inmobiliaria, TareasInicio). */
+export function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; ctaLabel: string }) {
   const inmueble = expediente.inmueble
   const solicitante = expediente.solicitante
   // Aprobado con traba (canon o segundo firmante sin terminar): el mismo nombre que la lista.

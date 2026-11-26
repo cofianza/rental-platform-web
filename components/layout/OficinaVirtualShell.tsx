@@ -1,15 +1,18 @@
 /**
- * Shell de layout para propietario/inmobiliaria — reemplaza Sidebar+Header
- * por una barra superior con logo, breadcrumb mínimo, notificaciones y
- * avatar, seguida del tab bar de 7 secciones de la Oficina Virtual.
+ * Shell de layout de la inmobiliaria (el propietario tiene PropietarioShell) — reemplaza Sidebar+Header
+ * por una barra superior con logo, notificaciones y avatar, seguida de la barra de secciones de la
+ * Oficina Virtual (OficinaVirtualNav).
  *
  * (Gerencia 12-may-2026, mockups 13_*propietario.html y 13_*_v2.html.)
  *
  * El bloque de usuario (arriba a la derecha) muestra el nombre de la
  * inmobiliaria (razón social) + su logo si lo subió, y es un menú desplegable
- * con accesos a Configuración / Mi Inmobiliaria / Mi cuenta / Cerrar sesión.
+ * con accesos a Analítica / Configuración / Datos de mi inmobiliaria / Mi cuenta / Cerrar sesión.
  * El logo y la razón social se leen del perfil arrendador (que ya resuelve al
  * perfil canónico de la organización), no del usuario logueado.
+ *
+ * Reporte de la Oficina Virtual (25-nov): Analítica y Configuración salieron de la barra y van en este menú
+ * (punto 9); la franja «Su Oficina Virtual» ya no va aquí, sobre todas las secciones, sino solo en Inicio (punto 12).
  */
 
 'use client'
@@ -18,17 +21,18 @@ import { esStorageSupabase } from '@/lib/imagenes'
 import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth.store'
 import { CofianzaLogo } from '@/components/ui/CofianzaLogo'
-import { IconLogOut, IconChevronDown, IconSettings, IconBuilding2, IconUser } from '@/components/icons'
+import { IconLogOut, IconChevronDown, IconSettings, IconBuilding2, IconUser, IconBarChart3 } from '@/components/icons'
 import { useAuth } from '@/hooks/useAuth'
 import { perfilArrendadorService } from '@/services/perfilArrendadorService'
 import { NotificationBell } from './NotificationBell'
 import { OficinaVirtualNav } from './OficinaVirtualNav'
-import { OficinaVirtualHero } from '@/components/dashboard/OficinaVirtualHero'
 import { BloqueosPendientesBanner } from '@/components/expedientes/BloqueosPendientesBanner'
 import { PerfilPersonalIncompletoBanner } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import { AvisosServicioBanner } from '@/components/avisos/AvisosServicioBanner'
+import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
 
 const SUBTITULO_MIEMBRO = {
   owner: 'Titular',
@@ -44,6 +48,8 @@ interface Props {
 export function OficinaVirtualShell({ rol, children }: Props) {
   const user = useAuthStore((s) => s.user)
   const { logout } = useAuth()
+  const pathname = usePathname()
+  const enRuta = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
   // Logo + razón social de la organización (perfil arrendador canónico).
   // Fail-silent: si no hay datos (perfil sin completar), caemos al nombre del
@@ -158,19 +164,39 @@ export function OficinaVirtualShell({ rol, children }: Props) {
                     <p className="text-[11px] text-gray-500">{subtitulo}</p>
                   </div>
 
-                  <MenuLink href="/configuracion" onClick={() => setMenuOpen(false)} icon={<IconSettings size={16} />}>
+                  {/* Analítica y Configuración salieron de la barra de secciones (reporte del 25-nov, punto 9). */}
+                  <MenuLink
+                    href="/reportes"
+                    actual={enRuta('/reportes')}
+                    onClick={() => setMenuOpen(false)}
+                    icon={<IconBarChart3 size={16} />}
+                  >
+                    Analítica
+                  </MenuLink>
+                  <MenuLink
+                    href="/configuracion"
+                    actual={pathname === '/configuracion'}
+                    onClick={() => setMenuOpen(false)}
+                    icon={<IconSettings size={16} />}
+                  >
                     Configuración
                   </MenuLink>
                   {rol === 'inmobiliaria' && (
                     <MenuLink
-                      href="/configuracion/mi-inmobiliaria"
+                      href={RUTA_DATOS_INMOBILIARIA}
+                      actual={enRuta(RUTA_DATOS_INMOBILIARIA)}
                       onClick={() => setMenuOpen(false)}
                       icon={<IconBuilding2 size={16} />}
                     >
-                      Mi Inmobiliaria
+                      Datos de mi inmobiliaria
                     </MenuLink>
                   )}
-                  <MenuLink href="/configuracion/cuenta" onClick={() => setMenuOpen(false)} icon={<IconUser size={16} />}>
+                  <MenuLink
+                    href="/configuracion/cuenta"
+                    actual={enRuta('/configuracion/cuenta')}
+                    onClick={() => setMenuOpen(false)}
+                    icon={<IconUser size={16} />}
+                  >
                     Mi cuenta
                   </MenuLink>
 
@@ -183,7 +209,7 @@ export function OficinaVirtualShell({ rol, children }: Props) {
                       setMenuOpen(false)
                       logout()
                     }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-coral-50 hover:text-coral-700 transition-colors"
+                    className="w-full min-h-10 flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-coral-50 hover:text-coral-700 transition-colors"
                   >
                     <IconLogOut size={16} />
                     Cerrar sesión
@@ -195,11 +221,8 @@ export function OficinaVirtualShell({ rol, children }: Props) {
         </div>
       </header>
 
-      {/* Hero persistente full-width — sobre los tabs, igual al mockup 13_v2 */}
-      <OficinaVirtualHero />
-
-      {/* Tab bar */}
-      <OficinaVirtualNav rol={rol} />
+      {/* Barra de secciones. La franja «Su Oficina Virtual» va solo en Inicio (punto 12). */}
+      <OficinaVirtualNav />
 
       <main id="contenido" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 focus:outline-none">
         <AvisosServicioBanner />
@@ -213,11 +236,14 @@ export function OficinaVirtualShell({ rol, children }: Props) {
 
 function MenuLink({
   href,
+  actual = false,
   onClick,
   icon,
   children,
 }: {
   href: string
+  /** La pantalla abierta es esta (Analítica, Configuración…: ya no tienen pestaña en la barra). */
+  actual?: boolean
   onClick: () => void
   icon: React.ReactNode
   children: React.ReactNode
@@ -226,8 +252,9 @@ function MenuLink({
     <Link
       href={href}
       role="menuitem"
+      aria-current={actual ? 'page' : undefined}
       onClick={onClick}
-      className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-700 transition-colors"
+      className={`flex min-h-10 items-center gap-2.5 px-3 py-2 text-sm transition-colors hover:bg-gray-50 hover:text-primary-700 ${actual ? 'font-semibold text-primary-700' : 'text-gray-700'}`}
     >
       <span className="text-gray-500">{icon}</span>
       {children}

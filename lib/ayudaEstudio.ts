@@ -17,7 +17,7 @@ export const AYUDA = {
     'Si el nombre o el documento quedaron mal escritos, corríjalos antes de que la persona autorice y reenvíele el enlace. Corregir solo el nombre no gasta corrección del documento.',
   // Sin cortes ni números (Política §2).
   evaluacion:
-    'Cofianza revisa primero las condiciones que no admiten excepción, como una mora actual o aparecer en listas restrictivas. Si se cumplen, calcula su propio puntaje con el historial de pagos, el endeudamiento y el canon frente al ingreso; por eso un buen puntaje de la central no basta por sí solo. El resultado puede ser aprobado, aprobado con la condición de sumar un coarrendatario, en revisión de un analista o no aprobable. Normalmente llega en minutos; si hay coarrendatario, la decisión espera un tiempo limitado a que autorice.',
+    'Cofianza revisa primero las condiciones que no admiten excepción, como una mora actual o aparecer en listas restrictivas. Si se cumplen, calcula su propio puntaje con el historial de pagos, el endeudamiento y el canon frente al ingreso; por eso un buen puntaje de la central no basta por sí solo. El resultado puede ser aprobado, aprobado con la condición de sumar un coarrendatario, en revisión de un analista o no aprobado. Normalmente llega en minutos; si hay coarrendatario, la decisión espera un tiempo limitado a que autorice.',
   evaluaciones:
     'Las consultas a las centrales de riesgo de este estudio: la del titular y, si hay, la del coarrendatario. Cada persona se consulta apenas autoriza.',
   coarrendatario:
@@ -86,7 +86,7 @@ export const AYUDA_ETAPA: Record<EtapaEstudio, string> = {
   firma_incompleta: 'La firma quedó incompleta y la fianza no opera. Abra el contrato: allí verá qué aviso aceptar y si puede reenviarlo o debe cancelarlo.',
   vigente: 'El contrato está firmado y vigente.',
   finalizado: 'El estudio terminó y queda para consulta.',
-  no_aprobado: 'El estudio no quedó aprobable. Abajo están el motivo y, si aplica, cómo apelar.',
+  no_aprobado: 'El estudio no quedó aprobado. Abajo están el motivo y, si aplica, cómo apelar.',
   cancelado: 'El estudio se canceló y no continúa.',
   // Punto 5 del reporte: el mismo texto para todos (lo que falta lo hace la persona nueva).
   reapertura: TEXTO_REAPERTURA,
@@ -180,11 +180,11 @@ export const TEXTO_REGISTRAR_LISTAS_SOLICITANTE =
  */
 const NO_APROBADO_CON_REEMPLAZO: Record<VistaTurno, string> = {
   gestor:
-    'El estudio no quedó aprobable. Puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
+    'El estudio no quedó aprobado. Puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
   equipo:
-    'El estudio no quedó aprobable. Alguien de su equipo con permiso de edición puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
+    'El estudio no quedó aprobado. Alguien de su equipo con permiso de edición puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
   cofianza:
-    'El estudio no quedó aprobable. La inmobiliaria o el propietario pueden reemplazar a una persona o, si todavía aplica, el solicitante puede apelar (vea abajo).',
+    'El estudio no quedó aprobado. La inmobiliaria o el propietario pueden reemplazar a una persona o, si todavía aplica, el solicitante puede apelar (vea abajo).',
 }
 
 /**
@@ -238,6 +238,8 @@ export function queSigue(
     segundoEnVerificacion?: 'api' | 'web' | false
     /** No aprobable: alguna persona del estudio se puede reemplazar (lo dice el texto de `persona_a5d`). */
     reemplazoPosible?: boolean
+    /** Adenda 6.1 §4: el contrato en firma espera el registro del contrato firmado en notaría (no hay firma electrónica). */
+    firmaNotaria?: boolean
   },
 ): string {
   const analista = o.vista === 'cofianza' && o.analista
@@ -289,8 +291,18 @@ export function paraLista(texto: string): string {
   return EN_LISTA.reduce((t, [re, por]) => t.replace(re, por), texto)
 }
 
+/** Adenda 6.1 §4: el contrato en firma espera el registro en notaría; lo hace quien gestiona el estudio. */
+const FIRMA_NOTARIA: Record<VistaTurno, string> = {
+  gestor:
+    'El contrato se firma en notaría: descárguelo, hágalo autenticar en notaría y regístrelo en la pantalla del contrato, con la fecha del sello, antes de que venza el plazo. La fianza se activa con el registro.',
+  equipo:
+    'El contrato se firma en notaría: alguien de su equipo con permiso de edición lo descarga, lo hace autenticar en notaría y lo registra con la fecha del sello. La fianza se activa con el registro.',
+  cofianza: 'El contrato se firma en notaría: falta que quien gestiona el estudio registre el contrato autenticado. La fianza se activa con el registro.',
+}
+
 function queSigueBase(etapa: EtapaEstudio, o: Parameters<typeof queSigue>[1]): string {
   const gestor = o.vista === 'gestor'
+  if (etapa === 'firma' && o.firmaNotaria) return FIRMA_NOTARIA[o.vista]
   if (etapa === 'visita' && o.citaActiva && o.vista !== 'cofianza') {
     return o.vista === 'gestor'
       ? 'La visita ya está agendada. Cuando se haga, márquela como realizada en la tarjeta de la cita, aquí abajo.'

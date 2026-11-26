@@ -81,7 +81,13 @@ export type EstudioFiltro =
   | 'revision_cofianza'
   | 'en_proceso'
   | 'sin_estudio'
+  /** Reporte de la Oficina Virtual (25-nov), punto 13: «Esperando autorización» (la evaluación espera que el titular autorice). */
+  | 'sin_autorizar'
   | 'requiere_accion'
+  /** Reporte de la Oficina Virtual (25-nov), punto 1: cancelados o caducados y cerrados sin resultado. */
+  | 'cerrado'
+  /** Punto 11: espera solo que el titular firme la autorización (enlace vigente). Filtro, no pestaña. */
+  | 'espera_autorizacion'
 
 /**
  * Inmueble asociado al expediente
@@ -149,6 +155,12 @@ export interface IExpediente {
   depende_de?: 'gestor' | 'prospecto' | 'cofianza' | null
   /** Lista (RPC): estado del último contrato no cancelado, para el paso de la fila. */
   contrato_estado?: string | null
+  /**
+   * Lista (RPC, Adenda 6 §2 y 6.1 §4): el contrato V3 en firma espera el registro del contrato firmado en notaría. No
+   * hay firmas que esperar: el turno es de quien gestiona («registrar el contrato firmado en notaría»). Ausente con una
+   * API anterior.
+   */
+  firma_notaria?: boolean
   /** Adenda de precios §8.2: prioridad en la cola del analista (el caso R2 va 'baja'). */
   prioridad_revision?: 'baja' | 'normal' | 'alta'
   /** Solo Cofianza, en revisión: desde cuándo (lista y detalle; «En revisión hace N días»). */
@@ -197,6 +209,12 @@ export interface IExpediente {
    * el margen que necesita el proceso de firma). Ausente con una API anterior: se cuenta contra `vigencia_hasta`.
    */
   firmar_hasta?: string | null
+  /**
+   * Adenda 6 §7: evaluar de nuevo el estudio por un canon mayor (al reasignarlo o desde el contrato) no tiene costo
+   * hoy. false: requeriría una consulta adicional o el resultado ya venció. Solo en un aprobado evaluado con la Adenda
+   * 5; ausente en los demás (o con una API anterior): sin el dato no se promete «sin costo».
+   */
+  reevaluacion_sin_costo?: boolean
   /**
    * Lista y detalle: Cofianza verifica al segundo firmante ya evaluado (el turno es de Cofianza y quien gestiona
    * no puede invitar ni reemplazar a nadie mientras tanto). Ausente con una API anterior.

@@ -131,7 +131,6 @@ export const WIZARD_MESSAGES = {
   LABEL_INGRESOS: 'Ingresos mensuales',
   LABEL_NIVEL_EDUCATIVO: 'Nivel educativo',
   LABEL_PARENTESCO: 'Parentesco',
-  LABEL_HABITARA_INMUEBLE: 'Habitará el inmueble',
 
   // Placeholders
   PLACEHOLDER_NOMBRE: 'Ingrese nombre(s)',
@@ -169,5 +168,4 @@ export const DEFAULT_SOLICITANTE_FORM = {
   ingresos_mensuales: undefined as number | undefined,
   nivel_educativo: '' as const,
   parentesco: '',
-  habitara_inmueble: false,
 }

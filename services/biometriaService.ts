@@ -5,7 +5,7 @@
  */
 
 import { apiClient } from '@/lib/api'
-import type { CualFotoBiometria, IEvidenciaBiometria, IResumenBiometriaRespuesta } from '@/types/autorizacion'
+import type { CualFotoBiometria, IEvidenciaBiometria, IResumenBiometriaRespuesta, PersonaCotejo } from '@/types/autorizacion'
 
 export const biometriaService = {
   /** Lo guardado del cotejo y cuántos intentos tienen fotos. */
@@ -27,6 +27,25 @@ export const biometriaService = {
   /** Supresión anticipada: elimina todas las fotos guardadas del estudio. Queda en la bitácora. */
   async eliminarFotos(expedienteId: string): Promise<{ eliminadas: number }> {
     const response = await apiClient.delete<{ eliminadas: number }>(`/expedientes/${expedienteId}/biometria/fotos`)
+    return response.data
+  },
+
+  /**
+   * Adenda 6 §2: vincula las imágenes de los cotejos FALLIDOS de una persona (autorización V3) a una denuncia o
+   * proceso — se conservan hasta que termine — o quita esa marca (motivo null). Solo administrador; queda en la bitácora.
+   */
+  async retencionPorProceso(
+    expedienteId: string,
+    persona: PersonaCotejo,
+    clave: string | null,
+    motivo: string | null,
+  ): Promise<{ filas: number }> {
+    const url = `/expedientes/${expedienteId}/biometria/fotos/retencion`
+    const response = motivo
+      ? await apiClient.post<{ filas: number }>(url, { motivo, persona, ...(clave ? { clave } : {}) })
+      : await apiClient.delete<{ filas: number }>(
+          `${url}?${new URLSearchParams({ persona, ...(clave ? { clave } : {}) }).toString()}`,
+        )
     return response.data
   },
 

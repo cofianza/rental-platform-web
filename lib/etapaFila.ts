@@ -4,7 +4,8 @@
  */
 
 import type { IExpediente, IExpedienteFilters } from '@/types/expediente'
-import { ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO, etapaCondicionado, etapaDeTraba, type EtapaEstudio } from './etapaEstudio'
+import { ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO, etapaCondicionado, etapaDeTraba, pesos, type EtapaEstudio } from './etapaEstudio'
+import { ACCION_CARGA_NOTARIA } from './turnoEstudio'
 
 const CONTRATO_FIRMADO = ['firmado', 'vigente', 'finalizado']
 const CONSULTA = ['en_proceso', 'completado', 'pagado', 'formulario_completado', 'documentos_cargados']
@@ -43,6 +44,13 @@ export function etapaDeFila(e: IExpediente): EtapaEstudio {
 }
 
 /**
+ * Adenda 6 §2 y 6.1 §4: el contrato V3 de la fila está en firma esperando el registro del contrato firmado en notaría
+ * (`firma_notaria` del RPC). El turno es de quien gestiona, no «Esperando las firmas». Pura.
+ */
+export const esperaCargaNotaria = (e: Pick<IExpediente, 'contrato_estado' | 'firma_notaria'>): boolean =>
+  e.contrato_estado === 'pendiente_firma' && e.firma_notaria === true
+
+/**
  * Lo que hay que hacer cuando depende_de === 'gestor'. En minúscula y en infinitivo: sigue a
  * «Su turno:» o a «Turno del gestor:». Las demás etapas no llevan acción, solo «Su turno».
  * ponytail: espejo de lo que el RPC de la lista cuenta como turno de quien gestiona. Si se
@@ -55,8 +63,9 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   fallida: 'reintentar la consulta',
   sin_ejecutar: 'ejecutar la consulta',
   contrato: 'crear el contrato',
-  // Reporte de Gerencia (21-nov): con la traba nunca «crear el contrato».
-  canon_excede: 'ajustar el canon o reasignar el estudio',
+  // Reporte de Gerencia (21-nov): con la traba nunca «crear el contrato». Oficina Virtual (punto 13): en palabras de
+  // quien arrienda; con la cifra, accionCanon / fraseCanonGestor.
+  canon_excede: 'elegir otro inmueble o pedir bajar el canon',
   coarrendatario_pendiente: 'esperar al segundo firmante o seguir sin él',
   // «el resultado», no «la evaluación en curso»: la misma traba cubre la consulta que falló (lo dice el texto de la API).
   coarrendatario_en_evaluacion: 'esperar el resultado del segundo firmante o seguir sin él',
@@ -68,6 +77,56 @@ export const ACCION_GESTOR: Partial<Record<EtapaEstudio, string>> = {
   bloqueado: 'revisar el bloqueo en el detalle',
   // Sin coarrendatario en curso (la API da el turno a quien gestiona): lo dice accionSegundoFirmante.
   segundo_firmante: 'invitar al segundo firmante',
+}
+
+/** Lo de traba_contrato que decide la frase del canon (todo opcional: una API anterior no lo manda). */
+export interface DatosTrabaCanon {
+  canon_habilitado_cop?: number | null
+  hasta_canon?: boolean
+  puede_reevaluar?: boolean
+  sobre_tope?: boolean
+}
+
+/** El canon hasta el que se puede pactar sin evaluar de nuevo (traba_contrato.canon_habilitado_cop); null sin la cifra. */
+const canonHabilitado = (traba: DatosTrabaCanon | null | undefined): number | null =>
+  typeof traba?.canon_habilitado_cop === 'number' && traba.canon_habilitado_cop > 0 ? traba.canon_habilitado_cop : null
+
+/**
+ * Reporte de la Oficina Virtual (25-nov), punto 13: lo que ve quien gestiona un aprobado cuyo canon supera lo aprobado,
+ * en lugar de «Su turno: ajustar el canon o reasignar el estudio». Lo dice según la traba de la API (traba-contrato.ts):
+ * - con la leyenda «hasta canon de» (la cifra ES el resultado): «Aprobado hasta $X. Elija un inmueble de ese valor o pida
+ *   bajar el canon», la frase de Gerencia;
+ * - sobre el tope de Cofianza: además, la excepción que decide la Gerencia General;
+ * - canon mayor al evaluado con reevaluación sin costo: evaluar de nuevo primero (la cifra es lo evaluado, no un tope);
+ * - canon mayor al evaluado sin reevaluación: un inmueble de hasta lo evaluado o bajar el canon;
+ * - sin cifra (estudio anterior a la Adenda 5): sin inventarla.
+ * El propietario fija su canon: a él no se le dice «pida», sino «baje». Pura.
+ */
+export function fraseCanonGestor(traba: DatosTrabaCanon | null | undefined, o: { propietario?: boolean } = {}): string {
+  const canon = canonHabilitado(traba)
+  const bajar = o.propietario ? 'baje el canon' : 'pida bajar el canon'
+  if (traba?.sobre_tope) {
+    return canon !== null
+      ? `El canon supera el tope de Cofianza. Elija un inmueble de hasta ${pesos(canon)}, ${bajar} o pida la excepción a la Gerencia General`
+      : `El canon supera el tope de Cofianza. Elija otro inmueble, ${bajar} o pida la excepción a la Gerencia General`
+  }
+  if (canon === null) return `El canon supera lo aprobado. Elija otro inmueble o ${bajar}`
+  if (traba?.puede_reevaluar) return `Canon mayor al evaluado: evalúe de nuevo sin costo o elija un inmueble de hasta ${pesos(canon)}`
+  if (traba?.hasta_canon) return `Aprobado hasta ${pesos(canon)}. Elija un inmueble de ese valor o ${bajar}`
+  return `Canon mayor al evaluado. Elija un inmueble de hasta ${pesos(canon)} o ${bajar}`
+}
+
+/** La misma acción en infinitivo, para quien mira sin gestionar («Turno de su equipo:», «Turno del gestor:»). Pura. */
+export function accionCanon(traba: DatosTrabaCanon | null | undefined): string {
+  const canon = canonHabilitado(traba)
+  if (traba?.sobre_tope) {
+    return canon !== null
+      ? `elegir un inmueble de hasta ${pesos(canon)}, pedir bajar el canon o pedir la excepción a la Gerencia General`
+      : 'elegir otro inmueble, pedir bajar el canon o pedir la excepción a la Gerencia General'
+  }
+  if (canon === null) return ACCION_GESTOR.canon_excede as string
+  if (traba?.puede_reevaluar) return `evaluar de nuevo sin costo o elegir un inmueble de hasta ${pesos(canon)}`
+  return `elegir un inmueble de hasta ${pesos(canon)} o pedir bajar el canon`
 }
 
 /** Lo del resultado que decide la acción del «aprobado con segundo firmante» (de la fila o de la evaluación del titular). */
@@ -106,8 +165,11 @@ export function accionSegundoFirmante(ev: DatosAccionSegundoFirmante | null | un
 export const TURNO_GESTOR_TRABA: EtapaEstudio[] = ['canon_excede', ...ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO]
 
 export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | undefined {
+  // Adenda 6.1 §4: en notaría no hay firma que revisar ni firmas que esperar: hay que registrar el contrato firmado.
+  if (etapa === 'firma' && esperaCargaNotaria(e)) return ACCION_CARGA_NOTARIA
   if (e.depende_de !== 'gestor' && !(e.depende_de && TURNO_GESTOR_TRABA.includes(etapa))) return undefined
   if (etapa === 'segundo_firmante') return accionSegundoFirmante(e.estudio_vigente)
+  if (etapa === 'canon_excede') return accionCanon(e.traba_contrato)
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'bloqueado_documento') return 'corregir el documento'
   // Con la identidad rechazada solo Cofianza reenvía: el gestor no puede «reenviar el enlace».
   if (etapa === 'enlace' && e.estudio_vigente?.estado_bloqueo === 'identidad_rechazada') return 'comunicarse con Cofianza'

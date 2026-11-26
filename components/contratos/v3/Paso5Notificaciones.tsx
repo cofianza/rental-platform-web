@@ -286,7 +286,13 @@ export function VistaPreviaContrato({
             aria-describedby={motivoNoEnviar ? motivoId : undefined}
           >
             {v3.accion === 'enviar' && <IconLoader size={16} className="animate-spin" />}
-            {v3.accion === 'enviar' ? 'Enviando…' : 'Enviar a firma'}
+            {v3.accion === 'enviar'
+              ? contrato.firmaNotaria
+                ? 'Preparando…'
+                : 'Enviando…'
+              : contrato.firmaNotaria
+                ? 'Preparar para notaría'
+                : 'Enviar a firma'}
           </Button>
         </div>
       </div>
@@ -320,8 +326,8 @@ export function VistaPreviaContrato({
         // texto nuevo o aprobado de la plantilla de Cofianza.
         <Aviso tono="aviso">
           {rutaB
-            ? 'Hay cambios desde que se generó el Anexo (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelva a generarlo.'
-            : 'Hay cambios desde que se generó la vista previa (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelva a generarla.'}
+            ? 'Hay cambios desde que se generó el Anexo (en los pasos, el estudio, los datos de la inmobiliaria o el texto de Cofianza). Vuelva a generarlo.'
+            : 'Hay cambios desde que se generó la vista previa (en los pasos, el estudio, los datos de la inmobiliaria o el texto de Cofianza). Vuelva a generarla.'}
         </Aviso>
       )}
 

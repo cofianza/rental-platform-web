@@ -27,6 +27,13 @@ export interface NavItem {
   group?: string
 }
 
+/**
+ * Cupos de estudios: se gestionan en UN lugar, la sección Pagos de la Oficina Virtual (reporte del 25-nov, punto 9).
+ * La ruta se queda en /configuracion: la pasarela de pagos vuelve aquí al terminar una compra (la URL la arma la API)
+ * y las notificaciones ya enviadas enlazan a ella.
+ */
+export const RUTA_CUPOS = '/configuracion/creditos-estudios'
+
 // Grupos del sidebar en el orden de aparición (mockup 15_*).
 export const NAV_GROUPS = ['Principal', 'Operación', 'Financiero', 'Administración'] as const
 
@@ -368,7 +375,7 @@ export const ESTADOS_EXPEDIENTE: Record<EstadoExpediente, EstadoConfig> = {
     borderColor: 'border-green-300',
   },
   rechazado: {
-    label: 'No aprobable',
+    label: 'No aprobado',
     color: 'red',
     bgColor: 'bg-red-100',
     textColor: 'text-red-700',
@@ -671,7 +678,7 @@ export const ESTADOS_RESULTADO_ESTUDIO: Record<ResultadoEstudioType, EstadoConfi
     borderColor: 'border-green-300',
   },
   rechazado: {
-    label: 'No aprobable',
+    label: 'No aprobado',
     color: 'red',
     bgColor: 'bg-red-100',
     textColor: 'text-red-700',

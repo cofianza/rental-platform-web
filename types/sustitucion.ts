@@ -91,6 +91,11 @@ export interface ICotizacionSustitucion {
   vuelve_a_revision?: boolean
   /** Estudio rechazado: hasta cuándo debe autorizar la persona nueva (ISO). */
   vence_reapertura?: string | null
+  /**
+   * Cambio del segundo firmante (Adenda 6 §7): hasta cuándo el resultado del estudio permite enviar el contrato a
+   * firma (ISO); el cambio no lo amplía. Ausente con una API anterior o sin fecha de evaluación.
+   */
+  firmar_hasta?: string | null
 }
 
 /** La persona que entra como solicitante (persona natural). */

@@ -308,9 +308,9 @@ function BarraPorEstado({
   if (isRejected) {
     return (
       <div className={cn('bg-red-50 border border-red-200 rounded-lg p-4', className)}>
-        <p className="text-sm font-semibold text-red-700">No aprobable</p>
+        <p className="text-sm font-semibold text-red-700">No aprobado</p>
         {/* Neutro (P34): pudo decidirlo un analista, no solo la evaluación crediticia. */}
-        <p className="text-xs text-red-600 mt-0.5">El estudio no quedó aprobable y termina sin contrato.</p>
+        <p className="text-xs text-red-600 mt-0.5">El estudio no quedó aprobado y termina sin contrato.</p>
       </div>
     )
   }

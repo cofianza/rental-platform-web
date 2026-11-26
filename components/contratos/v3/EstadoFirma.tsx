@@ -14,6 +14,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { CargaContratoNotaria } from '@/components/contratos/CargaContratoNotaria'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import {
   IconAlertTriangle,
@@ -27,7 +28,8 @@ import {
   IconUpload,
 } from '@/components/icons'
 import { etiquetaContrato, formatDate, formatDateTime, tonoContrato } from '@/lib/constants'
-import { cn } from '@/lib/utils'
+import { abrirEnPestana, cn } from '@/lib/utils'
+import { textoAvanceCotejo } from '@/lib/cotejoFirma'
 import { VerificacionIdentidadFirma } from '@/components/expedientes/VerificacionIdentidadFirma'
 import { CobroTarifaContrato } from '@/components/contratos/CobroTarifaContrato'
 import { contratoService } from '@/services/contratoService'
@@ -69,11 +71,14 @@ const NOTA_SOBRE: Partial<Record<EstadoSobreV3, string>> = {
 /** Cofianza lee el nombre del proveedor de firma; la inmobiliaria y el propietario, «firma electrónica». */
 const NOTA_CREANDO_INTERNO = 'Estamos creando el proceso de firma en Auco.'
 
-function motivoDe(s: EnvioV3['sobre'], interno: boolean): string | null {
+function motivoDe(s: EnvioV3['sobre'], interno: boolean, notaria: boolean): string | null {
   if (!s) return null
   switch (s.motivo) {
     case 'EXPIRED':
-      return 'Venció el plazo para firmar.'
+      // Adenda 6.1 §4: el plazo de registro llegaba hasta el fin de la vigencia del resultado (no se puede reabrir).
+      return notaria
+        ? 'Venció el plazo para registrar el contrato firmado en notaría, que llegaba hasta el fin de la vigencia del resultado del estudio.'
+        : 'Venció el plazo para firmar.'
     case 'IDENTIDAD':
       return `Venció el plazo para firmar sin que se completara la verificación de identidad${s.motivoDetalle ? ` (${s.motivoDetalle})` : ''}.`
     case 'FUERA_PLAZO':
@@ -103,6 +108,7 @@ interface Props {
 
 export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: Props) {
   const [confirmarReenvio, setConfirmarReenvio] = useState(false)
+  const [descargandoNotaria, setDescargandoNotaria] = useState(false)
   const [pedirMotivo, setPedirMotivo] = useState(false)
   const [confirmarReintento, setConfirmarReintento] = useState(false)
   const [pedirMotivoTerminar, setPedirMotivoTerminar] = useState(false)
@@ -130,19 +136,22 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const esperaIdentidad =
     enFirma && e.identidadPendientes > 0 && !!e.sobre && !['creando', 'en_firma', 'completo'].includes(e.sobre.estado)
   const s = esperaIdentidad ? null : e.sobre
+  // Adenda 6.1 §4: el contrato se firma en notaría (sin proceso en Auco): la inmobiliaria lo registra.
+  // Lo registra y carga el PDF la inmobiliaria (o Cofianza); no quien solo mira.
+  const notaria = e.notaria ?? null
   // Un proceso que no se creó en Auco (fallido), o el cierre sin proceso por el plazo vencido, no tiene firmantes ni plazo que mostrar.
   const creado = !!s && s.estado !== 'fallido' && s.firmantes.length > 0
   // Adenda 2 §9: la revisión biométrica la registra el analista de Cofianza.
   const esAnalista = rol === 'administrador' || rol === 'operador_analista'
   const firmantes = creado ? [...s.firmantes].sort((a, b) => a.orden - b.orden) : []
-  // Auco notifica en orden: el turno es del primero que no ha firmado.
-  const turno = s?.estado === 'en_firma' ? firmantes.find((f) => f.estado !== 'firmado') : undefined
+  // Auco notifica en orden: el turno es del primero que no ha firmado (en notaría no hay turnos).
+  const turno = s?.estado === 'en_firma' && !notaria ? firmantes.find((f) => f.estado !== 'firmado') : undefined
   const bloqueados = s?.estado === 'en_firma' ? firmantes.filter((f) => f.estado === 'bloqueado') : []
   // Las partes están congeladas: reintentar daría el mismo rechazo (la API tampoco lo deja).
   const rechazoDatos = (enFirma || incompleta) && s?.estado === 'fallido' && s.motivo === 'AUCO_DATOS'
   const notaBase = !enFirma || e.reintento || rechazoDatos ? undefined : s ? NOTA_SOBRE[s.estado] : e.identidadPendientes === 0 ? NOTA_SOBRE.creando : undefined
-  const nota = interno && notaBase === NOTA_SOBRE.creando ? NOTA_CREANDO_INTERNO : notaBase
-  const motivo = motivoDe(s, interno)
+  const nota = notaria ? undefined : interno && notaBase === NOTA_SOBRE.creando ? NOTA_CREANDO_INTERNO : notaBase
+  const motivo = motivoDe(s, interno, !!notaria)
   // Adenda 1 (respuesta 11): el aviso lo acepta la inmobiliaria y, hasta entonces, ella no reenvía ni cancela (el API igual).
   // Sin el acuse disponible (falta la migración) el API no lo exige: aquí tampoco.
   const acuse = e.aviso?.aceptado ?? null
@@ -153,10 +162,13 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         : 'Estamos entregando el aviso de firma incompleta: en unos minutos podrá aceptarlo aquí.'
       : null
 
+  // Adenda 6.1 §4: registrado en notaría sin el PDF autenticado, no hay versión firmada que esperar: se muestra el
+  // contrato que se llevó a la notaría, dicho así (el autenticado lo custodia la inmobiliaria hasta que lo cargue).
+  const sinAutenticado = firmado && !!notaria?.registro && !notaria.registro.documento
   const urlContrato = async (inline: boolean) => {
     const r = await contratoService.descargarContrato(e.id, { inline })
-    // Firmado, "Documento firmado" nunca muestra el PDF sin firmas.
-    if (firmado && r.firmado === false)
+    // Firmado, "Documento firmado" nunca muestra el PDF sin firmas (salvo el de notaría sin cargar, que lo dice).
+    if (firmado && r.firmado === false && !sinAutenticado)
       throw new Error(`La versión firmada todavía se está archivando${interno ? ' desde Auco' : ''}. Intente de nuevo en unos minutos.`)
     return r.url
   }
@@ -173,9 +185,20 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const docs: DocVisor[] = [
     {
       clave: 'contrato',
-      etiqueta: firmado ? 'Documento firmado' : 'Documento enviado a firma',
+      etiqueta: sinAutenticado
+        ? 'Contrato llevado a la notaría (sin firmas)'
+        : firmado
+          ? notaria?.registro
+            ? 'Contrato autenticado en notaría'
+            : 'Documento firmado'
+          : notaria
+            ? 'Contrato para firmar en notaría'
+            : 'Documento enviado a firma',
       cargar: () => urlContrato(true),
-      descargar: { etiqueta: firmado ? 'Descargar contrato firmado' : 'Descargar contrato', url: () => urlContrato(false) },
+      descargar: {
+        etiqueta: firmado && !sinAutenticado ? (notaria?.registro ? 'Descargar contrato autenticado' : 'Descargar contrato firmado') : 'Descargar contrato',
+        url: () => urlContrato(false),
+      },
     },
     { clave: 'crc', etiqueta: 'CRC', cargar: v3.crcUrl },
     ...(e.ruta === 'B' ? [{ clave: 'propio', etiqueta: 'Contrato original de la inmobiliaria', cargar: v3.propioUrl }] : []),
@@ -207,7 +230,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
     if (await v3.reintentar()) toast.success(`Contrato ${e.numero} enviado a firma`)
   }
   const reenviarIdentidad = async () => {
-    if (await v3.reenviarIdentidad()) toast.success('Enlace de verificación reenviado')
+    if (await v3.reenviarIdentidad()) toast.success(e.cotejo ? 'Enlace del cotejo reenviado' : 'Enlace de verificación reenviado')
   }
   const aceptarAviso = async () => {
     if (await v3.aceptarAviso()) toast.success('Aviso aceptado')
@@ -237,7 +260,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         )}
         {editable && !firmado && (
           <div className="flex flex-wrap gap-2">
-            {enFirma && creado && (
+            {enFirma && creado && !notaria && (
               <Button variante="secondary" onClick={actualizar} disabled={ocupado}>
                 {accion === 'actualizar' ? <IconLoader size={16} className="animate-spin" /> : <IconRefresh size={16} />}
                 Actualizar estado
@@ -317,10 +340,63 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
 
         {activa && (
           <Aviso tono="exito">
-            {e.fechaActivacion
-              ? `Fianza activa desde el ${formatDateTime(e.fechaActivacion)} (hora de Colombia): la última firma registrada${interno ? ' por Auco' : ''}.`
-              : 'Fianza activa: firmaron todas las partes.'}
+            {notaria?.registro
+              ? `Fianza activa desde el ${formatDateTime(notaria.registro.en)} (hora de Colombia): se registró el contrato con firma autenticada en notaría.`
+              : e.fechaActivacion
+                ? `Fianza activa desde el ${formatDateTime(e.fechaActivacion)} (hora de Colombia): la última firma registrada${interno ? ' por Auco' : ''}.`
+                : 'Fianza activa: firmaron todas las partes.'}
           </Aviso>
+        )}
+        {/* Adenda 6.1 §4: ya registrado, la constancia y, si falta, la carga del contrato autenticado (no cambia la fianza). */}
+        {(enFirma || firmado) && notaria?.registro && (
+          <CargaContratoNotaria
+            motivo={notaria.motivo}
+            aviso={notaria.aviso}
+            registro={notaria.registro}
+            // En firma, el registro quedó y la activación la termina el barrido (o está en curso).
+            estadoFianza={enFirma ? 'pendiente' : terminado ? 'terminada' : 'activa'}
+            puedeRegistrar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
+            quienCarga={
+              rol === 'inmobiliaria'
+                ? 'Lo carga un miembro de su inmobiliaria con permiso de edición.'
+                : 'La inmobiliaria carga el contrato autenticado.'
+            }
+            cargandoDocumento={accion === 'cargarDocumentoNotaria'}
+            onCargarDocumento={async (archivo) => {
+              const ok = await v3.cargarDocumentoNotaria(archivo)
+              if (ok) toast.success(`Contrato ${e.numero} autenticado cargado`)
+              return ok
+            }}
+          />
+        )}
+        {/* Solo con el plazo de registro vivo: un último proceso cancelado o incompleto no espera el registro. */}
+        {enFirma && notaria && !notaria.registro && s?.estado === 'en_firma' && (
+          <CargaContratoNotaria
+            motivo={notaria.motivo}
+            aviso={notaria.aviso}
+            vence={s.expiraEn}
+            rango={notaria.rango}
+            puedeRegistrar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
+            quienRegistra={
+              rol === 'inmobiliaria'
+                ? 'Lo registra un miembro de su inmobiliaria con permiso de edición.'
+                : 'La inmobiliaria registra el contrato autenticado.'
+            }
+            registrando={accion === 'registrarNotaria'}
+            descargando={descargandoNotaria}
+            onDescargar={() => {
+              // abrirEnPestana: Safari de iPhone bloquea el window.open que llega después de un await.
+              setDescargandoNotaria(true)
+              void abrirEnPestana(() => urlContrato(false))
+                .catch((err: unknown) => toast.error(err instanceof Error ? err.message : 'No se pudo descargar el contrato.'))
+                .finally(() => setDescargandoNotaria(false))
+            }}
+            onRegistrar={async (datos) => {
+              const ok = await v3.registrarNotaria(datos)
+              if (ok) toast.success(`Contrato ${e.numero} registrado`)
+              return ok
+            }}
+          />
         )}
         {activa && e.vigencia && (
           <p className="text-sm text-gray-700">
@@ -337,7 +413,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           </Aviso>
         )}
 
-        {s && creado && !firmado && (
+        {s && creado && !firmado && !notaria && (
           <dl className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-3">
             <Dato
               label="Enviado a firma"
@@ -372,17 +448,29 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
 
         {incompleta && motivo && !rechazoDatos && <p className="text-sm font-medium text-gray-900">{motivo}</p>}
         {nota && <Aviso>{nota}</Aviso>}
-        {enFirma && e.identidadPendientes > 0 && (
+        {enFirma && e.identidadPendientes > 0 && !notaria && (
           <Aviso>
-            <p>
-              Esperando que {e.identidadPendientes === 1 ? '1 firmante verifique' : `${e.identidadPendientes} firmantes verifiquen`} su
-              identidad con el enlace que les llegó por correo (vence a las 72 horas). El proceso de firma sale cuando todos terminen;
-              si no lo hacen dentro del plazo para firmar, el contrato queda con la firma incompleta.
-            </p>
+            {e.cotejo ? (
+              // Adenda 6.1 §3: el avance, sin el resultado de nadie.
+              <>
+                <p className="font-semibold text-gray-900">{textoAvanceCotejo(e.cotejo)}</p>
+                <p className="mt-1">
+                  Cada persona arrendataria hace su cotejo de identidad con el enlace que le llegó por correo, mientras el
+                  resultado del estudio esté vigente. Cuando todas lo aprueben, el contrato sale a firma digital por WhatsApp; si
+                  alguna no lo completa, se firma en notaría.
+                </p>
+              </>
+            ) : (
+              <p>
+                Esperando que {e.identidadPendientes === 1 ? '1 firmante verifique' : `${e.identidadPendientes} firmantes verifiquen`} su
+                identidad con el enlace que les llegó por correo (vence a las 72 horas). El proceso de firma sale cuando todos terminen;
+                si no lo hacen dentro del plazo para firmar, el contrato queda con la firma incompleta.
+              </p>
+            )}
             {editable && (
               <Button variante="secondary" tamano="sm" className="mt-2" onClick={reenviarIdentidad} disabled={ocupado}>
                 {accion === 'reenviarIdentidad' ? <IconLoader size={14} className="animate-spin" /> : <IconMail size={14} />}
-                Reenviar enlace de verificación
+                {e.cotejo ? 'Reenviar enlace del cotejo' : 'Reenviar enlace de verificación'}
               </Button>
             )}
           </Aviso>
@@ -421,7 +509,12 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           </Aviso>
         )}
 
-        {incompleta && editable && (
+        {incompleta && editable && notaria && (
+          // Adenda 6 §2: vencido el plazo de carga, también venció el resultado: no hay plazo que reabrir (la API
+          // tampoco lo deja). El motivo, arriba, ya dice hasta cuándo iba.
+          <p className="text-sm text-gray-600">Para seguir, cancele el contrato y cree un estudio nuevo (con su propio cobro).</p>
+        )}
+        {incompleta && editable && !notaria && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Button
               variante="accent"
@@ -440,8 +533,8 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
           </div>
         )}
 
-        {firmantes.length > 0 && <ListaFirmantes firmantes={firmantes} cerrado={s?.estado !== 'en_firma'} />}
-        {editable && (enFirma || incompleta) && firmantes.length > 0 && (
+        {firmantes.length > 0 && !notaria && <ListaFirmantes firmantes={firmantes} cerrado={s?.estado !== 'en_firma'} />}
+        {editable && (enFirma || incompleta) && firmantes.length > 0 && !notaria && (
           <p className="text-xs text-gray-500">
             ¿Un celular o un correo está mal? Cancele el contrato y créelo de nuevo desde el estudio: el asistente trae lo que
             usted ya llenó. Corrija el dato y vuelva a enviarlo.
@@ -540,7 +633,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         title="¿Reenviar a firma?"
         message={
           // A la inmobiliaria y al propietario, sin el proveedor ni el crédito de firma (costo de Cofianza).
-          `${e.identidadPendientes > 0 ? 'Primero le llega un correo nuevo para verificar su identidad a quien no lo ha hecho. Cuando todos terminen, se crea' : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
+          `${e.identidadPendientes > 0 ? `Primero le llega un correo nuevo ${e.cotejo ? 'para el cotejo de identidad a quien no lo ha hecho' : 'para verificar su identidad a quien no lo ha hecho'}. Cuando todos terminen, se crea` : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
         }
         confirmLabel="Reenviar a firma"
         isLoading={accion === 'reenviar'}
@@ -613,7 +706,9 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         }}
         title="¿Cancelar el contrato?"
         descripcion={
-          enFirma && creado
+          enFirma && notaria
+            ? `Se cierra el plazo para registrar el contrato firmado en notaría, el número ${e.numero} queda anulado y el inmueble se libera.`
+            : enFirma && creado
             ? `Se anula el proceso de firma${interno ? ' en Auco' : ''}, el número ${e.numero} queda anulado y el inmueble se libera.`
             : `El número ${e.numero} queda anulado y el inmueble se libera.`
         }

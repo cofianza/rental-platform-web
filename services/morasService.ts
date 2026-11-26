@@ -8,6 +8,43 @@ import type { EstadoDiferidos } from '@/types/migracion'
 
 export type MoraEstado = 'fase_1' | 'fase_2' | 'fase_3' | 'pagada' | 'cancelada'
 
+/**
+ * Adenda 6.1 §4: estado del reporte (aparte de la fase). 'completo' = corre el
+ * plazo de pago de Cofianza; 'incompleto' = contrato en notaría sin el contrato
+ * autenticado; 'por_verificar' = Cofianza lo revisa; 'no_paga' = no corresponde
+ * o la fecha está fuera de rango (final).
+ */
+export type ReporteEstado = 'completo' | 'incompleto' | 'por_verificar' | 'no_paga'
+export type ResultadoVerificacion = 'verificado' | 'no_corresponde' | 'fecha_fuera_de_rango'
+
+/** Lo que la API guarda de la constancia de notaría del contrato (sin IP ni quién registró). */
+export interface IReporteNotaria {
+  fecha_autenticacion: string | null
+  rango: { desde: string; hasta: string; dias: number } | null
+  fecha_en_rango: boolean | null
+  documento: { nombre_archivo: string; sha256: string; bytes: number; subido_en: string | null } | null
+  presentado_en: string | null
+  verificacion: {
+    resultado: ResultadoVerificacion
+    nota: string | null
+    en: string
+    automatica?: boolean
+  } | null
+}
+
+/** Lo que el formulario necesita del contrato elegido (la API calcula la fecha pactada). */
+export interface IDatosReporteMora {
+  contrato_id: string
+  canon: number | null
+  /** La fecha de pago pactada del mes en curso según el contrato (AAAA-MM-DD). */
+  fecha_vencimiento: string
+  dia_pago: number
+  fuente_fecha: 'v3' | 'anterior' | 'sin_dato'
+  explicacion_fecha: string
+  notaria: { documento_cargado: boolean; fecha_en_rango: boolean | null } | null
+  plazo_pago_dias: number
+}
+
 export interface IMoraTicket {
   id: string
   ticket_numero: string
@@ -40,6 +77,14 @@ export interface IMoraTicket {
   // dueño reportó un pago en Fase 3 y el WhatsApp espera la revisión de Cofianza.
   whatsapp_programado_para?: string | null
   whatsapp_pausado_at?: string | null
+  // Adenda 6.1 §4 y reporte de la Oficina Virtual (punto 2).
+  reporte_estado?: ReporteEstado
+  reporte_completo_at?: string | null
+  reporte_notaria?: IReporteNotaria | null
+  /** Último día (AAAA-MM-DD) en que Cofianza paga: 20 días calendario desde el reporte completo. null si no corre. */
+  plazo_pago_hasta?: string | null
+  /** Se reportó entre el día 6 y el 10 (fuera de la ventana no se promete la fecha de pago). */
+  reporte_en_ventana?: boolean | null
   created_at: string
   updated_at: string
 }
@@ -97,6 +142,8 @@ export interface IListMorasQuery {
   estado?: 'todas' | 'activas' | MoraEstado
   orden?: 'asc' | 'desc'
   contrato_id?: string
+  /** La cola de Operaciones: 'por_verificar'. */
+  reporte?: ReporteEstado
   page?: number
   limit?: number
 }
@@ -124,6 +171,7 @@ class MorasService {
     if (query.estado) params.set('estado', query.estado)
     if (query.orden) params.set('orden', query.orden)
     if (query.contrato_id) params.set('contrato_id', query.contrato_id)
+    if (query.reporte) params.set('reporte', query.reporte)
     if (query.page) params.set('page', String(query.page))
     if (query.limit) params.set('limit', String(query.limit))
     const qs = params.toString()
@@ -173,6 +221,30 @@ class MorasService {
       mensaje,
       reporta_pago: reportaPago,
     })
+    return res.data
+  }
+
+  /** Canon, fecha de pago pactada y si el contrato es de notaría (al elegirlo en el formulario). */
+  async datosReporte(contratoId: string): Promise<IDatosReporteMora> {
+    const res = await apiClient.get<IDatosReporteMora>(`${this.base}/contratos/${contratoId}/datos-reporte`)
+    return res.data
+  }
+
+  /**
+   * Adenda 6.1 §4: el contrato autenticado de un contrato en notaría. Queda en el
+   * contrato y la mora pasa a «por verificar». `documento_previo` = el contrato ya
+   * lo tenía y se presentó ese.
+   */
+  async cargarDocumentoNotaria(id: string, file: File): Promise<IMoraDetalle & { documento_previo?: boolean }> {
+    const form = new FormData()
+    form.append('archivo', file)
+    const response = await apiClient.raw(`${this.base}/${id}/documento-notaria`, { method: 'POST', body: form })
+    return ((await response.json()) as { data: IMoraDetalle & { documento_previo?: boolean } }).data
+  }
+
+  /** Cofianza verifica el contrato autenticado: completo (corre el plazo) o «Cofianza no paga» (con nota). */
+  async verificarNotaria(id: string, resultado: ResultadoVerificacion, nota?: string): Promise<IMoraDetalle> {
+    const res = await apiClient.patch<IMoraDetalle>(`${this.base}/${id}/verificacion-notaria`, { resultado, nota })
     return res.data
   }
 

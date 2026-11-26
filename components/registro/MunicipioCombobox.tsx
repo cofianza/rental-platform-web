@@ -9,6 +9,11 @@
  * «Municipio, Departamento» y, con `guardado`, una ciudad escrita a mano antes
  * del buscador: si es una del catálogo la elige sola; si no, la muestra y pide
  * elegirla de la lista (no se pierde).
+ *
+ * `variante="publica"` (autorización y pago sin sesión, en el celular): letra
+ * de 16 px, lista más corta, «Municipio donde vive» y sin la ayuda fija de
+ * facturación; `onEstadoBusqueda` le dice a la pantalla cómo terminó la última
+ * búsqueda (para dejar seguir sin municipio si no hay cómo elegirlo).
  */
 
 'use client'
@@ -50,7 +55,20 @@ interface Props {
   /** La ciudad guardada antes del buscador (texto libre), mientras no haya `value`. */
   guardado?: { ciudad: string | null | undefined; departamento: string | null | undefined } | null
   disabled?: boolean
+  /**
+   * 'publica': pantallas sin sesión en el celular. Letra de 16 px (Safari de iOS amplía la página al
+   * enfocar un campo más chico), lista más corta (cabe dentro de la tarjeta), etiqueta «Municipio
+   * donde vive», ejemplo corto y sin la ayuda fija de facturación (la da la tarjeta que lo contiene).
+   * `label`, `ayuda` y `placeholder` explícitos mandan sobre la variante.
+   */
+  variante?: 'publica'
+  /** Obligatorio para el lector de pantalla (aria-required). */
+  requerido?: boolean
+  /** Cómo terminó la última búsqueda: la pantalla puede dejar seguir sin municipio si no hay cómo elegirlo. */
+  onEstadoBusqueda?: (estado: EstadoBusquedaMunicipio) => void
 }
+
+export type EstadoBusquedaMunicipio = 'ok' | 'sin_resultados' | 'fallo'
 
 const AYUDA_FACTURA = 'Lo necesitamos para emitir su factura electrónica si paga el estudio de arrendamiento.'
 
@@ -72,13 +90,20 @@ export function MunicipioCombobox({
   onChange,
   error,
   authToken,
-  label = 'Municipio (para facturación)',
-  ayuda = AYUDA_FACTURA,
-  placeholder = 'Empiece a escribir su municipio (ej. Medellín)',
+  label: labelProp,
+  ayuda: ayudaProp,
+  placeholder: placeholderProp,
   id,
   guardado,
   disabled,
+  variante,
+  requerido = false,
+  onEstadoBusqueda,
 }: Props) {
+  const publica = variante === 'publica'
+  const label = labelProp !== undefined ? labelProp : publica ? 'Municipio donde vive' : 'Municipio (para facturación)'
+  const ayuda = ayudaProp !== undefined ? ayudaProp : publica ? null : AYUDA_FACTURA
+  const placeholder = placeholderProp ?? (publica ? 'Ej.: Medellín' : 'Empiece a escribir su municipio (ej. Medellín)')
   const textoGuardado = guardado ? etiquetaMunicipio(guardado.ciudad, guardado.departamento) : ''
   const [query, setQuery] = useState(value?.nombre || textoGuardado)
   const [results, setResults] = useState<MunicipioOption[]>([])
@@ -91,12 +116,17 @@ export function MunicipioCombobox({
   const [guardadoSinElegir, setGuardadoSinElegir] = useState<'no_encontrado' | 'sin_consulta' | null>(null)
   // Si la persona ya escribió, la respuesta tardía sobre la ciudad guardada no pisa lo escrito.
   const escribioRef = useRef(false)
+  const estadoRef = useRef(onEstadoBusqueda)
+  useEffect(() => {
+    estadoRef.current = onEstadoBusqueda
+  })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   // Generado: el combobox se usa en varias pantallas y un id fijo se repetiria.
   const idGenerado = useId()
   const inputId = id ?? idGenerado
   const ayudaId = `${inputId}-ayuda`
+  const errorId = `${inputId}-error`
 
   // Cerrar dropdown al click fuera.
   useEffect(() => {
@@ -168,10 +198,13 @@ export function MunicipioCombobox({
       setLoading(true)
       setFallo(false)
       try {
-        setResults(await buscarMunicipios(consulta, authToken))
+        const lista = await buscarMunicipios(consulta, authToken)
+        setResults(lista)
+        estadoRef.current?.(lista.length > 0 ? 'ok' : 'sin_resultados')
       } catch {
         setResults([])
         setFallo(true)
+        estadoRef.current?.('fallo')
       } finally {
         setLoading(false)
       }
@@ -221,8 +254,9 @@ export function MunicipioCombobox({
           }}
           placeholder={placeholder}
           aria-invalid={!!error}
-          aria-describedby={error || avisoGuardado || textoAyuda ? ayudaId : undefined}
-          className={`w-full min-h-11 rounded-lg border pl-3 pr-11 py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed ${
+          aria-required={requerido || undefined}
+          aria-describedby={error ? errorId : avisoGuardado || textoAyuda ? ayudaId : undefined}
+          className={`w-full min-h-11 rounded-lg border pl-3 pr-11 py-2 ${publica ? 'text-base' : 'text-base sm:text-sm'} focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed ${
             error ? 'border-red-300 bg-red-50' : avisoGuardado ? 'border-amber-300 bg-amber-50' : 'border-gray-300'
           }`}
           autoComplete="off"
@@ -240,7 +274,7 @@ export function MunicipioCombobox({
       </div>
 
       {open && !disabled && consulta.length >= 2 && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-auto">
+        <div className={`absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg ${publica ? 'max-h-44' : 'max-h-64'} overflow-auto`}>
           {loading ? (
             <div role="status" className="px-3 py-2 text-sm text-gray-500">Buscando…</div>
           ) : fallo ? (
@@ -255,7 +289,7 @@ export function MunicipioCombobox({
               </button>
             </div>
           ) : results.length === 0 ? (
-            <div role="status" className="px-3 py-2 text-sm text-gray-500">Sin resultados</div>
+            <div role="status" className="px-3 py-2 text-sm text-gray-500">No encontramos ese municipio. Revise cómo lo escribió.</div>
           ) : (
             results.map((m) => {
               // «Caldas, Antioquia»; Bogotá sin repetir su departamento.
@@ -276,9 +310,11 @@ export function MunicipioCombobox({
         </div>
       )}
 
-      {error ? (
-        <p id={ayudaId} className="mt-1 text-xs text-red-600">{error}</p>
-      ) : avisoGuardado ? (
+      {/* La región viva existe siempre (aria-live anuncia cuando cambia su contenido). */}
+      <p id={errorId} aria-live="polite" className={error ? 'mt-1 text-xs text-red-600' : 'sr-only'}>
+        {error ?? ''}
+      </p>
+      {error ? null : avisoGuardado ? (
         <p id={ayudaId} className="mt-1 flex items-start gap-1.5 text-xs text-amber-800">
           <IconAlertTriangle size={14} className="mt-px shrink-0" aria-hidden />
           <span>

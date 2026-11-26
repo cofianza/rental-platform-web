@@ -22,6 +22,11 @@ export interface IPaqueteCreditos {
   vence_en_dias: number | null
   /** Meses de vigencia con que se acredita al comprarlo (VIGENCIA_PAQUETE_MESES). Solo en /creditos-estudios/paquetes. */
   vigencia_meses?: number
+  /**
+   * Precio base (sin IVA) del estudio individual, PRECIO_ESTUDIO_INDIVIDUAL del panel: contra él se mide el ahorro
+   * (reporte de la Oficina Virtual, punto 6). Solo en /creditos-estudios/paquetes; ausente con una API anterior.
+   */
+  precio_individual_cop?: number
   activo: boolean
   orden: number
   created_at: string

@@ -67,7 +67,8 @@ import { EvaluarEnEstudioNuevo } from '@/components/expedientes/EvaluarEnEstudio
 import { ID_VERIFICACION_SEGUNDO } from '@/components/estudios/VerificacionSegundoFirmante'
 import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
 import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
-import { ACCION_GESTOR, accionSegundoFirmante, revisionDemorada } from '@/lib/etapaFila'
+import { ACCION_CARGA_NOTARIA } from '@/lib/turnoEstudio'
+import { ACCION_GESTOR, accionCanon, accionSegundoFirmante, fraseCanonGestor, revisionDemorada } from '@/lib/etapaFila'
 import { sinAccionSegundoFirmante } from '@/lib/etapaEstudio'
 import { cierreDelEstudio, coarrendatarioEnCurso, coarrendatarioEnVerificacion, ofreceReemplazo, personaA5dUsable } from '@/lib/personaEstudio'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
@@ -111,6 +112,7 @@ import {
 } from '@/components/expedientes/VerComo'
 import { setVerComoApi } from '@/lib/api'
 import { etiquetaMunicipio } from '@/lib/municipios'
+import { textoHabitara } from '@/lib/habitara'
 
 function ExpedienteDetalleContenido() {
   const params = useParams()
@@ -176,7 +178,7 @@ function ExpedienteDetalleContenido() {
   // refrescan en sitio (sin desmontarse ni pasar por el skeleton de página).
   const [cargas, setCargas] = useState(0)
   // Etapa real del estudio (revisión del Resumen, 23-oct): ordena el Resumen, la barra y el chip.
-  const { etapa, esperaHasta, coaFallido, citaActiva } = useEtapaEstudio(
+  const { etapa, esperaHasta, coaFallido, citaActiva, firmaNotaria } = useEtapaEstudio(
     user?.rol === 'solicitante' ? null : expediente,
     user?.rol !== 'gerencia_consulta',
     cargas,
@@ -634,7 +636,10 @@ function ExpedienteDetalleContenido() {
       ? // El vocabulario de su barra y de rutas-resultado (no «Borrador» ni «Condicionado»).
         expediente.estado === 'borrador'
         ? 'En preparación'
-        : expediente.estado === 'condicionado'
+        : // Flujo §10: al prospecto, «No aprobable por ahora» (no el «No aprobado» de la Oficina Virtual).
+          expediente.estado === 'rechazado' || (expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado')
+          ? 'No aprobable por ahora'
+          : expediente.estado === 'condicionado'
           ? condicionCoa && !prospectoSinAccion
             ? condicionCoa.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
             : 'En revisión'
@@ -667,11 +672,17 @@ function ExpedienteDetalleContenido() {
   // Reabierto por un reemplazo, igual: la franja ya dice que se espera a la persona nueva.
   const turnoBase =
     etapaTurno && etapaTurno !== 'espera_coarrendatario' && etapaTurno !== 'reapertura'
-      ? turnoDeEtapa(etapaTurno, !!condicionCoa, {
-          coarrendatarioEnCurso: apelacionLeida ? (coaEsperaLeida?.enCurso ?? null) : null,
-          apelacion: apelacionRadicada,
-          enVerificacion: !!segundoEnVerificacion,
-        })
+      ? turnoDeEtapa(
+          etapaTurno,
+          !!condicionCoa,
+          {
+            coarrendatarioEnCurso: apelacionLeida ? (coaEsperaLeida?.enCurso ?? null) : null,
+            apelacion: apelacionRadicada,
+            enVerificacion: !!segundoEnVerificacion,
+          },
+          // Adenda 6.1 §4: el contrato en firma espera el registro en notaría: el turno es de quien gestiona.
+          { firmaNotaria },
+        )
       : null
   // La lista no le pone turno a la visita (como el RPC), pero a la inmobiliaria y al
   // propietario sí les toca: agendarla o marcarla como hecha. Sin esto la franja no decía de quién era.
@@ -719,6 +730,8 @@ function ExpedienteDetalleContenido() {
                     expediente.traba_contrato?.canon_habilitado_cop ??
                     (titular.desenlace ? (titular.canon_habilitado_cop ?? null) : undefined),
                   hastaCanon: titular.hasta_canon === true,
+                  // Adenda 6 §7: sin el dato de la API no se promete «sin costo».
+                  reevaluacionSinCosto: expediente.reevaluacion_sin_costo === true,
                 }
               : null,
           onReasignado: fetchExpediente,
@@ -951,16 +964,26 @@ function ExpedienteDetalleContenido() {
             // Ya hay un segundo firmante invitado sin responder: «reenvíele la invitación o invite a otra persona».
             invitado: puedeEditar && !!coaEsperaLeida?.invitado,
             // Con traba o sin segundo firmante en curso, la misma acción que la pastilla de la lista
-            // («Su turno: ajustar el canon…», «Su turno: invitar al segundo firmante»). En el canal del
+            // («Aprobado hasta $X…», «Su turno: invitar al segundo firmante»). En el canal del
             // propietario directo la API no admite segundo firmante: sin acción propia, su texto dice por qué.
             accion:
               turno !== 'gestor'
                 ? undefined
                 : etapaTurno === 'segundo_firmante'
                   ? accionSegundoFirmante(titularCondicionado)
-                  : esEtapaDeTraba(etapaTurno)
-                    ? ACCION_GESTOR[etapaTurno]
-                    : undefined,
+                  : etapaTurno === 'canon_excede'
+                    ? accionCanon(expediente.traba_contrato)
+                    : esEtapaDeTraba(etapaTurno)
+                      ? ACCION_GESTOR[etapaTurno]
+                      : etapaTurno === 'firma' && firmaNotaria
+                        ? // Adenda 6.1 §4: «Su turno: registrar el contrato firmado en notaría» (como la lista).
+                          ACCION_CARGA_NOTARIA
+                        : undefined,
+            // Oficina Virtual (punto 13), como la lista: «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon».
+            fraseGestor:
+              turno === 'gestor' && etapaTurno === 'canon_excede'
+                ? fraseCanonGestor(expediente.traba_contrato, { propietario: user?.rol === 'propietario' })
+                : undefined,
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» (o «Lo verifica X») y sin coral.
             tomadoPor: (revisionAnalista || verificacion) && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
           }
@@ -1006,6 +1029,7 @@ function ExpedienteDetalleContenido() {
                     textoTraba: expediente.traba_contrato?.texto ?? null,
                     segundoEnVerificacion,
                     reemplazoPosible,
+                    firmaNotaria,
                   })}
                 </p>
               </div>
@@ -1130,7 +1154,7 @@ function ExpedienteDetalleContenido() {
                 titulo="Estudio cerrado"
                 descripcion={
                   <>
-                    <p>El estudio no fue aprobable y el caso quedó cerrado.</p>
+                    <p>El estudio no quedó aprobado y se cerró.</p>
                     {textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) }) && (
                       <p className="mt-1">
                         <span className="font-semibold">Motivo:</span>{' '}
@@ -1322,6 +1346,7 @@ function ExpedienteDetalleContenido() {
                       cierre={cierreDelEstudio(expediente.estado, expediente.estado_pre_cancelacion)}
                       reaperturaAbierta={!!expediente.reapertura_abierta}
                       venceReapertura={expediente.vence_reapertura ?? null}
+                      reevaluacionSinCosto={expediente.reevaluacion_sin_costo === true}
                       // Un cambio de persona mueve el estado del estudio: encabezado, banner y tarjeta, coherentes.
                       onExpedienteCambio={fetchExpediente}
                     />
@@ -1544,12 +1569,8 @@ function ExpedienteDetalleContenido() {
                     {expediente.solicitante.nivel_educativo && (
                       <InfoRow label="Nivel educativo" value={expediente.solicitante.nivel_educativo} />
                     )}
-                    {expediente.solicitante.habitara_inmueble !== null && (
-                      <InfoRow
-                        label="Habitará el inmueble"
-                        value={expediente.solicitante.habitara_inmueble ? 'Sí' : 'No'}
-                      />
-                    )}
+                    {/* Adenda 6 §8: lo que la persona respondió al autorizar este estudio; sin respuesta, «No lo indicó». */}
+                    <InfoRow label="Habitará el inmueble" value={textoHabitara(expediente.solicitante.habitara_inmueble)} />
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500">Sin solicitante asociado</p>

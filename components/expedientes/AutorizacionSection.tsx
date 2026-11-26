@@ -26,6 +26,8 @@ import { EVENTO_BLOQUEOS } from '@/components/expedientes/BloqueosPendientesBann
 import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefresco'
 import { fechaCompleta } from '@/lib/constants'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
+import { VerBiometria } from '@/components/expedientes/VerBiometria'
+import { esTextoV3 } from '@/lib/autorizacionV3'
 
 interface AutorizacionSectionProps {
   expedienteId: string
@@ -76,6 +78,12 @@ const METODO_LABELS: Record<string, string> = {
   otp: 'Verificación por código OTP',
   // Adenda 1 §7: aceptación por casilla, sin OTP (Decreto 1377/2013 art. 7).
   casilla: 'Aceptación por casilla',
+}
+
+// Adenda 6.1 §2: por cuál canal llegó el enlace con que la persona aceptó.
+const CANAL_ENLACE_LABELS: Record<string, string> = {
+  whatsapp: 'WhatsApp',
+  correo: 'Correo',
 }
 
 export function AutorizacionSection({
@@ -164,6 +172,8 @@ export function AutorizacionSection({
   // Con el enlace vencido ya no hay firma que esperar (el backend la marca
   // 'expirado' solo cuando alguien abre el link), y con la pestaña oculta no
   // se pregunta.
+  // Adenda 6 §2 / 6.1: la autorización se firmó con el texto V3.1 (casilla 4A, dos finalidades opcionales).
+  const esV3 = esTextoV3(autorizacion?.version_terminos)
   const tokenExpiracion = autorizacion?.token_expiracion
   useEffect(() => {
     if (autorizacion?.estado !== 'pendiente') return
@@ -685,8 +695,8 @@ export function AutorizacionSection({
             </div>
           </div>
 
-          {/* Consentimientos del solicitante: los 3 obligatorios van implícitos
-              en la firma; los 3 opcionales quedan tal como él los eligió. */}
+          {/* Consentimientos del solicitante: los obligatorios van implícitos
+              en la firma; los opcionales quedan tal como él los eligió. */}
           <div className="border border-gray-200 rounded-lg p-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Consentimientos otorgados
@@ -698,7 +708,20 @@ export function AutorizacionSection({
                 { txt: 'Historial de comportamiento de pago', on: true, oblig: true },
                 { txt: 'Analítica y personalización', on: !!autorizacion?.consent_analitica, oblig: false },
                 { txt: 'Ofertas y comunicaciones comerciales', on: !!autorizacion?.consent_comercial, oblig: false },
-                { txt: 'Historial como referencia ante terceros', on: !!autorizacion?.consent_historial_referencia, oblig: false },
+                // Adenda 6 §2 / 6.1: el texto V3.1 no ofrece la tercera finalidad y trae la casilla 4A (cotejo biométrico).
+                ...(esV3
+                  ? [
+                      {
+                        // Sin el dato (no se pudo leer) no se afirma que no lo autorizó.
+                        txt:
+                          autorizacion?.consent_cotejo_biometrico === undefined
+                            ? 'Cotejo biométrico (numeral 4A): no se pudo consultar'
+                            : 'Cotejo biométrico (numeral 4A)',
+                        on: !!autorizacion?.consent_cotejo_biometrico,
+                        oblig: false,
+                      },
+                    ]
+                  : [{ txt: 'Historial como referencia ante terceros', on: !!autorizacion?.consent_historial_referencia, oblig: false }]),
               ].map((c) => (
                 <div key={c.txt} className="flex items-center justify-between gap-2">
                   <span className={`flex items-center gap-1.5 ${c.on ? 'text-gray-800' : 'text-gray-500'}`}>
@@ -740,6 +763,22 @@ export function AutorizacionSection({
                   <dt className="text-gray-500">Dispositivo (user-agent)</dt>
                   <dd className="text-gray-900 break-all">{autorizacion?.user_agent || '—'}</dd>
                 </div>
+                {/* Adenda 6.1 §2: el canal por el que llegó el enlace y (solo Cofianza) a qué número o correo se envió.
+                    Sin el dato (API anterior o lectura fallida) no se muestra; un enlace sin marca es de antes. */}
+                {autorizacion?.canal_enlace !== undefined && (
+                  <div>
+                    <dt className="text-gray-500">Canal del enlace</dt>
+                    <dd className="text-gray-900 font-medium">
+                      {autorizacion.canal_enlace ? CANAL_ENLACE_LABELS[autorizacion.canal_enlace] : 'Sin registro (enlace anterior)'}
+                    </dd>
+                  </div>
+                )}
+                {autorizacion?.canal_enlace && autorizacion.destino_enlace !== undefined && (
+                  <div>
+                    <dt className="text-gray-500">Enviado a</dt>
+                    <dd className="text-gray-900 break-all">{autorizacion.destino_enlace || 'Sin registro del envío'}</dd>
+                  </div>
+                )}
                 <div className="sm:col-span-2">
                   <dt className="text-gray-500">Hash SHA-256 del documento</dt>
                   <dd className="text-gray-900 font-mono break-all select-all">{autorizacion?.hash_documento || '—'}</dd>
@@ -1032,6 +1071,11 @@ export function AutorizacionSection({
         }
         confirmLabel="Registrar revocación"
       />
+
+      {/* Adenda 6 §2: las fotos de los cotejos (de las dos personas) se consultan aquí en cualquier estado de la
+          autorización: el cotejo del solicitante corre antes de firmar, y las fotos de un intento fallido se conservan
+          aunque nadie firme. El botón solo aparece para Cofianza y si hay algo que ver (VerBiometria lo decide). */}
+      <VerBiometria expedienteId={expedienteId} contenedor="mt-3 flex justify-end" />
 
       {showOtraPersona && <OtraPersonaModal isOpen onClose={() => setShowOtraPersona(false)} expedienteId={expedienteId} />}
 

@@ -58,7 +58,7 @@ interface ExpedienteRechazadoBannerProps {
 }
 
 // Neutro (P34): no culpa a la evaluación crediticia cuando pudo decidirlo un analista.
-const MOTIVO_FALLBACK = 'El estudio no quedó aprobable y termina sin contrato.'
+const MOTIVO_FALLBACK = 'El estudio no quedó aprobado y termina sin contrato.'
 
 /**
  * Lo que tarda, de sobra, el gancho que saca del rechazo al estudio cuya
@@ -157,7 +157,7 @@ export function ExpedienteRechazadoBanner({ motivo, esProspecto, onReevaluar, ap
     <TarjetaSiguientePaso
       tono="alerta"
       icono={<IconAlertTriangle size={18} />}
-      titulo="Estudio no aprobable"
+      titulo="Estudio no aprobado"
       descripcion={motivo || MOTIVO_FALLBACK}
     >
       {/* 27-oct: «El flujo termina aquí» escondía la apelación (Política §11). */}

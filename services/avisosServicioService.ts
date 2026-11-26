@@ -11,6 +11,14 @@ export async function getAvisosActivos(): Promise<IAvisoVisible[]> {
   return res.data
 }
 
+/**
+ * La persona cierra un aviso: se guarda en su cuenta y no se le vuelve a mostrar hasta que el administrador lo edite
+ * (reporte de la Oficina Virtual del 25-nov, punto 12). Manda la versión que tenía en pantalla.
+ */
+export async function cerrarAviso(id: string, actualizadoEn: string): Promise<void> {
+  await apiClient.post(`/avisos-servicio/${id}/cerrar`, { actualizado_en: actualizadoEn })
+}
+
 /** Páginas públicas por enlace: sin sesión, solo los marcados para prospectos. */
 export async function getAvisosPublicos(): Promise<IAvisoVisible[]> {
   const res = await apiClient.get<IAvisoVisible[]>('/public/avisos-servicio')

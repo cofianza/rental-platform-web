@@ -3,7 +3,8 @@
  *
  * Estados visibles:
  *   - borrador / en_revision / aprobado → "Preparando su contrato..." (no accionable)
- *   - pendiente_firma → CTA revisar PDF + aviso: primero el correo de identidad, luego el WhatsApp de firma
+ *   - pendiente_firma → CTA revisar PDF + aviso: primero el correo de identidad, luego el WhatsApp de firma; o, con la
+ *     firma en notaría (Adenda 6 §2, `firma_notaria`), que quien tramita le indica cómo y que no llega un enlace
  *   - firma_incompleta (V3) → la firma venció o alguien la rechazó; la inmobiliaria la reenvía
  *   - firmado (por ambas partes, pendiente activación) → "Contrato firmado, esperando activación"
  *   - vigente → "¡Contrato activo!" con botón descargar firmado
@@ -44,6 +45,16 @@ function parseDateOnly(s: string): Date {
 function pasoIdentidad(verificaciones: IVerificacionIdentidad[]): string | null {
   const propia = verificaciones.find((v) => v.rol === 'arrendatario')
   if (!propia) return null
+  // Adenda 6.1 §3: el cotejo de identidad al firmar (sin plazo propio: vale mientras el resultado del estudio esté vigente).
+  if (propia.regla === 'adenda61') {
+    if (propia.estado === 'pendiente') {
+      return 'Paso 1 de 2: haga el cotejo de identidad (una foto de su documento y una selfie) con el enlace que le enviamos por correo. Mientras tanto, revise el contrato.'
+    }
+    if (verificaciones.some((v) => v.rol !== 'arrendatario' && v.estado === 'pendiente')) {
+      return 'Ya hizo su paso del cotejo de identidad. Falta su coarrendatario: si los dos lo aprueban, le llega por WhatsApp el enlace seguro para firmar; si no, el contrato se firma en notaría.'
+    }
+    return null
+  }
   if (propia.estado === 'pendiente') {
     const vence = propia.token_expiracion ? new Date(propia.token_expiracion) : null
     if (vence && vence.getTime() < Date.now()) {
@@ -257,6 +268,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     return null
   }
 
+  // Adenda 6 §2: sin el cotejo aprobado de todas las personas, el contrato se firma en notaría (no llega enlace).
+  const enNotaria = contrato.firma_notaria === true
+
   // Borrador / en_revision / aprobado → contrato aún no listo para el solicitante.
   if (contrato.estado === 'borrador' || contrato.estado === 'en_revision' || contrato.estado === 'aprobado') {
     return (
@@ -266,7 +280,9 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
           <div>
             <p className="text-sm font-semibold text-blue-900 mb-0.5">Preparando su contrato</p>
             <p className="text-sm text-blue-800">
-              Quien tramita su arriendo está preparando y revisando su contrato de arrendamiento. Le avisaremos por WhatsApp cuando esté listo para firmar.
+              {enNotaria
+                ? 'Quien tramita su arriendo está preparando su contrato de arrendamiento. Se firmará con firma autenticada en notaría, a su costo: quien tramita su arriendo le indicará cómo hacerlo. No le llegará un enlace de firma por WhatsApp.'
+                : 'Quien tramita su arriendo está preparando y revisando su contrato de arrendamiento. Le avisaremos por WhatsApp cuando esté listo para firmar.'}
             </p>
           </div>
         </div>
@@ -279,10 +295,17 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
     const tienePdf = Boolean(contrato.contenido_pdf_url || contrato.storage_key)
     return (
       <div className="border-2 border-primary-200 bg-primary-50/40 rounded-lg p-6">
-        <h3 className="text-base font-semibold text-gray-900 mb-1">Su contrato está listo para firmar</h3>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">
+          {enNotaria ? 'Su contrato se firma en notaría' : 'Su contrato está listo para firmar'}
+        </h3>
         <p className="text-sm text-gray-600 mb-4">
-          {pasoIdentidad(verificaciones) ??
-            'Revise el contrato antes de firmar. Primero le llega un correo de Cofianza para confirmar su identidad (el enlace vence en 72 horas). Cuando lo haga, le llega por WhatsApp el enlace seguro para firmar, cuando sea su turno: ábralo y siga las instrucciones.'}
+          {enNotaria
+            ? 'Su contrato se firma con firma autenticada en notaría, a su costo. Quien tramita su arriendo le entregará el documento y le indicará cómo hacerlo; la fianza se activa cuando quien tramita su arriendo registre el contrato autenticado en la plataforma. No le llegará un enlace de firma por WhatsApp.'
+            : (pasoIdentidad(verificaciones) ??
+              (contrato.firma_notaria === false
+                ? // Adenda 6.1: con el cotejo al firmar terminado, no hay otra verificación de identidad.
+                  'Revise el contrato antes de firmar. Le llega por WhatsApp el enlace seguro para firmar, cuando sea su turno: ábralo y siga las instrucciones.'
+                : 'Revise el contrato antes de firmar. Primero le llega un correo de Cofianza para confirmar su identidad (el enlace vence en 72 horas). Cuando lo haga, le llega por WhatsApp el enlace seguro para firmar, cuando sea su turno: ábralo y siga las instrucciones.'))}
         </p>
 
         <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 space-y-2">

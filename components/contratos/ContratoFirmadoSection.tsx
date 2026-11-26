@@ -54,7 +54,10 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
   // Sin PDF con firmas (firmado en papel, o cancelado sin firmar) se puede
   // subir el escaneado; con el de Auco no, porque la subida lo taparía.
   const sinDocumentoFirmado = !contrato.firmado_storage_key && (fuente === 'original' || fuente === null)
-  const puedeSubir = canManage && sinDocumentoFirmado
+  // Adenda 6.1 §4: registrado en notaría, el contrato autenticado se carga desde la tarjeta de la notaría (una sola
+  // entrada, con su constancia); aquí no se ofrece la subida manual.
+  const registradoEnNotaria = typeof contrato.firma_notaria === 'object' && !!contrato.firma_notaria?.registro
+  const puedeSubir = canManage && sinDocumentoFirmado && !registradoEnNotaria
 
   async function handleDescargar() {
     setDownloadLoading(true)
@@ -165,9 +168,11 @@ export function ContratoFirmadoSection({ contrato, onContratoUpdated, fuente }: 
                 <IconAlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-amber-900">
-                    {interno
-                      ? 'Contrato firmado sin documento de Auco (p. ej. en papel)'
-                      : 'Contrato firmado sin el documento de la plataforma de firma (p. ej. en papel)'}
+                    {registradoEnNotaria
+                      ? 'Contrato registrado con firma en notaría, sin el PDF autenticado cargado'
+                      : interno
+                        ? 'Contrato firmado sin documento de Auco (p. ej. en papel)'
+                        : 'Contrato firmado sin el documento de la plataforma de firma (p. ej. en papel)'}
                   </p>
                   <p className="text-xs text-amber-700 mt-1">
                     La descarga entrega el contrato generado, sin firmas.

@@ -8,7 +8,8 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard, IconAlertTriangle } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconUser, IconBank, IconCalendar, IconCreditCard, IconAlertTriangle } from '@/components/icons'
+import { RUTA_DATOS_INMOBILIARIA, tituloDatosArrendador } from '@/lib/datosArrendador'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
 const SECCIONES: Array<{
@@ -28,22 +29,15 @@ const SECCIONES: Array<{
     icon: IconUser,
     color: 'bg-sky-100 text-sky-600',
   },
+  // Reporte de la Oficina Virtual (25-nov), punto 13: «Datos para contrato» y «Mi Inmobiliaria» son un solo lugar
+  // (el título cambia para el propietario: tituloDatosArrendador).
   {
-    id: 'datos-contrato',
-    href: '/configuracion/datos-contrato',
-    titulo: 'Datos para contrato',
-    descripcion: 'Logo, domicilio, cuenta de recaudo y matrícula que aparecen en los contratos.',
+    id: 'datos-inmobiliaria',
+    href: RUTA_DATOS_INMOBILIARIA,
+    titulo: 'Datos de mi inmobiliaria',
+    descripcion: 'Los datos de sus contratos y facturas (domicilio, cuenta de recaudo y, si es inmobiliaria, razón social, NIT, logo y matrícula), su contacto y sus documentos legales.',
     icon: IconBuilding2,
     color: 'bg-primary-100 text-primary-600',
-    soloRoles: ['propietario', 'inmobiliaria'],
-  },
-  {
-    id: 'mi-inmobiliaria',
-    href: '/configuracion/mi-inmobiliaria',
-    titulo: 'Mi Inmobiliaria',
-    descripcion: 'Documentos legales: Cámara de Comercio, RUT, Matrícula, Cédula RL y Contrato Marco.',
-    icon: IconFileText,
-    color: 'bg-amber-100 text-amber-700',
     soloRoles: ['propietario', 'inmobiliaria'],
   },
   {
@@ -55,34 +49,17 @@ const SECCIONES: Array<{
     color: 'bg-violet-100 text-violet-600',
     soloRoles: ['inmobiliaria'],
   },
-  {
-    id: 'creditos-estudios',
-    href: '/configuracion/creditos-estudios',
-    titulo: 'Cupos de estudios',
-    descripcion: 'Compre paquetes de cupos y úselos para pagar los estudios de sus prospectos.',
-    icon: IconReceipt,
-    color: 'bg-emerald-100 text-emerald-600',
-    soloRoles: ['inmobiliaria'],
-  },
+  // Reporte de la Oficina Virtual (25-nov), punto 9: para la inmobiliaria, los cupos de estudios se gestionan solo en
+  // Pagos › Cupos de estudios, y las visitas y sus horarios están en Inmuebles (Visitas, Horarios de visita): sus
+  // tarjetas ya no van aquí. El propietario conserva la de horarios (su menú lateral no cambió).
   {
     id: 'disponibilidad',
     href: '/disponibilidad',
-    titulo: 'Disponibilidad de visitas',
+    titulo: 'Horarios de visita',
     descripcion: 'Defina sus horarios para que los interesados agenden visitas solo en los espacios libres.',
     icon: IconCalendar,
     color: 'bg-cyan-100 text-cyan-600',
-    soloRoles: ['propietario', 'inmobiliaria'],
-  },
-  {
-    // La pestaña "Visitas" se quitó del nav de la oficina virtual; queda
-    // accesible desde aquí (y desde cada expediente).
-    id: 'visitas',
-    href: '/citas',
-    titulo: 'Visitas',
-    descripcion: 'Agenda y tablero de las visitas a sus inmuebles.',
-    icon: IconCalendar,
-    color: 'bg-teal-100 text-teal-600',
-    soloRoles: ['inmobiliaria'],
+    soloRoles: ['propietario'],
   },
   {
     id: 'empresa',
@@ -192,7 +169,7 @@ export default function ConfiguracionPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-gray-900">
-                  {seccion.titulo}
+                  {seccion.id === 'datos-inmobiliaria' ? tituloDatosArrendador(rol) : seccion.titulo}
                 </h3>
                 <p className="text-sm text-gray-500 mt-0.5">
                   {seccion.descripcion}
