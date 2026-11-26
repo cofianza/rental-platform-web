@@ -110,6 +110,7 @@ import {
   type RolVista,
 } from '@/components/expedientes/VerComo'
 import { setVerComoApi } from '@/lib/api'
+import { etiquetaMunicipio } from '@/lib/municipios'
 
 function ExpedienteDetalleContenido() {
   const params = useParams()
@@ -1426,7 +1427,7 @@ function ExpedienteDetalleContenido() {
                     <InfoRow label="Dirección" value={expediente.inmueble.direccion} />
                     <InfoRow
                       label="Ciudad"
-                      value={`${expediente.inmueble.ciudad}, ${expediente.inmueble.departamento}`}
+                      value={etiquetaMunicipio(expediente.inmueble.ciudad, expediente.inmueble.departamento)}
                     />
                     <InfoRow
                       label="Tipo"
@@ -1527,7 +1528,7 @@ function ExpedienteDetalleContenido() {
                     {expediente.solicitante.ciudad && (
                       <InfoRow
                         label="Ciudad"
-                        value={`${expediente.solicitante.ciudad}, ${expediente.solicitante.departamento || ''}`}
+                        value={etiquetaMunicipio(expediente.solicitante.ciudad, expediente.solicitante.departamento)}
                       />
                     )}
                     {expediente.solicitante.ocupacion && (

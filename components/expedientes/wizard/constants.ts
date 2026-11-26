@@ -59,44 +59,6 @@ export const NIVEL_EDUCATIVO_OPTIONS = [
   { value: 'posgrado', label: 'Posgrado' },
 ] as const
 
-// Departamentos de Colombia. El value se queda sin tildes porque así está
-// guardado en solicitante.departamento; la etiqueta las lleva.
-export const DEPARTAMENTOS_COLOMBIA = [
-  { value: 'Amazonas', label: 'Amazonas' },
-  { value: 'Antioquia', label: 'Antioquia' },
-  { value: 'Arauca', label: 'Arauca' },
-  { value: 'Atlantico', label: 'Atlántico' },
-  { value: 'Bogota D.C.', label: 'Bogotá D.C.' },
-  { value: 'Bolivar', label: 'Bolívar' },
-  { value: 'Boyaca', label: 'Boyacá' },
-  { value: 'Caldas', label: 'Caldas' },
-  { value: 'Caqueta', label: 'Caquetá' },
-  { value: 'Casanare', label: 'Casanare' },
-  { value: 'Cauca', label: 'Cauca' },
-  { value: 'Cesar', label: 'Cesar' },
-  { value: 'Choco', label: 'Chocó' },
-  { value: 'Cordoba', label: 'Córdoba' },
-  { value: 'Cundinamarca', label: 'Cundinamarca' },
-  { value: 'Guainia', label: 'Guainía' },
-  { value: 'Guaviare', label: 'Guaviare' },
-  { value: 'Huila', label: 'Huila' },
-  { value: 'La Guajira', label: 'La Guajira' },
-  { value: 'Magdalena', label: 'Magdalena' },
-  { value: 'Meta', label: 'Meta' },
-  { value: 'Narino', label: 'Nariño' },
-  { value: 'Norte de Santander', label: 'Norte de Santander' },
-  { value: 'Putumayo', label: 'Putumayo' },
-  { value: 'Quindio', label: 'Quindío' },
-  { value: 'Risaralda', label: 'Risaralda' },
-  { value: 'San Andres y Providencia', label: 'San Andrés y Providencia' },
-  { value: 'Santander', label: 'Santander' },
-  { value: 'Sucre', label: 'Sucre' },
-  { value: 'Tolima', label: 'Tolima' },
-  { value: 'Valle del Cauca', label: 'Valle del Cauca' },
-  { value: 'Vaupes', label: 'Vaupés' },
-  { value: 'Vichada', label: 'Vichada' },
-] as const
-
 // ============================================
 // Mensajes del wizard
 // ============================================
@@ -162,8 +124,7 @@ export const WIZARD_MESSAGES = {
   LABEL_EMAIL: 'Correo electrónico',
   LABEL_TELEFONO: 'Celular (WhatsApp)',
   LABEL_DIRECCION: 'Dirección',
-  LABEL_DEPARTAMENTO: 'Departamento',
-  LABEL_CIUDAD: 'Ciudad',
+  LABEL_MUNICIPIO: 'Municipio',
   LABEL_OCUPACION: 'Ocupación',
   LABEL_ACTIVIDAD_ECONOMICA: 'Actividad económica',
   LABEL_EMPRESA: 'Nombre del empleador',
@@ -179,7 +140,7 @@ export const WIZARD_MESSAGES = {
   PLACEHOLDER_EMAIL: 'correo@ejemplo.com',
   PLACEHOLDER_TELEFONO: '+57 3001234567',
   PLACEHOLDER_DIRECCION: 'Dirección completa',
-  PLACEHOLDER_CIUDAD: 'Ciudad',
+  PLACEHOLDER_MUNICIPIO: 'Escriba el municipio (ej. Rionegro)',
   PLACEHOLDER_OCUPACION: 'Ocupación o cargo',
   PLACEHOLDER_ACTIVIDAD: 'Actividad económica',
   PLACEHOLDER_EMPRESA: 'Nombre de empresa',

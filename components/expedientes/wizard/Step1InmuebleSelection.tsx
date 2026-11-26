@@ -35,6 +35,7 @@ import { WIZARD_MESSAGES, USOS_NO_AFIANZABLES, TIPOS_NO_AFIANZABLES, MSG_USO_NO_
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { SinInmuebleStep1 } from './SinInmuebleStep1'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { etiquetaMunicipio } from '@/lib/municipios'
 
 interface Step1InmuebleSelectionProps {
   data: WizardStep1Data
@@ -525,7 +526,7 @@ export function Step1InmuebleSelection({
                             </span>
                           </div>
                           <p className="text-xs text-gray-500">
-                            {inmueble.ciudad}, {inmueble.departamento}
+                            {etiquetaMunicipio(inmueble.ciudad, inmueble.departamento)}
                           </p>
                           <div className="mt-1 flex items-center gap-2">
                             <p className="text-sm font-semibold text-primary-600">
@@ -659,7 +660,7 @@ export function Step1InmuebleSelection({
                     {data.inmueble.direccion}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {data.inmueble.ciudad}, {data.inmueble.departamento}
+                    {etiquetaMunicipio(data.inmueble.ciudad, data.inmueble.departamento)}
                   </p>
                 </div>
               </div>

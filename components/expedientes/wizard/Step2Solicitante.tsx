@@ -20,6 +20,8 @@ import {
   IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
+import { useAuthStore } from '@/stores/auth.store'
 import { solicitanteService } from '@/services/solicitanteService'
 import { estudioService, type IEstudioVigente } from '@/services/estudioService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
@@ -34,7 +36,6 @@ import {
   TIPO_PERSONA_OPTIONS,
   TIPO_DOCUMENTO_OPTIONS,
   NIVEL_EDUCATIVO_OPTIONS,
-  DEPARTAMENTOS_COLOMBIA,
   MSG_PERSONA_JURIDICA,
   esPersonaJuridica,
 } from './constants'
@@ -805,6 +806,8 @@ function SolicitanteForm({
   // qué se usa. Aquí quedan detrás de un toggle: quien ya los tiene a mano
   // puede capturarlos, pero el camino rápido es el del documento.
   const [showMore, setShowMore] = useState(false)
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const [municipio, setMunicipio] = useState<{ codigo: string; nombre: string } | null>(null)
 
   const inputClasses = (hasError: boolean) =>
     cn(
@@ -1003,36 +1006,23 @@ function SolicitanteForm({
             />
           </div>
 
-          {/* Departamento */}
-          <div>
-            <label htmlFor="solicitante-formData-departamento" className="block text-sm font-medium text-gray-700 mb-1">
-              {WIZARD_MESSAGES.LABEL_DEPARTAMENTO}
-            </label>
-            <select id="solicitante-formData-departamento"
-              value={formData.departamento || ''}
-              onChange={(e) => onUpdateField('departamento', e.target.value)}
-              className={selectClasses(false)}
-            >
-              <option value="">Seleccionar...</option>
-              {DEPARTAMENTOS_COLOMBIA.map((dep) => (
-                <option key={dep.value} value={dep.value}>
-                  {dep.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Ciudad */}
-          <div>
-            <label htmlFor="solicitante-formData-ciudad" className="block text-sm font-medium text-gray-700 mb-1">
-              {WIZARD_MESSAGES.LABEL_CIUDAD}
-            </label>
-            <input id="solicitante-formData-ciudad"
-              type="text"
-              value={formData.ciudad || ''}
-              onChange={(e) => onUpdateField('ciudad', e.target.value)}
-              placeholder={WIZARD_MESSAGES.PLACEHOLDER_CIUDAD}
-              className={inputClasses(false)}
+          {/* Municipio: del listado oficial, «Municipio, Departamento» (reporte Oficina Virtual 25-nov, punto 4) */}
+          <div className="md:col-span-2">
+            <MunicipioCombobox
+              id="solicitante-formData-ciudad"
+              label={WIZARD_MESSAGES.LABEL_MUNICIPIO}
+              ayuda="Búsquelo en el listado oficial de municipios de Colombia."
+              placeholder={WIZARD_MESSAGES.PLACEHOLDER_MUNICIPIO}
+              value={municipio}
+              onChange={(v, m, opciones) => {
+                setMunicipio(v)
+                // Si el campo reconoció solo la ciudad guardada, no se toca: no es un cambio.
+                if (opciones?.automatico) return
+                onUpdateField('ciudad', m?.name)
+                onUpdateField('departamento', m?.department.name)
+              }}
+              guardado={formData.ciudad ? { ciudad: formData.ciudad, departamento: formData.departamento } : null}
+              authToken={accessToken ?? undefined}
             />
           </div>
         </div>

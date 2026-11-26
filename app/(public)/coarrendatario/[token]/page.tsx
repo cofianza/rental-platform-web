@@ -22,6 +22,7 @@ import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
 import { CampoComprobarDocumento } from '@/components/public/CampoComprobarDocumento'
+import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 import { correoParaEnviar, correoResultadoValido, destinoDelCorreo, documentoParaEnviar } from '@/lib/correoResultado'
 import { esInvitacionRetirada, faseInicialInvitacion, TEXTO_YA_NO_HACE_PARTE } from '@/lib/coarrendatarioPublico'
 
@@ -147,7 +148,7 @@ export default function CoarrendatarioPublicPage() {
     }
     setFaltaConfirmarDocumento(false)
     if (direccion.trim().length < 5 || municipio.trim().length < 2) {
-      setErrorMsg('Escriba su dirección de residencia y su municipio.')
+      setErrorMsg('Escriba su dirección de residencia y elija su municipio de la lista.')
       return
     }
     const pideCorreo = !!view?.contacto_resultado?.requerido
@@ -524,16 +525,15 @@ export default function CoarrendatarioPublicPage() {
                 <label htmlFor="coa-municipio" className="mb-1 block text-xs font-medium text-gray-700">
                   Municipio
                 </label>
-                <input
+                {/* Del listado oficial de municipios: «Municipio, Departamento» (reporte Oficina Virtual 25-nov, punto 4). */}
+                <MunicipioCombobox
                   id="coa-municipio"
-                  type="text"
-                  autoComplete="address-level2"
-                  value={municipio}
-                  maxLength={120}
-                  onChange={(e) => setMunicipio(e.target.value)}
+                  label={null}
+                  ayuda={null}
+                  placeholder="Escriba su municipio"
+                  value={municipio ? { codigo: '', nombre: municipio } : null}
+                  onChange={(v) => setMunicipio(v?.nombre ?? '')}
                   disabled={procesando}
-                  placeholder="Medellín"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>

@@ -34,6 +34,8 @@ import { FOTO_LIMITS } from '@/types/inmueble'
 import { cn } from '@/lib/utils'
 import { leerErrorDeFormulario } from '@/lib/erroresApi'
 import { useAuthStore } from '@/stores/auth.store'
+import { MunicipioCombobox, type MunicipioOption } from '@/components/registro/MunicipioCombobox'
+import { departamentoSiDistinto } from '@/lib/municipios'
 
 // ── Sección y campo ─────────────────────────────────────────
 
@@ -150,43 +152,6 @@ function CurrencyInput({ label, id, value, onChange, disabled, placeholder, erro
     </Campo>
   )
 }
-
-// Departamentos de Colombia (principales)
-const DEPARTAMENTOS = [
-  'Amazonas',
-  'Antioquia',
-  'Arauca',
-  'Atlántico',
-  'Bogotá D.C.',
-  'Bolívar',
-  'Boyacá',
-  'Caldas',
-  'Caquetá',
-  'Casanare',
-  'Cauca',
-  'Cesar',
-  'Chocó',
-  'Córdoba',
-  'Cundinamarca',
-  'Guainía',
-  'Guaviare',
-  'Huila',
-  'La Guajira',
-  'Magdalena',
-  'Meta',
-  'Nariño',
-  'Norte de Santander',
-  'Putumayo',
-  'Quindío',
-  'Risaralda',
-  'San Andrés y Providencia',
-  'Santander',
-  'Sucre',
-  'Tolima',
-  'Valle del Cauca',
-  'Vaupés',
-  'Vichada',
-]
 
 interface InmuebleFormProps {
   mode: 'create' | 'edit'
@@ -310,6 +275,9 @@ function Avanzado({ plegar, children }: { plegar: boolean; children: ReactNode }
 export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
   const router = useRouter()
   const authUser = useAuthStore((s) => s.user)
+  const accessToken = useAuthStore((s) => s.accessToken)
+  // Reporte Oficina Virtual 25-nov, punto 4: el municipio se elige del listado oficial (DIVIPOLA).
+  const [municipio, setMunicipio] = useState<{ codigo: string; nombre: string } | null>(null)
   const isPropietarioUser = authUser?.rol === 'propietario'
   const isInmobiliariaUser = authUser?.rol === 'inmobiliaria'
   const isAutoAssignOwner = isPropietarioUser || isInmobiliariaUser
@@ -445,11 +413,10 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     if (!formData.direccion.trim()) {
       newErrors.direccion = INMUEBLE_MESSAGES.DIRECCION_REQUIRED
     }
-    if (!formData.ciudad.trim()) {
-      newErrors.ciudad = INMUEBLE_MESSAGES.CIUDAD_REQUIRED
-    }
-    if (!formData.departamento.trim()) {
-      newErrors.departamento = INMUEBLE_MESSAGES.DEPARTAMENTO_REQUIRED
+    // El municipio sale del listado oficial. El guardado antes del buscador (que no está en el
+    // listado) se conserva mientras no se toque; el combobox pide elegirlo.
+    if (!municipio && !(formData.ciudad.trim() && formData.departamento.trim())) {
+      newErrors.ciudad = INMUEBLE_MESSAGES.MUNICIPIO_REQUIRED
     }
     if (!formData.tipo) {
       newErrors.tipo = INMUEBLE_MESSAGES.TIPO_REQUIRED
@@ -657,6 +624,21 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     }
   }
 
+  // Ciudad y departamento salen juntos de la opción elegida; sin opción (borró o está escribiendo), vacíos.
+  // Si el campo reconoció solo la ciudad guardada, no se toca: no es un cambio de quien edita.
+  const handleMunicipioChange = (
+    v: { codigo: string; nombre: string } | null,
+    m?: MunicipioOption,
+    opciones?: { automatico: boolean },
+  ) => {
+    setMunicipio(v)
+    if (opciones?.automatico) return
+    setFormData((prev) => ({ ...prev, ciudad: m?.name ?? '', departamento: m?.department.name ?? '' }))
+    if (m && (errors.ciudad || errors.departamento)) {
+      setErrors((prev) => ({ ...prev, ciudad: undefined, departamento: undefined }))
+    }
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handlePropietarioChange = (propietarioId: string, _propietario: any) => {
     handleChange('propietario_id', propietarioId)
@@ -836,34 +818,19 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               />
             </Campo>
 
-            <Campo id="departamento" label="Departamento" requerido error={errors.departamento}>
-              <select
-                id="departamento"
-                value={formData.departamento}
-                onChange={(e) => handleChange('departamento', e.target.value)}
-                disabled={isSubmitting}
-                aria-invalid={!!errors.departamento}
-                className={inputClasses(!!errors.departamento)}
-              >
-                <option value="">Seleccionar departamento...</option>
-                {DEPARTAMENTOS.map((dep) => (
-                  <option key={dep} value={dep}>
-                    {dep}
-                  </option>
-                ))}
-              </select>
-            </Campo>
-
-            <Campo id="ciudad" label="Ciudad" requerido error={errors.ciudad}>
-              <input
-                type="text"
+            <Campo id="ciudad" label="Municipio" requerido>
+              <MunicipioCombobox
+                key={inmueble?.id ?? 'nuevo'}
                 id="ciudad"
-                value={formData.ciudad}
-                onChange={(e) => handleChange('ciudad', e.target.value)}
+                label={null}
+                ayuda="Búsquelo en el listado oficial de municipios de Colombia."
+                placeholder="Escriba el municipio (ej. Caldas)"
+                value={municipio}
+                onChange={handleMunicipioChange}
+                guardado={mode === 'edit' && inmueble ? { ciudad: inmueble.ciudad, departamento: inmueble.departamento } : null}
+                authToken={accessToken ?? undefined}
+                error={errors.ciudad ?? errors.departamento}
                 disabled={isSubmitting}
-                placeholder="Ej: Bogotá"
-                aria-invalid={!!errors.ciudad}
-                className={inputClasses(!!errors.ciudad)}
               />
             </Campo>
 
@@ -1307,7 +1274,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                     disabled={isSubmitting}
                     rows={2}
                     placeholder={
-                      [formData.direccion, formData.barrio, formData.ciudad, formData.departamento]
+                      [formData.direccion, formData.barrio, formData.ciudad, departamentoSiDistinto(formData.ciudad, formData.departamento)]
                         .filter(Boolean)
                         .join(', ') || 'Ej: Carrera 50 #20-30, barrio La Estrella, Caldas, Antioquia'
                     }

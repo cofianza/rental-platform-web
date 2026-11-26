@@ -30,6 +30,7 @@ import type { WizardData, CoarrendatarioWizard } from '@/hooks/useExpedienteWiza
 import { WIZARD_MESSAGES } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
+import { etiquetaMunicipio } from '@/lib/municipios'
 
 interface Step4ConfirmationProps {
   data: WizardData
@@ -239,7 +240,7 @@ export function Step4Confirmation({
                 </p>
                 <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
                   <IconMapPin size={12} />
-                  {inmueble.ciudad}, {inmueble.departamento}
+                  {etiquetaMunicipio(inmueble.ciudad, inmueble.departamento)}
                 </p>
                 <p className="mt-2 text-lg font-black tracking-tight text-primary-600">
                   {formatCurrency(inmueble.valor_arriendo)}
