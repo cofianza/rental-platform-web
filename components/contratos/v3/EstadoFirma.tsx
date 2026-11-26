@@ -162,10 +162,13 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         : 'Estamos entregando el aviso de firma incompleta: en unos minutos podrá aceptarlo aquí.'
       : null
 
+  // Adenda 6.1 §4: registrado en notaría sin el PDF autenticado, no hay versión firmada que esperar: se muestra el
+  // contrato que se llevó a la notaría, dicho así (el autenticado lo custodia la inmobiliaria hasta que lo cargue).
+  const sinAutenticado = firmado && !!notaria?.registro && !notaria.registro.documento
   const urlContrato = async (inline: boolean) => {
     const r = await contratoService.descargarContrato(e.id, { inline })
-    // Firmado, "Documento firmado" nunca muestra el PDF sin firmas.
-    if (firmado && r.firmado === false)
+    // Firmado, "Documento firmado" nunca muestra el PDF sin firmas (salvo el de notaría sin cargar, que lo dice).
+    if (firmado && r.firmado === false && !sinAutenticado)
       throw new Error(`La versión firmada todavía se está archivando${interno ? ' desde Auco' : ''}. Intente de nuevo en unos minutos.`)
     return r.url
   }
@@ -182,9 +185,20 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const docs: DocVisor[] = [
     {
       clave: 'contrato',
-      etiqueta: firmado ? 'Documento firmado' : notaria ? 'Contrato para firmar en notaría' : 'Documento enviado a firma',
+      etiqueta: sinAutenticado
+        ? 'Contrato llevado a la notaría (sin firmas)'
+        : firmado
+          ? notaria?.registro
+            ? 'Contrato autenticado en notaría'
+            : 'Documento firmado'
+          : notaria
+            ? 'Contrato para firmar en notaría'
+            : 'Documento enviado a firma',
       cargar: () => urlContrato(true),
-      descargar: { etiqueta: firmado ? 'Descargar contrato firmado' : 'Descargar contrato', url: () => urlContrato(false) },
+      descargar: {
+        etiqueta: firmado && !sinAutenticado ? (notaria?.registro ? 'Descargar contrato autenticado' : 'Descargar contrato firmado') : 'Descargar contrato',
+        url: () => urlContrato(false),
+      },
     },
     { clave: 'crc', etiqueta: 'CRC', cargar: v3.crcUrl },
     ...(e.ruta === 'B' ? [{ clave: 'propio', etiqueta: 'Contrato original de la inmobiliaria', cargar: v3.propioUrl }] : []),
@@ -333,18 +347,14 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
                 : 'Fianza activa: firmaron todas las partes.'}
           </Aviso>
         )}
-        {enFirma && notaria?.registro && (
-          // El registro quedó y la activación la termina el barrido (o está en curso).
-          <Aviso>
-            Contrato registrado el {formatDateTime(notaria.registro.en)} (hora de Colombia). La fianza se activa en unos minutos.
-          </Aviso>
-        )}
         {/* Adenda 6.1 §4: ya registrado, la constancia y, si falta, la carga del contrato autenticado (no cambia la fianza). */}
         {(enFirma || firmado) && notaria?.registro && (
           <CargaContratoNotaria
             motivo={notaria.motivo}
             aviso={notaria.aviso}
             registro={notaria.registro}
+            // En firma, el registro quedó y la activación la termina el barrido (o está en curso).
+            estadoFianza={enFirma ? 'pendiente' : terminado ? 'terminada' : 'activa'}
             puedeRegistrar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
             quienCarga={
               rol === 'inmobiliaria'

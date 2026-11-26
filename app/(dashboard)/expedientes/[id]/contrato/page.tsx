@@ -502,7 +502,7 @@ function Asistente({
       const enviado = tras.enviado
       toast.success(
         enviado?.notaria
-          ? `Contrato ${contrato.numero} listo para firmar en notaría: descárguelo y cárguelo firmado.`
+          ? `Contrato ${contrato.numero} listo para firmar en notaría: descárguelo, hágalo autenticar en notaría y regístrelo con la fecha del sello.`
           : enviado && enviado.identidadPendientes > 0
             ? enviado.cotejo
               ? `Contrato ${contrato.numero}: enviamos el enlace del cotejo de identidad. La firma sale cuando todas las personas lo aprueben.`

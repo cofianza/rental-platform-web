@@ -294,7 +294,7 @@ export function paraLista(texto: string): string {
 /** Adenda 6.1 §4: el contrato en firma espera el registro en notaría; lo hace quien gestiona el estudio. */
 const FIRMA_NOTARIA: Record<VistaTurno, string> = {
   gestor:
-    'El contrato se firma en notaría: descárguelo, hágalo autenticar en notaría y regístrelo en el contrato, con la fecha del sello, antes de que venza el plazo. La fianza se activa con el registro.',
+    'El contrato se firma en notaría: descárguelo, hágalo autenticar en notaría y regístrelo en la pantalla del contrato, con la fecha del sello, antes de que venza el plazo. La fianza se activa con el registro.',
   equipo:
     'El contrato se firma en notaría: alguien de su equipo con permiso de edición lo descarga, lo hace autenticar en notaría y lo registra con la fecha del sello. La fianza se activa con el registro.',
   cofianza: 'El contrato se firma en notaría: falta que quien gestiona el estudio registre el contrato autenticado. La fianza se activa con el registro.',

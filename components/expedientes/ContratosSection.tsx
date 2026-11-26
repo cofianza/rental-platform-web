@@ -498,7 +498,7 @@ export function ContratosSection({
         )}
         {/* Adenda 6.1 §4: el contrato que va a notaría no se envía a firma: se registra desde su detalle. */}
         {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && c.firma_notaria === true && (
-          <Link href={`/contratos/${c.id}`} className={cn(BOTON_FILA, BOTON_PRINCIPAL)} title="Descargar el contrato y registrarlo autenticado en notaría">
+          <Link href={`/contratos/${c.id}`} className={cn(BOTON_FILA, BOTON_PRINCIPAL)} title="Descargar el contrato y registrarlo con la fecha del sello de la notaría">
             <IconArrowRight size={16} />
             Firma en notaría
           </Link>

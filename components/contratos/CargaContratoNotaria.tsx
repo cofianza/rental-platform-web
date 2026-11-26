@@ -62,6 +62,11 @@ interface Props {
   rango?: RangoAutenticacion | null
   /** Ya registrado: la constancia (y el documento, si se cargó). */
   registro?: RegistroNotaria | null
+  /**
+   * Ya registrado: en qué quedó la fianza (lo dice el estado del contrato). 'activa' no agrega nada (la pantalla ya lo
+   * dice); 'pendiente' = la activación está en curso; 'terminada' = el contrato terminó.
+   */
+  estadoFianza?: 'activa' | 'pendiente' | 'terminada'
   /** Quien mira puede registrarlo y cargar el documento (inmobiliaria o propietario directo, no solo lectura). */
   puedeRegistrar: boolean
   /** Quién lo registra, cuando quien mira no puede. */
@@ -119,6 +124,7 @@ export function CargaContratoNotaria({
   freno,
   rango,
   registro,
+  estadoFianza = 'activa',
   puedeRegistrar,
   quienRegistra = 'Lo registra un miembro de su inmobiliaria con permiso de edición.',
   quienCarga = 'Lo carga un miembro de su inmobiliaria con permiso de edición.',
@@ -134,6 +140,7 @@ export function CargaContratoNotaria({
   const ayudaFechaId = useId()
   const errorFechaId = useId()
   const ayudaPdfId = useId()
+  const fechaRef = useRef<HTMLInputElement>(null)
   const inputRegistroRef = useRef<HTMLInputElement>(null)
   const inputDocumentoRef = useRef<HTMLInputElement>(null)
   const [fecha, setFecha] = useState('')
@@ -154,7 +161,12 @@ export function CargaContratoNotaria({
             </h3>
             <p>
               Fecha de autenticación: <span className="font-medium">{formatDate(registro.fechaAutenticacion)}</span>.
-              Registrado el {formatDateTime(registro.en)} (hora de Colombia): desde entonces corre la fianza.
+              Registrado el {formatDateTime(registro.en)} (hora de Colombia).
+              {estadoFianza === 'pendiente'
+                ? ' La activación de la fianza está en curso.'
+                : estadoFianza === 'terminada'
+                  ? ' El contrato ya terminó.'
+                  : ''}
             </p>
             <p className="text-gray-600">Aviso aceptado: «{aviso}»</p>
           </div>
@@ -171,8 +183,8 @@ export function CargaContratoNotaria({
             <p className="flex items-start gap-2">
               <IconInfo size={16} className="mt-0.5 shrink-0" />
               <span>
-                El contrato autenticado no está cargado en la plataforma. La fianza sigue activa, pero el documento se exige
-                al reportar una mora. Puede cargarlo cuando quiera.
+                El contrato autenticado no está cargado en la plataforma. Se debe presentar al reportar una mora: sin él,
+                Cofianza no paga. Puede cargarlo aquí cuando quiera.
               </span>
             </p>
             {puedeRegistrar && onCargarDocumento ? (
@@ -210,7 +222,8 @@ export function CargaContratoNotaria({
               {documento && <p className="break-words text-gray-900">Archivo: {documento.name}</p>}
               <p className="text-gray-600">
                 Revise que sea el contrato completo, con los sellos de la notaría: una vez cargado no se reemplaza desde la
-                plataforma. Quedan registrados la fecha, la hora y quién lo cargó. La fianza no cambia: corre desde el registro.
+                plataforma. Quedan registrados la fecha, la hora y quién lo cargó. La fecha de activación de la fianza no
+                cambia: es la del registro.
               </p>
             </div>
           }
@@ -279,7 +292,9 @@ export function CargaContratoNotaria({
           onSubmit={(ev) => {
             ev.preventDefault()
             setTocado(true)
-            if (!errorFecha && !bloqueado) setConfirmando(true)
+            // Con la fecha vacía o fuera del rango, el foco va al campo (el error se anuncia con él).
+            if (errorFecha) fechaRef.current?.focus()
+            else if (!bloqueado) setConfirmando(true)
           }}
           noValidate
         >
@@ -288,6 +303,7 @@ export function CargaContratoNotaria({
               Fecha de autenticación en notaría <span className="text-red-600" aria-hidden="true">*</span>
             </label>
             <input
+              ref={fechaRef}
               id={fechaId}
               type="date"
               value={fecha}
@@ -299,7 +315,7 @@ export function CargaContratoNotaria({
               aria-invalid={tocado && !!errorFecha}
               aria-describedby={`${ayudaFechaId}${tocado && errorFecha ? ` ${errorFechaId}` : ''}`}
               disabled={bloqueado}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 sm:w-60"
+              className="min-h-10 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 sm:w-60"
             />
             <p id={ayudaFechaId} className="text-xs text-gray-600">
               {rango
@@ -376,6 +392,12 @@ export function CargaContratoNotaria({
               Fecha de autenticación: {fecha ? formatDate(fecha) : '—'}.{' '}
               {archivo ? <span className="break-words">Archivo: {archivo.name}.</span> : 'Sin PDF por ahora (puede cargarlo después).'}
             </p>
+            {archivo && (
+              <p className="text-gray-600">
+                Revise que sea el contrato completo, con los sellos de la notaría: una vez registrado no se reemplaza desde la
+                plataforma.
+              </p>
+            )}
             <p className="text-gray-600">Quedan registrados la fecha, la hora y quién aceptó el aviso. Con el registro, la fianza queda activa.</p>
           </div>
         }

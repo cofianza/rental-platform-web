@@ -606,6 +606,7 @@ export default function ContratoDetallePage() {
           vence={notaria.vence}
           rango={notaria.rango ?? null}
           registro={notaria.registro ?? null}
+          estadoFianza={contrato.estado === 'vigente' ? 'activa' : contrato.estado === 'finalizado' ? 'terminada' : 'pendiente'}
           puedeRegistrar={puedeEditar && (user?.rol === 'propietario' || user?.rol === 'inmobiliaria' || user?.rol === 'administrador')}
           quienRegistra={
             user?.rol === 'inmobiliaria'
