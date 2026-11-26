@@ -72,6 +72,8 @@ import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
 import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
 import { AYUDA_CASILLA_4A, CASILLAS_5_2_V3, COTEJO_AL_FIRMAR, versionVisible } from '@/lib/autorizacionV3'
 import { canalDeEstaPagina } from '@/lib/canalEnlace'
+import { CampoDatosFactura, datosFacturaCompletos, type MunicipioFactura } from '@/components/public/CampoDatosFactura'
+import type { EstadoBusquedaMunicipio } from '@/components/registro/MunicipioCombobox'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -264,6 +266,11 @@ export default function AutorizarPage() {
   // (contacto_resultado). Se prellena al confirmar su documento con el de su ficha.
   const [correoResultado, setCorreoResultado] = useState('')
   const [errorCorreo, setErrorCorreo] = useState(false)
+  // Factura electrónica del pago: solo si la API lo pide (datos_factura).
+  const [direccionFactura, setDireccionFactura] = useState('')
+  const [municipioFactura, setMunicipioFactura] = useState<MunicipioFactura | null>(null)
+  const [errorFactura, setErrorFactura] = useState(false)
+  const [busquedaMunicipio, setBusquedaMunicipio] = useState<EstadoBusquedaMunicipio | null>(null)
   const [openFin, setOpenFin] = useState<number | null>(null)
   const [consents, setConsents] = useState<Record<ConsentKey, boolean>>({
     analitica: false,
@@ -612,6 +619,13 @@ export default function AutorizarPage() {
   // congela texto, versión, documento, IP, fecha y dispositivo (§8.4).
   async function handleConfirmarYFirmar() {
     if (submitting) return
+    const pideFactura = data?.datos_factura
+    if (pideFactura && !datosFacturaCompletos(pideFactura, direccionFactura, municipioFactura, busquedaMunicipio)) {
+      setErrorFactura(true)
+      // Al primer campo con error (el foco también lo desplaza a la vista).
+      requestAnimationFrame(() => document.querySelector<HTMLInputElement>('#datos-factura [aria-invalid="true"]')?.focus())
+      return
+    }
     setSubmitting(true)
     setErrorMessage('')
     const canal = canalDeEstaPagina(token)
@@ -628,6 +642,10 @@ export default function AutorizarPage() {
         ...correoParaEnviar(data?.contacto_resultado?.requerido, correoResultado),
         // Adenda 6.1 §2: por cuál canal llegó (la marca del enlace). El número o correo lo pone la API.
         ...(canal ? { canal_enlace: canal } : {}),
+        ...(pideFactura?.pide_direccion ? { direccion_factura: direccionFactura.trim() } : {}),
+        ...(pideFactura?.pide_municipio && municipioFactura
+          ? { municipio_codigo: municipioFactura.codigo, municipio_nombre: municipioFactura.nombre }
+          : {}),
       })
       setHashDocumento(result.hash_documento)
       setPagoRequerido(!!result.pago_requerido)
@@ -1721,7 +1739,7 @@ export default function AutorizarPage() {
               <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Confirme su autorización</h2>
               <p className="mt-1 text-sm text-gray-500">
                 {data?.pago?.requerido
-                  ? `Revise el resumen y confirme. Después le mostramos el enlace para pagar el estudio${
+                  ? `Revise el resumen${data.datos_factura ? ', complete los datos de su factura' : ''} y confirme. Después le mostramos el enlace para pagar el estudio${
                       data.pago.monto_formateado ? ` por ${data.pago.monto_formateado}` : ''
                     } en Mercado Pago; su evaluación empieza cuando se confirme el pago.`
                   : data?.pago == null
@@ -1765,6 +1783,19 @@ export default function AutorizarPage() {
                 <p className="mt-3 border-t border-gray-100 pt-3 text-xs leading-relaxed text-gray-600">{COTEJO_AL_FIRMAR}</p>
               )}
             </div>
+
+            {data?.datos_factura && (
+              <CampoDatosFactura
+                pide={data.datos_factura}
+                direccion={direccionFactura}
+                onDireccion={setDireccionFactura}
+                municipio={municipioFactura}
+                onMunicipio={setMunicipioFactura}
+                estadoBusqueda={busquedaMunicipio}
+                onEstadoBusqueda={setBusquedaMunicipio}
+                mostrarError={errorFactura}
+              />
+            )}
 
             {errorMessage && (
               <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorMessage}</div>
