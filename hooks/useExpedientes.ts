@@ -18,14 +18,14 @@ import { clavePestana, soloCambioLaBusqueda } from '@/lib/filtrosExpedientes'
 
 const ESTUDIO_FILTROS: EstudioFiltro[] = [
   'todos', 'aprobado', 'rechazado', 'condicionado', 'segundo_firmante', 'bloqueado', 'revision_cofianza',
-  'en_proceso', 'sin_estudio', 'requiere_accion', 'cerrado', 'espera_autorizacion',
+  'en_proceso', 'sin_estudio', 'sin_autorizar', 'requiere_accion', 'cerrado', 'espera_autorizacion',
 ]
 
 /** Los chips que solo acepta la API nueva (reporte de Gerencia, punto 6); `condicionado` es su unión. */
 const FILTROS_ADENDA5: EstudioFiltro[] = ['segundo_firmante', 'bloqueado', 'revision_cofianza']
 
 /** Los filtros del reporte de la Oficina Virtual (25-nov): una API anterior los rechaza (400) y se vuelve a «Todos». */
-const FILTROS_OFICINA_VIRTUAL: EstudioFiltro[] = ['cerrado', 'espera_autorizacion']
+const FILTROS_OFICINA_VIRTUAL: EstudioFiltro[] = ['cerrado', 'espera_autorizacion', 'sin_autorizar']
 
 const DEBOUNCE_DELAY = 300
 

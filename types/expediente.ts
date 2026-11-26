@@ -81,6 +81,8 @@ export type EstudioFiltro =
   | 'revision_cofianza'
   | 'en_proceso'
   | 'sin_estudio'
+  /** Reporte de la Oficina Virtual (25-nov), punto 13: «Esperando autorización» (la evaluación espera que el titular autorice). */
+  | 'sin_autorizar'
   | 'requiere_accion'
   /** Reporte de la Oficina Virtual (25-nov), punto 1: cancelados o caducados y cerrados sin resultado. */
   | 'cerrado'
