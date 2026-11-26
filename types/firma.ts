@@ -40,6 +40,8 @@ export interface IFirmantesPreview {
   puede_enviar: boolean
   /** Adenda 2 §9: antes del sobre, el arrendatario confirma su identidad por correo. */
   biometria?: boolean
+  /** Adenda 6.1 §3: antes del sobre, el arrendatario hace el cotejo de identidad (enlace por correo). */
+  cotejo?: boolean
 }
 
 // Firmante multi-parte de un contrato (arrendatario/arrendador/cofianza).
@@ -63,13 +65,33 @@ export interface IConsentimientoFirma {
   opciones: { autoriza: string; analista: string }
 }
 
+/**
+ * Adenda 6.1 §3: el cotejo de identidad AL FIRMAR (la misma página, otra regla). Solo lo de la persona: si tiene que
+ * marcar la casilla 4A (con su texto literal), cuántos intentos le quedan y, al terminar, si quedó aprobado o firma en
+ * notaría.
+ */
+export interface ICotejoFirmaPublico {
+  requiere_4a: boolean
+  texto_4a: string
+  version_4a: string
+  max_intentos: number
+  intentos_restantes: number
+  /** AucoFace encendido: si no, «no disponible por ahora». */
+  disponible: boolean
+  resultado: 'aprobado' | 'notaria' | null
+}
+
 export interface IVerificacionIdentidadPublica {
   nombre: string
   inmueble: string
   /** Solo el tipo (cc, ce, ppt, pep, pasaporte) para nombrar el documento de la foto. Ausente en APIs viejas. */
   tipo_documento?: string | null
   completada: boolean
-  consentimiento: IConsentimientoFirma
+  /** Adenda 2 §9 (ausente en el cotejo al firmar de la Adenda 6.1). */
+  consentimiento?: IConsentimientoFirma
+  /** 'adenda61' = el cotejo al firmar (Adenda 6.1 §3). Ausente en la verificación de la Adenda 2 §9. */
+  regla?: 'adenda61'
+  cotejo?: ICotejoFirmaPublico
 }
 
 /** El gestor solo ve 'pendiente' | 'completada'; Cofianza ve el resultado del cotejo. */
@@ -97,6 +119,13 @@ export interface IVerificacionIdentidad {
   revision?: 'confirmada' | 'suplantacion' | null
   revision_nota?: string | null
   revisado_en?: string | null
+  /** 'adenda61' = cotejo de identidad al firmar (Adenda 6.1); 'adenda2' = verificación previa (Adenda 2 §9). */
+  regla?: 'adenda2' | 'adenda61'
+  /** Solo Cofianza, cotejo al firmar: cómo terminó (null = pendiente) e intentos usados. */
+  desenlace?: 'aprobado' | 'sin_autorizacion_4a' | 'intentos_agotados' | 'no_cotejable' | null
+  intentos?: number
+  heredado?: boolean
+  consentimiento_4a?: { origen: 'autorizacion' | 'firma' | null; marcada: boolean } | null
 }
 
 export interface ISolicitudFirma {

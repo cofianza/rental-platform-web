@@ -29,6 +29,7 @@ import {
 } from '@/components/icons'
 import { etiquetaContrato, formatDate, formatDateTime, tonoContrato } from '@/lib/constants'
 import { abrirEnPestana, cn } from '@/lib/utils'
+import { textoAvanceCotejo } from '@/lib/cotejoFirma'
 import { VerificacionIdentidadFirma } from '@/components/expedientes/VerificacionIdentidadFirma'
 import { CobroTarifaContrato } from '@/components/contratos/CobroTarifaContrato'
 import { contratoService } from '@/services/contratoService'
@@ -74,9 +75,9 @@ function motivoDe(s: EnvioV3['sobre'], interno: boolean, notaria: boolean): stri
   if (!s) return null
   switch (s.motivo) {
     case 'EXPIRED':
-      // Adenda 6 §2: el plazo de carga llegaba hasta el fin de la vigencia del resultado (no se puede reabrir).
+      // Adenda 6.1 §4: el plazo de registro llegaba hasta el fin de la vigencia del resultado (no se puede reabrir).
       return notaria
-        ? 'Venció el plazo para cargar el contrato firmado en notaría, que llegaba hasta el fin de la vigencia del resultado del estudio.'
+        ? 'Venció el plazo para registrar el contrato firmado en notaría, que llegaba hasta el fin de la vigencia del resultado del estudio.'
         : 'Venció el plazo para firmar.'
     case 'IDENTIDAD':
       return `Venció el plazo para firmar sin que se completara la verificación de identidad${s.motivoDetalle ? ` (${s.motivoDetalle})` : ''}.`
@@ -135,7 +136,8 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const esperaIdentidad =
     enFirma && e.identidadPendientes > 0 && !!e.sobre && !['creando', 'en_firma', 'completo'].includes(e.sobre.estado)
   const s = esperaIdentidad ? null : e.sobre
-  // Adenda 6 §2: el contrato se firma en notaría (sin proceso en Auco): la inmobiliaria lo carga firmado.
+  // Adenda 6.1 §4: el contrato se firma en notaría (sin proceso en Auco): la inmobiliaria lo registra.
+  // Lo registra y carga el PDF la inmobiliaria (o Cofianza); no quien solo mira.
   const notaria = e.notaria ?? null
   // Un proceso que no se creó en Auco (fallido), o el cierre sin proceso por el plazo vencido, no tiene firmantes ni plazo que mostrar.
   const creado = !!s && s.estado !== 'fallido' && s.firmantes.length > 0
@@ -160,10 +162,13 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         : 'Estamos entregando el aviso de firma incompleta: en unos minutos podrá aceptarlo aquí.'
       : null
 
+  // Adenda 6.1 §4: registrado en notaría sin el PDF autenticado, no hay versión firmada que esperar: se muestra el
+  // contrato que se llevó a la notaría, dicho así (el autenticado lo custodia la inmobiliaria hasta que lo cargue).
+  const sinAutenticado = firmado && !!notaria?.registro && !notaria.registro.documento
   const urlContrato = async (inline: boolean) => {
     const r = await contratoService.descargarContrato(e.id, { inline })
-    // Firmado, "Documento firmado" nunca muestra el PDF sin firmas.
-    if (firmado && r.firmado === false)
+    // Firmado, "Documento firmado" nunca muestra el PDF sin firmas (salvo el de notaría sin cargar, que lo dice).
+    if (firmado && r.firmado === false && !sinAutenticado)
       throw new Error(`La versión firmada todavía se está archivando${interno ? ' desde Auco' : ''}. Intente de nuevo en unos minutos.`)
     return r.url
   }
@@ -180,9 +185,20 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const docs: DocVisor[] = [
     {
       clave: 'contrato',
-      etiqueta: firmado ? 'Documento firmado' : notaria ? 'Contrato para firmar en notaría' : 'Documento enviado a firma',
+      etiqueta: sinAutenticado
+        ? 'Contrato llevado a la notaría (sin firmas)'
+        : firmado
+          ? notaria?.registro
+            ? 'Contrato autenticado en notaría'
+            : 'Documento firmado'
+          : notaria
+            ? 'Contrato para firmar en notaría'
+            : 'Documento enviado a firma',
       cargar: () => urlContrato(true),
-      descargar: { etiqueta: firmado ? 'Descargar contrato firmado' : 'Descargar contrato', url: () => urlContrato(false) },
+      descargar: {
+        etiqueta: firmado && !sinAutenticado ? (notaria?.registro ? 'Descargar contrato autenticado' : 'Descargar contrato firmado') : 'Descargar contrato',
+        url: () => urlContrato(false),
+      },
     },
     { clave: 'crc', etiqueta: 'CRC', cargar: v3.crcUrl },
     ...(e.ruta === 'B' ? [{ clave: 'propio', etiqueta: 'Contrato original de la inmobiliaria', cargar: v3.propioUrl }] : []),
@@ -214,7 +230,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
     if (await v3.reintentar()) toast.success(`Contrato ${e.numero} enviado a firma`)
   }
   const reenviarIdentidad = async () => {
-    if (await v3.reenviarIdentidad()) toast.success('Enlace de verificación reenviado')
+    if (await v3.reenviarIdentidad()) toast.success(e.cotejo ? 'Enlace del cotejo reenviado' : 'Enlace de verificación reenviado')
   }
   const aceptarAviso = async () => {
     if (await v3.aceptarAviso()) toast.success('Aviso aceptado')
@@ -324,32 +340,49 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
 
         {activa && (
           <Aviso tono="exito">
-            {notaria?.cargado
-              ? `Fianza activa desde el ${formatDateTime(notaria.cargado.en)} (hora de Colombia): se cargó el contrato con firma autenticada en notaría.`
+            {notaria?.registro
+              ? `Fianza activa desde el ${formatDateTime(notaria.registro.en)} (hora de Colombia): se registró el contrato con firma autenticada en notaría.`
               : e.fechaActivacion
                 ? `Fianza activa desde el ${formatDateTime(e.fechaActivacion)} (hora de Colombia): la última firma registrada${interno ? ' por Auco' : ''}.`
                 : 'Fianza activa: firmaron todas las partes.'}
           </Aviso>
         )}
-        {enFirma && notaria?.cargado && (
-          // La carga quedó y la activación la termina el barrido (o está en curso).
-          <Aviso>
-            Contrato cargado el {formatDateTime(notaria.cargado.en)} (hora de Colombia). La fianza se activa en unos minutos.
-          </Aviso>
+        {/* Adenda 6.1 §4: ya registrado, la constancia y, si falta, la carga del contrato autenticado (no cambia la fianza). */}
+        {(enFirma || firmado) && notaria?.registro && (
+          <CargaContratoNotaria
+            motivo={notaria.motivo}
+            aviso={notaria.aviso}
+            registro={notaria.registro}
+            // En firma, el registro quedó y la activación la termina el barrido (o está en curso).
+            estadoFianza={enFirma ? 'pendiente' : terminado ? 'terminada' : 'activa'}
+            puedeRegistrar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
+            quienCarga={
+              rol === 'inmobiliaria'
+                ? 'Lo carga un miembro de su inmobiliaria con permiso de edición.'
+                : 'La inmobiliaria carga el contrato autenticado.'
+            }
+            cargandoDocumento={accion === 'cargarDocumentoNotaria'}
+            onCargarDocumento={async (archivo) => {
+              const ok = await v3.cargarDocumentoNotaria(archivo)
+              if (ok) toast.success(`Contrato ${e.numero} autenticado cargado`)
+              return ok
+            }}
+          />
         )}
-        {/* Solo con el plazo de carga vivo: un último proceso cancelado o incompleto no espera la carga. */}
-        {enFirma && notaria && !notaria.cargado && s?.estado === 'en_firma' && (
+        {/* Solo con el plazo de registro vivo: un último proceso cancelado o incompleto no espera el registro. */}
+        {enFirma && notaria && !notaria.registro && s?.estado === 'en_firma' && (
           <CargaContratoNotaria
             motivo={notaria.motivo}
             aviso={notaria.aviso}
             vence={s.expiraEn}
-            puedeCargar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
-            quienCarga={
+            rango={notaria.rango}
+            puedeRegistrar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
+            quienRegistra={
               rol === 'inmobiliaria'
-                ? 'Lo carga un miembro de su inmobiliaria con permiso de edición.'
-                : 'La inmobiliaria carga el contrato firmado.'
+                ? 'Lo registra un miembro de su inmobiliaria con permiso de edición.'
+                : 'La inmobiliaria registra el contrato autenticado.'
             }
-            cargando={accion === 'cargarNotaria'}
+            registrando={accion === 'registrarNotaria'}
             descargando={descargandoNotaria}
             onDescargar={() => {
               // abrirEnPestana: Safari de iPhone bloquea el window.open que llega después de un await.
@@ -358,9 +391,9 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
                 .catch((err: unknown) => toast.error(err instanceof Error ? err.message : 'No se pudo descargar el contrato.'))
                 .finally(() => setDescargandoNotaria(false))
             }}
-            onCargar={async (archivo) => {
-              const ok = await v3.cargarNotaria(archivo)
-              if (ok) toast.success(`Contrato ${e.numero} cargado`)
+            onRegistrar={async (datos) => {
+              const ok = await v3.registrarNotaria(datos)
+              if (ok) toast.success(`Contrato ${e.numero} registrado`)
               return ok
             }}
           />
@@ -415,17 +448,29 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
 
         {incompleta && motivo && !rechazoDatos && <p className="text-sm font-medium text-gray-900">{motivo}</p>}
         {nota && <Aviso>{nota}</Aviso>}
-        {enFirma && e.identidadPendientes > 0 && (
+        {enFirma && e.identidadPendientes > 0 && !notaria && (
           <Aviso>
-            <p>
-              Esperando que {e.identidadPendientes === 1 ? '1 firmante verifique' : `${e.identidadPendientes} firmantes verifiquen`} su
-              identidad con el enlace que les llegó por correo (vence a las 72 horas). El proceso de firma sale cuando todos terminen;
-              si no lo hacen dentro del plazo para firmar, el contrato queda con la firma incompleta.
-            </p>
+            {e.cotejo ? (
+              // Adenda 6.1 §3: el avance, sin el resultado de nadie.
+              <>
+                <p className="font-semibold text-gray-900">{textoAvanceCotejo(e.cotejo)}</p>
+                <p className="mt-1">
+                  Cada persona arrendataria hace su cotejo de identidad con el enlace que le llegó por correo, mientras el
+                  resultado del estudio esté vigente. Cuando todas lo aprueben, el contrato sale a firma digital por WhatsApp; si
+                  alguna no lo completa, se firma en notaría.
+                </p>
+              </>
+            ) : (
+              <p>
+                Esperando que {e.identidadPendientes === 1 ? '1 firmante verifique' : `${e.identidadPendientes} firmantes verifiquen`} su
+                identidad con el enlace que les llegó por correo (vence a las 72 horas). El proceso de firma sale cuando todos terminen;
+                si no lo hacen dentro del plazo para firmar, el contrato queda con la firma incompleta.
+              </p>
+            )}
             {editable && (
               <Button variante="secondary" tamano="sm" className="mt-2" onClick={reenviarIdentidad} disabled={ocupado}>
                 {accion === 'reenviarIdentidad' ? <IconLoader size={14} className="animate-spin" /> : <IconMail size={14} />}
-                Reenviar enlace de verificación
+                {e.cotejo ? 'Reenviar enlace del cotejo' : 'Reenviar enlace de verificación'}
               </Button>
             )}
           </Aviso>
@@ -588,7 +633,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         title="¿Reenviar a firma?"
         message={
           // A la inmobiliaria y al propietario, sin el proveedor ni el crédito de firma (costo de Cofianza).
-          `${e.identidadPendientes > 0 ? 'Primero le llega un correo nuevo para verificar su identidad a quien no lo ha hecho. Cuando todos terminen, se crea' : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
+          `${e.identidadPendientes > 0 ? `Primero le llega un correo nuevo ${e.cotejo ? 'para el cotejo de identidad a quien no lo ha hecho' : 'para verificar su identidad a quien no lo ha hecho'}. Cuando todos terminen, se crea` : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
         }
         confirmLabel="Reenviar a firma"
         isLoading={accion === 'reenviar'}
@@ -662,7 +707,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         title="¿Cancelar el contrato?"
         descripcion={
           enFirma && notaria
-            ? `Se cierra el plazo para cargar el contrato firmado en notaría, el número ${e.numero} queda anulado y el inmueble se libera.`
+            ? `Se cierra el plazo para registrar el contrato firmado en notaría, el número ${e.numero} queda anulado y el inmueble se libera.`
             : enFirma && creado
             ? `Se anula el proceso de firma${interno ? ' en Auco' : ''}, el número ${e.numero} queda anulado y el inmueble se libera.`
             : `El número ${e.numero} queda anulado y el inmueble se libera.`

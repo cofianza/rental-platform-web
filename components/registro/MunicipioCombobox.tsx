@@ -25,13 +25,33 @@ interface Props {
   error?: string
   /** Token de acceso si el endpoint requiere auth. En registro va sin token. */
   authToken?: string
+  /**
+   * 'publica': pantallas sin sesión en el celular. Letra de 16 px (Safari de iOS amplía la página al
+   * enfocar un campo más chico), lista más corta (cabe dentro de la tarjeta), etiqueta «Municipio
+   * donde vive», ejemplo corto y sin la ayuda fija de facturación (la da la tarjeta que lo contiene).
+   */
+  variante?: 'publica'
+  /** Obligatorio para el lector de pantalla (aria-required). */
+  requerido?: boolean
+  /** Cómo terminó la última búsqueda: la pantalla puede dejar seguir sin municipio si no hay cómo elegirlo. */
+  onEstadoBusqueda?: (estado: EstadoBusquedaMunicipio) => void
 }
 
-export function MunicipioCombobox({ value, onChange, error, authToken }: Props) {
+export type EstadoBusquedaMunicipio = 'ok' | 'sin_resultados' | 'fallo'
+
+export function MunicipioCombobox({ value, onChange, error, authToken, variante, requerido = false, onEstadoBusqueda }: Props) {
+  const publica = variante === 'publica'
   const [query, setQuery] = useState(value?.nombre || '')
   const [results, setResults] = useState<MunicipioOption[]>([])
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  // La búsqueda falló (red, 429, 5xx): se dice y se ofrece reintentar; antes salía «Sin resultados».
+  const [fallo, setFallo] = useState(false)
+  const [reintento, setReintento] = useState(0)
+  const estadoRef = useRef(onEstadoBusqueda)
+  useEffect(() => {
+    estadoRef.current = onEstadoBusqueda
+  })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   // Generado: el combobox se usa en varias pantallas y un id fijo se repetiria.
@@ -69,12 +89,19 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
         )
         if (!res.ok) {
           setResults([])
+          setFallo(true)
+          estadoRef.current?.('fallo')
           return
         }
         const json = await res.json()
-        setResults(Array.isArray(json.data) ? json.data : [])
+        const lista: MunicipioOption[] = Array.isArray(json.data) ? json.data : []
+        setResults(lista)
+        setFallo(false)
+        estadoRef.current?.(lista.length > 0 ? 'ok' : 'sin_resultados')
       } catch {
         setResults([])
+        setFallo(true)
+        estadoRef.current?.('fallo')
       } finally {
         setLoading(false)
       }
@@ -82,7 +109,7 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [query, authToken])
+  }, [query, authToken, reintento])
 
   const handleSelect = (m: MunicipioOption) => {
     const label = `${m.name}, ${m.department.name}`
@@ -100,7 +127,7 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
   return (
     <div ref={containerRef} className="relative">
       <label htmlFor={inputId} className="block text-sm font-medium text-gray-700 mb-1">
-        Municipio (para facturación)
+        {publica ? 'Municipio donde vive' : 'Municipio (para facturación)'}
       </label>
       <div className="relative">
         <input
@@ -121,8 +148,11 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
             e.preventDefault()
             if (open && !loading && results.length > 0 && !value) handleSelect(results[0])
           }}
-          placeholder="Empiece a escribir su municipio (ej. Medellín)"
-          className={`w-full min-h-11 rounded-lg border pl-3 pr-10 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+          placeholder={publica ? 'Ej.: Medellín' : 'Empiece a escribir su municipio (ej. Medellín)'}
+          aria-invalid={!!error}
+          aria-required={requerido || undefined}
+          aria-describedby={error ? `${inputId}-error` : publica ? undefined : `${inputId}-ayuda`}
+          className={`w-full min-h-11 rounded-lg border pl-3 pr-10 py-2 ${publica ? 'text-base' : 'text-sm'} focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
             error ? 'border-red-300 bg-red-50' : 'border-gray-300'
           }`}
           autoComplete="off"
@@ -131,8 +161,8 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-gray-500 hover:text-gray-600"
-            aria-label="Limpiar"
+            className="absolute right-0.5 top-1/2 flex min-h-10 min-w-10 -translate-y-1/2 items-center justify-center text-gray-500 hover:text-gray-600"
+            aria-label="Borrar municipio"
           >
             <IconX size={14} aria-hidden />
           </button>
@@ -140,11 +170,22 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
       </div>
 
       {open && query.trim().length >= 2 && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-auto">
+        <div className={`absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg ${publica ? 'max-h-44' : 'max-h-64'} overflow-auto`}>
           {loading ? (
             <div className="px-3 py-2 text-sm text-gray-500">Buscando…</div>
+          ) : fallo ? (
+            <div className="flex items-center justify-between gap-2 px-3 py-1.5 text-sm text-gray-600">
+              <span>No pudimos buscar municipios.</span>
+              <button
+                type="button"
+                onClick={() => setReintento((n) => n + 1)}
+                className="min-h-10 shrink-0 px-2 font-semibold text-primary-700 underline"
+              >
+                Reintentar
+              </button>
+            </div>
           ) : results.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-gray-500">Sin resultados</div>
+            <div className="px-3 py-2 text-sm text-gray-500">No encontramos ese municipio. Revise cómo lo escribió.</div>
           ) : (
             results.map((m) => (
               <button
@@ -161,9 +202,12 @@ export function MunicipioCombobox({ value, onChange, error, authToken }: Props) 
         </div>
       )}
 
-      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-      {!error && (
-        <p className="mt-1 text-xs text-gray-500">
+      {/* La región viva existe siempre (aria-live anuncia cuando cambia su contenido). */}
+      <p id={`${inputId}-error`} aria-live="polite" className={error ? 'mt-1 text-xs text-red-600' : 'sr-only'}>
+        {error ?? ''}
+      </p>
+      {!error && !publica && (
+        <p id={`${inputId}-ayuda`} className="mt-1 text-xs text-gray-500">
           Lo necesitamos para emitir su factura electrónica si paga el estudio de arrendamiento.
         </p>
       )}

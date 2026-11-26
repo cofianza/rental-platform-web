@@ -45,6 +45,16 @@ function parseDateOnly(s: string): Date {
 function pasoIdentidad(verificaciones: IVerificacionIdentidad[]): string | null {
   const propia = verificaciones.find((v) => v.rol === 'arrendatario')
   if (!propia) return null
+  // Adenda 6.1 §3: el cotejo de identidad al firmar (sin plazo propio: vale mientras el resultado del estudio esté vigente).
+  if (propia.regla === 'adenda61') {
+    if (propia.estado === 'pendiente') {
+      return 'Paso 1 de 2: haga el cotejo de identidad (una foto de su documento y una selfie) con el enlace que le enviamos por correo. Mientras tanto, revise el contrato.'
+    }
+    if (verificaciones.some((v) => v.rol !== 'arrendatario' && v.estado === 'pendiente')) {
+      return 'Ya hizo su paso del cotejo de identidad. Falta su coarrendatario: si los dos lo aprueban, le llega por WhatsApp el enlace seguro para firmar; si no, el contrato se firma en notaría.'
+    }
+    return null
+  }
   if (propia.estado === 'pendiente') {
     const vence = propia.token_expiracion ? new Date(propia.token_expiracion) : null
     if (vence && vence.getTime() < Date.now()) {
@@ -290,10 +300,10 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         </h3>
         <p className="text-sm text-gray-600 mb-4">
           {enNotaria
-            ? 'Su contrato se firma con firma autenticada en notaría, a su costo. Quien tramita su arriendo le entregará el documento y le indicará cómo hacerlo; la fianza se activa cuando quien tramita su arriendo cargue el contrato firmado. No le llegará un enlace de firma por WhatsApp.'
+            ? 'Su contrato se firma con firma autenticada en notaría, a su costo. Quien tramita su arriendo le entregará el documento y le indicará cómo hacerlo; la fianza se activa cuando quien tramita su arriendo registre el contrato autenticado en la plataforma. No le llegará un enlace de firma por WhatsApp.'
             : (pasoIdentidad(verificaciones) ??
               (contrato.firma_notaria === false
-                ? // Firma digital con el cotejo aprobado (Adenda 6 §2): no hay otra verificación de identidad.
+                ? // Adenda 6.1: con el cotejo al firmar terminado, no hay otra verificación de identidad.
                   'Revise el contrato antes de firmar. Le llega por WhatsApp el enlace seguro para firmar, cuando sea su turno: ábralo y siga las instrucciones.'
                 : 'Revise el contrato antes de firmar. Primero le llega un correo de Cofianza para confirmar su identidad (el enlace vence en 72 horas). Cuando lo haga, le llega por WhatsApp el enlace seguro para firmar, cuando sea su turno: ábralo y siga las instrucciones.'))}
         </p>

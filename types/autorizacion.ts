@@ -21,11 +21,17 @@ export interface IAutorizacion {
   consent_analitica?: boolean
   consent_comercial?: boolean
   consent_historial_referencia?: boolean
-  /** Adenda 6 §2 (texto V3): la casilla 4A, cotejo biométrico. Solo viaja con la V3 vigente. */
+  /** Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A, cotejo biométrico. Solo viaja con la V3.1 vigente. */
   consent_cotejo_biometrico?: boolean
   // Evidencia de la firma (soporte legal Ley 527/1999).
   ip_autorizacion?: string | null
   user_agent?: string | null
+  /**
+   * Adenda 6.1 §2: por cuál canal llegó el enlace con que la persona aceptó (null = enlace sin marca, de antes) y, solo
+   * para Cofianza, el número o correo al que ese canal lo envió. Ausentes en APIs anteriores o si no se pudieron leer.
+   */
+  canal_enlace?: 'whatsapp' | 'correo' | null
+  destino_enlace?: string | null
   version_terminos?: string | null
   texto_autorizado?: string | null
   /** PASO 5 (Flujo §8): lo que el prospecto declaró en su celular. El bloque
@@ -174,18 +180,10 @@ export interface IAutorizacionPublicData {
   biometria?: {
     requerida: boolean
     /**
-     * Adenda 6 §2 (texto V3): el texto trae la casilla 4A, cotejo biométrico opcional. La pantalla la muestra
-     * desmarcada; sin ella no hay cotejo y el contrato se firma en notaría.
+     * Adenda 6 §2 / 6.1 (texto V3.1): el texto trae la casilla 4A, cotejo biométrico opcional. La pantalla la muestra
+     * desmarcada. El cotejo no se hace aquí: es al firmar el contrato (6.1 §3).
      */
     casilla_4a?: boolean
-    /** Adenda 6 §2: el cotejo se puede hacer (solo si la persona marca la 4A). */
-    opcional?: boolean
-    /** Adenda 6 §2: no se ofrece porque Auco no coteja su tipo de documento. Ausente por otra razón o en APIs viejas. */
-    no_cotejable?: 'tipo_documento'
-    /** Adenda 6 §2: ya marcó la 4A (su constancia quedó al tomarse las fotos): la casilla no se desmarca. */
-    autorizo_4a?: boolean
-    /** Adenda 6 §2: el cotejo quedó aprobado (rostro y documento): habilita la firma digital. */
-    aprobado?: boolean
     estado: EstadoBiometria | null
     /** Texto 3.3-biometria con el guardado encendido: si el cotejo falla, Cofianza conserva las fotos. */
     conserva_fotos?: boolean
@@ -203,6 +201,11 @@ export interface IAutorizacionPublicData {
    * piden los datos del coarrendatario. Ausente = un API anterior (se piden como siempre).
    */
   admite_segundo_firmante?: boolean
+  /**
+   * Factura electrónica del pago del estudio: al prospecto le toca pagar y a su ficha le falta la
+   * dirección o el municipio. Ausente = no se pide nada (o un API anterior).
+   */
+  datos_factura?: { pide_direccion: boolean; pide_municipio: boolean }
 }
 
 /** Vocabulario del cotejo. `omitida` = el titular ejerció su derecho a negarse. */
@@ -220,8 +223,6 @@ export interface IBiometriaResponse {
   umbral?: number
   motivo?: string | null
   guardado?: boolean
-  /** Adenda 6 §2 (texto V3): el cotejo quedó aprobado. Un «verificada» sin documento confirmado no lo está. */
-  aprobado?: boolean
 }
 
 // «Ver biometría» en la revisión manual: solo administrador y operador.
@@ -254,8 +255,30 @@ export interface IResumenBiometriaAnalista {
   historial?: IIntentoGuardadoBiometria[]
 }
 
+/**
+ * Adenda 6.1 §3: el cotejo de identidad AL FIRMAR de una persona en un contrato (solo Cofianza), con sus intentos (sin
+ * el código del proveedor).
+ */
+export interface ICotejoFirmaAnalista {
+  contrato_id: string
+  contrato_numero: string | null
+  persona: PersonaCotejo
+  rol: 'arrendatario' | 'cotitular'
+  nombre: string
+  /** null = pendiente. Todo lo que no es «aprobado» = firma en notaría. */
+  desenlace: 'aprobado' | 'sin_autorizacion_4a' | 'intentos_agotados' | 'no_cotejable' | null
+  intentos: number
+  completado_en: string | null
+  consentimiento_4a: { origen: 'autorizacion' | 'firma' | null; marcada: boolean; en: string | null } | null
+  /** El resultado vino de otro contrato del mismo estudio (el cotejo se hace una sola vez). */
+  heredado: boolean
+  historial: IIntentoGuardadoBiometria[]
+}
+
 export interface IResumenBiometriaRespuesta {
   resumen: IResumenBiometriaAnalista | null
+  /** Adenda 6.1: los cotejos de identidad al firmar del estudio. Ausente con una API anterior. */
+  cotejos_firma?: ICotejoFirmaAnalista[]
   /** Hay algo que mostrar (un cotejo registrado o fotos guardadas): se muestra «Ver biometría». */
   con_evidencia: boolean
   /** Intentos con fotos guardadas que se pueden ver (0 con el estudio decidido). Ausente con una API anterior. */
@@ -311,6 +334,8 @@ export interface IEvidenciaBiometria {
   dias_conservacion?: number
   /** Adenda 6: los años del panel (null si no hay fotos de la autorización V3). */
   anios_conservacion?: { aprobado: number; fallido: number } | null
+  /** Adenda 6.1: los cotejos de identidad al firmar del estudio. Ausente con una API anterior. */
+  cotejos_firma?: ICotejoFirmaAnalista[]
 }
 
 export type CualFotoBiometria = 'selfie' | 'documento'
@@ -330,13 +355,20 @@ export interface IFirmarInput {
   codigo_otp?: string
   /** El correo donde quiere recibir el resultado (solo si la pantalla lo pide). */
   correo_resultado?: string
+  /** Factura electrónica del pago (solo si la API los pide en `datos_factura`). */
+  direccion_factura?: string
+  /** Código DANE de 5 dígitos. */
+  municipio_codigo?: string
+  municipio_nombre?: string
   consentimientos_opcionales?: {
     analitica?: boolean
     comercial?: boolean
     historial_referencia?: boolean
-    /** Adenda 6 §2 (texto V3): la casilla 4A. */
+    /** Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A. */
     cotejo_biometrico?: boolean
   }
+  /** Adenda 6.1 §2: por cuál canal llegó (la marca del enlace). El número o correo lo pone la API. */
+  canal_enlace?: 'whatsapp' | 'correo'
 }
 
 export interface IFirmarResponse {

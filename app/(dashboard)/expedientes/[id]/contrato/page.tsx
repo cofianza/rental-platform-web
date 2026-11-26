@@ -502,9 +502,11 @@ function Asistente({
       const enviado = tras.enviado
       toast.success(
         enviado?.notaria
-          ? `Contrato ${contrato.numero} listo para firmar en notaría: descárguelo y cárguelo firmado.`
+          ? `Contrato ${contrato.numero} listo para firmar en notaría: descárguelo, hágalo autenticar en notaría y regístrelo con la fecha del sello.`
           : enviado && enviado.identidadPendientes > 0
-            ? `Contrato ${contrato.numero}: enviamos el correo de verificación de identidad. La firma sale cuando todos terminen.`
+            ? enviado.cotejo
+              ? `Contrato ${contrato.numero}: enviamos el enlace del cotejo de identidad. La firma sale cuando todas las personas lo aprueben.`
+              : `Contrato ${contrato.numero}: enviamos el correo de verificación de identidad. La firma sale cuando todos terminen.`
             : `Contrato ${contrato.numero} enviado a firma`,
       )
     }
@@ -766,14 +768,16 @@ function Asistente({
             {/* Adenda 6 §2: sin el cotejo aprobado de todas las personas no hay firma digital. */}
             {contrato.firmaNotaria && (
               <Aviso tono="aviso">
-                Con los datos de hoy, al menos una persona arrendataria no tiene el cotejo de identidad aprobado: el contrato
+                Con los datos de hoy, al menos una persona arrendataria no completó el cotejo de identidad: el contrato
                 se firmará con firma autenticada en notaría, a costo del arrendatario. Después de prepararlo, lo descarga, lo
-                hace firmar y lo carga firmado aquí; la fianza se activa con esa carga.
+                hace autenticar en notaría y lo registra aquí con la fecha del sello; la fianza se activa con ese registro.
               </Aviso>
             )}
             <p>
               {contrato.firmaNotaria
                 ? 'Partes del contrato:'
+                : contrato.cotejoFirma
+                ? `Primero les llega por correo un enlace para el cotejo de identidad (una foto del documento y una selfie) al arrendatario y, si hay, al coarrendatario. Si todos lo aprueban, cada parte recibirá por WhatsApp ${enlaceFirma}, en este orden y una a la vez; si alguno no lo completa, el contrato se firmará en notaría, a costo del arrendatario:`
                 : contrato.biometriaFirma
                 ? `Primero les llega por correo un enlace para verificar su identidad al arrendatario y, si hay, al coarrendatario. Cuando todos terminen, cada parte recibirá por WhatsApp ${enlaceFirma}, en este orden y una a la vez:`
                 : `Cada parte recibirá por WhatsApp ${enlaceFirma}, en este orden y una a la vez:`}

@@ -92,14 +92,22 @@ export const contratoV3Service = {
     return res.data.url
   },
   /**
-   * Adenda 6 §2: carga el contrato con firma autenticada en notaría (PDF) tras aceptar el aviso; la carga activa la
-   * fianza. Multipart por apiClient.raw.
+   * Adenda 6.1 §4: registra el contrato con firma autenticada en notaría (fecha de autenticación del sello y, opcional,
+   * el PDF) tras aceptar el aviso; el registro activa la fianza. Multipart por apiClient.raw.
    */
-  async cargarNotaria(expedienteId: string, archivo: File): Promise<EstadoAsistente> {
+  async registrarNotaria(expedienteId: string, datos: { fechaAutenticacion: string; archivo: File | null }): Promise<EstadoAsistente> {
     const form = new FormData()
     form.append('acepta_aviso', 'true')
-    form.append('archivo', archivo)
+    form.append('fecha_autenticacion', datos.fechaAutenticacion)
+    if (datos.archivo) form.append('archivo', datos.archivo)
     const res = await apiClient.raw(`${ruta(expedienteId)}/notaria`, { method: 'POST', body: form })
+    return ((await res.json()) as ApiResponse<EstadoAsistente>).data
+  },
+  /** Adenda 6.1 §4 (caso 9): carga el contrato autenticado (PDF) después del registro; no cambia la activación. */
+  async cargarDocumentoNotaria(expedienteId: string, archivo: File): Promise<EstadoAsistente> {
+    const form = new FormData()
+    form.append('archivo', archivo)
+    const res = await apiClient.raw(`${ruta(expedienteId)}/notaria/documento`, { method: 'POST', body: form })
     return ((await res.json()) as ApiResponse<EstadoAsistente>).data
   },
   /** Saca el contrato de borrador y crea el proceso de firma en Auco. */
