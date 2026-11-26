@@ -538,7 +538,7 @@ export function useExpedienteWizard() {
       // Adenda de precios §7.1: el canon sobre el tope ya no detiene el paso 1 (solo avisa).
       return data.step1.sinInmueble
         ? !!data.step1.canonObjetivo && data.step1.canonObjetivo > 0 && !!data.step1.destinacion
-        : !!data.step1.inmueble
+        : !!data.step1.inmueble && !data.step1.destinacionBloqueada
     }
     if (currentStep === 2) {
       // El coarrendatario, si se agregó, con todos sus campos (el formato se valida al pulsar «Siguiente»).

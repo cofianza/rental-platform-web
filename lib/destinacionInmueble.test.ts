@@ -11,8 +11,10 @@ import {
   estudioSegunDestinacion,
   mensajeDestinacionIncoherente,
   MSG_DESTINACION_AVISO,
+  MSG_DESTINACION_AVISO_SIN_INMUEBLE,
   MSG_DESTINACION_BLOQUEO,
   NOTA_CONTRATO_SOLO_VIVIENDA,
+  NOTA_ESTUDIOS_NO_VIVIENDA,
   usosPermitidosPara,
 } from './destinacionInmueble'
 
@@ -74,9 +76,10 @@ test('el asistente del estudio: bloquea con el interruptor apagado, avisa con el
 })
 
 test('los textos: usted, «en desarrollo» y sin palabras vetadas', () => {
-  for (const t of [MSG_DESTINACION_BLOQUEO, MSG_DESTINACION_AVISO, NOTA_CONTRATO_SOLO_VIVIENDA]) {
+  for (const t of [MSG_DESTINACION_BLOQUEO, MSG_DESTINACION_AVISO, MSG_DESTINACION_AVISO_SIN_INMUEBLE, NOTA_CONTRATO_SOLO_VIVIENDA, NOTA_ESTUDIOS_NO_VIVIENDA]) {
     assert.doesNotMatch(t, /\b(tú|tu|puedes|rechaz)|bur[oó]|score/i)
   }
   assert.match(MSG_DESTINACION_BLOQUEO, /en desarrollo/)
+  assert.match(NOTA_ESTUDIOS_NO_VIVIENDA, /en desarrollo/)
   assert.match(MSG_DESTINACION_AVISO, /contrato de vivienda/)
 })

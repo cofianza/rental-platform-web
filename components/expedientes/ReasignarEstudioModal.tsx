@@ -349,7 +349,7 @@ export function ReasignarEstudioModal({
               <li>Su canon debe caber en el canon aprobado.</li>
               <li>Debe ser de la misma destinación (vivienda o comercial).</li>
               {destinacion === 'comercial' && (
-                <li>Con un inmueble comercial no se podrá generar el contrato de vivienda de la plataforma.</li>
+                <li>Con un inmueble comercial no se podrá generar el contrato de la plataforma, que solo genera el de vivienda.</li>
               )}
               <li>Desde ese momento el estudio pasa a la cartera del dueño del inmueble. Conserva su vigencia original.</li>
             </>
@@ -509,7 +509,7 @@ export function ReasignarEstudioModal({
                     )}
                     {otraDestinacion && (
                       <p className="mt-1 text-xs text-gray-500">
-                        No es {destinacion === 'comercial' ? 'comercial' : 'de vivienda'}: para otro tipo de inmueble se
+                        No es {destinacion === 'comercial' ? 'comercial' : 'de vivienda'}: para otra destinación se
                         requiere una evaluación nueva.
                       </p>
                     )}

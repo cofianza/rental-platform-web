@@ -612,8 +612,8 @@ export default function InmuebleDetailPage() {
                           {inmueble.uso === 'vivienda'
                             ? 'Vivienda'
                             : inmueble.uso === 'mixto'
-                              ? 'Mixto'
-                              : 'Comercio'}
+                              ? 'Mixta'
+                              : 'Comercial'}
                         </dd>
                       </div>
                       {inmueble.destinacion && (

@@ -79,16 +79,20 @@ export function estudioSegunDestinacion(
 
 /** Tarjeta no seleccionable en el paso 1 (Adenda de precios §6.4: «en desarrollo», no «rechazado»). */
 export const MSG_DESTINACION_BLOQUEO =
-  'Destinación comercial o mixta: los estudios de estos inmuebles están en desarrollo y el contrato de la plataforma es solo para vivienda. Si en realidad es de vivienda, corrija su ficha.'
+  'Destinación comercial o mixta: los estudios de estos inmuebles están en desarrollo y el contrato de la plataforma es solo para vivienda. Si en realidad es de vivienda, corrija el tipo y la destinación en la ficha del inmueble.'
 
 /** Interruptor encendido: el estudio sigue, el contrato de vivienda no. */
 export const MSG_DESTINACION_AVISO =
-  'Con este inmueble no se podrá generar el contrato de vivienda de la plataforma: su destinación es comercial o mixta, y el contrato comercial todavía no está habilitado. El estudio evalúa a la persona, pero el contrato no se podrá hacer aquí.'
+  'Con este inmueble no se podrá generar el contrato de la plataforma: su destinación es comercial o mixta y la plataforma solo genera el contrato de vivienda. El estudio evalúa a la persona, pero el contrato no se podrá hacer aquí.'
 
 /** Estudio sin propiedad con destinación comercial (interruptor encendido). */
 export const MSG_DESTINACION_AVISO_SIN_INMUEBLE =
-  'Con destinación comercial no se podrá generar el contrato de vivienda de la plataforma, y el contrato comercial todavía no está habilitado: el estudio evalúa a la persona, pero el contrato no se podrá hacer aquí.'
+  'Con destinación comercial no se podrá generar el contrato de la plataforma, que solo genera el de vivienda: el estudio evalúa a la persona, pero el contrato no se podrá hacer aquí.'
 
 /** Ayuda del formulario del inmueble. */
 export const NOTA_CONTRATO_SOLO_VIVIENDA =
   'El contrato que genera la plataforma es solo para vivienda: con destinación comercial o mixta no se podrá generar.'
+
+/** Ayuda del formulario y aviso al crear un inmueble comercial o mixto (Adenda de precios §6.4: «en desarrollo»). */
+export const NOTA_ESTUDIOS_NO_VIVIENDA =
+  'Los estudios de inmuebles comerciales o mixtos están en desarrollo: por ahora no se pueden solicitar por la plataforma.'

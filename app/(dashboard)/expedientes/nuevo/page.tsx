@@ -348,7 +348,11 @@ function NuevoExpedienteContent() {
             onNext={nextStep}
             onCancel={handleCancel}
             blockedReason={
-              step2EditDirty ? 'Guarde o cancele la edición del solicitante para continuar' : undefined
+              step2EditDirty
+                ? 'Guarde o cancele la edición del solicitante para continuar'
+                : currentStep === 1 && data.step1.destinacionBloqueada
+                  ? 'Quite el inmueble y elija uno de vivienda para continuar.'
+                  : undefined
             }
           />
         )}

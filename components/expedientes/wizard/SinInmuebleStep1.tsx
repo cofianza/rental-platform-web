@@ -73,7 +73,7 @@ export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon, tolerancia
             disabled={comercialNoDisponible}
             onSelect={() => onUpdate({ destinacion: 'comercial' })}
             titulo="Comercial"
-            descripcion={comercialNoDisponible ? 'Todavía no disponible en la plataforma.' : undefined}
+            descripcion={comercialNoDisponible ? 'En desarrollo: todavía no se puede solicitar.' : undefined}
             icono={IconBuilding2}
           />
         </div>

@@ -236,7 +236,8 @@ export function Step1InmuebleSelection({
       })
       .catch(() => {
         // Sin el tope no se bloquea nada: el API lo valida igual al enviar. El interruptor
-        // se toma por apagado (lo más prudente: la API bloquearía igual).
+        // se toma por apagado, que es lo que rige mientras la Gerencia no lo encienda
+        // (Adenda de precios §6.2); si estuviera encendido, recargar lo corrige.
         if (vivo) setComercialHabilitado(false)
       })
     return () => {
@@ -386,7 +387,7 @@ export function Step1InmuebleSelection({
                 <p className="text-sm text-gray-500">
                   No tiene inmuebles. Use el buscador de abajo para ver el catálogo completo, o{' '}
                   <Link href="/inmuebles/nuevo" className="font-semibold text-primary-700 hover:text-primary-800">
-                    crea uno ahora
+                    cree uno ahora
                   </Link>
                   .
                 </p>
@@ -595,17 +596,19 @@ export function Step1InmuebleSelection({
 
           {/* Reporte Oficina Virtual, punto 8: el contrato de la plataforma es solo de vivienda. */}
           {reglaElegido === 'bloqueo' && (
-            <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-              <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-red-600" />
+            <div role="status" className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
               <div>
-                <p className="text-sm font-medium text-red-800">Con este inmueble no se puede solicitar el estudio</p>
-                <p className="mt-1 text-sm text-red-700">{MSG_DESTINACION_BLOQUEO}</p>
-                <p className="mt-1 text-sm text-red-700">Quite el inmueble y elija uno de vivienda. No se generó ningún cobro.</p>
+                <p className="text-sm font-medium text-amber-800">Con este inmueble todavía no se puede solicitar el estudio</p>
+                <p className="mt-1 text-sm text-amber-700">{MSG_DESTINACION_BLOQUEO}</p>
+                <p className="mt-1 text-sm text-amber-700">
+                  Quite el inmueble y elija uno de vivienda. Todavía no se ha creado el estudio ni se ha cobrado nada.
+                </p>
               </div>
             </div>
           )}
           {reglaElegido === 'aviso' && (
-            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+            <div role="status" className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
               <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
               <div>
                 <p className="text-sm font-medium text-amber-800">El contrato de vivienda no se podrá generar</p>

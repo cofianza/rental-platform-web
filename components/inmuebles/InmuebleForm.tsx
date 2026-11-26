@@ -40,6 +40,7 @@ import {
   mensajeDestinacionIncoherente,
   usosPermitidosPara,
   NOTA_CONTRATO_SOLO_VIVIENDA,
+  NOTA_ESTUDIOS_NO_VIVIENDA,
   type DestinacionElegible,
 } from '@/lib/destinacionInmueble'
 
@@ -372,7 +373,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         propietario_id: inmueble.propietario_id,
         foto_fachada_url: inmueble.foto_fachada_url || '',
         barrio: inmueble.barrio || '',
-        // 'local_comercial' (legacy) se consolida en 'comercial' (Comercio) para
+        // 'local_comercial' (legacy) se consolida en 'comercial' (Comercial) para
         // que el select lo muestre correctamente con las nuevas opciones. Una
         // destinación que el tipo no admite (un local guardado como vivienda
         // antes de la regla) queda vacía: hay que elegirla para guardar.
@@ -438,7 +439,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       newErrors.tipo = INMUEBLE_MESSAGES.TIPO_REQUIRED
     }
     if (!formData.uso) {
-      newErrors.uso = INMUEBLE_MESSAGES.USO_REQUIRED
+      // Con un local, una oficina… no se pide «vivienda»: se dice qué puede elegir.
+      newErrors.uso = mensajeDestinacionIncoherente(formData.tipo, 'vivienda') ?? INMUEBLE_MESSAGES.USO_REQUIRED
     } else {
       const incoherente = mensajeDestinacionIncoherente(formData.tipo, formData.uso)
       if (incoherente) newErrors.uso = incoherente
@@ -565,9 +567,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
 
         // "Y ahora qué": el toast dice si quedó publicado y qué puede hacer
         // desde la tarjeta, porque el listado no lo explica.
+        // Punto 8: a un inmueble comercial o mixto no se le promete evaluar candidatos.
         toast.success(INMUEBLE_MESSAGES.CREATE_SUCCESS, {
           description: formData.visible_vitrina
-            ? 'Ya está publicado en la vitrina de Cofianza. Desde la tarjeta puede pausarlo o evaluar un candidato.'
+            ? formData.uso === 'vivienda'
+              ? 'Ya está publicado en la vitrina de Cofianza. Desde la tarjeta puede pausarlo o evaluar un candidato.'
+              : `Ya está publicado en la vitrina de Cofianza; desde la tarjeta puede pausarlo. ${NOTA_ESTUDIOS_NO_VIVIENDA}`
             : 'No está en la vitrina: actívelo desde la tarjeta cuando desee publicarlo.',
         })
       } else if (inmueble) {
@@ -664,13 +669,13 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     usosPermitidosPara(formData.tipo).includes(o.value as DestinacionElegible),
   )
   const ayudaDestinacion = avisoDestinacion ? (
-    <span className="text-amber-800">{avisoDestinacion}</span>
+    <span role="status" className="text-amber-800">{avisoDestinacion}</span>
   ) : formData.uso === 'comercial' || formData.uso === 'mixto' ? (
-    NOTA_CONTRATO_SOLO_VIVIENDA
+    `${NOTA_CONTRATO_SOLO_VIVIENDA} ${NOTA_ESTUDIOS_NO_VIVIENDA}`
   ) : (
     // Con un local, una oficina… la ayuda dice desde ya por qué no está «Vivienda».
     mensajeDestinacionIncoherente(formData.tipo, 'vivienda') ??
-    'Vivienda: para habitar. Comercial: locales, oficinas, bodegas o negocios.'
+    'Vivienda: para habitar. Comercial: locales, oficinas, bodegas o negocios. Mixta: vivienda y comercio en el mismo inmueble.'
   )
 
   // Ciudad y departamento salen juntos de la opción elegida; sin opción (borró o está escribiendo), vacíos.

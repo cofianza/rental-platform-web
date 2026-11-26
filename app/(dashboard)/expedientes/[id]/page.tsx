@@ -1436,7 +1436,7 @@ function ExpedienteDetalleContenido() {
                     {expediente.inmueble.uso && (
                       <InfoRow
                         label="Destinación"
-                        value={{ vivienda: 'Vivienda', mixto: 'Mixto', comercial: 'Comercio', local_comercial: 'Comercio' }[expediente.inmueble.uso] || expediente.inmueble.uso}
+                        value={{ vivienda: 'Vivienda', mixto: 'Mixta', comercial: 'Comercial', local_comercial: 'Comercial' }[expediente.inmueble.uso] || expediente.inmueble.uso}
                       />
                     )}
                     {expediente.inmueble.estrato && (
