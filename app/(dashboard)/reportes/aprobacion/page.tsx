@@ -282,8 +282,8 @@ export default function AprobacionExpedientesPage() {
         title="Tasa de Aprobación"
         subtitle={
           conDesglose
-            ? 'Aprobados sobre decididos por periodo. Decididos: aprobados, aprobados con segundo firmante, no aprobables y bloqueados por listas. Los aprobados se agrupan por tarifa: automática (sin analista, también cuando se aprueba con su segundo firmante) o no automática (decididos por un analista). Lo que sigue en revisión de Cofianza va aparte y no cuenta en la tasa.'
-            : 'Aprobados vs no aprobables por periodo. Los aprobados se agrupan por tarifa: automática (sin analista, también cuando se aprueba con su segundo firmante) o no automática (decididos por un analista). Lo que sigue en revisión de Cofianza va aparte y no cuenta en la tasa.'
+            ? 'Aprobados sobre decididos por periodo. Decididos: aprobados, aprobados con segundo firmante, no aprobados y bloqueados por listas. Los aprobados se agrupan por tarifa: automática (sin analista, también cuando se aprueba con su segundo firmante) o no automática (decididos por un analista). Lo que sigue en revisión de Cofianza va aparte y no cuenta en la tasa.'
+            : 'Aprobados vs no aprobados por periodo. Los aprobados se agrupan por tarifa: automática (sin analista, también cuando se aprueba con su segundo firmante) o no automática (decididos por un analista). Lo que sigue en revisión de Cofianza va aparte y no cuenta en la tasa.'
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -385,7 +385,7 @@ export default function AprobacionExpedientesPage() {
         )}
         <span className="flex items-center gap-1.5 text-xs text-gray-600">
           <span className="w-3 h-3 rounded bg-red-500" />
-          No aprobables
+          No aprobados
         </span>
         {conDesglose && (
           <span className="flex items-center gap-1.5 text-xs text-gray-600">
@@ -428,7 +428,7 @@ export default function AprobacionExpedientesPage() {
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Tarifa automática</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-500">Tarifa no automática</th>
                 {conDesglose && <th className="text-right px-4 py-3 font-medium text-gray-700">Con segundo firmante</th>}
-                <th className="text-right px-4 py-3 font-medium text-gray-700">No aprobables</th>
+                <th className="text-right px-4 py-3 font-medium text-gray-700">No aprobados</th>
                 {conDesglose && <th className="text-right px-4 py-3 font-medium text-gray-700">Bloqueados por listas</th>}
                 <th className="text-right px-4 py-3 font-medium text-gray-700">En revisión de Cofianza</th>
                 <th className="text-right px-4 py-3 font-medium text-gray-700">Decididos</th>

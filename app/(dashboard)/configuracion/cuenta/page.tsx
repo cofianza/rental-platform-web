@@ -135,7 +135,7 @@ export default function MiCuentaPage() {
       tipo_documento: form.tipo_documento || null,
       numero_documento: form.numero_documento.trim() || null,
     }
-    // El "representante legal" ya no se edita aquí: vive en Datos para contrato
+    // El "representante legal" ya no se edita aquí: vive en Datos de mi inmobiliaria
     // (de la organización). No se envía desde Mi cuenta.
 
     setSaving(true)
@@ -225,8 +225,8 @@ export default function MiCuentaPage() {
           />
         </div>
 
-        {/* "Representante legal" se gestiona en Configuración → Datos para
-            contrato (es de la organización y es el que sale en el contrato).
+        {/* "Representante legal" se gestiona en Configuración → Datos de mi
+            inmobiliaria (es de la organización y es el que sale en el contrato).
             No se duplica aquí en los datos personales. */}
 
         <div>

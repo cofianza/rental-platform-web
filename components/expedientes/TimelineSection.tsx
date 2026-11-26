@@ -44,7 +44,7 @@ const ESTADO_LABELS: Record<string, string> = {
   en_revision: 'En revisión',
   informacion_incompleta: 'Info. incompleta',
   aprobado: 'Aprobado',
-  rechazado: 'No aprobable',
+  rechazado: 'No aprobado',
   condicionado: 'En revisión o con segundo firmante',
   cerrado: 'Finalizado',
 }
@@ -60,7 +60,7 @@ function estadoLabel(estado: string): string {
  */
 function estadoNuevoLabel(anterior: string, nuevo: string): string {
   if (nuevo !== 'cerrado') return estadoLabel(nuevo)
-  if (anterior === 'rechazado') return 'No aprobable (cerrado)'
+  if (anterior === 'rechazado') return 'No aprobado (cerrado)'
   if (anterior === 'aprobado') return 'Finalizado'
   return 'Cancelado'
 }

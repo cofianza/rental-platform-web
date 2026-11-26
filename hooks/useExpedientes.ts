@@ -18,11 +18,14 @@ import { clavePestana, soloCambioLaBusqueda } from '@/lib/filtrosExpedientes'
 
 const ESTUDIO_FILTROS: EstudioFiltro[] = [
   'todos', 'aprobado', 'rechazado', 'condicionado', 'segundo_firmante', 'bloqueado', 'revision_cofianza',
-  'en_proceso', 'sin_estudio', 'requiere_accion',
+  'en_proceso', 'sin_estudio', 'sin_autorizar', 'requiere_accion', 'cerrado', 'espera_autorizacion',
 ]
 
 /** Los chips que solo acepta la API nueva (reporte de Gerencia, punto 6); `condicionado` es su unión. */
 const FILTROS_ADENDA5: EstudioFiltro[] = ['segundo_firmante', 'bloqueado', 'revision_cofianza']
+
+/** Los filtros del reporte de la Oficina Virtual (25-nov): una API anterior los rechaza (400) y se vuelve a «Todos». */
+const FILTROS_OFICINA_VIRTUAL: EstudioFiltro[] = ['cerrado', 'espera_autorizacion', 'sin_autorizar']
 
 const DEBOUNCE_DELAY = 300
 
@@ -193,6 +196,10 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
         FILTROS_ADENDA5.includes(filters.estudio_filtro)
       ) {
         setFilters({ estudio_filtro: 'condicionado', page: 1 })
+        return
+      }
+      if (err instanceof ApiClientError && err.statusCode === 400 && filters.estudio_filtro && FILTROS_OFICINA_VIRTUAL.includes(filters.estudio_filtro)) {
+        setFilters({ estudio_filtro: 'todos', page: 1 })
         return
       }
       const message = err instanceof Error ? err.message : EXPEDIENTE_MESSAGES.FETCH_ERROR

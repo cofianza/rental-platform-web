@@ -31,7 +31,7 @@ export {
   type EtapaEstudio,
   type Turno,
 } from '@/lib/etapaEstudio'
-import { calcularEtapa, type EtapaEstudio } from '@/lib/etapaEstudio'
+import { calcularEtapa, esperaCargaNotariaContratos, type EtapaEstudio } from '@/lib/etapaEstudio'
 
 interface ExpedienteEtapa {
   id: string
@@ -59,12 +59,19 @@ export function useEtapaEstudio(
   expediente: ExpedienteEtapa | null,
   conPago: boolean,
   version: number,
-): { etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean; citaActiva: boolean } {
-  const [leida, setLeida] = useState<{ etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean; citaActiva: boolean }>({
+): { etapa: EtapaEstudio | null; esperaHasta: string | null; coaFallido: boolean; citaActiva: boolean; firmaNotaria: boolean } {
+  const [leida, setLeida] = useState<{
+    etapa: EtapaEstudio | null
+    esperaHasta: string | null
+    coaFallido: boolean
+    citaActiva: boolean
+    firmaNotaria: boolean
+  }>({
     etapa: null,
     esperaHasta: null,
     coaFallido: false,
     citaActiva: false,
+    firmaNotaria: false,
   })
   const id = expediente?.id
   const estado = expediente?.estado
@@ -126,6 +133,8 @@ export function useEtapaEstudio(
         coaFallido: ultimaCoa?.estado === 'fallido',
         // De la misma lectura de citas: en la visita, «agende» o «márquela como realizada».
         citaActiva: citas.some((c) => c.estado === 'solicitada' || c.estado === 'confirmada'),
+        // Adenda 6 §2: de la misma lectura de contratos: el turno es de quien gestiona (cargar el firmado en notaría).
+        firmaNotaria: esperaCargaNotariaContratos(contratos?.data ?? []),
       })
     })
     return () => {

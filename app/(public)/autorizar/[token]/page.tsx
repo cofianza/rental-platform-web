@@ -11,7 +11,9 @@
  *   Paso 2: §8.2 laboral + ingreso y §8.3 solo/acompañado ("Sobre ti").
  *   Paso 3: beneficios (3 consentimientos OPCIONALES con toggle).
  *   Paso 'bio': cotejo biométrico AucoFace — SOLO si el backend lo pide
- *           (AUCO_BIOMETRIA_ENABLED). Política Anexo A + §14.
+ *           (AUCO_BIOMETRIA_ENABLED). Política Anexo A + §14. Con el texto V3.1
+ *           (Adenda 6.1) nunca: solo la casilla 4A en el paso 1; el cotejo es al
+ *           firmar el contrato. La firma manda el canal del enlace (?c=w / ?c=c).
  *   Paso 4: confirmación + resumen. SIN OTP (Adenda 1 §7, Gerencia 07/09/2026:
  *           "No se implementa OTP en el flujo de autorización del estudio").
  *           La aceptación por casilla es la firma (Decreto 1377/2013, art. 7).
@@ -66,6 +68,12 @@ import { buttonClasses } from '@/components/ui/Button'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
 import { correoParaEnviar, correoResultadoValido } from '@/lib/correoResultado'
+import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
+import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
+import { AYUDA_CASILLA_4A, CASILLAS_5_2_V3, COTEJO_AL_FIRMAR, versionVisible } from '@/lib/autorizacionV3'
+import { canalDeEstaPagina } from '@/lib/canalEnlace'
+import { CampoDatosFactura, datosFacturaCompletos, type MunicipioFactura } from '@/components/public/CampoDatosFactura'
+import type { EstadoBusquedaMunicipio } from '@/components/registro/MunicipioCombobox'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -103,6 +111,9 @@ const MOTIVOS_REPORTE: Array<{ key: 'no_soy_yo' | 'datos_incorrectos'; label: st
 const SIN_DATOS_SENSIBLES = 'No tratamos datos sensibles ni de menores; el servicio es solo para mayores de 18 años.'
 const CON_BIOMETRIA =
   'La foto de su rostro es un dato sensible: la usamos solo para confirmar que usted es el titular del documento y no está obligado a darla. No tratamos datos de menores; el servicio es solo para mayores de 18 años.'
+// Adenda 6 §2 / 6.1 (texto V3.1): el único dato sensible es el del cotejo opcional del numeral 4A, al firmar el contrato.
+const CON_COTEJO_V3 =
+  'Solo tratamos un dato sensible si usted lo autoriza: la foto de su rostro, para el cotejo de identidad opcional del numeral 4A, que se hace al firmar el contrato. No tratamos datos de menores; el servicio es solo para mayores de 18 años.'
 
 const FINALIDADES = [
   {
@@ -227,6 +238,11 @@ export default function AutorizarPage() {
   const [dondeLabora, setDondeLabora] = useState('')
   const [ingreso, setIngreso] = useState('')
   const [presentacion, setPresentacion] = useState<'solo' | 'acompanado' | null>(null)
+  // Adenda 6 §8: tres opciones; por defecto «Prefiero no indicarlo» (quien tramita ve «No lo indicó»).
+  const [habitara, setHabitara] = useState<Habitara>(HABITARA_POR_DEFECTO)
+  // Se envía solo si la persona respondió en esta visita: el «Prefiero no indicarlo» que trae por defecto no borra un
+  // «Sí» o un «No» que dejó antes (enlace reenviado, página cerrada antes de firmar).
+  const [habitaraRespondida, setHabitaraRespondida] = useState(false)
   const [coaNombre, setCoaNombre] = useState('')
   const [coaApellido, setCoaApellido] = useState('')
   const [coaEmail, setCoaEmail] = useState('')
@@ -243,10 +259,18 @@ export default function AutorizarPage() {
   // §8.4: "la casilla de aceptación no puede venir marcada por defecto".
   // Este `false` es normativo — no lo cambies a true ni lo derives de nada.
   const [acepta, setAcepta] = useState(false)
+  // Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A, opcional. También desmarcada por defecto (dato sensible, Ley 1581
+  // art. 6). Solo se registra con la firma: el cotejo es al firmar el contrato.
+  const [aceptaCotejo, setAceptaCotejo] = useState(false)
   // El correo donde quiere recibir el resultado de su evaluación: solo si la API lo pide
   // (contacto_resultado). Se prellena al confirmar su documento con el de su ficha.
   const [correoResultado, setCorreoResultado] = useState('')
   const [errorCorreo, setErrorCorreo] = useState(false)
+  // Factura electrónica del pago: solo si la API lo pide (datos_factura).
+  const [direccionFactura, setDireccionFactura] = useState('')
+  const [municipioFactura, setMunicipioFactura] = useState<MunicipioFactura | null>(null)
+  const [errorFactura, setErrorFactura] = useState(false)
+  const [busquedaMunicipio, setBusquedaMunicipio] = useState<EstadoBusquedaMunicipio | null>(null)
   const [openFin, setOpenFin] = useState<number | null>(null)
   const [consents, setConsents] = useState<Record<ConsentKey, boolean>>({
     analitica: false,
@@ -334,14 +358,20 @@ export default function AutorizarPage() {
     // del historial de la entrada en la que estaba).
     window.history.replaceState({ ...window.history.state, paso: 1 }, '')
   }, [])
+  // Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A se muestra; el cotejo NO se hace aquí (es al firmar el contrato).
+  // El paso de la foto queda solo para los enlaces de textos anteriores que la piden (`requerida`).
+  const casilla4a = !!data?.biometria?.casilla_4a
+  const pideCotejo = !!data?.biometria?.requerida
   useEffect(() => {
     const onPop = (e: PopStateEvent) => {
       const p = ((e.state as { paso?: Paso } | null)?.paso ?? 1) as Paso
-      setPaso(p !== 1 && !(identidadOk && acepta) ? 1 : p)
+      // «Adelante» del navegador no lleva al paso de la foto si este enlace no la pide.
+      const destino = p === 'bio' && !pideCotejo ? 3 : p
+      setPaso(destino !== 1 && !(identidadOk && acepta) ? 1 : destino)
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
-  }, [identidadOk, acepta])
+  }, [identidadOk, acepta, pideCotejo])
 
   // El paso 1 mide varios miles de px (texto legal íntegro + acordeones) y el
   // botón vive al fondo: sin este reset, al pasar al paso 2 el navegador clampa
@@ -358,20 +388,30 @@ export default function AutorizarPage() {
     setErrorMessage('')
   }, [irAPaso])
 
-  // Salida del paso 3. Si el backend pide biometría, se intercala el cotejo
-  // antes de la confirmación final.
+  // Con la V3.1 el numeral 5.2 solo trae dos finalidades opcionales: la tercera no se ofrece,
+  // y sus descripciones son las casillas literales del texto V3.1 (la casilla es el consentimiento: no se recorta).
+  const beneficios = casilla4a
+    ? BENEFICIOS.filter((b) => b.key !== 'historial_referencia').map((b) =>
+        b.key === 'analitica' || b.key === 'comercial' ? { ...b, desc: CASILLAS_5_2_V3[b.key] } : b,
+      )
+    : BENEFICIOS
+
+  // Salida del paso 3. Si el backend pide biometría (enlaces de textos anteriores
+  // a la V3.1), se intercala el cotejo antes de la confirmación final.
   const salirDeBeneficios = useCallback(() => {
     // B4: quien ya se negó ('omitida') tampoco vuelve al paso; ahí vería «reintentar».
-    if (data?.biometria?.requerida && data.biometria.estado !== 'verificada' && data.biometria.estado !== 'omitida') {
+    const estado = data?.biometria?.estado
+    const resuelto = estado === 'verificada' || estado === 'omitida'
+    if (pideCotejo && !resuelto) {
       irAPaso('bio')
       return
     }
     irAFirma()
-  }, [data?.biometria?.requerida, data?.biometria?.estado, irAFirma, irAPaso])
+  }, [pideCotejo, data?.biometria?.estado, irAFirma, irAPaso])
 
   // Barra de progreso: 4 tramos, o 5 cuando el backend pide el cotejo. El
   // índice traduce el paso 'bio' a su posición para poder compararlo.
-  const conBiometria = !!data?.biometria?.requerida
+  const conBiometria = pideCotejo
   const pasosBarra = conBiometria
     ? ['Autorización', 'Sobre usted', 'Beneficios', 'Identidad', 'Confirmar']
     : ['Autorización', 'Sobre usted', 'Beneficios', 'Confirmar']
@@ -417,6 +457,7 @@ export default function AutorizarPage() {
       ...(situacion === 'independiente' && tieneRut !== null ? { tiene_rut: tieneRut } : {}),
       ...(dondeLabora.trim() ? { donde_labora: dondeLabora.trim() } : {}),
       ...(ingresoNum > 0 ? { ingreso_declarado_cop: ingresoNum } : {}),
+      ...(habitaraRespondida ? { habitara_inmueble: habitara } : {}),
       ...(presentacion ? { presentacion } : {}),
       ...(!sinCoarrendatario && presentacion === 'acompanado' && coaNombre.trim() && coaApellido.trim() && (coaEmail.trim() || coaTelefono.trim())
         ? {
@@ -578,16 +619,33 @@ export default function AutorizarPage() {
   // congela texto, versión, documento, IP, fecha y dispositivo (§8.4).
   async function handleConfirmarYFirmar() {
     if (submitting) return
+    const pideFactura = data?.datos_factura
+    if (pideFactura && !datosFacturaCompletos(pideFactura, direccionFactura, municipioFactura, busquedaMunicipio)) {
+      setErrorFactura(true)
+      // Al primer campo con error (el foco también lo desplaza a la vista).
+      requestAnimationFrame(() => document.querySelector<HTMLInputElement>('#datos-factura [aria-invalid="true"]')?.focus())
+      return
+    }
     setSubmitting(true)
     setErrorMessage('')
+    const canal = canalDeEstaPagina(token)
     try {
       const result = await autorizacionPublicService.firmar(token, {
         metodo_firma: 'casilla',
         // §8.1: el mismo documento que la API ya aceptó en el paso 1; la firma
         // lo vuelve a comparar (un POST directo no se salta la confirmación).
         numero_documento: documento.trim(),
-        consentimientos_opcionales: consents,
+        // Adenda 6 §2 / 6.1 (texto V3.1): las dos finalidades del 5.2 y la casilla 4A.
+        consentimientos_opcionales: casilla4a
+          ? { analitica: consents.analitica, comercial: consents.comercial, cotejo_biometrico: aceptaCotejo }
+          : consents,
         ...correoParaEnviar(data?.contacto_resultado?.requerido, correoResultado),
+        // Adenda 6.1 §2: por cuál canal llegó (la marca del enlace). El número o correo lo pone la API.
+        ...(canal ? { canal_enlace: canal } : {}),
+        ...(pideFactura?.pide_direccion ? { direccion_factura: direccionFactura.trim() } : {}),
+        ...(pideFactura?.pide_municipio && municipioFactura
+          ? { municipio_codigo: municipioFactura.codigo, municipio_nombre: municipioFactura.nombre }
+          : {}),
       })
       setHashDocumento(result.hash_documento)
       setPagoRequerido(!!result.pago_requerido)
@@ -855,7 +913,10 @@ export default function AutorizarPage() {
                   ? 'Si se aprueba, le contamos por correo los siguientes pasos.'
                   : data.expediente.inmueble === null
                     ? 'Si se aprueba, le decimos hasta qué canon puede arrendar.'
-                    : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
+                    : data.biometria?.casilla_4a
+                      ? // Adenda 6.1 §3: al firmar se hace el cotejo; la firma es digital o en notaría según su resultado.
+                        `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le indica cómo firmarlo. El cotejo con foto, si lo autoriza, se hace en ese momento.`
+                      : `Si se aprueba, ${enMedioDeFrase(quien)} prepara el contrato y le llega el enlace para firmarlo.`}
               </li>
             </ol>
             <p className="mt-3 text-sm text-gray-500">Puede cerrar esta página.</p>
@@ -887,7 +948,9 @@ export default function AutorizarPage() {
     { txt: 'Consulta y reporte a centrales de riesgo', lock: 'Obligatorio', on: true },
     { txt: 'Historial de comportamiento de pago', lock: 'Obligatorio', on: true },
     // B6: los opcionales con los mismos títulos del paso 3 (texto legal §5.2).
-    ...BENEFICIOS.map((b) => ({ txt: b.titulo, lock: 'Opcional', on: consents[b.key] })),
+    ...beneficios.map((b) => ({ txt: b.titulo, lock: 'Opcional', on: consents[b.key] })),
+    // Adenda 6 §2 / 6.1: la casilla 4A (cuándo se hace el cotejo va debajo de la lista).
+    ...(casilla4a ? [{ txt: 'Cotejo biométrico (numeral 4A)', lock: 'Opcional', on: aceptaCotejo }] : []),
   ]
 
   return (
@@ -1125,7 +1188,7 @@ export default function AutorizarPage() {
                         {f.detalle.map((d) => (
                           <li key={d} className="flex gap-2">
                             <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary-500" />
-                            <span>{d === SIN_DATOS_SENSIBLES && conBiometria ? CON_BIOMETRIA : d}</span>
+                            <span>{d === SIN_DATOS_SENSIBLES && casilla4a ? CON_COTEJO_V3 : d === SIN_DATOS_SENSIBLES && conBiometria ? CON_BIOMETRIA : d}</span>
                           </li>
                         ))}
                       </ul>
@@ -1146,7 +1209,8 @@ export default function AutorizarPage() {
               <div className="border-b border-gray-100 px-4 py-3">
                 <h2 className="text-sm font-semibold text-gray-900">Autorización legal completa</h2>
                 <p className="mt-0.5 text-[11px] text-gray-500">
-                  Este es el texto íntegro que está aceptando. Versión {data.version_terminos}.
+                  Este es el texto íntegro que está aceptando. Versión {versionVisible(data.version_terminos)}.
+                  {casilla4a && ' Las casillas de este texto se marcan más abajo.'}
                 </p>
               </div>
               <div className="whitespace-pre-wrap break-words bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
@@ -1196,6 +1260,24 @@ export default function AutorizarPage() {
                 </a>
               </span>
             </label>
+
+            {/* Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A, opcional, separada y desmarcada. Su texto es el del
+                numeral 4A. Se registra con la firma; el cotejo se hace al firmar el contrato (6.1 §3). */}
+            {casilla4a && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-white p-3.5">
+                <input
+                  type="checkbox"
+                  checked={aceptaCotejo}
+                  onChange={(e) => setAceptaCotejo(e.target.checked)}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="text-sm text-gray-700">
+                  <strong>Opcional (numeral 4A):</strong> autorizo el tratamiento de mis datos biométricos para el cotejo de
+                  identidad descrito en ese numeral.
+                  <span className="mt-1 block text-xs text-gray-600">{AYUDA_CASILLA_4A}</span>
+                </span>
+              </label>
+            )}
 
             <button
               type="button"
@@ -1341,6 +1423,16 @@ export default function AutorizarPage() {
                 </span>
               </p>
             </div>
+
+            {/* Adenda 6 §8: informativo; la evaluación no lo usa. */}
+            <PreguntaHabitara
+              valor={habitara}
+              onCambio={(v) => {
+                setHabitara(v)
+                setHabitaraRespondida(true)
+              }}
+              disabled={guardandoPerfil}
+            />
 
             {/* §8.3 Solo o acompañado */}
             <div>
@@ -1523,7 +1615,7 @@ export default function AutorizarPage() {
               disabled={guardandoPerfil}
               className={buttonClasses('secondary', 'lg', 'w-full')}
             >
-              {[situacion, presentacion, dondeLabora.trim(), ingreso, coaNombre.trim(), coaApellido.trim(), coaEmail.trim(), coaTelefono.trim()].some(Boolean)
+              {[situacion, presentacion, dondeLabora.trim(), ingreso, coaNombre.trim(), coaApellido.trim(), coaEmail.trim(), coaTelefono.trim(), habitara !== HABITARA_POR_DEFECTO].some(Boolean)
                 ? 'Saltar sin guardar lo que escribió'
                 : 'Saltar este paso'}
             </button>
@@ -1550,7 +1642,7 @@ export default function AutorizarPage() {
               {/* M12: «Beneficios», el mismo nombre que usa el texto legal para este paso. */}
               <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Beneficios opcionales</h2>
               <p className="mt-1 text-sm text-gray-500">
-                {BENEFICIOS.length === 3 ? 'Tres' : BENEFICIOS.length} autorizaciones opcionales. Usted elige cuáles
+                {beneficios.length === 3 ? 'Tres' : beneficios.length === 2 ? 'Dos' : beneficios.length} autorizaciones opcionales. Usted elige cuáles
                 encender y las cambia cuando quiera. Su fianza funciona igual, las active o no.
               </p>
             </div>
@@ -1561,7 +1653,7 @@ export default function AutorizarPage() {
             </div>
 
             <div className="space-y-3">
-              {BENEFICIOS.map((b) => {
+              {beneficios.map((b) => {
                 const on = consents[b.key]
                 return (
                   <div key={b.key} className="rounded-xl border border-gray-200 bg-white p-4">
@@ -1647,7 +1739,7 @@ export default function AutorizarPage() {
               <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Confirme su autorización</h2>
               <p className="mt-1 text-sm text-gray-500">
                 {data?.pago?.requerido
-                  ? `Revise el resumen y confirme. Después le mostramos el enlace para pagar el estudio${
+                  ? `Revise el resumen${data.datos_factura ? ', complete los datos de su factura' : ''} y confirme. Después le mostramos el enlace para pagar el estudio${
                       data.pago.monto_formateado ? ` por ${data.pago.monto_formateado}` : ''
                     } en Mercado Pago; su evaluación empieza cuando se confirme el pago.`
                   : data?.pago == null
@@ -1686,7 +1778,24 @@ export default function AutorizarPage() {
                   </li>
                 ))}
               </ul>
+              {/* Adenda 6.1 §3: el cotejo es al firmar el contrato; con él aprobado, la firma es digital. */}
+              {casilla4a && (
+                <p className="mt-3 border-t border-gray-100 pt-3 text-xs leading-relaxed text-gray-600">{COTEJO_AL_FIRMAR}</p>
+              )}
             </div>
+
+            {data?.datos_factura && (
+              <CampoDatosFactura
+                pide={data.datos_factura}
+                direccion={direccionFactura}
+                onDireccion={setDireccionFactura}
+                municipio={municipioFactura}
+                onMunicipio={setMunicipioFactura}
+                estadoBusqueda={busquedaMunicipio}
+                onEstadoBusqueda={setBusquedaMunicipio}
+                mostrarError={errorFactura}
+              />
+            )}
 
             {errorMessage && (
               <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{errorMessage}</div>

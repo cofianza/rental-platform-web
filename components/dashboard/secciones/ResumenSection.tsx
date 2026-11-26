@@ -720,8 +720,8 @@ export function ResumenSection() {
               }
               hint={
                 desgloseTasa
-                  ? 'Aprobados sobre los estudios creados este mes que ya tienen decisión: aprobados, aprobados con segundo firmante, no aprobables y bloqueados por listas'
-                  : 'Aprobados sobre los estudios creados este mes que ya tienen decisión (aprobados y no aprobables)'
+                  ? 'Aprobados sobre los estudios creados este mes que ya tienen decisión: aprobados, aprobados con segundo firmante, no aprobados y bloqueados por listas'
+                  : 'Aprobados sobre los estudios creados este mes que ya tienen decisión (aprobados y no aprobados)'
               }
               onClick={goExpedientes}
             />

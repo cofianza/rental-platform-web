@@ -153,6 +153,33 @@ export function avisosAMostrar(avisos: IAvisoVisible[], ocultos: AvisosOcultos):
   return avisos.filter((a) => a.nivel === 'caido' || ocultos[a.id] !== a.actualizado_en)
 }
 
+/**
+ * Reporte de la Oficina Virtual (25-nov), punto 12: en el panel el cierre se guarda en la cuenta (la API ya no manda
+ * los que la persona cerró). El navegador solo es el respaldo cuando la API no lo pudo guardar, y por persona (en un
+ * equipo compartido, lo que cierra una no se le oculta a otra). Las páginas públicas (prospectos sin cuenta) siguen
+ * con la clave del navegador.
+ */
+export const CLAVE_OCULTOS_PUBLICOS = 'hp-avisos-ocultos'
+
+/** La clave del respaldo en el navegador de lo que esta persona cerró en el panel. */
+export function claveOcultosDe(usuarioId: string): string {
+  return `${CLAVE_OCULTOS_PUBLICOS}:${usuarioId}`
+}
+
+/**
+ * Qué hacer cuando la API no guardó el cierre (por el código de error, no por el estado HTTP: con una API sin la ruta
+ * también es un 404):
+ * - `olvidar`: el aviso ya no está publicado (AVISO_NO_ENCONTRADO): sigue oculto y no hay nada que recordar.
+ * - `deshacer`: no se puede cerrar («fuera de servicio», AVISO_NO_SE_CIERRA) o es «ver como» (SOLO_LECTURA, que
+ *   la web ya avisó): vuelve a mostrarse.
+ * - `recordar`: cualquier otra falla (sin red, la API caída o anterior): se recuerda en este navegador.
+ */
+export function siNoSeGuardoElCierre(codigo: string | undefined): 'olvidar' | 'deshacer' | 'recordar' {
+  if (codigo === 'AVISO_NO_ENCONTRADO') return 'olvidar'
+  if (codigo === 'AVISO_NO_SE_CIERRA' || codigo === 'SOLO_LECTURA') return 'deshacer'
+  return 'recordar'
+}
+
 /** Deja solo lo de avisos que siguen vigentes, para que la lista no crezca sin fin. */
 export function podarOcultos(ocultos: AvisosOcultos, vigentes: IAvisoVisible[]): AvisosOcultos {
   const ids = new Set(vigentes.map((a) => a.id))

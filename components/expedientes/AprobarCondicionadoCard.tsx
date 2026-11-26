@@ -259,7 +259,7 @@ export function AprobarCondicionadoCard({
         ? TEXTO_VERIFICAR_SEGUNDO_FIRMANTE
         : (segundoEnVerificacion === 'api' && siguienteAccionTexto) || TEXTO_SEGUNDO_EN_VERIFICACION
       : condicion.vencida
-        ? `Venció el plazo para presentar un segundo firmante válido (${fecha}). Sin él, el estudio queda como no aprobable.`
+        ? `Venció el plazo para presentar un segundo firmante válido (${fecha}). Sin él, el estudio queda como no aprobado.`
         : `${queFalta} Con las dos evaluaciones, el estudio se decide solo; Cofianza interviene únicamente si hay algo por verificar.`
     // Con la verificación abierta ya hay un segundo firmante presentado: lo que se espera es a Cofianza.
     const mientras = segundoEnVerificacion ? 'Mientras Cofianza lo verifica' : 'Mientras falte el segundo firmante'
@@ -497,7 +497,7 @@ export function AprobarCondicionadoCard({
         <>
           <span className="font-semibold text-gray-800">Cuando se decida.</span>{' '}
           <strong className="font-semibold text-gray-800">Aprobado:</strong> se crea el contrato desde este estudio.{' '}
-          <strong className="font-semibold text-gray-800">No aprobable:</strong> no se puede hacer contrato con este solicitante para este inmueble.
+          <strong className="font-semibold text-gray-800">No aprobado:</strong> no se puede hacer contrato con este solicitante para este inmueble.
         </>
       }
     >
@@ -537,7 +537,7 @@ export function AprobarCondicionadoCard({
                   <p className="font-semibold">{bloqueo.codigo === 'APROBACION_CON_SEGUNDO_NO_PROCEDE' ? 'No se puede aprobar' : 'Todavía no se puede aprobar'}</p>
                   <p>{bloqueo.motivo}</p>
                   {bloqueo.codigo !== 'APROBACION_CON_SEGUNDO_NO_PROCEDE' && (
-                    <p className="mt-1 text-red-700">Puede dejarlo en espera o pasarlo a «No aprobable» con «Cambiar estado».</p>
+                    <p className="mt-1 text-red-700">Puede dejarlo en espera o pasarlo a «No aprobado» con «Cambiar estado».</p>
                   )}
                 </div>
               </div>
@@ -604,7 +604,7 @@ export function AprobarCondicionadoCard({
               Es el segundo firmante: firma el contrato con el titular y los dos responden solidariamente por todas las
               obligaciones del contrato. Se le hace su propia evaluación y el analista decide con los dos
               resultados. Si el coarrendatario tiene un impedimento que no admite excepciones (por
-              ejemplo, aparecer en listas restrictivas), el estudio queda no aprobable.
+              ejemplo, aparecer en listas restrictivas), el estudio queda no aprobado.
             </p>
           </div>
         )}

@@ -210,7 +210,7 @@ export function InquilinosSection() {
             { value: 'todos', label: 'Todos' },
             { value: 'aprobado', label: 'Aprobado' },
             { value: 'condicionado', label: 'En revisión o con segundo firmante' },
-            { value: 'rechazado', label: 'No aprobable' },
+            { value: 'rechazado', label: 'No aprobado' },
           ]}
         />
         <FiltroSelect

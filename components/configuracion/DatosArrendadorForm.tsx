@@ -1,10 +1,12 @@
 /**
- * Datos del arrendador para contratos.
+ * Datos del arrendador para contratos y facturas (antes la página «Datos para contrato»).
  *
- * Pantalla donde la inmobiliaria/propietario completa los datos que
- * aparecen en el contrato de arrendamiento generado: domicilio, cuenta
- * de recaudo del canon, contacto para notificar pagos, y (solo
- * inmobiliaria) logo + matrícula de arrendador.
+ * Reporte de la Oficina Virtual (25-nov), punto 13: va dentro de «Datos de mi inmobiliaria»
+ * (/configuracion/datos-inmobiliaria), el único lugar con los datos de la inmobiliaria. Aquí la
+ * inmobiliaria/propietario completa lo que aparece en el contrato de arrendamiento y en las facturas de
+ * Cofianza: razón social, NIT y municipio (DIAN), domicilio, cuenta de recaudo del canon, contacto para
+ * notificar pagos, y (solo inmobiliaria) logo + matrícula de arrendador. Los mismos datos los lee el
+ * formulario de cupos y solo pide los que falten.
  */
 
 'use client'
@@ -12,7 +14,6 @@
 import { useEffect, useState, useRef, useId } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { toast } from 'sonner'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuth } from '@/hooks/useAuth'
 import {
   perfilArrendadorService,
@@ -20,7 +21,7 @@ import {
   type IUpdatePerfilArrendadorInput,
   type TipoDocumentoRepresentante,
 } from '@/services/perfilArrendadorService'
-import { IconLoader, IconCheck, IconUpload, IconTrash, IconAlertTriangle } from '@/components/icons'
+import { IconLoader, IconCheck, IconUpload, IconTrash } from '@/components/icons'
 import { SkeletonDetail } from '@/components/ui/Skeleton'
 import { PhoneInput } from '@/components/ui/PhoneInput'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -34,7 +35,7 @@ const ROL_LABELS: Record<string, string> = {
   administrador: 'Administrador',
 }
 
-export default function DatosContratoPage() {
+export function DatosArrendadorForm() {
   const { user } = useAuth()
   const isInmobiliaria = user?.rol === 'inmobiliaria'
   // Los datos para contrato son de la ORGANIZACIÓN: solo el titular los edita.
@@ -43,7 +44,8 @@ export default function DatosContratoPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   // Si vinimos redirigidos desde otra pantalla (banner perfil incompleto),
-  // al guardar volvemos a donde estabamos. Validamos que sea un path
+  // al guardar volvemos a donde estabamos (la ruta vieja /configuracion/datos-contrato
+  // redirige con su returnTo). Validamos que sea un path
   // interno seguro para evitar open-redirect.
   const returnToParam = searchParams?.get('returnTo')
   const returnTo = rutaInterna(returnToParam)
@@ -219,13 +221,13 @@ export default function DatosContratoPage() {
   }
 
   if (loading && !perfil) {
-    return <SkeletonDetail bloques={3} etiqueta="Cargando sus datos para contrato…" />
+    return <SkeletonDetail bloques={3} etiqueta="Cargando sus datos para contratos y facturas…" />
   }
 
   if (!perfil || errorCarga) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-        <p className="text-sm text-red-700 mb-3">No pudimos cargar sus datos para contrato. Puede ser un problema de conexión.</p>
+        <p className="text-sm text-red-700 mb-3">No pudimos cargar sus datos para contratos y facturas. Puede ser un problema de conexión.</p>
         <button
           type="button"
           onClick={() => setRecarga((n) => n + 1)}
@@ -240,21 +242,16 @@ export default function DatosContratoPage() {
   const rolLabel = ROL_LABELS[perfil.rol] ?? perfil.rol
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <PageHeader
-        title="Datos para contrato"
-        subtitle={`Estos datos aparecen en los contratos de arrendamiento que se generan a su nombre como ${rolLabel.toLowerCase()}.`}
-      />
-
-      {soloLectura && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
-          <p className="text-sm text-amber-800">
-            Estos datos los gestiona <strong>el titular</strong> de la inmobiliaria y son los mismos
-            para todo el equipo. Los ve en <strong>modo lectura</strong>.
-          </p>
-        </div>
-      )}
+    <section aria-labelledby="datos-arrendador-titulo" className="space-y-6">
+      <div>
+        <h2 id="datos-arrendador-titulo" className="text-lg font-semibold text-gray-900">
+          Datos para contratos y facturas
+        </h2>
+        <p className="mt-0.5 text-sm text-gray-500">
+          Aparecen en los contratos de arrendamiento que se generan a su nombre como {rolLabel.toLowerCase()} y en las
+          facturas que Cofianza le emite.
+        </p>
+      </div>
 
       <fieldset disabled={soloLectura} className="space-y-6 border-0 p-0 m-0 disabled:opacity-70">
       {/* Logo (solo inmobiliaria) */}
@@ -589,7 +586,7 @@ export default function DatosContratoPage() {
         confirmLabel="Eliminar logo"
         variant="danger"
       />
-    </div>
+    </section>
   )
 }
 

@@ -492,16 +492,22 @@ function Asistente({
     // Ruta B con otro arrendatario que el solicitante: sin la casilla marcada no sale.
     // La casilla se limpia al cerrar el diálogo (onClose), cuando termina el envío: no durante «Procesando…».
     if (rutaB && resumen?.arrendatarioEsSolicitante === false && !confirmaArrendatario) return
-    const ok = await v3.enviar({
+    const tras = await v3.enviar({
       generacion: contrato.documento.generacion,
       propioSha256: rutaB ? contrato.propio?.sha256 : undefined,
       firmasHuella: rutaB ? contrato.propio?.firmasHuella : undefined,
     })
-    if (ok) {
+    // Lo que de verdad pasó (el envío decide con las partes congeladas), no lo que se anticipaba.
+    if (tras) {
+      const enviado = tras.enviado
       toast.success(
-        contrato.biometriaFirma
-          ? `Contrato ${contrato.numero}: enviamos el correo de verificación de identidad. La firma sale cuando todos terminen.`
-          : `Contrato ${contrato.numero} enviado a firma`,
+        enviado?.notaria
+          ? `Contrato ${contrato.numero} listo para firmar en notaría: descárguelo, hágalo autenticar en notaría y regístrelo con la fecha del sello.`
+          : enviado && enviado.identidadPendientes > 0
+            ? enviado.cotejo
+              ? `Contrato ${contrato.numero}: enviamos el enlace del cotejo de identidad. La firma sale cuando todas las personas lo aprueben.`
+              : `Contrato ${contrato.numero}: enviamos el correo de verificación de identidad. La firma sale cuando todos terminen.`
+            : `Contrato ${contrato.numero} enviado a firma`,
       )
     }
   }
@@ -601,7 +607,7 @@ function Asistente({
         <Aviso>
           El inmueble está reservado hasta el {reservadoHasta}
           {contrato.reservaDiasHabiles ? ` (${contrato.reservaDiasHabiles} días hábiles desde que se inició el contrato)` : ''}.
-          Si el contrato no se envía a firma antes, el borrador se cancela solo y el inmueble se libera; lo que ya llenó
+          Si el contrato no se {contrato.firmaNotaria ? 'prepara para la firma en notaría' : 'envía a firma'} antes, el borrador se cancela solo y el inmueble se libera; lo que ya llenó
           se conserva para cuando lo vuelva a iniciar.
         </Aviso>
       )}
@@ -754,22 +760,35 @@ function Asistente({
           setConfirmaArrendatario(false)
         }}
         onConfirm={enviarAFirma}
-        title="¿Enviar el contrato a firma?"
+        title={contrato.firmaNotaria ? '¿Preparar el contrato para firma en notaría?' : '¿Enviar el contrato a firma?'}
         confirmDisabled={pideConfirmarArrendatario && !confirmaArrendatario}
         message={
           <div className="space-y-3">
             {resumen?.avisoPartes && <Aviso tono="aviso">{resumen.avisoPartes}</Aviso>}
+            {/* Adenda 6 §2: sin el cotejo aprobado de todas las personas no hay firma digital. */}
+            {contrato.firmaNotaria && (
+              <Aviso tono="aviso">
+                Con los datos de hoy, al menos una persona arrendataria no completó el cotejo de identidad: el contrato
+                se firmará con firma autenticada en notaría, a costo del arrendatario. Después de prepararlo, lo descarga, lo
+                hace autenticar en notaría y lo registra aquí con la fecha del sello; la fianza se activa con ese registro.
+              </Aviso>
+            )}
             <p>
-              {contrato.biometriaFirma
+              {contrato.firmaNotaria
+                ? 'Partes del contrato:'
+                : contrato.cotejoFirma
+                ? `Primero les llega por correo un enlace para el cotejo de identidad (una foto del documento y una selfie) al arrendatario y, si hay, al coarrendatario. Si todos lo aprueban, cada parte recibirá por WhatsApp ${enlaceFirma}, en este orden y una a la vez; si alguno no lo completa, el contrato se firmará en notaría, a costo del arrendatario:`
+                : contrato.biometriaFirma
                 ? `Primero les llega por correo un enlace para verificar su identidad al arrendatario y, si hay, al coarrendatario. Cuando todos terminen, cada parte recibirá por WhatsApp ${enlaceFirma}, en este orden y una a la vez:`
                 : `Cada parte recibirá por WhatsApp ${enlaceFirma}, en este orden y una a la vez:`}
             </p>
-            <ol className="list-decimal space-y-1 pl-5">
+            {/* En notaría no hay orden de firma ni WhatsApp: la lista va sin números ni celulares. */}
+            <ol className={contrato.firmaNotaria ? 'list-disc space-y-1 pl-5' : 'list-decimal space-y-1 pl-5'}>
               {ordenFirma.map((f, i) => (
                 <li key={i} className="break-words">
                   <span className="text-gray-600">{f.rol}: </span>
                   <span className="font-medium text-gray-900">{f.nombre}</span>
-                  {f.celular && ` (${f.celular})`}
+                  {f.celular && !contrato.firmaNotaria && ` (${f.celular})`}
                 </li>
               ))}
             </ol>
@@ -797,11 +816,12 @@ function Asistente({
               </label>
             )}
             <p className="font-medium text-gray-900">
-              Después de enviarlo, el contrato no se puede editar.{interno ? ' Cada envío consume un crédito de firma.' : ''}
+              Después de {contrato.firmaNotaria ? 'prepararlo' : 'enviarlo'}, el contrato no se puede editar.
+              {interno && !contrato.firmaNotaria ? ' Cada envío consume un crédito de firma.' : ''}
             </p>
           </div>
         }
-        confirmLabel="Enviar a firma"
+        confirmLabel={contrato.firmaNotaria ? 'Preparar para notaría' : 'Enviar a firma'}
         isLoading={accion === 'enviar'}
       />
 

@@ -77,7 +77,7 @@ const NAV: NavGroup[] = [
     group: 'Cuenta',
     items: [
       // Acceso a Mi cuenta (correo/teléfono donde llegan las notificaciones),
-      // Datos para contrato y documentos legales — antes el propietario no
+      // Mis datos de propietario (datos para contratos y documentos legales) — antes el propietario no
       // tenía cómo llegar a /configuracion desde su panel.
       { label: 'Configuración', href: '/configuracion', Icon: IconSettings },
     ],

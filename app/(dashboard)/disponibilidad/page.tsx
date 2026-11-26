@@ -379,7 +379,7 @@ export default function DisponibilidadPage() {
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Disponibilidad"
+          title="Horarios de visita"
           subtitle="Configure cuándo puede recibir visitas de arrendatarios interesados"
         />
         <div className="max-w-3xl space-y-3">
@@ -396,7 +396,7 @@ export default function DisponibilidadPage() {
   return (
     <div className={'space-y-6' + (isDirty ? ' pb-28' : '')}>
       <PageHeader
-        title="Disponibilidad"
+        title="Horarios de visita"
         subtitle="Configure cuándo puede recibir visitas de arrendatarios interesados"
       />
 

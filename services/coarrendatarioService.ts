@@ -8,6 +8,7 @@ import type { IBeneficioPrima } from '@/lib/textosPrima'
 import type { IPersonaA5d } from '@/types/estudio'
 import { apiClient } from '@/lib/api'
 import { coalesceRequest, descartarEnVuelo } from '@/lib/requestCoalesce'
+import type { Habitara } from '@/lib/habitara'
 
 export type CoarrendatarioEstado =
   | 'pendiente_aceptacion'
@@ -50,6 +51,11 @@ export interface ICoarrendatario {
    * el documento enmascarado, sin correo ni teléfono (email '', telefono null).
    */
   datos_protegidos?: boolean
+  /**
+   * Adenda 6 §8: si vivirá en el inmueble (true = Sí, false = No, null = No lo indicó). Lo responde al aceptar.
+   * No llega al titular ni con una API anterior (undefined).
+   */
+  habitara_inmueble?: boolean | null
   /** Solo en la respuesta de reenviar: true si se emitió un enlace nuevo (cambió la persona o el destino). */
   enlace_renovado?: boolean
   /** Estudio TransUnion del coarrendatario (embebido por el backend). */
@@ -120,6 +126,13 @@ export interface ICoarrendatarioPublicView {
    */
   texto_legal: string
   version_terminos: string
+  /**
+   * Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A. Ausente con un texto anterior. `autorizado`: ya aceptó y marcó
+   * (true) o no (false) la 4A; null antes de aceptar. El cotejo no se hace aquí: es al firmar el contrato.
+   */
+  cotejo?: {
+    autorizado: boolean | null
+  }
 }
 
 /** La clave con que se comparte la lectura del coarrendatario de un estudio. */
@@ -230,15 +243,27 @@ export const coarrendatarioService = {
   /** `notificacion`: su dirección y municipio para el contrato (Contratos V3 §8.7.2). */
   async aceptar(
     token: string,
-    notificacion?: { direccion: string; municipio: string },
+    /** Sus datos para el contrato y, Adenda 6 §8, si vivirá en el inmueble (informativo). */
+    notificacion?: { direccion: string; municipio: string; habitara_inmueble?: Habitara },
     /** Solo si la pantalla lo pide (contacto_resultado): el correo para el resultado de su evaluación y su documento. */
     contacto?: { correo_resultado?: string; numero_documento?: string },
+    /**
+     * Adenda 6 §2 / 6.1 (texto V3.1): la versión que la pantalla mostró, la casilla 4A, las dos finalidades opcionales
+     * y, Adenda 6.1 §2, por cuál canal llegó (el número o correo lo pone la API).
+     */
+    autorizacion?: {
+      version_terminos?: string
+      acepta_cotejo_biometrico?: boolean
+      consentimientos_opcionales?: { analitica?: boolean; comercial?: boolean }
+      canal_enlace?: 'whatsapp' | 'correo'
+    },
   ): Promise<{ ok: true; estudio_id: string | null; mensaje: string }> {
     const res = (await apiClient.post(`/public/coarrendatario/${token}/aceptar`, {
       acepta_terminos: true,
       acepta_datos: true,
       ...notificacion,
       ...contacto,
+      ...autorizacion,
     })) as unknown as { data: { ok: true; estudio_id: string | null; mensaje: string } }
     return res.data
   },

@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SkeletonTable } from '@/components/ui/Skeleton'
 import { IconLoader, IconCheck, IconHome, IconUser, IconX, IconFileText } from '@/components/icons'
+import { accionesInteresado } from '@/lib/accionesInteresado'
 import {
   interesadosService,
   type Interesado,
@@ -320,20 +321,23 @@ export default function InteresadosPage() {
                   página corre los puestos y dejaría a otro sin mostrar. */}
               {puedeEditar && (
                 <div className="flex shrink-0 flex-wrap justify-end gap-2">
-                  {/* Convertir el interesado en expediente (datos pre-llenados) */}
-                  <Link
-                    href={crearExpedienteHref(it)}
-                    // Al convertirlo en estudio ya se está atendiendo: deja de
-                    // figurar como «Nuevo» y de contar en la pestaña.
-                    onClick={() => {
-                      if (it.estado === 'nuevo') void interesadosService.updateEstado(it.id, 'contactado').catch(() => undefined)
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-800"
-                  >
-                    <IconFileText size={13} />
-                    Crear estudio
-                  </Link>
-                  {it.estado !== 'contactado' && (
+                  {/* Convertir el interesado en expediente (datos pre-llenados). Reporte de la Oficina Virtual
+                      (25-nov), punto 5: un descartado solo muestra «Reabrir» (lib/accionesInteresado). */}
+                  {accionesInteresado(it.estado).crearEstudio && (
+                    <Link
+                      href={crearExpedienteHref(it)}
+                      // Al convertirlo en estudio ya se está atendiendo: deja de
+                      // figurar como «Nuevo» y de contar en la pestaña.
+                      onClick={() => {
+                        if (it.estado === 'nuevo') void interesadosService.updateEstado(it.id, 'contactado').catch(() => undefined)
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-primary-800"
+                    >
+                      <IconFileText size={13} />
+                      Crear estudio
+                    </Link>
+                  )}
+                  {accionesInteresado(it.estado).contactado && (
                     <button
                       type="button"
                       onClick={() => cambiarEstado(it.id, 'contactado')}
@@ -348,7 +352,7 @@ export default function InteresadosPage() {
                       Contactado
                     </button>
                   )}
-                  {it.estado !== 'descartado' ? (
+                  {accionesInteresado(it.estado).descartar ? (
                     <button
                       type="button"
                       onClick={() => cambiarEstado(it.id, 'descartado')}
@@ -358,7 +362,7 @@ export default function InteresadosPage() {
                       <IconX size={13} />
                       Descartar
                     </button>
-                  ) : (
+                  ) : accionesInteresado(it.estado).reabrir && (
                     <button
                       type="button"
                       onClick={() => cambiarEstado(it.id, 'nuevo')}

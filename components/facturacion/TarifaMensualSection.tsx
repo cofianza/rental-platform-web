@@ -38,6 +38,7 @@ import { tarifaCobroService } from '@/services/tarifaCobroService'
 import { facturacionService } from '@/services/facturacionService'
 import { useAuthStore } from '@/stores/auth.store'
 import type { ICuentaCobro, ICuentaCobroDetalle, ILineaCobro, SituacionCuenta } from '@/types/tarifaCobro'
+import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
 
 const mesTexto = (periodo: string) =>
   new Date(`${periodo.slice(0, 10)}T12:00:00`).toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
@@ -662,8 +663,8 @@ function AvisoDatosFiscales() {
     <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
       <IconAlertTriangle size={12} className="inline mr-1 -mt-0.5" />
       Faltan datos fiscales de su inmobiliaria (persona jurídica con NIT) para emitir la cuenta de cobro. Complételos en{' '}
-      <Link href="/configuracion/datos-contrato" className="font-medium underline hover:text-amber-900">
-        Datos para contrato
+      <Link href={RUTA_DATOS_INMOBILIARIA} className="font-medium underline hover:text-amber-900">
+        Datos de mi inmobiliaria
       </Link>
       ; la cuenta se libera sola cuando estén completos.
     </p>

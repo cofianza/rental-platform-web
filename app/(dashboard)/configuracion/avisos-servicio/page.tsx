@@ -78,7 +78,8 @@ export default function AvisosServicioPage() {
   /** Tras cada cambio: la lista y el banner de esta misma pantalla. */
   async function refrescar() {
     await cargar()
-    if (rol) void useAvisosServicioStore.getState().cargar(rol)
+    const usuario = useAuthStore.getState().user?.id
+    if (rol && usuario) void useAvisosServicioStore.getState().cargar(rol, usuario)
   }
 
   async function guardar(input: IAvisoServicioInput): Promise<boolean> {

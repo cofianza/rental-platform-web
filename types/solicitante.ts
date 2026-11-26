@@ -47,7 +47,8 @@ export interface ISolicitante {
   ingresos_mensuales: number | null
   nivel_educativo: NivelEducativo | null
   parentesco: string | null
-  habitara_inmueble: boolean
+  /** Adenda 6 §8: ya no se escribe desde la pantalla (null = No lo indicó). */
+  habitara_inmueble: boolean | null
   estado: 'activo' | 'inactivo'
   created_at: string
   updated_at: string
@@ -78,7 +79,7 @@ export interface ISolicitanteCreateData {
   ingresos_mensuales?: number
   nivel_educativo?: NivelEducativo
   parentesco?: string
-  habitara_inmueble?: boolean
+  habitara_inmueble?: boolean | null
 }
 
 /**

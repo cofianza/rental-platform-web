@@ -1,8 +1,12 @@
 /**
  * Banner del panel con los avisos de servicio vigentes (fallas de WhatsApp,
  * pagos, firma…). Va arriba del contenido en los tres shells. La persona puede
- * ocultar los que no son «fuera de servicio»; si el administrador los edita,
- * vuelven a salir. El equipo de Cofianza ve todos y a quién le salen.
+ * cerrar los que no son «fuera de servicio»; el cierre se guarda en su cuenta
+ * y, si el administrador los edita, vuelven a salir. El equipo de Cofianza ve
+ * todos y a quién le salen.
+ *
+ * Reporte de la Oficina Virtual (25-nov), punto 12: cada aviso ocupa una línea
+ * con «Ver más» para el detalle (AvisoServicioCard `compacto`).
  */
 
 'use client'
@@ -26,6 +30,7 @@ export function AvisosServicioBanner() {
       {avisos.map((a) => (
         <AvisoServicioCard
           key={a.id}
+          compacto
           servicio={a.servicio}
           nivel={a.nivel}
           titulo={a.titulo}

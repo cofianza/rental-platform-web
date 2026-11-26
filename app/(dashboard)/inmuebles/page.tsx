@@ -27,6 +27,7 @@ import { MisInmueblesPropietario } from '@/components/dashboard/MisInmueblesProp
 import { inmuebleService } from '@/services/inmuebleService'
 import type { IInmueble } from '@/types/inmueble'
 import { useInmueblesStore } from '@/stores/inmuebles.store'
+import { rutaDatosConRegreso } from '@/lib/datosArrendador'
 
 /**
  * Cada rol monta solo la vista que usa. Antes los hooks de datos corrían para
@@ -119,7 +120,7 @@ function InmueblesGestion() {
     if (perfilIncompleto) {
       // returnTo=/inmuebles/nuevo asi al terminar de completar el perfil
       // el usuario aterriza en el form de nuevo inmueble.
-      router.push('/configuracion/datos-contrato?returnTo=' + encodeURIComponent('/inmuebles/nuevo'))
+      router.push(rutaDatosConRegreso('/inmuebles/nuevo'))
       return
     }
     router.push('/inmuebles/nuevo')

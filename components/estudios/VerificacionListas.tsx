@@ -189,7 +189,7 @@ export function VerificacionListas({
               {resultado === 'con_coincidencias' && (
                 <p className="text-sm font-medium text-red-700">
                   Con coincidencias, la coincidencia queda confirmada en este mismo paso: con dos personas, la operación queda bloqueada
-                  por listas; con una sola, el estudio queda no aprobable.
+                  por listas; con una sola, el estudio queda no aprobado.
                 </p>
               )}
             </fieldset>

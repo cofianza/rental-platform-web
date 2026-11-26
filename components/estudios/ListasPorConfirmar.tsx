@@ -67,7 +67,7 @@ export function ListasPorConfirmar({
           ? 'Coincidencia descartada: el caso sigue en revisión.'
           : confirmada?.expediente_estado === 'bloqueado'
             ? 'Coincidencia confirmada: la operación quedó bloqueada hasta que esa persona salga del estudio.'
-            : 'Coincidencia confirmada: el estudio quedó no aprobable.',
+            : 'Coincidencia confirmada: el estudio quedó no aprobado.',
       )
       setAccion(null)
       setMotivo('')

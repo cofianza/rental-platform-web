@@ -1,7 +1,7 @@
 /**
  * Chips y tasa de aprobación de la lista de estudios de quien gestiona (inmobiliaria y propietario).
  * Reporte de Gerencia (21-nov), punto 6: todos los contadores con la misma definición de cada estado,
- * y sin «Condicionados»: los resultados son aprobado, aprobado con segundo firmante y no aprobable
+ * y sin «Condicionados»: los resultados son aprobado, aprobado con segundo firmante y no aprobado
  * (Adenda 5 §4), más el bloqueo por listas y lo que revisa Cofianza.
  *
  * La API nueva cuenta además `segundo_firmante`, `revision_cofianza` y `bloqueado` en
@@ -35,9 +35,30 @@ export const AYUDA_REQUIERE_ACCION_EQUIPO =
 export const CHIPS_ESTUDIO: readonly ChipEstudio[] = [
   { id: 'todos', label: 'Todos' },
   { id: 'requiere_accion', label: 'Requieren su acción', ayuda: AYUDA_REQUIERE_ACCION },
-  { id: 'sin_estudio', label: 'Antes de la evaluación', ayuda: 'Visita pendiente o evaluación sin habilitar.' },
-  // U13: el mismo nombre que la pestaña de la lista de Cofianza.
-  { id: 'en_proceso', label: 'Antes del resultado' },
+  // Reporte de la Oficina Virtual (25-nov), punto 11: un filtro, no una pestaña (no entra en la partición). Solo se ve
+  // elegido (el enlace del Inicio lleva a él). Es parte de «Esperando autorización»: los que además no piden nada a
+  // quien gestiona (el nombre no se confunde con esa pestaña).
+  {
+    id: 'espera_autorizacion',
+    label: 'Solo falta la autorización',
+    ayuda: 'El enlace de autorización sigue vigente y el solicitante todavía no autoriza; por ahora no hay nada que hacer.',
+  },
+  // Punto 13: antes «Antes de la evaluación». Son los estudios SIN evaluación habilitada: el nombre lo dice. Solo se ve
+  // con alguno (o elegido).
+  { id: 'sin_estudio', label: 'Evaluación sin habilitar', ayuda: 'La visita está pendiente o la evaluación todavía no se habilita.' },
+  // Punto 13: «Esperando autorización» (antes estaban en «Antes del resultado»). Solo con una API que la cuenta.
+  {
+    id: 'sin_autorizar',
+    label: 'Esperando autorización',
+    ayuda: 'El solicitante todavía no autoriza la consulta: el enlace ya se le envió (vigente o vencido) o sale cuando se defina el pago.',
+  },
+  // Punto 13: antes «Antes del resultado». La bandeja de Cofianza conserva ese nombre: allí son todos los que no tienen
+  // resultado (estado borrador), también los que esperan la autorización.
+  {
+    id: 'en_proceso',
+    label: 'En estudio',
+    ayuda: 'Todavía sin resultado y sin esperar la autorización: falta el pago, la consulta está en curso o hay que reintentarla, o el estudio se reabrió por un cambio de persona.',
+  },
   // La API cuenta aquí el condicionado sin «aprobado con segundo firmante» ni «bloqueado por listas»:
   // la revisión manual y las verificaciones abiertas (identidad, una coincidencia en listas).
   {
@@ -59,7 +80,14 @@ export const CHIPS_ESTUDIO: readonly ChipEstudio[] = [
     label: 'Bloqueados por listas',
     ayuda: 'Una persona del estudio está en listas restrictivas: debe salir del estudio para continuar.',
   },
-  { id: 'rechazado', label: 'No aprobables' },
+  { id: 'rechazado', label: 'No aprobados' },
+  // Reporte de la Oficina Virtual (25-nov), punto 1: con esta pestaña cada estudio está en exactamente una y todas
+  // suman «Todos» (antes un cancelado o uno cerrado sin resultado no estaba en ninguna).
+  {
+    id: 'cerrado',
+    label: 'Cerrados y cancelados',
+    ayuda: 'Estudios cancelados, los que se cerraron solos porque el solicitante no autorizó a tiempo y los que se cerraron sin un resultado.',
+  },
 ]
 
 /** Las claves que solo cuenta la API nueva. */
@@ -71,14 +99,24 @@ export function tieneConteosAdenda5(conteos: ConteosEstudios | null | undefined)
 }
 
 /** Los chips de siempre, con cualquier API. */
-const COMUNES: readonly EstudioFiltro[] = ['todos', 'requiere_accion', 'sin_estudio', 'en_proceso', 'aprobado', 'rechazado']
+const COMUNES: readonly EstudioFiltro[] = ['todos', 'requiere_accion', 'en_proceso', 'aprobado', 'rechazado']
+
+/** Con una API anterior (sin «sin_autorizar») los que esperan la autorización siguen en «En estudio». */
+const AYUDA_EN_ESTUDIO_SIN_AUTORIZAR = 'Evaluación habilitada y todavía sin resultado: también los que esperan la autorización del solicitante.'
+
+/** La API cuenta «Esperando autorización» (migración 20261126000150): trae un número para esa pestaña. */
+export const cuentaSinAutorizar = (conteos: ConteosEstudios | null | undefined): boolean => typeof conteos?.sin_autorizar === 'number'
 
 /**
  * Qué chips se ven, en el orden de CHIPS_ESTUDIO:
  * - conteos undefined (todavía no llegan): solo los comunes, sin adivinar qué API responde;
  * - con los conteos de la Adenda 5: «En revisión de Cofianza», «Con segundo firmante» y «Bloqueados por
  *   listas» (este solo con alguno o elegido); sin ellos (API anterior, o null porque no se pudieron leer):
- *   «Condicionados», como antes.
+ *   «Condicionados», como antes;
+ * - «Cerrados y cancelados» solo con alguno (o elegido): la API lo manda solo cuando las pestañas suman «Todos».
+ *   Las que no se ven están en 0, así que las visibles siguen sumando «Todos»;
+ * - punto 13 de la Oficina Virtual: «Evaluación sin habilitar» solo con alguno (o elegida); «Esperando
+ *   autorización» siempre que la API la cuente (con una anterior no se ve y «En estudio» los incluye, con su ayuda).
  * El chip elegido siempre se ve (p. ej. «Condicionados» que quedó elegido de antes): así se sabe qué filtra.
  */
 export function chipsVisibles(
@@ -96,11 +134,18 @@ export function chipsVisibles(
     } else {
       ids.add('condicionado')
     }
+    if ((conteos?.cerrado ?? 0) > 0) ids.add('cerrado')
+    if ((conteos?.sin_estudio ?? 0) > 0) ids.add('sin_estudio')
+    if (cuentaSinAutorizar(conteos)) ids.add('sin_autorizar')
   }
   ids.add(activo)
-  return CHIPS_ESTUDIO.filter((c) => ids.has(c.id)).map((c) =>
-    o.equipo && c.id === 'requiere_accion' ? { ...c, label: 'Requieren acción del equipo', ayuda: AYUDA_REQUIERE_ACCION_EQUIPO } : c,
-  )
+  const conSinAutorizar = cuentaSinAutorizar(conteos)
+  return CHIPS_ESTUDIO.filter((c) => ids.has(c.id)).map((c) => {
+    if (o.equipo && c.id === 'requiere_accion') return { ...c, label: 'Requieren acción del equipo', ayuda: AYUDA_REQUIERE_ACCION_EQUIPO }
+    // Sin saber si la API cuenta «Esperando autorización», «En estudio» no promete que ya autorizó.
+    if (c.id === 'en_proceso' && !conSinAutorizar) return { ...c, ayuda: AYUDA_EN_ESTUDIO_SIN_AUTORIZAR }
+    return c
+  })
 }
 
 export interface TasaAprobacion {
@@ -117,7 +162,7 @@ export interface TasaAprobacion {
 
 /**
  * Tasa de aprobación: aprobados / decididos. Decididos = aprobados + con segundo firmante + no
- * aprobables + bloqueados por listas; lo que revisa Cofianza todavía no está decidido. El aprobado con
+ * aprobados + bloqueados por listas; lo que revisa Cofianza todavía no está decidido. El aprobado con
  * segundo firmante cuenta en los decididos pero NO en los aprobados: sin el segundo firmante válido no
  * llega al contrato. Con una API anterior, aprobados / (aprobados + no aprobables), como antes. null sin
  * conteos o sin ningún decidido.
@@ -166,7 +211,7 @@ export function fraseDesgloseAprobacion(t: Omit<TasaAprobacion, 'tasa'>): string
   const partes = [
     cuenta(t.aprobados, 'aprobado', 'aprobados'),
     ...(t.conSegundoFirmante !== null ? [`${t.conSegundoFirmante} con segundo firmante`] : []),
-    cuenta(t.noAprobables, 'no aprobable', 'no aprobables'),
+    cuenta(t.noAprobables, 'no aprobado', 'no aprobados'),
     ...(t.bloqueados > 0 ? [cuenta(t.bloqueados, 'bloqueado por listas', 'bloqueados por listas')] : []),
   ]
   return `de ${cuenta(t.decididos, 'estudio decidido', 'estudios decididos')}: ${enumerar(partes)}`
