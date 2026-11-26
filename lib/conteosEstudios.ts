@@ -35,6 +35,13 @@ export const AYUDA_REQUIERE_ACCION_EQUIPO =
 export const CHIPS_ESTUDIO: readonly ChipEstudio[] = [
   { id: 'todos', label: 'Todos' },
   { id: 'requiere_accion', label: 'Requieren su acción', ayuda: AYUDA_REQUIERE_ACCION },
+  // Reporte de la Oficina Virtual (25-nov), punto 11: un filtro, no una pestaña (no entra en la partición). Solo se ve
+  // elegido (el enlace del Inicio lleva a él).
+  {
+    id: 'espera_autorizacion',
+    label: 'Esperan la autorización',
+    ayuda: 'El enlace de autorización sigue vigente y el solicitante todavía no lo firma; por ahora no hay nada que hacer.',
+  },
   { id: 'sin_estudio', label: 'Antes de la evaluación', ayuda: 'Visita pendiente o evaluación sin habilitar.' },
   // U13: el mismo nombre que la pestaña de la lista de Cofianza.
   { id: 'en_proceso', label: 'Antes del resultado' },
@@ -60,6 +67,13 @@ export const CHIPS_ESTUDIO: readonly ChipEstudio[] = [
     ayuda: 'Una persona del estudio está en listas restrictivas: debe salir del estudio para continuar.',
   },
   { id: 'rechazado', label: 'No aprobables' },
+  // Reporte de la Oficina Virtual (25-nov), punto 1: con esta pestaña cada estudio está en exactamente una y todas
+  // suman «Todos» (antes un cancelado o uno cerrado sin resultado no estaba en ninguna).
+  {
+    id: 'cerrado',
+    label: 'Cerrados y cancelados',
+    ayuda: 'Estudios cancelados o vencidos sin terminar, y los que se cerraron sin un resultado.',
+  },
 ]
 
 /** Las claves que solo cuenta la API nueva. */
@@ -78,7 +92,9 @@ const COMUNES: readonly EstudioFiltro[] = ['todos', 'requiere_accion', 'sin_estu
  * - conteos undefined (todavía no llegan): solo los comunes, sin adivinar qué API responde;
  * - con los conteos de la Adenda 5: «En revisión de Cofianza», «Con segundo firmante» y «Bloqueados por
  *   listas» (este solo con alguno o elegido); sin ellos (API anterior, o null porque no se pudieron leer):
- *   «Condicionados», como antes.
+ *   «Condicionados», como antes;
+ * - «Cerrados y cancelados» solo con alguno (o elegido): la API lo manda solo cuando las pestañas suman «Todos».
+ *   Las que no se ven están en 0, así que las visibles siguen sumando «Todos».
  * El chip elegido siempre se ve (p. ej. «Condicionados» que quedó elegido de antes): así se sabe qué filtra.
  */
 export function chipsVisibles(
@@ -96,6 +112,7 @@ export function chipsVisibles(
     } else {
       ids.add('condicionado')
     }
+    if ((conteos?.cerrado ?? 0) > 0) ids.add('cerrado')
   }
   ids.add(activo)
   return CHIPS_ESTUDIO.filter((c) => ids.has(c.id)).map((c) =>

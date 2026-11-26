@@ -8,6 +8,12 @@
  * Re-skin (mockup 13_v2): stat-cards grandes estilo "est-stat" (igual que
  * EstudiosExpedientesFusion) dentro de paneles con header de punto verde, en
  * lugar de los Kpi/KpiRow compactos. Mismos datos reales de getMiCarteraAnalitica.
+ *
+ * Reporte de la Oficina Virtual (25-nov), puntos 1, 7 y 13: los estudios, la tasa y los contratos salen de
+ * GET /oficina-virtual/conteos, las mismas cifras de Estudios y Contratos, con su periodo al lado: «Estudios
+ * aprobados» desde el inicio (las pestañas de Estudios), la tasa de los últimos 30 días («Aprobamos 6 de cada 10»,
+ * con el detalle al pasar el cursor o tocar), «En revisión de Cofianza» en este momento (la pestaña de Estudios, no
+ * las decisiones del periodo) y los contratos activos con sus cancelados y terminados.
  */
 
 'use client'
@@ -19,13 +25,22 @@ import { moneyCompact } from '@/components/dashboard/secciones/_shared'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 import { cn } from '@/lib/utils'
 import { desgloseDeCifras, fraseDesgloseAprobacion, tasaLegible } from '@/lib/conteosEstudios'
-import { SkeletonCards } from '@/components/ui/Skeleton'
+import { Skeleton, SkeletonCards } from '@/components/ui/Skeleton'
+import { InfoTip } from '@/components/ui/InfoTip'
+import { useConteosOficina } from '@/hooks/useConteosOficina'
+import { detalleAprobacion, textoAprobamos, TEXTO_PERIODO } from '@/lib/conteosOficina'
+import { notaContratosCerrados } from '@/lib/contratosCancelados'
+import type { SeccionOficina } from '@/types/oficinaVirtual'
+
+/** Las cifras que comparte con Estudios y Contratos. */
+const SECCIONES: readonly SeccionOficina[] = ['estudios', 'aprobacion', 'contratos']
 
 export function CarteraAnaliticaSection() {
   const rol = useAuthStore((s) => s.user?.rol)
   const [data, setData] = useState<MiCarteraAnalitica | null>(null)
   const [loading, setLoading] = useState(true)
   const [intento, setIntento] = useState(0)
+  const ov = useConteosOficina(SECCIONES)
 
   useEffect(() => {
     if (rol !== 'inmobiliaria') {
@@ -81,7 +96,25 @@ export function CarteraAnaliticaSection() {
   // Bloque 4: las cifras de la tasa, si la API las manda (misma definición que /estudios y /reportes). Si las omite
   // (una API anterior, o no pudo clasificar), ni la frase ni sus tarjetas.
   const desgloseTasa = desgloseDeCifras(d)
-  const conDesglose = typeof d.con_segundo_firmante === 'number'
+  // Reporte de la Oficina Virtual: con los conteos (la API nueva), sus cifras; con una API anterior, las de antes.
+  const conConteos = ov.disponible !== false
+  const cargando = conConteos && ov.isLoading && !ov.data
+  const pestanas = ov.data?.estudios?.pestanas
+  const aprob = ov.data?.aprobacion ?? null
+  const contratos = ov.data?.contratos ?? null
+  const conDesglose = conConteos ? typeof aprob?.con_segundo_firmante === 'number' : typeof d.con_segundo_firmante === 'number'
+  /** La cifra de los conteos (null = no se pudo leer: «—») o, con una API anterior, la de antes. */
+  const cifra = (nueva: number | undefined | null, anterior: number | string): number | string =>
+    conConteos ? (typeof nueva === 'number' ? nueva : '—') : anterior
+  const notaCerrados = conConteos ? notaContratosCerrados(contratos) : null
+  const decisiones = conConteos
+    ? {
+        aprobados: aprob?.aprobados,
+        conSegundo: aprob?.con_segundo_firmante,
+        rechazados: aprob?.rechazados,
+        bloqueados: aprob?.bloqueados,
+      }
+    : { aprobados: d.aprobados, conSegundo: d.con_segundo_firmante, rechazados: d.rechazados, bloqueados: d.bloqueados }
 
   return (
     <div className="space-y-6">
@@ -90,9 +123,11 @@ export function CarteraAnaliticaSection() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
             label="Contratos activos"
-            value={s.contratosActivos}
+            value={cifra(contratos?.activos, s.contratosActivos)}
+            cargando={cargando}
             color="text-primary-600"
-            sub="con Cofianza"
+            // Punto 7: los cancelados y terminados, junto al contador (como en Contratos y en Inicio).
+            sub={notaCerrados ? `con Cofianza ${notaCerrados}` : 'con Cofianza'}
           />
           {/* Migración §9.5: con cartera migrada, la morosidad es la de la originada y la migrada va aparte. */}
           <StatCard
@@ -121,12 +156,19 @@ export function CarteraAnaliticaSection() {
 
       {/* Desempeño de sus estudios */}
       <Panel title="Desempeño de sus estudios">
-        <div className={`grid grid-cols-1 gap-4 ${e.scorePromedio !== undefined ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
+        <div
+          className={cn(
+            'grid grid-cols-1 gap-4 sm:grid-cols-2',
+            e.scorePromedio !== undefined ? (conConteos ? 'lg:grid-cols-4' : 'lg:grid-cols-3') : conConteos ? 'lg:grid-cols-3' : '',
+          )}
+        >
           <StatCard
             label="Estudios aprobados"
-            value={e.aprobados}
+            // Punto 1: la pestaña «Aprobados» de Estudios sobre «Todos», desde el inicio.
+            value={cifra(pestanas?.aprobado, e.aprobados)}
+            cargando={cargando}
             color="text-primary-600"
-            sub={`de ${e.total} en total`}
+            sub={conConteos ? (typeof pestanas?.todos === 'number' ? `de ${pestanas.todos} ${TEXTO_PERIODO.desde_el_inicio}` : TEXTO_PERIODO.desde_el_inicio) : `de ${e.total} en total`}
           />
           {/* La API puede no enviar este dato: entonces la tarjeta no se muestra. */}
           {e.scorePromedio !== undefined && (
@@ -137,12 +179,35 @@ export function CarteraAnaliticaSection() {
               sub="escala de 0 a 999 · inquilinos calificados"
             />
           )}
-          <StatCard
-            label="Tasa de aprobación"
-            value={d.total ? tasaLegible(d.tasaAprobacion) : '—'}
-            color="text-primary-600"
-            sub={desgloseTasa ? `últimos 30 días · ${fraseDesgloseAprobacion(desgloseTasa)}` : 'últimos 30 días'}
-          />
+          {conConteos ? (
+            // Punto 13: la misma tasa y la misma frase de Estudios, con el detalle al pasar el cursor o tocar.
+            <StatCard
+              label="Tasa de aprobación"
+              value={aprob && aprob.tasa !== null ? tasaLegible(aprob.tasa) : '—'}
+              cargando={cargando}
+              color="text-primary-600"
+              sub={textoAprobamos(aprob) ?? TEXTO_PERIODO.ultimos_30_dias}
+              ayuda={detalleAprobacion(aprob)}
+            />
+          ) : (
+            <StatCard
+              label="Tasa de aprobación"
+              value={d.total ? tasaLegible(d.tasaAprobacion) : '—'}
+              color="text-primary-600"
+              sub={desgloseTasa ? `últimos 30 días · ${fraseDesgloseAprobacion(desgloseTasa)}` : 'últimos 30 días'}
+            />
+          )}
+          {/* Punto 1: lo que Cofianza revisa AHORA, la misma cifra de la pestaña de Estudios (antes eran las decisiones
+              del periodo que seguían en revisión, y no coincidía). */}
+          {conConteos && (
+            <StatCard
+              label="En revisión de Cofianza"
+              value={cifra(pestanas?.revision_cofianza, 0)}
+              cargando={cargando}
+              color="text-amber-700"
+              sub={TEXTO_PERIODO.ahora}
+            />
+          )}
         </div>
 
         {/* Decisiones — últimos 30 días */}
@@ -154,38 +219,44 @@ export function CarteraAnaliticaSection() {
               y, al final, lo que sigue en revisión (fuera de la tasa). Con el desglose son seis tarjetas (2×3 en el
               celular, 3×2 desde sm); sin él (una API anterior, o no se pudo clasificar), las cuatro de siempre:
               ninguna queda sola en su fila. */}
-          <div className={cn('grid grid-cols-2 gap-3', conDesglose ? 'sm:grid-cols-3' : 'sm:grid-cols-4')}>
+          {/* Con los conteos, solo las decisiones del periodo (la tasa va arriba y «En revisión de Cofianza» es de ahora):
+              cuatro tarjetas con el desglose (2×2 en el celular), dos sin él. Con una API anterior, las de antes. */}
+          <div className={cn('grid grid-cols-2 gap-3', conConteos ? (conDesglose ? 'sm:grid-cols-4' : '') : conDesglose ? 'sm:grid-cols-3' : 'sm:grid-cols-4')}>
             <DecisionCard
               label="Aprobados"
-              value={d.aprobados}
+              value={cargando ? null : (decisiones.aprobados ?? '—')}
               variant="border-primary-600 bg-primary-50 text-primary-700"
             />
             {conDesglose && (
               <DecisionCard
                 label="Con segundo firmante"
-                value={d.con_segundo_firmante ?? 0}
+                value={cargando ? null : (decisiones.conSegundo ?? 0)}
                 variant="border-amber-300 bg-amber-50 text-amber-700"
               />
             )}
             <DecisionCard
               label="No aprobables"
-              value={d.rechazados}
+              value={cargando ? null : (decisiones.rechazados ?? '—')}
               variant="border-red-300 bg-red-50 text-red-500"
             />
             {conDesglose && (
-              <DecisionCard label="Bloqueados por listas" value={d.bloqueados ?? 0} variant="border-red-300 bg-red-50 text-red-500" />
+              <DecisionCard label="Bloqueados por listas" value={cargando ? null : (decisiones.bloqueados ?? 0)} variant="border-red-300 bg-red-50 text-red-500" />
             )}
-            <DecisionCard
-              label="Tasa"
-              value={d.total ? tasaLegible(d.tasaAprobacion) : '—'}
-              variant="border-primary-600 bg-primary-50 text-primary-700"
-            />
-            {/* P26: lo que revisa Cofianza y todavía no resuelve; no entra en la tasa. */}
-            <DecisionCard
-              label="En revisión de Cofianza"
-              value={d.condicionados}
-              variant="border-amber-300 bg-amber-50 text-amber-700"
-            />
+            {!conConteos && (
+              <>
+                <DecisionCard
+                  label="Tasa"
+                  value={d.total ? tasaLegible(d.tasaAprobacion) : '—'}
+                  variant="border-primary-600 bg-primary-50 text-primary-700"
+                />
+                {/* P26: lo que revisa Cofianza y todavía no resuelve; no entra en la tasa. */}
+                <DecisionCard
+                  label="En revisión de Cofianza"
+                  value={d.condicionados}
+                  variant="border-amber-300 bg-amber-50 text-amber-700"
+                />
+              </>
+            )}
           </div>
         </div>
       </Panel>
@@ -219,16 +290,33 @@ function StatCard({
   value,
   sub,
   color = 'text-gray-900',
+  cargando = false,
+  ayuda,
 }: {
   label: string
   value: string | number
   sub: string
   color?: string
+  /** Mientras carga, el esqueleto en lugar de la cifra (nunca un 0). */
+  cargando?: boolean
+  /** El detalle al pasar el cursor o tocar (sirve en el celular). */
+  ayuda?: string | null
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-      <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</div>
-      <div className={cn('text-3xl font-black leading-none tracking-tight', color)}>{value}</div>
+    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4" aria-busy={cargando}>
+      {/* La burbuja se ancla a la tarjeta (abre desde su borde izquierdo): a 390 px no se sale de la pantalla. */}
+      <div className="relative mb-1.5 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+        {label}
+        {ayuda && !cargando && <InfoTip texto={ayuda} etiqueta={`Detalle: ${label.toLowerCase()}`} anclada lado="derecha" />}
+      </div>
+      {cargando ? (
+        <>
+          <span className="sr-only">Cargando…</span>
+          <Skeleton className="h-[30px] w-16" />
+        </>
+      ) : (
+        <div className={cn('text-3xl font-black leading-none tracking-tight', color)}>{value}</div>
+      )}
       <div className="mt-1 text-xs text-gray-500">{sub}</div>
     </div>
   )
@@ -240,12 +328,13 @@ function DecisionCard({
   variant,
 }: {
   label: string
-  value: string | number
+  /** null = cargando: el esqueleto (nunca un 0). */
+  value: string | number | null
   variant: string
 }) {
   return (
     <div className={cn('rounded-xl border px-4 py-3.5 text-center', variant)}>
-      <div className="text-2xl font-black">{value}</div>
+      {value === null ? <Skeleton className="mx-auto h-8 w-10" /> : <div className="text-2xl font-black">{value}</div>}
       <div className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</div>
     </div>
   )

@@ -13,7 +13,7 @@ import { usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { dashboardService, type PortfolioStats } from '@/services/dashboardService'
 import { formatCurrency } from '@/lib/constants'
-import { notaContratosCancelados } from '@/lib/contratosCancelados'
+import { notaContratosCerrados } from '@/lib/contratosCancelados'
 
 // Formato colombiano: «$1,5 M» y «$850 mil» (antes «$1.5M» y «$850K»).
 function formatCompactCOP(monto: number): string {
@@ -49,10 +49,12 @@ export function OficinaVirtualHero() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  // Adenda 6 §9: un cero porque todos los contratos están cancelados se explica («(4 contratos cancelados)»); una sola
-  // vez, bajo los inquilinos (el canon en $0 de al lado tiene la misma causa).
+  // Reporte de la Oficina Virtual (25-nov), punto 7 (amplía la Adenda 6 §9): con contratos cancelados o terminados se dice
+  // junto al contador («(4 contratos cancelados)»), como en Contratos y Analítica; una sola vez, bajo los inquilinos.
   const notaCancelados =
-    stats && !loading ? notaContratosCancelados(stats.inquilinos_cartera, stats.contratos_cancelados, stats.contratos_no_cancelados) : null
+    stats && !loading
+      ? notaContratosCerrados({ cancelados: stats.contratos_cancelados, finalizados: stats.contratos_finalizados }, { conPalabraContratos: true })
+      : null
   const titulo = 'Su Oficina Virtual'
   const subtitulo = 'Gestione propiedades, inquilinos y recaudos con seguridad y control total.'
 

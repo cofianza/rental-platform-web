@@ -22,7 +22,9 @@
  * API): sin él el inicio decía «Todo al día» con estudios esperando al gestor
  * (consulta fallida, enlace vencido, condicionado…).
  *
- * TODO: si el dataset supera 50 en producción, paginar por categoría.
+ * Reporte de la Oficina Virtual (25-nov), puntos 1 y 11: cada grupo muestra hasta 5 filas, pero su número es el TOTAL
+ * de la API (GET /oficina-virtual/conteos, sección «acciones»: los mismos criterios de cada lista, sin recortes). Antes
+ * el inicio decía «Contratos por generar (5)» y Contratos 11. Con una API anterior, el número de filas, como antes.
  */
 
 'use client'
@@ -31,8 +33,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { citaService } from '@/services/citaService'
 import { cargarAprobadosSinContrato, tieneTrabaContrato } from '@/hooks/useAprobadosSinContrato'
 import { expedienteService } from '@/services/expedienteService'
+import { oficinaVirtualService } from '@/services/oficinaVirtualService'
 import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
+import { totalesDeAcciones, type TotalesAcciones } from '@/lib/conteosOficina'
+
 
 export interface AccionesPendientes {
   porConfirmar: ICita[]            // estado=solicitada
@@ -41,6 +46,9 @@ export interface AccionesPendientes {
   porGenerarContrato: IExpediente[] // estado=aprobado/condicionado sin contrato activo
   /** Aprobados sin contrato con traba_contrato (canon o segundo firmante sin terminar); el vencido no entra. */
   conTrabaContrato: IExpediente[]
+  /** El total de cada grupo (puede ser mayor que las filas: se muestran hasta 5). */
+  totales: TotalesAcciones
+  /** La suma de los totales: 0 = «Todo al día» (si tampoco hay «Requieren mi acción»). */
   total: number
   /** Total del filtro «Requieren mi acción» de /expedientes (0 si no se pudo leer). */
   requierenAccion: number
@@ -52,6 +60,7 @@ const EMPTY: AccionesPendientes = {
   porHabilitar: [],
   porGenerarContrato: [],
   conTrabaContrato: [],
+  totales: { porConfirmar: 0, porRealizar: 0, porHabilitar: 0, porGenerarContrato: 0, conTrabaContrato: 0, esperandoAutorizacion: null },
   total: 0,
   requierenAccion: 0,
 }
@@ -68,14 +77,24 @@ export function useAccionesPendientes() {
       // Citas y expedientes-aprobados en paralelo. Errores aislados: si el
       // listado de expedientes falla por permisos, igual mostramos las 3
       // categorias de citas (degradacion suave).
-      const [citasRes, expedientesRes, requierenRes] = await Promise.allSettled([
+      const [citasRes, expedientesRes, conteosRes] = await Promise.allSettled([
         citaService.listMisCitas({ limit: 50 }),
         // Solo aprobados: un condicionado todavía no admite contrato (lo decide
         // Cofianza) y salía como «Estudio aprobado · Generar contrato».
         cargarAprobadosSinContrato(20),
-        // Solo el total (limit 1).
-        expedienteService.getExpedientes({ estudio_filtro: 'requiere_accion', page: 1, limit: 1 }),
+        // Los totales de cada grupo y de «Requieren mi acción» (reporte de la Oficina Virtual, punto 11).
+        oficinaVirtualService.getConteos(['acciones']),
       ])
+      const acciones = conteosRes.status === 'fulfilled' ? (conteosRes.value?.acciones ?? null) : null
+      // Con una API anterior (sin el endpoint), el total de «Requieren mi acción» como antes (limit 1).
+      const requierenAccion = acciones
+        ? acciones.requieren_accion
+        : conteosRes.status === 'fulfilled' && conteosRes.value === null
+          ? await expedienteService
+              .getExpedientes({ estudio_filtro: 'requiere_accion', page: 1, limit: 1 })
+              .then((r) => r.meta.total)
+              .catch(() => 0)
+          : 0
 
       const today = new Date()
       today.setHours(23, 59, 59, 999) // "antes o igual a hoy"
@@ -111,19 +130,22 @@ export function useAccionesPendientes() {
         .filter((e) => tieneTrabaContrato(e) && e.traba_contrato?.codigo !== 'vencido')
         .slice(0, 5)
 
+      const totales = totalesDeAcciones(acciones, {
+        porConfirmar: porConfirmar.length,
+        porRealizar: porRealizar.length,
+        porHabilitar: porHabilitar.length,
+        porGenerarContrato: porGenerarContrato.length,
+        conTrabaContrato: conTrabaContrato.length,
+      })
       setData({
         porConfirmar,
         porRealizar,
         porHabilitar,
         porGenerarContrato,
         conTrabaContrato,
-        total:
-          porConfirmar.length +
-          porRealizar.length +
-          porHabilitar.length +
-          porGenerarContrato.length +
-          conTrabaContrato.length,
-        requierenAccion: requierenRes.status === 'fulfilled' ? requierenRes.value.meta.total : 0,
+        totales,
+        total: totales.porConfirmar + totales.porRealizar + totales.porHabilitar + totales.porGenerarContrato + totales.conTrabaContrato,
+        requierenAccion,
       })
 
       // Si AMBAS llamadas fallaron, exponemos error visible. Si solo falla

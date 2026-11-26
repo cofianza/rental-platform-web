@@ -142,3 +142,23 @@ test('bloque 4: la tasa se escribe igual en /estudios, el inicio y /reportes («
   // La frase de /estudios usa el mismo formato.
   assert.match(textoTasaAprobacion({ aprobado: 12, segundo_firmante: 7, revision_cofianza: 4, rechazado: 13, bloqueado: 0 }) ?? '', /^Tasa de aprobación: 37,5\u00a0% \(/)
 })
+
+test('Oficina Virtual (punto 1): «Cerrados y cancelados» con alguno; con cero no se ve y las visibles siguen sumando «Todos»', () => {
+  const c = { todos: 10, requiere_accion: 1, sin_estudio: 1, en_proceso: 2, condicionado: 1, segundo_firmante: 0, bloqueado: 0, revision_cofianza: 1, aprobado: 4, rechazado: 1, cerrado: 1 }
+  assert.deepEqual(ids(c), ['todos', 'requiere_accion', 'sin_estudio', 'en_proceso', 'revision_cofianza', 'aprobado', 'segundo_firmante', 'rechazado', 'cerrado'])
+  assert.equal(ids({ ...c, cerrado: 0 }).includes('cerrado'), false)
+  // Sin la clave (API anterior, o las pestañas no sumaban «Todos»): tampoco, salvo elegido.
+  const { cerrado: _c, ...sinCerrado } = c
+  void _c
+  assert.equal(ids(sinCerrado).includes('cerrado'), false)
+  assert.equal(ids(sinCerrado, 'cerrado').includes('cerrado'), true)
+  // Las pestañas visibles de resultado suman «Todos».
+  const visibles = chipsVisibles(c, 'todos').map((x) => x.id).filter((id) => !['todos', 'requiere_accion', 'condicionado'].includes(id))
+  assert.equal(visibles.reduce((s, id) => s + (c[id as keyof typeof c] ?? 0), 0), c.todos)
+})
+
+test('Oficina Virtual (punto 11): «Esperan la autorización» solo se ve elegido (es un filtro, no una pestaña)', () => {
+  const c = { todos: 3, requiere_accion: 0, sin_estudio: 1, en_proceso: 2, aprobado: 0, rechazado: 0, segundo_firmante: 0, revision_cofianza: 0, bloqueado: 0 }
+  assert.equal(ids(c).includes('espera_autorizacion'), false)
+  assert.equal(ids(c, 'espera_autorizacion')[2], 'espera_autorizacion')
+})

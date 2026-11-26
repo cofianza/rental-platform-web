@@ -11,8 +11,11 @@
  *   (server-side, vía filters.estudio_filtro → RPC p_estudio_filtro).
  * - Los chips llevan su conteo (antes había además cuatro tarjetas que filtraban
  *   lo mismo); la tasa de aprobación y el ritmo del mes van en la frase del encabezado.
- *   Chips y tasa usan la misma definición de cada resultado (lib/conteosEstudios,
- *   reporte de Gerencia del 21-nov, punto 6).
+ *   Reporte de la Oficina Virtual (25-nov), puntos 1 y 13: las cifras salen de
+ *   GET /oficina-virtual/conteos (las mismas de Inicio, Contratos y Analítica), cada una
+ *   con su periodo escrito al lado; los chips son una partición de «Todos» (con
+ *   «Cerrados y cancelados»); la tasa es la de los últimos 30 días («Aprobamos 6 de cada
+ *   10 estudios»), con el detalle al pasar el cursor o tocar; mientras cargan, esqueleto.
  * - Al cambiar de chip no se ven las filas del anterior mientras carga: el esqueleto (punto 12).
  * - «Qué sigue» de cada fila y el aviso de arriba dicen qué le toca a quien mira.
  * - Clic en una fila → /expedientes/[id] (donde vive el estudio completo).
@@ -28,17 +31,23 @@ import { useAuthStore } from '@/stores/auth.store'
 import { cn } from '@/lib/utils'
 import { IconArrowRight, IconCheckCircle, IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
-import { estudioService } from '@/services/estudioService'
+import { useConteosOficina } from '@/hooks/useConteosOficina'
 import { expedienteService } from '@/services/expedienteService'
 import { creditosEstudiosService, type ISaldoCreditos } from '@/services/creditosEstudiosService'
 import { listMiembros } from '@/services/miembrosService'
-import type { IEstudiosStats } from '@/types/estudio'
 import type { EstudioFiltro } from '@/types/expediente'
-import { chipsVisibles, textoTasaAprobacion, type ConteosEstudios } from '@/lib/conteosEstudios'
+import type { SeccionOficina } from '@/types/oficinaVirtual'
+import { chipsVisibles, type ConteosEstudios } from '@/lib/conteosEstudios'
+import { detalleAprobacion, textoAprobamos, textoEstudiosPeriodo } from '@/lib/conteosOficina'
+import { InfoTip } from '@/components/ui/InfoTip'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { ExpedientesFilters } from '@/components/expedientes/ExpedientesFilters'
 import { ExpedientesTable } from '@/components/expedientes/ExpedientesTable'
 import { ExpedientesTablaCofianzaSkeleton } from '@/components/expedientes/ExpedientesTablaCofianza'
 import { AdquirirEstudiosCredito } from './AdquirirEstudiosCredito'
+
+/** Lo que muestra esta pantalla: las pestañas (con «este mes») y la tasa de los últimos 30 días. */
+const SECCIONES: readonly SeccionOficina[] = ['estudios', 'aprobacion']
 
 export function EstudiosExpedientesFusion() {
   const puedeEditar = usePuedeEditar()
@@ -59,7 +68,6 @@ export function EstudiosExpedientesFusion() {
     fetchExpedientes,
   } = useExpedientes({ conStats: false })
 
-  const [stats, setStats] = useState<IEstudiosStats | null>(null)
   const [saldo, setSaldo] = useState<ISaldoCreditos | null>(null)
   const [saldoError, setSaldoError] = useState(false)
   // Mapa perfil_id → nombre de los miembros del equipo, para mostrar en la
@@ -68,29 +76,29 @@ export function EstudiosExpedientesFusion() {
 
   // Los chips cuentan ESTUDIOS con el mismo filtro que aplican: contadas por
   // evaluación (coarrendatarios, reevaluaciones, canceladas) decían 9 y al
-  // pulsarlas la lista traía 5. undefined = todavía no llegan; null = no se pudieron leer.
-  const [conteos, setConteos] = useState<ConteosEstudios | null | undefined>(undefined)
-  // Todos en una sola petición (antes seis). Se recalculan al montar (volver a la lista) y al recuperar la ventana: un estudio
+  // pulsarlas la lista traía 5. Se recalculan al montar (volver a la lista) y al recuperar la ventana: un estudio
   // movido en otra pestaña dejaba los números del aviso y de los chips viejos.
+  const ov = useConteosOficina(SECCIONES, { alVolver: true })
+  // Con una API anterior (sin /oficina-virtual/conteos), los chips como antes y sin la frase de la tasa.
+  const [conteosAnteriores, setConteosAnteriores] = useState<ConteosEstudios | null | undefined>(undefined)
   useEffect(() => {
-    const contar = () =>
-      expedienteService
-        .getConteos()
-        .then(setConteos)
-        // Sin conteos los chips van sin número y no sale el aviso (nunca un «0» falso).
-        // Una lectura anterior que sí llegó se conserva.
-        .catch(() => setConteos((c) => c ?? null))
-    void contar()
-    const alVolver = () => {
-      if (document.visibilityState === 'visible') void contar()
-    }
-    document.addEventListener('visibilitychange', alVolver)
-    return () => document.removeEventListener('visibilitychange', alVolver)
-  }, [])
+    if (ov.disponible !== false) return
+    expedienteService.getConteos().then(setConteosAnteriores).catch(() => setConteosAnteriores((c) => c ?? null))
+  }, [ov.disponible])
+  // undefined = todavía no llegan; null = no se pudieron leer: los chips van sin número y no sale el aviso (nunca un «0»
+  // falso). Una lectura anterior que sí llegó se conserva (el hook la guarda).
+  const conteos: ConteosEstudios | null | undefined =
+    ov.disponible === false
+      ? conteosAnteriores
+      : ov.data
+        ? (ov.data.estudios?.pestanas ?? null)
+        : ov.isLoading
+          ? undefined
+          : null
+  const aprobacion = ov.data?.aprobacion ?? null
+  const esteMes = ov.data?.estudios?.este_mes.creados
 
   useEffect(() => {
-    // Solo alimenta la frase del encabezado: si falla, la frase no sale.
-    estudioService.getStats().then(setStats).catch(() => {})
     if (esPropietario) return
     creditosEstudiosService.getMiSaldo().then(setSaldo).catch(() => setSaldoError(true))
     listMiembros()
@@ -105,8 +113,9 @@ export function EstudiosExpedientesFusion() {
       .catch(() => {})
   }, [esPropietario])
 
-  // Tasa de aprobación: aprobados / decididos (lo que revisa Cofianza todavía no está decidido).
-  const textoTasa = textoTasaAprobacion(conteos)
+  // Punto 13: «Aprobamos 6 de cada 10 estudios (últimos 30 días)», la misma tasa de Analítica.
+  const textoTasa = textoAprobamos(aprobacion)
+  const detalleTasa = detalleAprobacion(aprobacion)
   const activeChip: EstudioFiltro = filters.estudio_filtro ?? 'todos'
   // Con la API nueva, los resultados de la Adenda 5 en lugar de «Condicionados».
   const chips = chipsVisibles(conteos, activeChip, { equipo: !puedeEditar })
@@ -134,14 +143,30 @@ export function EstudiosExpedientesFusion() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-black tracking-tight text-gray-900">Estudios</h1>
+          {/* Punto 1: cada cifra con su periodo («desde el inicio», «este mes», «últimos 30 días»); mientras cargan, el
+              esqueleto, nunca un 0. Los conteos son de toda la cartera: no dependen de los filtros de la lista. */}
           <p className="mt-0.5 max-w-2xl text-sm text-gray-600">
-            Sus estudios y en qué va cada uno.
-            {stats &&
-              (stats.este_mes === 1
-                ? ' Este mes se inició 1 evaluación crediticia.'
-                : ` Este mes se iniciaron ${stats.este_mes} evaluaciones crediticias.`)}
-            {textoTasa && ` ${textoTasa}`}
+            Sus estudios y en qué va cada uno
+            {(() => {
+              const periodo = textoEstudiosPeriodo(conteos?.todos, esteMes)
+              return periodo ? `: ${periodo}.` : '.'
+            })()}
           </p>
+          {ov.disponible !== false &&
+            (ov.isLoading && !ov.data ? (
+              <div role="status" className="mt-1.5">
+                <span className="sr-only">Cargando la tasa de aprobación…</span>
+                <Skeleton className="h-4 w-72 max-w-full" />
+              </div>
+            ) : (
+              textoTasa && (
+                // La burbuja se ancla al párrafo (abre desde su borde izquierdo): a 390 px no se sale de la pantalla.
+                <p className="relative mt-1 flex flex-wrap items-center gap-x-1.5 text-sm font-medium text-gray-800">
+                  {textoTasa}
+                  {detalleTasa && <InfoTip texto={detalleTasa} etiqueta="Detalle de la tasa de aprobación" anclada lado="derecha" />}
+                </p>
+              )
+            ))}
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
           {!esPropietario && (
@@ -221,6 +246,10 @@ export function EstudiosExpedientesFusion() {
                     )}
                   >
                     {c.label}
+                    {/* Mientras cargan los conteos, un esqueleto en lugar del número (nunca un 0). */}
+                    {n == null && conteos === undefined && !conFiltros && (
+                      <span aria-hidden="true" className="inline-block h-4 w-5 animate-pulse rounded-full bg-gray-200" />
+                    )}
                     {n != null && (
                       <span
                         className={cn(

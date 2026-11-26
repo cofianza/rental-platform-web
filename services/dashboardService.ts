@@ -47,6 +47,8 @@ export interface PortfolioStats {
   /** Adenda 6 §9: contratos de la cartera cancelados y en otro estado (para explicar un cero). Una API anterior no los manda. */
   contratos_cancelados?: number
   contratos_no_cancelados?: number
+  /** Reporte de la Oficina Virtual (25-nov), punto 7: los terminados. Una API anterior no los manda. */
+  contratos_finalizados?: number
 }
 
 // ── Admin overview (Centro de Control) ──────
@@ -416,6 +418,8 @@ export interface MisInmueblesData {
     ingresoMes: number
     contratosCancelados?: number
     contratosNoCancelados?: number
+    /** Punto 7 del reporte de la Oficina Virtual: los terminados. Una API anterior no los manda. */
+    contratosFinalizados?: number
   }
   inmuebles: MiInmueble[]
 }

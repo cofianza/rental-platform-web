@@ -28,7 +28,7 @@ import {
   IconPlus,
 } from '@/components/icons'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { notaContratosCancelados } from '@/lib/contratosCancelados'
+import { notaContratosCerrados } from '@/lib/contratosCancelados'
 import {
   money,
   moneyCompact,
@@ -411,9 +411,11 @@ export function MisInmueblesPropietario() {
   const { data, loading, error, reload } = useSeccion(() => dashboardService.getMisInmuebles())
   const r = data?.resumen
   const inmuebles = data?.inmuebles ?? []
-  // Adenda 6 §9: un cero porque todos los contratos están cancelados se explica («(4 contratos cancelados)»), bajo
-  // «Arrendados»; el canon conserva su definición.
-  const notaCancelados = r ? notaContratosCancelados(r.arrendados, r.contratosCancelados, r.contratosNoCancelados) : null
+  // Reporte de la Oficina Virtual (25-nov), punto 7 (amplía la Adenda 6 §9): con contratos cancelados o terminados se
+  // dice bajo «Arrendados» («(4 contratos cancelados)»); el canon conserva su definición.
+  const notaCancelados = r
+    ? notaContratosCerrados({ cancelados: r.contratosCancelados, finalizados: r.contratosFinalizados }, { conPalabraContratos: true })
+    : null
 
   const agregarBtn = (
     <Link href="/inmuebles/nuevo" className={`${btnP} px-4 py-2 text-sm`}>

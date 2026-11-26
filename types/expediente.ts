@@ -82,6 +82,10 @@ export type EstudioFiltro =
   | 'en_proceso'
   | 'sin_estudio'
   | 'requiere_accion'
+  /** Reporte de la Oficina Virtual (25-nov), punto 1: cancelados o caducados y cerrados sin resultado. */
+  | 'cerrado'
+  /** Punto 11: espera solo que el titular firme la autorización (enlace vigente). Filtro, no pestaña. */
+  | 'espera_autorizacion'
 
 /**
  * Inmueble asociado al expediente
