@@ -3,7 +3,7 @@
  *
  * Lo usa la lista de inmuebles y el formulario de "Nuevo Inmueble" para
  * bloquear la creacion mientras el propietario/inmobiliaria no haya
- * completado sus Datos para contrato (domicilio, cuenta de recaudo,
+ * completado sus datos de «Datos de mi inmobiliaria» (domicilio, cuenta de recaudo,
  * matricula si aplica).
  *
  * Solo carga si el rol es propietario/inmobiliaria — admin/operador no

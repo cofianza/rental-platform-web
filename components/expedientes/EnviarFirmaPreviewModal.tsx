@@ -140,7 +140,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
               Todavía no se puede enviar: hay firmantes con el <strong>mismo número</strong>, con el
               <strong> mismo correo</strong> o con datos faltantes. Cada parte necesita un número de WhatsApp
               y un correo distintos. Corrija el teléfono con «Editar» en cada firmante (el correo, en la
-              ficha del solicitante o en «Datos para contrato») y vuelva a intentar.
+              ficha del solicitante o en «Datos de mi inmobiliaria») y vuelva a intentar.
             </span>
           </div>
         )}
@@ -206,7 +206,7 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
                     decir quién lo corrige en vez de dejar la marca sin salida. */}
                 {f.rol_firmante === 'arrendador' && !editable && problema && (
                   <p className="mt-1.5 text-xs text-gray-600">
-                    Lo corrige el titular de la inmobiliaria o el propietario en «Datos para contrato».
+                    Lo corrige el titular de la inmobiliaria en «Datos de mi inmobiliaria» o el propietario en «Mis datos de propietario».
                   </p>
                 )}
 

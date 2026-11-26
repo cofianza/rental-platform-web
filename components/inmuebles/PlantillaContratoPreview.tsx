@@ -81,8 +81,8 @@ export function PlantillaContratoPreview({ inmuebleId }: Props) {
             {/* El destino no habilitado no se arregla desde el perfil */}
             {errorCode !== 'DESTINACION_NO_HABILITADA' && (
               <p className="text-xs text-red-700 mt-1">
-                Verifique que su perfil tenga los datos para contrato completos en
-                Configuración → Datos para contrato.
+                Verifique que sus datos para contratos estén completos en Configuración › Datos de mi
+                inmobiliaria (si es propietario, Mis datos de propietario).
               </p>
             )}
           </div>

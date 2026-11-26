@@ -36,6 +36,7 @@ import {
   bloqueoOfreceSeguirSinEl,
   trabaAdmiteSeguirSinEl,
 } from '@/lib/frenosSegundoFirmante'
+import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
 
 export { COARRENDATARIO_EN_VERIFICACION, SEGUNDO_FIRMANTE_EN_CURSO, avisoPrimaDeTraba, bloqueoOfreceSeguirSinEl, trabaAdmiteSeguirSinEl }
 
@@ -79,7 +80,7 @@ interface Props {
   inmuebleId?: string
   /** ¿Abre la ficha del inmueble? El asesor restringido, solo lo suyo o asignado; null mientras se consulta. */
   inmuebleAccesible?: boolean | null
-  /** Titular de la inmobiliaria: el único que edita los Datos para contrato. */
+  /** Titular de la inmobiliaria: el único que edita los Datos de mi inmobiliaria. */
   esTitular?: boolean
   /** Puede cancelar el estudio y crear uno nuevo (la salida de una evaluación que ya no sirve). */
   puedeEditar?: boolean
@@ -336,12 +337,12 @@ export function BloqueosContrato({
       case 'datos_contrato': {
         if (!esTitular) {
           return (
-            <p className="text-xs text-gray-600">Pídale al titular de la inmobiliaria que complete los Datos para contrato.</p>
+            <p className="text-xs text-gray-600">Pídale al titular de la inmobiliaria que complete los Datos de mi inmobiliaria.</p>
           )
         }
         return (
-          <Link href={`/configuracion/datos-contrato?returnTo=${volverAqui}`} className={enlace}>
-            Completar Datos para contrato <IconArrowRight size={12} />
+          <Link href={`${RUTA_DATOS_INMOBILIARIA}?returnTo=${volverAqui}`} className={enlace}>
+            Completar Datos de mi inmobiliaria <IconArrowRight size={12} />
           </Link>
         )
       }

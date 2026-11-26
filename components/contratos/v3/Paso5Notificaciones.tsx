@@ -326,8 +326,8 @@ export function VistaPreviaContrato({
         // texto nuevo o aprobado de la plantilla de Cofianza.
         <Aviso tono="aviso">
           {rutaB
-            ? 'Hay cambios desde que se generó el Anexo (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelva a generarlo.'
-            : 'Hay cambios desde que se generó la vista previa (en los pasos, el estudio, los Datos para contrato o el texto de Cofianza). Vuelva a generarla.'}
+            ? 'Hay cambios desde que se generó el Anexo (en los pasos, el estudio, los Datos de mi inmobiliaria o el texto de Cofianza). Vuelva a generarlo.'
+            : 'Hay cambios desde que se generó la vista previa (en los pasos, el estudio, los Datos de mi inmobiliaria o el texto de Cofianza). Vuelva a generarla.'}
         </Aviso>
       )}
 

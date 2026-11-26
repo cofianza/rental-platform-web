@@ -7,7 +7,7 @@
  *
  * El bloque de usuario (arriba a la derecha) muestra el nombre de la
  * inmobiliaria (razón social) + su logo si lo subió, y es un menú desplegable
- * con accesos a Analítica / Configuración / Mi Inmobiliaria / Mi cuenta / Cerrar sesión.
+ * con accesos a Analítica / Configuración / Datos de mi inmobiliaria / Mi cuenta / Cerrar sesión.
  * El logo y la razón social se leen del perfil arrendador (que ya resuelve al
  * perfil canónico de la organización), no del usuario logueado.
  *
@@ -32,6 +32,7 @@ import { OficinaVirtualNav } from './OficinaVirtualNav'
 import { BloqueosPendientesBanner } from '@/components/expedientes/BloqueosPendientesBanner'
 import { PerfilPersonalIncompletoBanner } from '@/components/expedientes/PerfilPersonalIncompletoBanner'
 import { AvisosServicioBanner } from '@/components/avisos/AvisosServicioBanner'
+import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
 
 const SUBTITULO_MIEMBRO = {
   owner: 'Titular',
@@ -182,12 +183,12 @@ export function OficinaVirtualShell({ rol, children }: Props) {
                   </MenuLink>
                   {rol === 'inmobiliaria' && (
                     <MenuLink
-                      href="/configuracion/mi-inmobiliaria"
-                      actual={enRuta('/configuracion/mi-inmobiliaria')}
+                      href={RUTA_DATOS_INMOBILIARIA}
+                      actual={enRuta(RUTA_DATOS_INMOBILIARIA)}
                       onClick={() => setMenuOpen(false)}
                       icon={<IconBuilding2 size={16} />}
                     >
-                      Mi Inmobiliaria
+                      Datos de mi inmobiliaria
                     </MenuLink>
                   )}
                   <MenuLink

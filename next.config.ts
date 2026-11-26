@@ -30,7 +30,14 @@ const nextConfig: NextConfig = {
     ]
   },
   async redirects() {
-    return [{ source: '/recuperar-password', destination: '/recuperar-contrasena', permanent: true }]
+    return [
+      { source: '/recuperar-password', destination: '/recuperar-contrasena', permanent: true },
+      // Reporte de la Oficina Virtual (25-nov), punto 13: «Datos para contrato» y «Mi Inmobiliaria» quedaron en un solo
+      // lugar, «Datos de mi inmobiliaria». No permanentes (por si la página cambia de nombre); la consulta (?returnTo=)
+      // pasa tal cual. Los correos y notificaciones ya enviados siguen llegando.
+      { source: '/configuracion/datos-contrato', destination: '/configuracion/datos-inmobiliaria', permanent: false },
+      { source: '/configuracion/mi-inmobiliaria', destination: '/configuracion/datos-inmobiliaria', permanent: false },
+    ]
   },
   turbopack: {},
   webpack: (config) => {

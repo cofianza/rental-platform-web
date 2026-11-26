@@ -18,6 +18,7 @@ import Link from 'next/link'
 import { IconCheck, IconChevronRight } from '@/components/icons'
 import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 import { dashboardService } from '@/services/dashboardService'
+import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
 
 export function PrimerosPasosWidget() {
   const puedeEditar = usePuedeEditar()
@@ -49,13 +50,13 @@ export function PrimerosPasosWidget() {
 
   const pasos = [
     {
-      titulo: 'Complete sus datos para contrato',
+      titulo: 'Complete los datos de su inmobiliaria',
       detalle: perfilCompleto
         ? 'Listo'
         : faltantes
           ? `Faltan: ${faltantes}`
           : 'Los usamos al generar el contrato de arrendamiento',
-      href: '/configuracion/datos-contrato',
+      href: RUTA_DATOS_INMOBILIARIA,
       hecho: perfilCompleto,
       bloqueado: false,
     },

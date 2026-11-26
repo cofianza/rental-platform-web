@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
 import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconUser, IconBank, IconCalendar, IconCreditCard, IconAlertTriangle } from '@/components/icons'
+import { RUTA_DATOS_INMOBILIARIA, tituloDatosArrendador } from '@/lib/datosArrendador'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
 const SECCIONES: Array<{
@@ -28,22 +29,15 @@ const SECCIONES: Array<{
     icon: IconUser,
     color: 'bg-sky-100 text-sky-600',
   },
+  // Reporte de la Oficina Virtual (25-nov), punto 13: «Datos para contrato» y «Mi Inmobiliaria» son un solo lugar
+  // (el título cambia para el propietario: tituloDatosArrendador).
   {
-    id: 'datos-contrato',
-    href: '/configuracion/datos-contrato',
-    titulo: 'Datos para contrato',
-    descripcion: 'Logo, domicilio, cuenta de recaudo y matrícula que aparecen en los contratos.',
+    id: 'datos-inmobiliaria',
+    href: RUTA_DATOS_INMOBILIARIA,
+    titulo: 'Datos de mi inmobiliaria',
+    descripcion: 'Razón social, NIT, logo, domicilio, cuenta de recaudo y matrícula de sus contratos y facturas, su contacto y sus documentos legales.',
     icon: IconBuilding2,
     color: 'bg-primary-100 text-primary-600',
-    soloRoles: ['propietario', 'inmobiliaria'],
-  },
-  {
-    id: 'mi-inmobiliaria',
-    href: '/configuracion/mi-inmobiliaria',
-    titulo: 'Mi Inmobiliaria',
-    descripcion: 'Documentos legales: Cámara de Comercio, RUT, Matrícula, Cédula RL y Contrato Marco.',
-    icon: IconFileText,
-    color: 'bg-amber-100 text-amber-700',
     soloRoles: ['propietario', 'inmobiliaria'],
   },
   {
@@ -175,7 +169,7 @@ export default function ConfiguracionPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-base font-semibold text-gray-900">
-                  {seccion.titulo}
+                  {seccion.id === 'datos-inmobiliaria' ? tituloDatosArrendador(rol) : seccion.titulo}
                 </h3>
                 <p className="text-sm text-gray-500 mt-0.5">
                   {seccion.descripcion}

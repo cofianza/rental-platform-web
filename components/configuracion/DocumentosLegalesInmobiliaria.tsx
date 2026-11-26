@@ -1,7 +1,10 @@
 /**
- * Mi Inmobiliaria — gestión de los documentos legales que la
- * inmobiliaria/propietario tiene que cargar para operar con Cofianza
- * (Gerencia 12-may-2026). Cada doc se sube/reemplaza/descarga/elimina via
+ * Documentos legales y contacto de la inmobiliaria/propietario (antes la página «Mi Inmobiliaria»).
+ *
+ * Reporte de la Oficina Virtual (25-nov), punto 13: va dentro de «Datos de mi inmobiliaria»
+ * (/configuracion/datos-inmobiliaria), junto a los datos para contratos y facturas, que ya no se repiten
+ * aquí (la tarjeta «Identidad» de solo lectura sobraba). Los documentos que tiene que cargar para operar con
+ * Cofianza (Gerencia 12-may-2026): cada uno se sube/reemplaza/descarga/elimina vía
  * /api/v1/documentos-legales/:tipo.
  */
 
@@ -10,7 +13,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import Link from 'next/link'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import {
   IconLoader,
@@ -18,7 +20,6 @@ import {
   IconUpload,
   IconTrash,
   IconAlertTriangle,
-  IconChevronLeft,
   IconDownload,
   IconFileText,
   IconBuilding2,
@@ -26,7 +27,6 @@ import {
   IconFileCheck,
   IconId,
   IconScrollText,
-  IconArrowRight,
 } from '@/components/icons'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuth } from '@/hooks/useAuth'
@@ -98,7 +98,7 @@ const TIPOS: TipoConfig[] = [
   },
 ]
 
-export default function MiInmobiliariaPage() {
+export function DocumentosLegalesInmobiliaria() {
   const { user } = useAuth()
   const isInmobiliaria = user?.rol === 'inmobiliaria'
   const isPropietario = user?.rol === 'propietario'
@@ -140,8 +140,7 @@ export default function MiInmobiliariaPage() {
     fetchDocs()
   }, [])
 
-  // Identidad (logo / nombre / NIT / dirección) — se edita en datos-contrato;
-  // aquí solo la mostramos para que esta pantalla refleje el mockup.
+  // La afianzadora actual vive en el mismo perfil (los demás datos se editan en la sección de arriba).
   useEffect(() => {
     perfilArrendadorService
       .getMe()
@@ -189,33 +188,10 @@ export default function MiInmobiliariaPage() {
   const pendientes = tiposObligatorios.length - cargadosObligatorios
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <Link href="/configuracion" className="hover:text-primary-700 flex items-center gap-1">
-          <IconChevronLeft size={14} /> Configuración
-        </Link>
-        <span>·</span>
-        <span className="text-gray-900 font-medium">Mi {isInmobiliaria ? 'Inmobiliaria' : 'Perfil legal'}</span>
-      </div>
-
-      <PageHeader
-        title={isInmobiliaria ? 'Mi Inmobiliaria' : 'Mis documentos legales'}
-        subtitle={
-          isInmobiliaria
-            ? 'Documentos requeridos para operar con Cofianza. La validación la hace nuestro equipo después de cargar cada documento.'
-            : 'Documentos legales de su perfil como propietario.'
-        }
-      />
-
-      {soloLectura && (
-        <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <IconAlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-600" />
-          <p className="text-sm text-amber-800">
-            Los documentos de la inmobiliaria los gestiona <strong>el titular</strong> y son los mismos
-            para todo el equipo. Puede verlos y descargarlos, pero no editarlos.
-          </p>
-        </div>
-      )}
+    <section aria-labelledby="documentos-legales-titulo" className="space-y-6">
+      <h2 id="documentos-legales-titulo" className="text-lg font-semibold text-gray-900">
+        {isInmobiliaria ? 'Contacto y documentos de la inmobiliaria' : 'Contacto y documentos legales'}
+      </h2>
 
       {/* Contacto y notificaciones: a dónde llegan los mensajes de Cofianza
           (correo + WhatsApp). Editable desde Mi cuenta. */}
@@ -273,63 +249,6 @@ export default function MiInmobiliariaPage() {
               ? '¡Listo! Su perfil legal está completo.'
               : `Faltan ${pendientes} ${pendientes === 1 ? 'documento obligatorio' : 'documentos obligatorios'}.`}
           </p>
-        </div>
-      )}
-
-      {/* Identidad de la inmobiliaria (solo lectura; editar en datos-contrato) */}
-      {perfil && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <h3 className="text-sm font-bold text-gray-900 mb-4">
-            Identidad de {isInmobiliaria ? 'la inmobiliaria' : 'su perfil'}
-          </h3>
-          <div className="flex flex-col sm:flex-row gap-5">
-            <div className="shrink-0">
-              {perfil.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={perfil.logo_url}
-                  alt="Logo"
-                  className="h-20 w-20 rounded-lg object-contain border border-gray-200 bg-gray-50"
-                />
-              ) : (
-                <div className="h-20 w-20 rounded-lg border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center text-[11px] text-gray-500 text-center px-2">
-                  Sin logo
-                </div>
-              )}
-            </div>
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-500">Nombre comercial</div>
-                <div className="font-medium text-gray-900">
-                  {perfil.razon_social || `${perfil.nombre} ${perfil.apellido}`.trim() || '—'}
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-500">NIT / Documento</div>
-                <div className="font-medium text-gray-900">{perfil.numero_documento || '—'}</div>
-              </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-500">Dirección</div>
-                <div className="font-medium text-gray-900">
-                  {[perfil.domicilio_direccion, perfil.domicilio_ciudad].filter(Boolean).join(', ') || '—'}
-                </div>
-              </div>
-              <div>
-                <div className="text-[11px] uppercase tracking-wide text-gray-500">Contacto</div>
-                <div className="font-medium text-gray-900">
-                  {perfil.whatsapp_recaudo || perfil.email_recaudo || '—'}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-4 text-right">
-            <Link
-              href="/configuracion/datos-contrato"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-primary-700 hover:underline"
-            >
-              Editar datos <IconArrowRight size={16} />
-            </Link>
-          </div>
         </div>
       )}
 
@@ -412,7 +331,7 @@ export default function MiInmobiliariaPage() {
           </div>
         )}
       </div>
-    </div>
+    </section>
   )
 }
 

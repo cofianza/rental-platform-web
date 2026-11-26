@@ -35,6 +35,7 @@ import {
   porcentaje,
   rutaBFirmaNoHabilitada,
 } from './campos'
+import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
 
 type Resumen = NonNullable<EstadoAsistente['resumen']>
 
@@ -97,8 +98,8 @@ export function ResumenContrato({ resumen, expedienteId, esTitular, inmuebleAcce
         icono={IconBuilding2}
         pie={
           esTitular ? (
-            <Link href={`/configuracion/datos-contrato?returnTo=${returnTo}`} className={enlace}>
-              Editar en Datos para contrato <IconArrowRight size={12} />
+            <Link href={`${RUTA_DATOS_INMOBILIARIA}?returnTo=${returnTo}`} className={enlace}>
+              Editar en Datos de mi inmobiliaria <IconArrowRight size={12} />
             </Link>
           ) : (
             'Solo el titular de la inmobiliaria puede cambiar estos datos.'

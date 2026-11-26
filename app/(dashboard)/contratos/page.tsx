@@ -10,6 +10,7 @@ import { ContratosInmobiliariaView, SECCIONES_CONTRATOS } from '@/components/con
 import { contratoService, type IContratosStats } from '@/services/contratoService'
 import { useConteosOficina } from '@/hooks/useConteosOficina'
 import { notaContratosCerrados } from '@/lib/contratosCancelados'
+import { RUTA_DATOS_INMOBILIARIA, tituloDatosArrendador } from '@/lib/datosArrendador'
 
 /** «4 contratos desde el inicio · 0 activos (4 cancelados)» (reporte de la Oficina Virtual, puntos 1 y 7). Pura. */
 function subtituloContratos(c: { total: number; activos: number; cancelados?: number | null; finalizados?: number | null }): string {
@@ -20,7 +21,7 @@ function subtituloContratos(c: { total: number; activos: number; cancelados?: nu
 
 function ContratosContent() {
   const user = useAuthStore((s) => s.user)
-  // Propietario e inmobiliaria editan en /configuracion/datos-contrato los
+  // Propietario e inmobiliaria editan en /configuracion/datos-inmobiliaria los
   // datos que salen en sus contratos generados (domicilio, cuenta de recaudo,
   // logo, etc.). Atajo desde la pantalla donde naturalmente miran sus contratos.
   const canEditDatosContrato = user?.rol === 'propietario' || user?.rol === 'inmobiliaria'
@@ -46,11 +47,11 @@ function ContratosContent() {
 
   const datosContratoAction = canEditDatosContrato ? (
     <Link
-      href="/configuracion/datos-contrato"
+      href={RUTA_DATOS_INMOBILIARIA}
       className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
     >
       <IconSettings size={16} />
-      Datos para contrato
+      {tituloDatosArrendador(user?.rol)}
     </Link>
   ) : undefined
 
