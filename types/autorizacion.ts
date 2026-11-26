@@ -250,8 +250,30 @@ export interface IResumenBiometriaAnalista {
   historial?: IIntentoGuardadoBiometria[]
 }
 
+/**
+ * Adenda 6.1 §3: el cotejo de identidad AL FIRMAR de una persona en un contrato (solo Cofianza), con sus intentos (sin
+ * el código del proveedor).
+ */
+export interface ICotejoFirmaAnalista {
+  contrato_id: string
+  contrato_numero: string | null
+  persona: PersonaCotejo
+  rol: 'arrendatario' | 'cotitular'
+  nombre: string
+  /** null = pendiente. Todo lo que no es «aprobado» = firma en notaría. */
+  desenlace: 'aprobado' | 'sin_autorizacion_4a' | 'intentos_agotados' | 'no_cotejable' | null
+  intentos: number
+  completado_en: string | null
+  consentimiento_4a: { origen: 'autorizacion' | 'firma' | null; marcada: boolean; en: string | null } | null
+  /** El resultado vino de otro contrato del mismo estudio (el cotejo se hace una sola vez). */
+  heredado: boolean
+  historial: IIntentoGuardadoBiometria[]
+}
+
 export interface IResumenBiometriaRespuesta {
   resumen: IResumenBiometriaAnalista | null
+  /** Adenda 6.1: los cotejos de identidad al firmar del estudio. Ausente con una API anterior. */
+  cotejos_firma?: ICotejoFirmaAnalista[]
   /** Hay algo que mostrar (un cotejo registrado o fotos guardadas): se muestra «Ver biometría». */
   con_evidencia: boolean
   /** Intentos con fotos guardadas que se pueden ver (0 con el estudio decidido). Ausente con una API anterior. */
@@ -307,6 +329,8 @@ export interface IEvidenciaBiometria {
   dias_conservacion?: number
   /** Adenda 6: los años del panel (null si no hay fotos de la autorización V3). */
   anios_conservacion?: { aprobado: number; fallido: number } | null
+  /** Adenda 6.1: los cotejos de identidad al firmar del estudio. Ausente con una API anterior. */
+  cotejos_firma?: ICotejoFirmaAnalista[]
 }
 
 export type CualFotoBiometria = 'selfie' | 'documento'

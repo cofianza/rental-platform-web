@@ -99,6 +99,11 @@ export interface EstadoAsistente {
     biometriaFirma: boolean;
     /** Adenda 6 §2: con lo que hay hoy, el contrato se firmará en notaría (lo decide del todo el envío). */
     firmaNotaria?: boolean;
+    /**
+     * Adenda 6.1 §3: al enviarlo, cada persona arrendataria hace el cotejo de identidad (enlace por correo): con todas
+     * aprobadas sale a firma digital; si alguna no lo completa, a notaría. Ausente si no rige.
+     */
+    cotejoFirma?: boolean;
     adicionales: {
       maximo: number; ordinales: string[] /* 25, desde la 1.ª adicional de ESTE contrato */;
       /** texto = responsabilidad (solo propias); modelos = los modelos sin cambios son texto de Cofianza (Adenda 1 contratos, resp. 13). */
@@ -199,8 +204,10 @@ export interface EnvioV3 {
    * inmobiliaria lo carga firmado tras aceptar `aviso`; `cargado` = ya lo cargó. null/ausente = Auco.
    */
   notaria?: null | { motivo: string; aviso: string; cargado: null | { nombre: string; en: string } };
-  /** Verificaciones de identidad que faltan antes de crear el sobre (0 sin biometría). */
+  /** Verificaciones (Adenda 2 §9) o cotejos de identidad (Adenda 6.1) que faltan antes de crear el sobre. */
   identidadPendientes: number;
+  /** Adenda 6.1 §3: el avance del cotejo de identidad al firmar, sin el resultado de nadie. Ausente sin cotejos. */
+  cotejo?: null | { total: number; aprobados: number; pendientes: number };
   /** FIRMA INCOMPLETA + estudio vigente (§11.7.5). */
   reenvio: { puede: boolean; motivo: string | null };
   /** EN FIRMA sin sobre vivo ni identidad pendiente: el envío falló y se puede reintentar. */

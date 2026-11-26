@@ -40,6 +40,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useEvidenciaBiometria, useFotoBiometria, useResumenBiometria } from '@/hooks/useBiometriaEvidencia'
 import type {
   CualFotoBiometria,
+  ICotejoFirmaAnalista,
   IIntentoConFotos,
   IIntentoGuardadoBiometria,
   IResumenBiometriaAnalista,
@@ -264,6 +265,7 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
         <div className="space-y-4">
           {resumen && <ResumenCotejo resumen={resumen} />}
           {conHistorial && <IntentosGuardados historial={historial} numeroDelResultado={numeroDelResultado} />}
+          {(datos?.cotejos_firma?.length ?? 0) > 0 && <CotejosAlFirmar cotejos={datos!.cotejos_firma!} />}
 
           <section aria-labelledby="bio-fotos" className="space-y-3">
             <h3 id="bio-fotos" className="text-sm font-semibold text-gray-900">
@@ -508,6 +510,80 @@ function motivoIntento(h: IIntentoGuardadoBiometria): string | null {
   if (h.motivo_auco !== 'DOCUMENT_FAKE') return base
   const documento = 'Auco no pudo validar el documento fotografiado (puede ser una foto poco nítida).'
   return base ? `${base} Además, ${documento.charAt(0).toLowerCase()}${documento.slice(1)}` : documento
+}
+
+/** Adenda 6.1 §3: cómo terminó el cotejo al firmar de una persona (sin revisión manual: o firma digital o notaría). */
+const DESENLACE: Record<NonNullable<ICotejoFirmaAnalista['desenlace']> | 'pendiente', { texto: string; clase: string }> = {
+  aprobado: { texto: 'Aprobado: firma digital', clase: VERDE },
+  sin_autorizacion_4a: { texto: 'No autorizó el cotejo (4A): notaría', clase: AMBAR },
+  intentos_agotados: { texto: 'Sin cotejo aprobado: notaría', clase: ROJO },
+  no_cotejable: { texto: 'Documento sin cotejo posible: notaría', clase: AMBAR },
+  pendiente: { texto: 'Pendiente', clase: GRIS },
+}
+
+/**
+ * Adenda 6.1 §3: el cotejo de identidad AL FIRMAR, por contrato y persona: el desenlace, de dónde salió la casilla 4A y
+ * cada intento (las cuatro condiciones: rostro, número del documento, marca del proveedor; la prueba de vida no la
+ * ofrece el proveedor). Las fotos de esos intentos van abajo, con las demás.
+ */
+function CotejosAlFirmar({ cotejos }: { cotejos: ICotejoFirmaAnalista[] }) {
+  return (
+    <section aria-labelledby="bio-cotejos-firma" className="rounded-lg border border-gray-200 p-3 text-sm">
+      <h3 id="bio-cotejos-firma" className="font-semibold text-gray-900">
+        Cotejos al firmar el contrato ({cotejos.length})
+      </h3>
+      <p className="mt-0.5 text-xs text-gray-500">
+        Aprobado = el rostro coincide, el número leído es el de la cédula estudiada y el documento no quedó marcado. Ningún
+        analista reemplaza el cotejo.
+      </p>
+      <ul className="mt-2 divide-y divide-gray-100">
+        {cotejos.map((c) => {
+          const d = DESENLACE[c.desenlace ?? 'pendiente']
+          const origen4A = !c.consentimiento_4a
+            ? 'Casilla 4A sin marcar'
+            : !c.consentimiento_4a.marcada
+              ? 'No marcó la casilla 4A al firmar'
+              : c.consentimiento_4a.origen === 'firma'
+                ? `Casilla 4A marcada al firmar${c.consentimiento_4a.en ? ` (${fechaHora(c.consentimiento_4a.en)})` : ''}`
+                : 'Casilla 4A marcada al autorizar'
+          return (
+            <li key={`${c.contrato_id}-${c.persona}-${c.rol}`} className="py-2 first:pt-0 last:pb-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="break-words font-medium text-gray-900">
+                  {c.rol === 'cotitular' ? 'Segundo firmante' : 'Titular'} · {c.nombre}
+                </span>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${d.clase}`}>
+                  {d.texto}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-gray-600">
+                {c.contrato_numero ? `Contrato ${c.contrato_numero} · ` : ''}
+                {origen4A} · {c.intentos === 1 ? '1 intento' : `${c.intentos} intentos`}
+                {c.heredado ? ' · tomado de otro contrato del estudio' : ''}
+                {c.completado_en ? ` · ${fechaHora(c.completado_en)}` : ''}
+              </p>
+              {c.historial.length > 0 && (
+                <ol className="mt-1 space-y-0.5">
+                  {c.historial.map((h) => {
+                    const e = estadoVisible(h, 'el de la cédula estudiada')
+                    return (
+                      <li key={h.numero} className="flex flex-wrap items-center gap-x-2 text-xs text-gray-600">
+                        <span>Intento {h.numero}</span>
+                        <span>{fechaHora(h.verificado_en)}</span>
+                        <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-semibold ring-1 ring-inset ${e.clase}`}>{e.texto}</span>
+                        {h.similitud != null && <span>similitud {pct(h.similitud)}</span>}
+                        {h.motivo_auco && <span className="font-mono">{h.motivo_auco}</span>}
+                      </li>
+                    )
+                  })}
+                </ol>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
 }
 
 function IntentosGuardados({

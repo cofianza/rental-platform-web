@@ -25,7 +25,9 @@ import {
   IconFolderOpen,
   IconMail,
   IconEye,
+  IconShieldCheck,
 } from '@/components/icons'
+import { textoAvanceCotejo } from '@/lib/cotejoFirma'
 import { ESTADOS_CONTRATO, type EstadoContratoKey, etiquetaContrato, formatDate, formatDateTime, formatCurrency } from '@/lib/constants'
 import { contratoService } from '@/services/contratoService'
 import { useAuth } from '@/hooks/useAuth'
@@ -577,6 +579,20 @@ export default function ContratoDetallePage() {
         />
       )}
 
+      {/* Adenda 6.1 §3: mientras el arrendatario hace el cotejo de identidad al firmar, el avance (sin su resultado). */}
+      {!esMigrado && !notaria && contrato.estado === 'pendiente_firma' && contrato.cotejo_firma && contrato.cotejo_firma.pendientes > 0 && (
+        <div className="flex items-start gap-2 rounded-xl border border-primary-200 bg-primary-50 px-4 py-3 text-sm text-primary-900">
+          <IconShieldCheck size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <div>
+            <p className="font-semibold">{textoAvanceCotejo(contrato.cotejo_firma)}</p>
+            <p className="mt-0.5">
+              El arrendatario hace su cotejo de identidad con el enlace que le llegó por correo, mientras el resultado del estudio
+              esté vigente. Con el cotejo aprobado, el contrato sale a firma digital; si no lo completa, se firma en notaría.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Adenda 6 §2: sin el cotejo aprobado del arrendatario, el contrato se firma en notaría y se carga aquí. Va
           arriba: es la acción principal del contrato (en el celular quedaría debajo del visor). */}
       {!esMigrado && notaria && [...ESTADOS_PRE_FIRMA, 'pendiente_firma'].includes(contrato.estado) && (
@@ -891,6 +907,7 @@ export default function ContratoDetallePage() {
         firmantes={firmaPreview?.firmantes ?? []}
         puedeEnviar={firmaPreview?.puede_enviar ?? false}
         biometria={firmaPreview?.biometria}
+        cotejo={firmaPreview?.cotejo}
         submitting={confirmandoFirma}
         onConfirm={handleConfirmarFirma}
         onClose={() => {

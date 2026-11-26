@@ -383,6 +383,18 @@ const META_A5D: Record<string, MetaParametro> = {
     rige: 'parcial',
     notaRige: 'Rige con la autorización de datos versión 3.1, cuando Cofianza la active.',
   },
+  // Adenda 6.1 §3 y §7 (MAX_INTENTOS_COTEJO = 3): el cotejo de identidad al firmar el contrato.
+  MAX_INTENTOS_COTEJO: {
+    nombre: 'Intentos del cotejo de identidad al firmar',
+    seccion: 'plazos',
+    unidad: 'num',
+    queHace:
+      'Intentos de cotejo biométrico (foto del documento y selfie) que tiene cada persona arrendataria al firmar el contrato. Si los agota sin un cotejo aprobado, el contrato se firma en notaría. Cada intento es un cotejo que se paga al proveedor.',
+    ejemplo: (v) =>
+      `Con ${v.MAX_INTENTOS_COTEJO}: si a la persona no le aprueban ${v.MAX_INTENTOS_COTEJO === 1 ? 'el primer intento' : `los ${v.MAX_INTENTOS_COTEJO} intentos`}, el contrato se firma en notaría.`,
+    rige: 'parcial',
+    notaRige: 'Rige con la Adenda 6.1 (autorización de datos versión 3.1), cuando Cofianza la active.',
+  },
   SCORE_MINIMO_SOLO: {
     nombre: 'Puntaje mínimo en la central para ir sin segundo firmante',
     seccion: 'a5d_motor',

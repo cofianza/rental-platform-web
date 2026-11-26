@@ -29,6 +29,7 @@ import {
 } from '@/components/icons'
 import { etiquetaContrato, formatDate, formatDateTime, tonoContrato } from '@/lib/constants'
 import { abrirEnPestana, cn } from '@/lib/utils'
+import { textoAvanceCotejo } from '@/lib/cotejoFirma'
 import { VerificacionIdentidadFirma } from '@/components/expedientes/VerificacionIdentidadFirma'
 import { CobroTarifaContrato } from '@/components/contratos/CobroTarifaContrato'
 import { contratoService } from '@/services/contratoService'
@@ -214,7 +215,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
     if (await v3.reintentar()) toast.success(`Contrato ${e.numero} enviado a firma`)
   }
   const reenviarIdentidad = async () => {
-    if (await v3.reenviarIdentidad()) toast.success('Enlace de verificación reenviado')
+    if (await v3.reenviarIdentidad()) toast.success(e.cotejo ? 'Enlace del cotejo reenviado' : 'Enlace de verificación reenviado')
   }
   const aceptarAviso = async () => {
     if (await v3.aceptarAviso()) toast.success('Aviso aceptado')
@@ -415,17 +416,29 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
 
         {incompleta && motivo && !rechazoDatos && <p className="text-sm font-medium text-gray-900">{motivo}</p>}
         {nota && <Aviso>{nota}</Aviso>}
-        {enFirma && e.identidadPendientes > 0 && (
+        {enFirma && e.identidadPendientes > 0 && !notaria && (
           <Aviso>
-            <p>
-              Esperando que {e.identidadPendientes === 1 ? '1 firmante verifique' : `${e.identidadPendientes} firmantes verifiquen`} su
-              identidad con el enlace que les llegó por correo (vence a las 72 horas). El proceso de firma sale cuando todos terminen;
-              si no lo hacen dentro del plazo para firmar, el contrato queda con la firma incompleta.
-            </p>
+            {e.cotejo ? (
+              // Adenda 6.1 §3: el avance, sin el resultado de nadie.
+              <>
+                <p className="font-semibold text-gray-900">{textoAvanceCotejo(e.cotejo)}</p>
+                <p className="mt-1">
+                  Cada persona arrendataria hace su cotejo de identidad con el enlace que le llegó por correo, mientras el
+                  resultado del estudio esté vigente. Cuando todas lo aprueben, el contrato sale a firma digital por WhatsApp; si
+                  alguna no lo completa, se firma en notaría.
+                </p>
+              </>
+            ) : (
+              <p>
+                Esperando que {e.identidadPendientes === 1 ? '1 firmante verifique' : `${e.identidadPendientes} firmantes verifiquen`} su
+                identidad con el enlace que les llegó por correo (vence a las 72 horas). El proceso de firma sale cuando todos terminen;
+                si no lo hacen dentro del plazo para firmar, el contrato queda con la firma incompleta.
+              </p>
+            )}
             {editable && (
               <Button variante="secondary" tamano="sm" className="mt-2" onClick={reenviarIdentidad} disabled={ocupado}>
                 {accion === 'reenviarIdentidad' ? <IconLoader size={14} className="animate-spin" /> : <IconMail size={14} />}
-                Reenviar enlace de verificación
+                {e.cotejo ? 'Reenviar enlace del cotejo' : 'Reenviar enlace de verificación'}
               </Button>
             )}
           </Aviso>
@@ -588,7 +601,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         title="¿Reenviar a firma?"
         message={
           // A la inmobiliaria y al propietario, sin el proveedor ni el crédito de firma (costo de Cofianza).
-          `${e.identidadPendientes > 0 ? 'Primero le llega un correo nuevo para verificar su identidad a quien no lo ha hecho. Cuando todos terminen, se crea' : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
+          `${e.identidadPendientes > 0 ? `Primero le llega un correo nuevo ${e.cotejo ? 'para el cotejo de identidad a quien no lo ha hecho' : 'para verificar su identidad a quien no lo ha hecho'}. Cuando todos terminen, se crea` : 'Se crea'} un proceso de firma nuevo${interno ? ' en Auco' : ''} con el mismo documento: todas las partes vuelven a firmar, en el mismo orden.${interno ? ' Cada envío consume un crédito de firma.' : ''}`
         }
         confirmLabel="Reenviar a firma"
         isLoading={accion === 'reenviar'}

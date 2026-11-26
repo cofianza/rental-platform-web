@@ -33,6 +33,8 @@ interface Props {
   puedeEnviar: boolean
   /** Adenda 2 §9: primero va el correo de verificación de identidad al arrendatario. */
   biometria?: boolean
+  /** Adenda 6.1 §3: primero va el enlace del cotejo de identidad al arrendatario. */
+  cotejo?: boolean
   submitting: boolean
   onConfirm: () => void
   onClose: () => void
@@ -42,7 +44,7 @@ interface Props {
   onFirmanteUpdated?: () => void | Promise<void>
 }
 
-export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biometria, submitting, onConfirm, onClose, onFirmanteUpdated }: Props) {
+export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biometria, cotejo, submitting, onConfirm, onClose, onFirmanteUpdated }: Props) {
   const [editingRol, setEditingRol] = useState<RolFirmante | null>(null)
   const [editValue, setEditValue] = useState('')
   const [savingRol, setSavingRol] = useState<RolFirmante | null>(null)
@@ -126,7 +128,14 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
       }
     >
       <div className="space-y-4">
-        {biometria && (
+        {cotejo && (
+          <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
+            Antes de firmar, al arrendatario le llega un <strong>correo para el cotejo de identidad</strong> (una foto de su
+            documento y una selfie). Con el cotejo aprobado, el contrato sale a firma digital; si no lo completa, se firma en
+            notaría, a su costo.
+          </p>
+        )}
+        {biometria && !cotejo && (
           <p className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm text-primary-900">
             Antes de firmar, al arrendatario le llega un <strong>correo para confirmar su identidad</strong>. El
             contrato sale a firma apenas lo haga.

@@ -64,6 +64,11 @@ export interface IContrato {
    * literal y lo que hoy impide cargarlo (`freno`).
    */
   firma_notaria?: boolean | IFirmaNotaria
+  /**
+   * Adenda 6.1 §3 (flujo anterior): mientras el arrendatario hace el cotejo de identidad al firmar, el avance (sin su
+   * resultado). Ausente sin cotejos al firmar.
+   */
+  cotejo_firma?: { total: number; aprobados: number; pendientes: number }
 }
 
 export interface IFirmaNotaria {

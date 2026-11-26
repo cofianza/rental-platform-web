@@ -824,6 +824,7 @@ export function ContratosSection({
         firmantes={firmaPreview?.data.firmantes ?? []}
         puedeEnviar={firmaPreview?.data.puede_enviar ?? false}
         biometria={firmaPreview?.data.biometria}
+        cotejo={firmaPreview?.data.cotejo}
         submitting={confirmandoFirma}
         onConfirm={() => { if (firmaPreview) void handleConfirmarFirma(firmaPreview.contrato) }}
         onClose={() => !confirmandoFirma && setFirmaPreview(null)}
