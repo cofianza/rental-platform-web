@@ -44,7 +44,7 @@ import {
   IconGlobe,
   IconPencil,
   IconBuilding2,
-  IconCheck,
+  IconHome,
   IconImage,
   IconMapPin,
   IconBed,
@@ -55,6 +55,8 @@ import {
   IconRefresh,
   IconCalendar,
 } from '@/components/icons'
+import { rutaDatosConRegreso } from '@/lib/datosArrendador'
+import { contadoresVitrina, notaTotalVitrina, type TotalesVitrina } from '@/lib/contadoresVitrina'
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
 
@@ -134,9 +136,10 @@ export function PropiedadesInmobiliariaView() {
 
   // Contadores de TODA la cartera (antes contaban solo la página visible y el
   // chip activo). Cada uno es el total del listado con su filtro, limit 1.
-  // Publicado real = flag + disponible; pausada = disponible fuera de vitrina
-  // (visible_vitrina es NOT NULL, así que pausadas = disponibles − en vitrina).
-  const [conteos, setConteos] = useState<{ total: number; enVitrina: number; disponibles: number; pausadas: number } | null>(null)
+  // Reporte de la Oficina Virtual (25-nov), punto 14: Total, En vitrina, Pausadas y Arrendadas, que suman el Total
+  // (lib/contadoresVitrina: pausadas = disponibles − en vitrina; arrendadas = estado 'ocupado').
+  const [totales, setTotales] = useState<TotalesVitrina | null>(null)
+  const conteos = totales ? contadoresVitrina(totales) : null
   // Si los conteos fallan se muestra «—»: con «…» parecían cargar sin fin.
   const [conteosError, setConteosError] = useState(false)
   const [intentoConteos, setIntentoConteos] = useState(0)
@@ -148,15 +151,16 @@ export function PropiedadesInmobiliariaView() {
       total({}),
       total({ visible_vitrina: true, estado: 'disponible' }),
       total({ estado: 'disponible' }),
+      total({ estado: 'ocupado' }),
     ])
-      .then(([t, v, d]) => {
+      .then(([t, v, d, o]) => {
         if (!vivo) return
-        setConteos({ total: t, enVitrina: v, disponibles: d, pausadas: d - v })
+        setTotales({ total: t, enVitrina: v, disponibles: d, arrendadas: o })
         setConteosError(false)
       })
       .catch(() => {
         if (!vivo) return
-        setConteos(null)
+        setTotales(null)
         setConteosError(true)
       })
     return () => {
@@ -185,10 +189,10 @@ export function PropiedadesInmobiliariaView() {
           ? 'inactivas'
           : 'todas'
 
-  // "Agregar propiedad": gate por perfil incompleto → datos-contrato con returnTo.
+  // "Agregar propiedad": gate por perfil incompleto → «Datos de mi inmobiliaria» con returnTo.
   function handleCreateClick() {
     if (perfilIncompleto) {
-      router.push('/configuracion/datos-contrato?returnTo=' + encodeURIComponent('/inmuebles/nuevo'))
+      router.push(rutaDatosConRegreso('/inmuebles/nuevo'))
       return
     }
     router.push('/inmuebles/nuevo')
@@ -204,7 +208,7 @@ export function PropiedadesInmobiliariaView() {
       // (y solo si está disponible): se ajusta local, sin volver a contar.
       if (inmueble.estado === 'disponible' && inmueble.visible_vitrina !== value) {
         const delta = value ? 1 : -1
-        setConteos((c) => c && { ...c, enVitrina: c.enVitrina + delta, pausadas: c.pausadas - delta })
+        setTotales((t) => t && { ...t, enVitrina: t.enVitrina + delta })
       }
     } catch {
       updateInmuebleInList({ ...inmueble, visible_vitrina: !value })
@@ -256,7 +260,7 @@ export function PropiedadesInmobiliariaView() {
         <StatCard
           label="Total"
           value={cifra(conteos?.total)}
-          sub="Propiedades registradas"
+          sub={conteos ? notaTotalVitrina(conteos) : 'Propiedades registradas'}
           icon={IconBuilding2}
           iconClass="bg-slate-100 text-slate-500"
         />
@@ -269,19 +273,19 @@ export function PropiedadesInmobiliariaView() {
           iconClass="bg-primary-50 text-primary-600"
         />
         <StatCard
-          label="Disponibles"
-          value={cifra(conteos?.disponibles)}
-          color="text-blue-600"
-          sub="Listas para arrendar"
-          icon={IconCheck}
-          iconClass="bg-blue-50 text-blue-600"
-        />
-        <StatCard
           label="Pausadas"
           value={cifra(conteos?.pausadas)}
-          sub="Disponibles, fuera de la vitrina"
+          sub="Sin inquilino, fuera de la vitrina"
           icon={IconEyeOff}
           iconClass="bg-gray-100 text-gray-500"
+        />
+        <StatCard
+          label="Arrendadas"
+          value={cifra(conteos?.arrendadas)}
+          color="text-amber-700"
+          sub="Con contrato vigente o en firma"
+          icon={IconHome}
+          iconClass="bg-amber-50 text-amber-700"
         />
       </div>
 
