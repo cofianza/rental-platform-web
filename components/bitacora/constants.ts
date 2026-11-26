@@ -108,6 +108,7 @@ export const ACTION_LABELS: Record<string, string> = {
   contrato_version_downloaded: 'Versión del contrato descargada',
   contrato_transitioned: 'Contrato cambió de estado',
   contrato_firmado_uploaded: 'Contrato firmado cargado',
+  contrato_notaria_registrado: 'Contrato registrado en notaría',
   contrato_firmado_downloaded: 'Contrato firmado descargado',
   contrato_firmado_verified: 'Contrato firmado verificado',
   contrato_renewed: 'Contrato renovado',
@@ -191,6 +192,8 @@ export const ACTION_LABELS: Record<string, string> = {
   mora_escalada: 'Mora escalada',
   mora_pagada: 'Mora marcada como pagada',
   mora_cancelada: 'Mora cancelada',
+  mora_notaria_presentada: 'Contrato autenticado presentado en la mora',
+  mora_notaria_verificada: 'Verificación del contrato autenticado de la mora',
 
   // Equipo de la inmobiliaria
   miembro_invitado: 'Miembro invitado',
@@ -398,6 +401,7 @@ export const ACTION_GROUPS: Array<{
       'contrato_transitioned',
       'contrato_downloaded',
       'contrato_firmado_uploaded',
+      'contrato_notaria_registrado',
       'contrato_renewed',
       'contrato_prorrogado',
       'firma_solicitud_created',
@@ -472,7 +476,7 @@ export const ACTION_GROUPS: Array<{
   },
   {
     label: 'Moras',
-    options: ['mora_reportada', 'mora_escalada', 'mora_pagada', 'mora_cancelada'].map(toOption),
+    options: ['mora_reportada', 'mora_escalada', 'mora_pagada', 'mora_cancelada', 'mora_notaria_presentada', 'mora_notaria_verificada'].map(toOption),
   },
   {
     label: 'WhatsApp',

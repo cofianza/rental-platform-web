@@ -28,8 +28,9 @@ const PROPIETARIO = {
     },
     {
       icon: <IconDollarSign size={16} />,
-      title: 'Pago el día 30 de mora',
-      desc: 'Si reporta la mora dentro de los primeros 10 días, Cofianza paga el día 30 y gestiona el cobro.',
+      title: 'Pago dentro de los 20 días del reporte',
+      // Reporte de la Oficina Virtual (punto 2): la regla del convenio, sin prometer más.
+      desc: 'Reporte la mora entre el día 6 y el día 10. Cofianza le paga dentro de los 20 días calendario siguientes al reporte completo.',
     },
     {
       icon: <IconHome size={16} />,

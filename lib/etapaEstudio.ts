@@ -429,7 +429,7 @@ export function calcularEtapa(d: DatosEtapa): EtapaEstudio {
 }
 
 /**
- * Adenda 6 §2: el contrato V3 en firma espera la carga del documento firmado en notaría (`firma_notaria` del listado
+ * Adenda 6 §2 y 6.1 §4: el contrato V3 en firma espera el registro del contrato firmado en notaría (`firma_notaria` del listado
  * de contratos del estudio: la misma regla que `firma_notaria` de la lista de estudios). Pura.
  */
 export const esperaCargaNotariaContratos = (
@@ -478,7 +478,7 @@ export function turnoDeEtapa(
   etapa: EtapaEstudio,
   conCondicion: boolean,
   segundo: DatosTurnoSegundoFirmante = {},
-  /** Adenda 6 §2: el contrato en firma espera la carga del documento firmado en notaría (lo dice la API). */
+  /** Adenda 6.1 §4: el contrato en firma espera el registro del contrato firmado en notaría (lo dice la API). */
   o: { firmaNotaria?: boolean } = {},
 ): Turno | null {
   if (etapa === 'segundo_firmante') return turnoSegundoFirmante(segundo)
@@ -513,7 +513,7 @@ export function turnoDeEtapa(
     case 'decision':
       return conCondicion ? 'prospecto' : 'cofianza'
     case 'firma':
-      // En notaría no hay firmas que esperar: descargarlo, hacerlo firmar y cargarlo le toca a quien gestiona.
+      // En notaría no hay firmas que esperar: descargarlo, hacerlo autenticar y registrarlo le toca a quien gestiona.
       return o.firmaNotaria ? 'gestor' : 'firmas'
     default:
       return null

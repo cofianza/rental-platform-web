@@ -206,7 +206,7 @@ export function datosEstadoFila(
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
   const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
-  // Adenda 6 §2: en notaría no se esperan firmas: cargar el contrato firmado le toca a quien gestiona.
+  // Adenda 6.1 §4: en notaría no se esperan firmas: registrar el contrato firmado le toca a quien gestiona.
   // Con el canon que excede o el segundo firmante en curso, decide quien gestiona (como turnoDeEtapa).
   // «Aprobado con segundo firmante» con el segundo en verificación: de Cofianza, diga lo que diga depende_de.
   const turno: Turno | null | undefined =

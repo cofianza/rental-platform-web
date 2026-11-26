@@ -41,8 +41,7 @@
 
 import { useRef, useState } from 'react'
 import { autorizacionPublicService } from '@/services/autorizacionService'
-import type { EstadoBiometria, IBiometriaResponse } from '@/types/autorizacion'
-import { SIN_COTEJO_NOTARIA } from '@/lib/autorizacionV3'
+import type { EstadoBiometria } from '@/types/autorizacion'
 import { buttonClasses } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import {
@@ -231,41 +230,13 @@ interface Props {
   /** Avanza al paso de firma. Se llama pase lo que pase con el cotejo. */
   onContinuar: () => void
   onVolver: () => void
-  /**
-   * El veredicto sube a la página: al volver a este paso se muestra sin repetir (ni cobrar) el cotejo. `registrado`:
-   * la API respondió y guardó el veredicto (con la V3, con la constancia de la casilla 4A); ante un error (red, 503)
-   * es false: la página no puede dar por registrada la 4A.
-   */
-  onResultado?: (estado: EstadoBiometria, aprobado?: boolean, registrado?: boolean) => void
+  /** El veredicto sube a la página: al volver a este paso se muestra sin repetir (ni cobrar) el cotejo. */
+  onResultado?: (estado: EstadoBiometria) => void
   /** Cómo se llama el documento del prospecto («cédula de ciudadanía», «pasaporte»…). */
   documentoNombre?: string
   /** Texto 3.3-biometria: si el cotejo no confirma la identidad, Cofianza conserva las fotos (lo dice la API). */
   conservaFotos?: boolean
-  /**
-   * Adenda 6 §2 (texto V3): el cotejo es opcional (casilla 4A) y no cambia el estudio; sin él, el contrato se
-   * firma en notaría. Cambia los textos y avisa a la API que la persona marcó la 4A.
-   */
-  v3?: boolean
-  /** Adenda 6 §2: el veredicto previo quedó aprobado (con la V3, un «verificada» sin documento confirmado no lo está). */
-  aprobadoPrevio?: boolean
-  /** Adenda 6 §2: la persona marcó la casilla 4A (sin ella la API no coteja). */
-  aceptaCotejo?: boolean
-  /** Texto del botón de abajo (por omisión «Volver»). */
-  textoVolver?: string
-  /**
-   * Adenda 6 §2: la API dijo que el cotejo no se puede hacer (COTEJO_NO_DISPONIBLE, COTEJO_SIN_AUTORIZACION). La
-   * página vuelve a pedir la vista para no ofrecer otra vez el cotejo con datos viejos.
-   */
-  onNoDisponible?: () => void
-  /** Otro destino para el cotejo (el segundo firmante usa el suyo). Por omisión, el del enlace de autorización. */
-  servicio?: {
-    verificar: (input: { documentImage: string; photo: string }) => Promise<IBiometriaResponse>
-    omitir: () => Promise<IBiometriaResponse>
-  }
 }
-
-/** Adenda 6 §2: lo que pasa sin el cotejo, dicho igual en todos los textos de la V3. */
-const SIN_COTEJO_V3 = `Su evaluación es la misma con el cotejo o sin él. ${SIN_COTEJO_NOTARIA}`
 
 export function CapturaBiometrica({
   token,
@@ -275,12 +246,6 @@ export function CapturaBiometrica({
   onResultado,
   documentoNombre = 'documento',
   conservaFotos = false,
-  v3 = false,
-  aprobadoPrevio,
-  aceptaCotejo = false,
-  textoVolver = 'Volver',
-  servicio,
-  onNoDisponible,
 }: Props) {
   const [documento, setDocumento] = useState<string | null>(null)
   const [selfie, setSelfie] = useState<string | null>(null)
@@ -292,52 +257,33 @@ export function CapturaBiometrica({
     estadoPrevio && estadoPrevio !== 'desactivada' && estadoPrevio !== 'omitida' ? estadoPrevio : null,
   )
   const [mensaje, setMensaje] = useState('')
-  // La API dijo que el cotejo ya no está disponible en este enlace: no se ofrece reintentar.
-  const [sinReintento, setSinReintento] = useState(false)
-  // Adenda 6 §2: con la V3 lo que cuenta es el cotejo APROBADO (rostro y documento), no solo el rostro.
-  const [aprobado, setAprobado] = useState<boolean | null>(aprobadoPrevio ?? null)
 
   const listo = !!documento && !!selfie
-  const verificada = resultado === 'verificada' && (!v3 || aprobado === true)
+  const verificada = resultado === 'verificada'
 
   async function verificar() {
     if (!listo || enviando) return
     setEnviando(true)
     setMensaje('')
     try {
-      const input = { documentImage: documento!, photo: selfie! }
-      const r = servicio
-        ? await servicio.verificar(input)
-        : await autorizacionPublicService.verificarBiometria(token, { ...input, ...(v3 ? { acepta_cotejo: aceptaCotejo } : {}) })
-      const ok = r.estado === 'verificada' && (!v3 || r.aprobado === true)
+      const r = await autorizacionPublicService.verificarBiometria(token, {
+        documentImage: documento,
+        photo: selfie,
+      })
       setResultado(r.estado)
-      setAprobado(v3 ? r.aprobado === true : null)
-      onResultado?.(r.estado, v3 ? r.aprobado === true : undefined, r.guardado === true)
+      onResultado?.(r.estado)
       setMensaje(r.motivo ?? '')
-      if (ok) onContinuar()
+      if (r.estado === 'verificada') onContinuar()
       // La misma selfie daría el mismo resultado (y otro cobro): se pide una nueva.
       else setSelfie(null)
-    } catch (err) {
+    } catch {
       // Ni siquiera un error de red puede dejarlo atrapado: se marca como no
       // verificada (que es la verdad) y aparece «Continuar».
       setResultado('no_verificada')
-      // Sin respuesta de la API no hay veredicto guardado ni constancia de la 4A (registrado = false).
-      onResultado?.('no_verificada', v3 ? false : undefined, false)
+      onResultado?.('no_verificada')
       // B3: sin veredicto no se sabe si Auco cobró el cotejo: reintentar exige otra selfie.
       setSelfie(null)
-      // Adenda 6 §2: si la API dice que el cotejo ya no está disponible (plazo, estudio cerrado, sin la 4A), se
-      // muestra su mensaje: «inténtelo de nuevo» sería un círculo.
-      const codigo = (err as { code?: string } | null)?.code
-      const definitivo = v3 && (codigo === 'COTEJO_NO_DISPONIBLE' || codigo === 'COTEJO_SIN_AUTORIZACION')
-      setSinReintento(definitivo)
-      if (definitivo) onNoDisponible?.()
-      setMensaje(
-        definitivo
-          ? (err as { message?: string }).message ?? SIN_COTEJO_NOTARIA
-          : v3
-            ? `No pudimos completar el cotejo en este momento. Puede intentarlo de nuevo o continuar sin el cotejo. ${SIN_COTEJO_V3}`
-            : 'No pudimos completar la verificación en este momento. Puede continuar: alguien de nuestro equipo revisará su caso.',
-      )
+      setMensaje('No pudimos completar la verificación en este momento. Puede continuar: alguien de nuestro equipo revisará su caso.')
     } finally {
       setEnviando(false)
     }
@@ -346,11 +292,8 @@ export function CapturaBiometrica({
   async function omitir() {
     setEnviando(true)
     try {
-      const r = servicio ? await servicio.omitir() : await autorizacionPublicService.omitirBiometria(token)
-      // Adenda 6 §2: si el cotejo ya quedó aprobado (p. ej. en otra pestaña), la API no lo pisa y lo dice
-      // (`estado: 'verificada'`, `aprobado: true`): se sigue con ese veredicto (firma digital), no con notaría.
-      if (v3 && r?.estado === 'verificada' && r.aprobado !== false) onResultado?.('verificada', true, true)
-      else onResultado?.('omitida', v3 ? false : undefined, r?.guardado === true)
+      await autorizacionPublicService.omitirBiometria(token)
+      onResultado?.('omitida')
     } catch {
       // El registro del "no autorizo" es best-effort: si falla, la API lo
       // registra como "no verificada" al firmar (firmarAutorizacion) y el
@@ -369,19 +312,16 @@ export function CapturaBiometrica({
         </div>
         <h2 className="text-xl font-extrabold tracking-tight text-gray-900">Confirmemos que es usted</h2>
         <p className="mt-1 text-sm text-gray-500">
-          {v3
-            ? `Tome una foto de su ${documentoNombre} y una selfie. Comparamos las dos para confirmar que es usted y prevenir la suplantación. Con el cotejo aprobado, el contrato se puede firmar digitalmente.`
-            : `Tome una foto de su ${documentoNombre} y una selfie. Comparamos las dos para proteger su identidad: así nadie puede solicitar una fianza a su nombre.`}
+          Tome una foto de su {documentoNombre} y una selfie. Comparamos las dos para proteger su identidad: así nadie
+          puede solicitar una fianza a su nombre.
         </p>
       </div>
 
       {verificada ? (
         <div className="flex items-start gap-2 rounded-lg border border-primary-200 bg-primary-50 p-3">
           <IconCheck size={16} className="mt-0.5 shrink-0 text-primary-700" />
-          <p className="text-sm text-primary-900">
-            <span className="font-semibold">Listo, confirmamos su identidad.</span>
-            {v3 &&
-              ' Si todas las personas del contrato completan el cotejo, podrán firmarlo digitalmente; si no, se firma con firma autenticada en notaría, a su costo.'}
+          <p className="text-sm font-semibold text-primary-900">
+            Listo, confirmamos su identidad.
           </p>
         </div>
       ) : (
@@ -422,13 +362,13 @@ export function CapturaBiometrica({
           <button
             type="button"
             onClick={verificar}
-            disabled={!listo || enviando || sinReintento}
+            disabled={!listo || enviando}
             className={buttonClasses('primary', 'lg', 'w-full')}
           >
             {enviando ? <IconLoader size={20} className="animate-spin" /> : resultado ? <IconRefresh size={18} /> : null}
             {enviando ? 'Verificando…' : resultado ? 'Verificar con la nueva selfie' : 'Verificar mi identidad'}
           </button>
-          {resultado && !selfie && !enviando && !sinReintento && (
+          {resultado && !selfie && !enviando && (
             <p className="-mt-2 text-center text-xs text-gray-500">Para intentar de nuevo, tome otra selfie siguiendo los consejos de arriba.</p>
           )}
         </>
@@ -459,15 +399,13 @@ export function CapturaBiometrica({
           disabled={enviando}
           className={buttonClasses('secondary', 'lg', 'w-full')}
         >
-          {v3 ? 'Seguir sin el cotejo' : 'Prefiero no tomarme la foto'}
+          Prefiero no tomarme la foto
         </button>
       )}
 
       {!verificada && (
         <p className="text-center text-xs text-gray-500">
-          {v3
-            ? 'El cotejo es opcional (numeral 4A de la autorización). Las imágenes y el resultado se conservan como lo dice ese numeral y no se comparten con la inmobiliaria.'
-            : conservaFotos
+          {conservaFotos
             ? 'Su foto solo se usa para confirmar su identidad y no se comparte con la inmobiliaria. Si no logramos confirmarla, Cofianza guarda las fotos cifradas para que nuestro equipo revise su caso y las elimina al decidir su estudio o, a más tardar, a los 30 días. No está obligado a tomarla: su estudio sigue y lo revisa una persona de nuestro equipo.'
             : 'Su foto solo se usa para confirmar su identidad. No se guarda en Cofianza ni se comparte con la inmobiliaria. No está obligado a tomarla: su estudio sigue y lo revisa una persona de nuestro equipo.'}
         </p>
@@ -479,7 +417,7 @@ export function CapturaBiometrica({
         disabled={enviando}
         className="mx-auto inline-flex min-h-11 items-center gap-1 px-4 py-2 text-xs font-semibold text-gray-500 hover:text-gray-600"
       >
-        <IconArrowLeft size={14} /> {textoVolver}
+        <IconArrowLeft size={14} /> Volver
       </button>
     </div>
   )

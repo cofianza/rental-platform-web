@@ -360,7 +360,7 @@ const META_A5D: Record<string, MetaParametro> = {
     },
     rige: 'a5d',
   },
-  // Adenda 6 §2 y §10 (en la Adenda: AÑOS_CONSERVACION_COTEJO_*): las imágenes de los cotejos de la autorización V3.
+  // Adenda 6 §2 y §10 (en la Adenda: AÑOS_CONSERVACION_COTEJO_*): las imágenes de los cotejos de la autorización V3.1.
   ANIOS_CONSERVACION_COTEJO_APROBADO: {
     nombre: 'Conservación de las imágenes de un cotejo aprobado',
     seccion: 'plazos',
@@ -370,7 +370,7 @@ const META_A5D: Record<string, MetaParametro> = {
     ejemplo: (v) =>
       `Con ${v.ANIOS_CONSERVACION_COTEJO_APROBADO}: si la fianza termina el 1 de marzo de 2028, las imágenes se eliminan el 1 de marzo de ${2028 + v.ANIOS_CONSERVACION_COTEJO_APROBADO}.`,
     rige: 'parcial',
-    notaRige: 'Rige con la autorización de datos versión 3, cuando Cofianza la active.',
+    notaRige: 'Rige con la autorización de datos versión 3.1, cuando Cofianza la active.',
   },
   ANIOS_CONSERVACION_COTEJO_FALLIDO: {
     nombre: 'Conservación de las imágenes de un cotejo fallido',
@@ -381,7 +381,19 @@ const META_A5D: Record<string, MetaParametro> = {
     ejemplo: (v) =>
       `Con ${v.ANIOS_CONSERVACION_COTEJO_FALLIDO}: un cotejo fallido del 10 de enero de 2027 se elimina el 10 de enero de ${2027 + v.ANIOS_CONSERVACION_COTEJO_FALLIDO}.`,
     rige: 'parcial',
-    notaRige: 'Rige con la autorización de datos versión 3, cuando Cofianza la active.',
+    notaRige: 'Rige con la autorización de datos versión 3.1, cuando Cofianza la active.',
+  },
+  // Adenda 6.1 §3 y §7 (MAX_INTENTOS_COTEJO = 3): el cotejo de identidad al firmar el contrato.
+  MAX_INTENTOS_COTEJO: {
+    nombre: 'Intentos del cotejo de identidad al firmar',
+    seccion: 'plazos',
+    unidad: 'num',
+    queHace:
+      'Intentos de cotejo biométrico (foto del documento y selfie) que tiene cada persona arrendataria al firmar el contrato. Si los agota sin un cotejo aprobado, el contrato se firma en notaría. Cada intento es un cotejo que se paga al proveedor.',
+    ejemplo: (v) =>
+      `Con ${v.MAX_INTENTOS_COTEJO}: si a la persona no le aprueban ${v.MAX_INTENTOS_COTEJO === 1 ? 'el primer intento' : `los ${v.MAX_INTENTOS_COTEJO} intentos`}, el contrato se firma en notaría.`,
+    rige: 'parcial',
+    notaRige: 'Rige con la Adenda 6.1 (autorización de datos versión 3.1), cuando Cofianza la active.',
   },
   SCORE_MINIMO_SOLO: {
     nombre: 'Puntaje mínimo en la central para ir sin segundo firmante',

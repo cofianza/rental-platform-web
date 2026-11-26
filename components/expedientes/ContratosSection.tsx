@@ -291,10 +291,10 @@ export function ContratosSection({
     onContratoActualizado?.()
   }
 
-  // Adenda 6 §2: sin el cotejo aprobado no hay firma digital; la carga se hace desde el detalle del contrato.
+  // Adenda 6.1 §4: sin el cotejo aprobado no hay firma digital; el registro se hace desde el detalle del contrato.
   function avisarNotaria(contratoId: string) {
     setFirmaPreview(null)
-    toast.info('Este contrato se firma con firma autenticada en notaría: ábralo para descargarlo y cargarlo firmado.', {
+    toast.info('Este contrato se firma con firma autenticada en notaría: ábralo para descargarlo y, ya autenticado, registrarlo.', {
       action: { label: 'Abrir el contrato', onClick: () => window.location.assign(`/contratos/${contratoId}`) },
     })
     fetchContratos()
@@ -496,9 +496,9 @@ export function ContratosSection({
             Continuar
           </Link>
         )}
-        {/* Adenda 6 §2: el contrato que va a notaría no se envía a firma: se carga firmado desde su detalle. */}
+        {/* Adenda 6.1 §4: el contrato que va a notaría no se envía a firma: se registra desde su detalle. */}
         {!esV3 && canRegenerate && ESTADOS_PRE_FIRMA.includes(c.estado) && c.firma_notaria === true && (
-          <Link href={`/contratos/${c.id}`} className={cn(BOTON_FILA, BOTON_PRINCIPAL)} title="Descargar el contrato y cargarlo firmado en notaría">
+          <Link href={`/contratos/${c.id}`} className={cn(BOTON_FILA, BOTON_PRINCIPAL)} title="Descargar el contrato y registrarlo con la fecha del sello de la notaría">
             <IconArrowRight size={16} />
             Firma en notaría
           </Link>
@@ -824,6 +824,7 @@ export function ContratosSection({
         firmantes={firmaPreview?.data.firmantes ?? []}
         puedeEnviar={firmaPreview?.data.puede_enviar ?? false}
         biometria={firmaPreview?.data.biometria}
+        cotejo={firmaPreview?.data.cotejo}
         submitting={confirmandoFirma}
         onConfirm={() => { if (firmaPreview) void handleConfirmarFirma(firmaPreview.contrato) }}
         onClose={() => !confirmandoFirma && setFirmaPreview(null)}

@@ -238,7 +238,7 @@ export function queSigue(
     segundoEnVerificacion?: 'api' | 'web' | false
     /** No aprobable: alguna persona del estudio se puede reemplazar (lo dice el texto de `persona_a5d`). */
     reemplazoPosible?: boolean
-    /** Adenda 6 §2: el contrato en firma espera la carga del documento firmado en notaría (no hay firma electrónica). */
+    /** Adenda 6.1 §4: el contrato en firma espera el registro del contrato firmado en notaría (no hay firma electrónica). */
     firmaNotaria?: boolean
   },
 ): string {
@@ -291,13 +291,13 @@ export function paraLista(texto: string): string {
   return EN_LISTA.reduce((t, [re, por]) => t.replace(re, por), texto)
 }
 
-/** Adenda 6 §2: el contrato en firma espera la carga en notaría; lo hace quien gestiona el estudio. */
+/** Adenda 6.1 §4: el contrato en firma espera el registro en notaría; lo hace quien gestiona el estudio. */
 const FIRMA_NOTARIA: Record<VistaTurno, string> = {
   gestor:
-    'El contrato se firma en notaría: descárguelo, hágalo firmar con firma autenticada y cárguelo firmado en el contrato antes de que venza el plazo. La fianza se activa con la carga.',
+    'El contrato se firma en notaría: descárguelo, hágalo autenticar en notaría y regístrelo en la pantalla del contrato, con la fecha del sello, antes de que venza el plazo. La fianza se activa con el registro.',
   equipo:
-    'El contrato se firma en notaría: alguien de su equipo con permiso de edición lo descarga, lo hace firmar con firma autenticada y lo carga firmado. La fianza se activa con la carga.',
-  cofianza: 'El contrato se firma en notaría: falta que quien gestiona el estudio cargue el contrato firmado. La fianza se activa con la carga.',
+    'El contrato se firma en notaría: alguien de su equipo con permiso de edición lo descarga, lo hace autenticar en notaría y lo registra con la fecha del sello. La fianza se activa con el registro.',
+  cofianza: 'El contrato se firma en notaría: falta que quien gestiona el estudio registre el contrato autenticado. La fianza se activa con el registro.',
 }
 
 function queSigueBase(etapa: EtapaEstudio, o: Parameters<typeof queSigue>[1]): string {

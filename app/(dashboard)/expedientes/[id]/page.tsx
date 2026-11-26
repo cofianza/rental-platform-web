@@ -679,7 +679,7 @@ function ExpedienteDetalleContenido() {
             apelacion: apelacionRadicada,
             enVerificacion: !!segundoEnVerificacion,
           },
-          // Adenda 6 §2: el contrato en firma espera la carga en notaría: el turno es de quien gestiona.
+          // Adenda 6.1 §4: el contrato en firma espera el registro en notaría: el turno es de quien gestiona.
           { firmaNotaria },
         )
       : null
@@ -975,7 +975,7 @@ function ExpedienteDetalleContenido() {
                     : esEtapaDeTraba(etapaTurno)
                       ? ACCION_GESTOR[etapaTurno]
                       : etapaTurno === 'firma' && firmaNotaria
-                        ? // Adenda 6 §2: «Su turno: cargar el contrato firmado en notaría» (como la lista).
+                        ? // Adenda 6.1 §4: «Su turno: registrar el contrato firmado en notaría» (como la lista).
                           ACCION_CARGA_NOTARIA
                         : undefined,
             // Oficina Virtual (punto 13), como la lista: «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon».

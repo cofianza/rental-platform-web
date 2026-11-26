@@ -421,7 +421,8 @@ export default async function HomePage() {
                 body: 'Publique en nuestra vitrina o reciba arrendatarios respaldados. Su contrato viene con fiador firmado.',
                 items: [
                   'Fiador solidario sin beneficio de excusión',
-                  'Pago el día 30 si reporta la mora dentro de los primeros 10 días',
+                  // Reporte de la Oficina Virtual (punto 2): la regla del convenio, sin prometer más.
+                  'Reporte la mora entre el día 6 y el día 10: Cofianza le paga dentro de los 20 días calendario siguientes al reporte completo',
                   'Proceso de restitución coordinado',
                   'Sin tramitar cobros directamente',
                 ],
@@ -597,7 +598,7 @@ export default async function HomePage() {
               },
               {
                 q: '¿Qué pasa si me atraso en el pago?',
-                a: 'Desde el día 6 de mora Cofianza activa su protocolo de cobro. El día 9 le notificamos formalmente que en 20 días reportaremos a centrales de riesgo. El día 30 pagamos al propietario, siempre que haya reportado la mora a tiempo, y el cobro pasa a ser directamente contra usted.',
+                a: 'Cuando el propietario o la inmobiliaria reporta la mora, Cofianza le escribe para recordarle el pago y, si no se pone al día, el caso escala hasta que Cofianza asume el cobro como su fiador. Si Cofianza le paga al propietario, desde ese pago usted le debe ese valor directamente a Cofianza.',
               },
             ].map((f) => (
               <div
