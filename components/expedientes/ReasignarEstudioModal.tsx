@@ -61,13 +61,7 @@ import { PagarConsultaAdicional } from './PagarConsultaAdicional'
 import { valorConsultaAdicional } from '@/hooks/useSustituciones'
 import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import { SkeletonText } from '@/components/ui/Skeleton'
-
-/** Misma regla que la API (inmuebles/destinacion.ts): mixto o desconocido no tiene destinación. */
-function destinacionDeUso(uso: string | null | undefined): 'vivienda' | 'comercial' | null {
-  if (uso === 'vivienda') return 'vivienda'
-  if (uso === 'comercial' || uso === 'local_comercial') return 'comercial'
-  return null
-}
+import { destinacionDelInmueble } from '@/lib/destinacionInmueble'
 
 interface ReasignarEstudioModalProps {
   isOpen: boolean
@@ -354,6 +348,9 @@ export function ReasignarEstudioModal({
             <>
               <li>Su canon debe caber en el canon aprobado.</li>
               <li>Debe ser de la misma destinación (vivienda o comercial).</li>
+              {destinacion === 'comercial' && (
+                <li>Con un inmueble comercial no se podrá generar el contrato de vivienda de la plataforma.</li>
+              )}
               <li>Desde ese momento el estudio pasa a la cartera del dueño del inmueble. Conserva su vigencia original.</li>
             </>
           ) : (
@@ -467,7 +464,8 @@ export function ReasignarEstudioModal({
           {!isLoading &&
             ordenados.map((inm) => {
               const otraCartera = esDeOtraCartera(inm)
-              const otraDestinacion = vincular && !!destinacion && destinacionDeUso(inm.uso) !== destinacion
+              // Tipo + uso (reporte Oficina Virtual, punto 8): un local guardado como vivienda es comercial.
+              const otraDestinacion = vincular && !!destinacion && destinacionDelInmueble(inm) !== destinacion
               const seleccionable = esSeleccionable(inm) && !otraCartera && !otraDestinacion
               const fueraDeTolerancia =
                 canonMaximo !== null && inm.valor_arriendo > canonMaximo

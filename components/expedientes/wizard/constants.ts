@@ -22,7 +22,8 @@ export type WizardStepName = (typeof WIZARD_STEPS)[number]
 // Punto 3 (2026-09-25): mientras el contrato comercial y el de persona jurídica
 // no existan en la plataforma, el estudio no nace ni se cobra (la API responde
 // 409 ESTUDIO_NO_AFIANZABLE). Por eso el asistente no ofrece persona jurídica
-// ni NIT, y el paso 1 no deja elegir inmuebles comerciales o mixtos.
+// ni NIT, y el paso 1 no deja elegir inmuebles comerciales o mixtos (la regla
+// tipo + uso vive en lib/destinacionInmueble, con el interruptor de la Gerencia).
 // Adenda de precios §6.4: el mensaje dice «en desarrollo», no «rechazado».
 export const TIPO_PERSONA_OPTIONS = [
   { value: 'natural', label: 'Persona Natural' },
@@ -36,13 +37,6 @@ export const TIPO_DOCUMENTO_OPTIONS = [
   { value: 'pep', label: 'Permiso Especial de Permanencia (PEP)' },
   { value: 'pasaporte', label: 'Pasaporte' },
 ] as const
-
-export const USOS_NO_AFIANZABLES: readonly string[] = ['comercial', 'local_comercial', 'mixto']
-// Comerciales por naturaleza aunque el uso diga vivienda (API: usoParaAfianzar en inmuebles/destinacion.ts).
-export const TIPOS_NO_AFIANZABLES: readonly string[] = ['local', 'oficina', 'bodega']
-
-export const MSG_USO_NO_AFIANZABLE =
-  'Locales, oficinas, bodegas e inmuebles de uso comercial o mixto: los estudios de estos inmuebles están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'
 
 export const MSG_PERSONA_JURIDICA =
   'El arrendatario es una persona jurídica o se identifica con NIT: estos estudios están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'

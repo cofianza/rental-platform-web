@@ -123,6 +123,7 @@ export const INMUEBLE_MESSAGES = {
   DEPARTAMENTO_REQUIRED: 'El departamento es requerido',
   MUNICIPIO_REQUIRED: 'Busque el municipio y elíjalo de la lista',
   TIPO_REQUIRED: 'El tipo de inmueble es requerido',
+  USO_REQUIRED: 'Elija la destinación: vivienda o comercial',
   ESTRATO_REQUIRED: 'El estrato es requerido',
   VALOR_ARRIENDO_REQUIRED: 'El valor de arrendamiento es requerido',
   PROPIETARIO_REQUIRED: 'Debe seleccionar un propietario',

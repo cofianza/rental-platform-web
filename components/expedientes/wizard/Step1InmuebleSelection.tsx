@@ -31,7 +31,8 @@ import {
 } from '@/components/inmuebles/constants'
 import { EstudiosActivosBadge } from '@/components/inmuebles/InmuebleBadges'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
-import { WIZARD_MESSAGES, USOS_NO_AFIANZABLES, TIPOS_NO_AFIANZABLES, MSG_USO_NO_AFIANZABLE } from './constants'
+import { WIZARD_MESSAGES } from './constants'
+import { estudioSegunDestinacion, MSG_DESTINACION_AVISO, MSG_DESTINACION_BLOQUEO } from '@/lib/destinacionInmueble'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { SinInmuebleStep1 } from './SinInmuebleStep1'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -74,13 +75,11 @@ function estadoBadge(i: IInmueble) {
 // esSeleccionable / motivoNoSeleccionable viven en
 // components/inmuebles/constants porque la reasignacion del estudio (§4.3) usa
 // exactamente la misma regla — ver la nota alli.
-// Aquí además (punto 3, 2026-09-25) un inmueble comercial o mixto no se puede
-// elegir: el estudio no nacería (409 ESTUDIO_NO_AFIANZABLE). La reasignación
-// no cambia: ahí el estudio ya existe.
-const usoNoAfianzable = (i: IInmueble) => USOS_NO_AFIANZABLES.includes(i.uso) || (i.tipo != null && TIPOS_NO_AFIANZABLES.includes(i.tipo))
-const esSeleccionable = (i: IInmueble) => esSeleccionableBase(i) && !usoNoAfianzable(i)
-const motivoNoSeleccionable = (i: IInmueble) =>
-  esSeleccionableBase(i) && usoNoAfianzable(i) ? MSG_USO_NO_AFIANZABLE : motivoNoSeleccionableBase(i)
+// Aquí además (punto 3, 2026-09-25; reporte Oficina Virtual, punto 8) un
+// inmueble comercial o mixto —por su tipo o por su uso, lib/destinacionInmueble—
+// no se puede elegir mientras el interruptor de la Gerencia esté apagado: el
+// estudio no nacería (409 ESTUDIO_NO_AFIANZABLE). Encendido, se elige con aviso.
+// Las dos funciones viven dentro del componente porque dependen del interruptor.
 
 // Limite del dropdown "Mis inmuebles" (propietario/inmobiliaria). Si tienen
 // mas, los excedentes se encuentran via el buscador como antes.
@@ -222,6 +221,9 @@ export function Step1InmuebleSelection({
   const [topeCanon, setTopeCanon] = useState<number | null>(null)
   // Sin propiedad: la tolerancia del panel explica hasta cuánto podrá costar el inmueble.
   const [toleranciaCanon, setToleranciaCanon] = useState<number | null>(null)
+  // Interruptor de la Gerencia para estudios comerciales (Adenda de precios §6.2). null =
+  // todavía no se sabe: mientras tanto un inmueble comercial cuenta como bloqueado.
+  const [comercialHabilitado, setComercialHabilitado] = useState<boolean | null>(null)
   useEffect(() => {
     let vivo = true
     estudioService
@@ -230,14 +232,31 @@ export function Step1InmuebleSelection({
         if (!vivo) return
         setTopeCanon(t.tope_cop)
         setToleranciaCanon(t.tolerancia_canon_pct ?? null)
+        setComercialHabilitado(t.estudios_comercial_pj_habilitados === true)
       })
       .catch(() => {
-        // Sin el tope no se bloquea nada: el API lo valida igual al enviar.
+        // Sin el tope no se bloquea nada: el API lo valida igual al enviar. El interruptor
+        // se toma por apagado (lo más prudente: la API bloquearía igual).
+        if (vivo) setComercialHabilitado(false)
       })
     return () => {
       vivo = false
     }
   }, [])
+
+  const reglaDestinacion = (i: IInmueble) => estudioSegunDestinacion(i, comercialHabilitado === true)
+  const esSeleccionable = (i: IInmueble) => esSeleccionableBase(i) && reglaDestinacion(i) !== 'bloqueo'
+  const motivoNoSeleccionable = (i: IInmueble) =>
+    esSeleccionableBase(i) && reglaDestinacion(i) === 'bloqueo' ? MSG_DESTINACION_BLOQUEO : motivoNoSeleccionableBase(i)
+
+  // El inmueble ya elegido (también el del atajo «Evaluar candidato» o un borrador): si el
+  // interruptor está apagado y es comercial o mixto, «Siguiente» no avanza (validateStep1).
+  const reglaElegido = data.inmueble && comercialHabilitado !== null ? reglaDestinacion(data.inmueble) : null
+  useEffect(() => {
+    if (reglaElegido === null) return
+    const bloqueada = reglaElegido === 'bloqueo'
+    if (!!data.destinacionBloqueada !== bloqueada) onUpdate({ destinacionBloqueada: bloqueada })
+  }, [reglaElegido, data.destinacionBloqueada, onUpdate])
 
   // §4.2: estudios en curso = expedientes, no evaluaciones (el coarrendatario no suma).
   const enCurso = data.inmueble?.expedientes_activos ?? data.inmueble?.estudios_activos ?? 0
@@ -266,6 +285,7 @@ export function Step1InmuebleSelection({
         inmueble,
         hasActiveExpediente: result.hasActiveExpediente,
         excedeTope: excedeElTope(inmueble),
+        destinacionBloqueada: reglaDestinacion(inmueble) === 'bloqueo',
         // Decisión 4: el canal del propietario directo no admite coarrendatario.
         coarrendatarioDesdeInicio: result.coarrendatarioDesdeInicio && !!inmueble.inmobiliaria_id,
       })
@@ -276,6 +296,7 @@ export function Step1InmuebleSelection({
         inmueble,
         hasActiveExpediente: false,
         excedeTope: excedeElTope(inmueble),
+        destinacionBloqueada: reglaDestinacion(inmueble) === 'bloqueo',
         coarrendatarioDesdeInicio: false,
       })
     } finally {
@@ -290,6 +311,7 @@ export function Step1InmuebleSelection({
       inmueble: null,
       hasActiveExpediente: false,
       coarrendatarioDesdeInicio: false,
+      destinacionBloqueada: false,
     })
   }
 
@@ -333,7 +355,14 @@ export function Step1InmuebleSelection({
       )}
 
       {data.sinInmueble && puedeSinInmueble ? (
-        <SinInmuebleStep1 data={data} errors={errors} onUpdate={onUpdate} topeCanon={topeCanon} toleranciaCanon={toleranciaCanon} />
+        <SinInmuebleStep1
+          data={data}
+          errors={errors}
+          onUpdate={onUpdate}
+          topeCanon={topeCanon}
+          toleranciaCanon={toleranciaCanon}
+          comercialHabilitado={comercialHabilitado === true}
+        />
       ) : (
       <>
 
@@ -561,6 +590,27 @@ export function Step1InmuebleSelection({
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <IconLoader size={16} className="animate-spin" />
               <span>Verificando disponibilidad...</span>
+            </div>
+          )}
+
+          {/* Reporte Oficina Virtual, punto 8: el contrato de la plataforma es solo de vivienda. */}
+          {reglaElegido === 'bloqueo' && (
+            <div role="alert" className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
+              <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-red-600" />
+              <div>
+                <p className="text-sm font-medium text-red-800">Con este inmueble no se puede solicitar el estudio</p>
+                <p className="mt-1 text-sm text-red-700">{MSG_DESTINACION_BLOQUEO}</p>
+                <p className="mt-1 text-sm text-red-700">Quite el inmueble y elija uno de vivienda. No se generó ningún cobro.</p>
+              </div>
+            </div>
+          )}
+          {reglaElegido === 'aviso' && (
+            <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <IconAlertTriangle size={20} className="mt-0.5 shrink-0 text-amber-600" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">El contrato de vivienda no se podrá generar</p>
+                <p className="mt-1 text-sm text-amber-700">{MSG_DESTINACION_AVISO}</p>
+              </div>
             </div>
           )}
 

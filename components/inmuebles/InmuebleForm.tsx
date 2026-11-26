@@ -36,6 +36,12 @@ import { leerErrorDeFormulario } from '@/lib/erroresApi'
 import { useAuthStore } from '@/stores/auth.store'
 import { MunicipioCombobox, type MunicipioOption } from '@/components/registro/MunicipioCombobox'
 import { departamentoSiDistinto } from '@/lib/municipios'
+import {
+  mensajeDestinacionIncoherente,
+  usosPermitidosPara,
+  NOTA_CONTRATO_SOLO_VIVIENDA,
+  type DestinacionElegible,
+} from '@/lib/destinacionInmueble'
 
 // ── Sección y campo ─────────────────────────────────────────
 
@@ -173,7 +179,8 @@ interface FormData {
   foto_fachada_url: string
   // Opcionales
   barrio: string
-  uso: UsoInmueble
+  // Obligatoria y sin valor por defecto (reporte Oficina Virtual, punto 8).
+  uso: UsoInmueble | ''
   destinacion: string
   valor_comercial: number | ''
   administracion: number | ''
@@ -211,7 +218,7 @@ const initialFormData: FormData = {
   propietario_id: '',
   foto_fachada_url: '',
   barrio: '',
-  uso: 'vivienda',
+  uso: '',
   destinacion: '',
   valor_comercial: '',
   administracion: '',
@@ -233,7 +240,7 @@ const initialFormData: FormData = {
 
 // Etiquetas para el aviso de 'falta X' (antes: 'completa todos los campos requeridos' sin decir cual).
 const FIELD_LABELS: Record<string, string> = {
-  codigo: 'código', direccion: 'dirección', ciudad: 'municipio', departamento: 'municipio', tipo: 'tipo de inmueble',
+  codigo: 'código', direccion: 'dirección', ciudad: 'municipio', departamento: 'municipio', tipo: 'tipo de inmueble', uso: 'destinación',
   estrato: 'estrato', valor_arriendo: 'valor del arriendo', propietario_id: 'propietario', foto_fachada_url: 'foto de fachada',
   area_m2: 'área', habitaciones: 'habitaciones', banos: 'baños', parqueaderos: 'parqueaderos', administracion: 'administración',
 }
@@ -295,6 +302,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     apellido: string
   } | null>(null)
   const [fotosAdicionales, setFotosAdicionales] = useState<{ file: File; preview: string }[]>([])
+  // Por qué se vació la destinación: el tipo elegido (o el guardado, en un
+  // inmueble anterior a la regla) no admite la que tenía. Se borra al elegir otra.
+  const [avisoDestinacion, setAvisoDestinacion] = useState<string | null>(null)
 
   // Cambios sin guardar: el formulario es largo y «Cancelar», el menú o cerrar
   // la pestaña borraban todo sin preguntar. `tocado` lo enciende cualquier
@@ -363,8 +373,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         foto_fachada_url: inmueble.foto_fachada_url || '',
         barrio: inmueble.barrio || '',
         // 'local_comercial' (legacy) se consolida en 'comercial' (Comercio) para
-        // que el select lo muestre correctamente con las nuevas opciones.
-        uso: inmueble.uso === 'local_comercial' ? 'comercial' : inmueble.uso,
+        // que el select lo muestre correctamente con las nuevas opciones. Una
+        // destinación que el tipo no admite (un local guardado como vivienda
+        // antes de la regla) queda vacía: hay que elegirla para guardar.
+        uso: mensajeDestinacionIncoherente(inmueble.tipo, inmueble.uso)
+          ? ''
+          : inmueble.uso === 'local_comercial' ? 'comercial' : inmueble.uso,
         destinacion: inmueble.destinacion || '',
         valor_comercial: inmueble.valor_comercial || '',
         administracion: inmueble.administracion || '',
@@ -386,6 +400,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         ubicacion_detallada: inmueble.ubicacion_detallada || '',
         matricula_inmobiliaria: inmueble.matricula_inmobiliaria || '',
       })
+
+      setAvisoDestinacion(mensajeDestinacionIncoherente(inmueble.tipo, inmueble.uso))
 
       // Cargar datos del propietario si existen
       if (inmueble.propietario) {
@@ -420,6 +436,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     }
     if (!formData.tipo) {
       newErrors.tipo = INMUEBLE_MESSAGES.TIPO_REQUIRED
+    }
+    if (!formData.uso) {
+      newErrors.uso = INMUEBLE_MESSAGES.USO_REQUIRED
+    } else {
+      const incoherente = mensajeDestinacionIncoherente(formData.tipo, formData.uso)
+      if (incoherente) newErrors.uso = incoherente
     }
     if (!formData.estrato) {
       newErrors.estrato = INMUEBLE_MESSAGES.ESTRATO_REQUIRED
@@ -491,7 +513,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           foto_fachada_url: formData.foto_fachada_url,
           // Opcionales
           barrio: formData.barrio || undefined,
-          uso: formData.uso,
+          uso: formData.uso as UsoInmueble,
           destinacion: formData.destinacion || undefined,
           valor_comercial: formData.valor_comercial ? Number(formData.valor_comercial) : undefined,
           administracion: formData.administracion ? Number(formData.administracion) : undefined,
@@ -560,7 +582,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           propietario_id: formData.propietario_id,
           foto_fachada_url: formData.foto_fachada_url,
           barrio: formData.barrio || null,
-          uso: formData.uso,
+          uso: formData.uso as UsoInmueble,
           destinacion: formData.destinacion || null,
           valor_comercial: formData.valor_comercial ? Number(formData.valor_comercial) : null,
           // Siempre un número: con undefined el 0 («Déjalo en 0 si no aplica») o
@@ -623,6 +645,33 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
     }
   }
+
+  // Punto 8: al cambiar el tipo, una destinación que el nuevo tipo no admite se
+  // vacía (nunca se cambia sola por otra) y se dice por qué.
+  const handleTipoChange = (tipo: string) => {
+    const incoherente = mensajeDestinacionIncoherente(tipo, formData.uso)
+    setFormData((prev) => ({ ...prev, tipo: tipo as TipoInmueble | '', ...(incoherente ? { uso: '' as const } : {}) }))
+    setAvisoDestinacion(incoherente)
+    if (errors.tipo || errors.uso) setErrors((prev) => ({ ...prev, tipo: undefined, uso: undefined }))
+  }
+
+  const handleUsoChange = (uso: string) => {
+    handleChange('uso', uso)
+    setAvisoDestinacion(null)
+  }
+
+  const usosOfrecidos = USO_OPTIONS.filter((o) =>
+    usosPermitidosPara(formData.tipo).includes(o.value as DestinacionElegible),
+  )
+  const ayudaDestinacion = avisoDestinacion ? (
+    <span className="text-amber-800">{avisoDestinacion}</span>
+  ) : formData.uso === 'comercial' || formData.uso === 'mixto' ? (
+    NOTA_CONTRATO_SOLO_VIVIENDA
+  ) : (
+    // Con un local, una oficina… la ayuda dice desde ya por qué no está «Vivienda».
+    mensajeDestinacionIncoherente(formData.tipo, 'vivienda') ??
+    'Vivienda: para habitar. Comercial: locales, oficinas, bodegas o negocios.'
+  )
 
   // Ciudad y departamento salen juntos de la opción elegida; sin opción (borró o está escribiendo), vacíos.
   // Si el campo reconoció solo la ciudad guardada, no se toca: no es un cambio de quien edita.
@@ -739,7 +788,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               <select
                 id="tipo"
                 value={formData.tipo}
-                onChange={(e) => handleChange('tipo', e.target.value)}
+                onChange={(e) => handleTipoChange(e.target.value)}
                 disabled={isSubmitting}
                 aria-invalid={!!errors.tipo}
                 className={inputClasses(!!errors.tipo)}
@@ -753,15 +802,17 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               </select>
             </Campo>
 
-            <Campo id="uso" label="Uso" ayuda="Vivienda: para habitar. Comercial: oficinas, locales o negocios.">
+            <Campo id="uso" label="Destinación" requerido error={errors.uso} ayuda={ayudaDestinacion}>
               <select
                 id="uso"
                 value={formData.uso}
-                onChange={(e) => handleChange('uso', e.target.value)}
+                onChange={(e) => handleUsoChange(e.target.value)}
                 disabled={isSubmitting}
-                className={inputClasses(false)}
+                aria-invalid={!!errors.uso}
+                className={inputClasses(!!errors.uso)}
               >
-                {USO_OPTIONS.map((opt) => (
+                <option value="">Seleccionar destinación...</option>
+                {usosOfrecidos.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>

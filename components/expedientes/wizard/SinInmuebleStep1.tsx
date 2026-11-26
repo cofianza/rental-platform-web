@@ -12,7 +12,7 @@ import { IconAlertTriangle, IconBuilding2, IconHome } from '@/components/icons'
 import { CampoPesos, OpcionTarjeta } from '@/components/contratos/v3/campos'
 import { formatCurrency } from '@/lib/constants'
 import type { WizardStep1Data } from '@/hooks/useExpedienteWizard'
-import { USOS_NO_AFIANZABLES } from './constants'
+import { MSG_DESTINACION_AVISO_SIN_INMUEBLE } from '@/lib/destinacionInmueble'
 
 interface Props {
   data: WizardStep1Data
@@ -22,17 +22,18 @@ interface Props {
   topeCanon: number | null
   /** TOLERANCIA_CANON del panel (%); null si no se pudo leer. */
   toleranciaCanon?: number | null
+  /** Interruptor de la Gerencia (Adenda de precios §6.2): sin él, comercial no está disponible. */
+  comercialHabilitado?: boolean
 }
 
-const COMERCIAL_NO_DISPONIBLE = USOS_NO_AFIANZABLES.includes('comercial')
-
-export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon, toleranciaCanon = null }: Props) {
+export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon, toleranciaCanon = null, comercialHabilitado = false }: Props) {
   const canon = data.canonObjetivo
+  const comercialNoDisponible = !comercialHabilitado
   // Mientras comercial no esté disponible, vivienda es la única opción: va marcada.
   const faltaDestinacion = !data.destinacion
   useEffect(() => {
-    if (COMERCIAL_NO_DISPONIBLE && faltaDestinacion) onUpdate({ destinacion: 'vivienda' })
-  }, [faltaDestinacion, onUpdate])
+    if (comercialNoDisponible && faltaDestinacion) onUpdate({ destinacion: 'vivienda' })
+  }, [comercialNoDisponible, faltaDestinacion, onUpdate])
   const excede = topeCanon !== null && canon !== undefined && canon > topeCanon
   // Mismo canon + tolerancia que canonAprobadoCop en la API; el tope de la
   // destinación y el ingreso pueden bajarlo, y eso solo lo sabe el certificado.
@@ -69,14 +70,21 @@ export function SinInmuebleStep1({ data, errors, onUpdate, topeCanon, tolerancia
           <OpcionTarjeta
             name="destinacion-objetivo"
             checked={data.destinacion === 'comercial'}
-            disabled={COMERCIAL_NO_DISPONIBLE}
+            disabled={comercialNoDisponible}
             onSelect={() => onUpdate({ destinacion: 'comercial' })}
             titulo="Comercial"
-            descripcion={COMERCIAL_NO_DISPONIBLE ? 'Todavía no disponible en la plataforma.' : undefined}
+            descripcion={comercialNoDisponible ? 'Todavía no disponible en la plataforma.' : undefined}
             icono={IconBuilding2}
           />
         </div>
         {errors.destinacion && <p className="mt-1 text-xs text-red-600">{errors.destinacion}</p>}
+        {/* Reporte Oficina Virtual, punto 8: lo dice antes de crear y cobrar. */}
+        {!comercialNoDisponible && data.destinacion === 'comercial' && (
+          <p className="mt-2 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <IconAlertTriangle size={18} className="mt-0.5 shrink-0" />
+            {MSG_DESTINACION_AVISO_SIN_INMUEBLE}
+          </p>
+        )}
       </fieldset>
 
       {excede && (

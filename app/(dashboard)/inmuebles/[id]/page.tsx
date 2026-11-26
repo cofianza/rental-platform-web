@@ -607,7 +607,7 @@ export default function InmuebleDetailPage() {
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-gray-500">Uso</dt>
+                        <dt className="text-gray-500">Destinación</dt>
                         <dd className="text-gray-900 font-medium">
                           {inmueble.uso === 'vivienda'
                             ? 'Vivienda'
@@ -618,7 +618,7 @@ export default function InmuebleDetailPage() {
                       </div>
                       {inmueble.destinacion && (
                         <div>
-                          <dt className="text-gray-500">Destinación</dt>
+                          <dt className="text-gray-500">Detalle de la destinación</dt>
                           <dd className="text-gray-900">{inmueble.destinacion}</dd>
                         </div>
                       )}
