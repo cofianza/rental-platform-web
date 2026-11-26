@@ -44,7 +44,7 @@ export function etapaDeFila(e: IExpediente): EtapaEstudio {
 }
 
 /**
- * Adenda 6 §2: el contrato V3 de la fila está en firma esperando la carga del documento firmado en notaría
+ * Adenda 6 §2 y 6.1 §4: el contrato V3 de la fila está en firma esperando el registro del contrato firmado en notaría
  * (`firma_notaria` del RPC). El turno es de quien gestiona, no «Esperando las firmas». Pura.
  */
 export const esperaCargaNotaria = (e: Pick<IExpediente, 'contrato_estado' | 'firma_notaria'>): boolean =>
@@ -114,7 +114,7 @@ export function accionSegundoFirmante(ev: DatosAccionSegundoFirmante | null | un
 export const TURNO_GESTOR_TRABA: EtapaEstudio[] = ['canon_excede', ...ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO]
 
 export function accionDeFila(e: IExpediente, etapa: EtapaEstudio): string | undefined {
-  // Adenda 6 §2: en notaría no hay firma que revisar ni firmas que esperar: hay que cargar el documento firmado.
+  // Adenda 6.1 §4: en notaría no hay firma que revisar ni firmas que esperar: hay que registrar el contrato firmado.
   if (etapa === 'firma' && esperaCargaNotaria(e)) return ACCION_CARGA_NOTARIA
   if (e.depende_de !== 'gestor' && !(e.depende_de && TURNO_GESTOR_TRABA.includes(etapa))) return undefined
   if (etapa === 'segundo_firmante') return accionSegundoFirmante(e.estudio_vigente)

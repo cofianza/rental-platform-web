@@ -770,7 +770,7 @@ function Asistente({
               <Aviso tono="aviso">
                 Con los datos de hoy, al menos una persona arrendataria no completó el cotejo de identidad: el contrato
                 se firmará con firma autenticada en notaría, a costo del arrendatario. Después de prepararlo, lo descarga, lo
-                hace firmar y lo carga firmado aquí; la fianza se activa con esa carga.
+                hace autenticar en notaría y lo registra aquí con la fecha del sello; la fianza se activa con ese registro.
               </Aviso>
             )}
             <p>

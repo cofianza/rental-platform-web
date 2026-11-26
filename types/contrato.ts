@@ -59,9 +59,10 @@ export interface IContrato {
   created_at: string
   updated_at: string
   /**
-   * Adenda 6 §2: el contrato se firma en notaría (alguna persona arrendataria sin el cotejo aprobado). Ausente si no
-   * rige o no se pudo saber. El listado manda true/false; el detalle del flujo anterior, false o el motivo, el aviso
-   * literal y lo que hoy impide cargarlo (`freno`).
+   * Adenda 6 §2 y 6.1 §4: el contrato se firma en notaría (alguna persona arrendataria sin el cotejo aprobado).
+   * Ausente si no rige o no se pudo saber. El listado manda true/false; el detalle del flujo anterior, false o el
+   * motivo, el aviso literal, lo que hoy impide registrarlo (`freno`), el rango de la fecha de autenticación y, ya
+   * registrado, la constancia (`registro`).
    */
   firma_notaria?: boolean | IFirmaNotaria
   /**
@@ -73,10 +74,20 @@ export interface IContrato {
 
 export interface IFirmaNotaria {
   motivo: string
+  /** El aviso que se acepta al registrar (el de quien mira: propietario o inmobiliaria) o, ya registrado, el aceptado. */
   aviso: string
   freno: string | null
-  /** Hasta cuándo se puede cargar (ISO): el fin del resultado, como en el V3. null o ausente = sin dato. */
+  /** Hasta cuándo se puede registrar (ISO): el fin del resultado, como en el V3. null o ausente = sin dato. */
   vence?: string | null
+  /** Adenda 6.1 §4: el rango permitido de la fecha de autenticación (AAAA-MM-DD). null o ausente = sin dato. */
+  rango?: { desde: string; hasta: string; dias: number; maximo: string } | null
+  /** Adenda 6.1 §4: la constancia del registro y el documento si ya se cargó. null o ausente = sin registrar. */
+  registro?: {
+    fechaAutenticacion: string
+    en: string
+    avisoVersion: string
+    documento: null | { nombre: string; en: string | null }
+  } | null
 }
 
 /** Bloque de migración de cartera que GET /contratos/:id agrega a los migrados. */

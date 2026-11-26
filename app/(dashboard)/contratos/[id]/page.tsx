@@ -8,6 +8,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { toast } from 'sonner'
+import { ApiClientError } from '@/lib/api'
 import {
   IconArrowLeft,
   IconDownload,
@@ -138,6 +139,7 @@ export default function ContratoDetallePage() {
     puedeEditar && (canManage || user?.rol === 'inmobiliaria' || user?.rol === 'propietario')
   // Adenda 6 §2: la carga del contrato firmado en notaría.
   const [cargandoNotaria, setCargandoNotaria] = useState(false)
+  const [cargandoDocumentoNotaria, setCargandoDocumentoNotaria] = useState(false)
   const notaria = typeof contrato?.firma_notaria === 'object' ? contrato.firma_notaria : null
 
   // opts.silent = refresco EN SITIO (p. ej. cuando FirmantesContratoSection
@@ -346,7 +348,7 @@ export default function ContratoDetallePage() {
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'No se pudo preparar el envío a firma'
-      // Adenda 6 §2: el contrato va a notaría: se recarga para mostrar la carga en lugar del envío.
+      // Adenda 6 §2: el contrato va a notaría: se recarga para mostrar el registro en lugar del envío.
       if ((err as { code?: string }).code === 'FIRMA_EN_NOTARIA') {
         toast.info(message)
         fetchContrato()
@@ -550,7 +552,7 @@ export default function ContratoDetallePage() {
             </button>
           )}
           {canManage && transiciones.length > 0 && transiciones
-            // Adenda 6 §2: el contrato de notaría no se envía a firma ni se marca firmado a mano (lo hace la carga).
+            // Adenda 6 §2: el contrato de notaría no se envía a firma ni se marca firmado a mano (lo hace el registro).
             .filter((t) => !(notaria && (t.estado === 'pendiente_firma' || t.estado === 'firmado')))
             .map((t) => (
             <button
@@ -593,37 +595,62 @@ export default function ContratoDetallePage() {
         </div>
       )}
 
-      {/* Adenda 6 §2: sin el cotejo aprobado del arrendatario, el contrato se firma en notaría y se carga aquí. Va
-          arriba: es la acción principal del contrato (en el celular quedaría debajo del visor). */}
-      {!esMigrado && notaria && [...ESTADOS_PRE_FIRMA, 'pendiente_firma'].includes(contrato.estado) && (
+      {/* Adenda 6.1 §4: sin el cotejo aprobado del arrendatario, el contrato se firma en notaría y se registra aquí (y,
+          ya registrado, muestra la constancia y la carga del PDF si falta). Va arriba: es la acción principal del
+          contrato (en el celular quedaría debajo del visor). */}
+      {!esMigrado && notaria && (notaria.registro || [...ESTADOS_PRE_FIRMA, 'pendiente_firma'].includes(contrato.estado)) && (
         <CargaContratoNotaria
           motivo={notaria.motivo}
           aviso={notaria.aviso}
           freno={notaria.freno}
           vence={notaria.vence}
-          puedeCargar={puedeEditar && (user?.rol === 'propietario' || user?.rol === 'inmobiliaria' || user?.rol === 'administrador')}
+          rango={notaria.rango ?? null}
+          registro={notaria.registro ?? null}
+          puedeRegistrar={puedeEditar && (user?.rol === 'propietario' || user?.rol === 'inmobiliaria' || user?.rol === 'administrador')}
+          quienRegistra={
+            user?.rol === 'inmobiliaria'
+              ? 'Lo registra un miembro de su inmobiliaria con permiso de edición.'
+              : 'Lo registra quien tramita el arriendo.'
+          }
           quienCarga={
             user?.rol === 'inmobiliaria'
               ? 'Lo carga un miembro de su inmobiliaria con permiso de edición.'
               : 'Lo carga quien tramita el arriendo.'
           }
-          cargando={cargandoNotaria}
+          registrando={cargandoNotaria}
+          cargandoDocumento={cargandoDocumentoNotaria}
           descargando={downloadLoading}
           onDescargar={() => void handleDownload()}
-          onCargar={async (archivo) => {
+          onRegistrar={async (datos) => {
             setCargandoNotaria(true)
             try {
-              const r = await contratoService.cargarNotaria(id, archivo)
-              toast.success(r.message || 'Contrato cargado')
+              const r = await contratoService.registrarNotaria(id, datos)
+              toast.success(r.message || 'Contrato registrado')
               await fetchContrato()
               return true
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : 'No se pudo cargar el contrato firmado.')
-              // 409 (ya cargado, cambió) o 5xx: se recarga para mostrar lo que quedó.
-              void fetchContrato()
+              toast.error(err instanceof Error ? err.message : 'No se pudo registrar el contrato.')
+              // 409 (ya registrado, cambió) o 5xx: se recarga para mostrar lo que quedó. Un 400 (la fecha fuera del
+              // rango) deja el formulario como estaba para corregirla.
+              if (!(err instanceof ApiClientError && err.statusCode === 400)) void fetchContrato()
               return false
             } finally {
               setCargandoNotaria(false)
+            }
+          }}
+          onCargarDocumento={async (archivo) => {
+            setCargandoDocumentoNotaria(true)
+            try {
+              const r = await contratoService.cargarDocumentoNotaria(id, archivo)
+              toast.success(r.message || 'Contrato autenticado cargado')
+              await fetchContrato()
+              return true
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : 'No se pudo cargar el contrato autenticado.')
+              if (!(err instanceof ApiClientError && err.statusCode === 400)) void fetchContrato()
+              return false
+            } finally {
+              setCargandoDocumentoNotaria(false)
             }
           }}
         />

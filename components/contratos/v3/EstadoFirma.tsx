@@ -75,9 +75,9 @@ function motivoDe(s: EnvioV3['sobre'], interno: boolean, notaria: boolean): stri
   if (!s) return null
   switch (s.motivo) {
     case 'EXPIRED':
-      // Adenda 6 §2: el plazo de carga llegaba hasta el fin de la vigencia del resultado (no se puede reabrir).
+      // Adenda 6.1 §4: el plazo de registro llegaba hasta el fin de la vigencia del resultado (no se puede reabrir).
       return notaria
-        ? 'Venció el plazo para cargar el contrato firmado en notaría, que llegaba hasta el fin de la vigencia del resultado del estudio.'
+        ? 'Venció el plazo para registrar el contrato firmado en notaría, que llegaba hasta el fin de la vigencia del resultado del estudio.'
         : 'Venció el plazo para firmar.'
     case 'IDENTIDAD':
       return `Venció el plazo para firmar sin que se completara la verificación de identidad${s.motivoDetalle ? ` (${s.motivoDetalle})` : ''}.`
@@ -136,7 +136,8 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
   const esperaIdentidad =
     enFirma && e.identidadPendientes > 0 && !!e.sobre && !['creando', 'en_firma', 'completo'].includes(e.sobre.estado)
   const s = esperaIdentidad ? null : e.sobre
-  // Adenda 6 §2: el contrato se firma en notaría (sin proceso en Auco): la inmobiliaria lo carga firmado.
+  // Adenda 6.1 §4: el contrato se firma en notaría (sin proceso en Auco): la inmobiliaria lo registra.
+  // Lo registra y carga el PDF la inmobiliaria (o Cofianza); no quien solo mira.
   const notaria = e.notaria ?? null
   // Un proceso que no se creó en Auco (fallido), o el cierre sin proceso por el plazo vencido, no tiene firmantes ni plazo que mostrar.
   const creado = !!s && s.estado !== 'fallido' && s.firmantes.length > 0
@@ -325,32 +326,53 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
 
         {activa && (
           <Aviso tono="exito">
-            {notaria?.cargado
-              ? `Fianza activa desde el ${formatDateTime(notaria.cargado.en)} (hora de Colombia): se cargó el contrato con firma autenticada en notaría.`
+            {notaria?.registro
+              ? `Fianza activa desde el ${formatDateTime(notaria.registro.en)} (hora de Colombia): se registró el contrato con firma autenticada en notaría.`
               : e.fechaActivacion
                 ? `Fianza activa desde el ${formatDateTime(e.fechaActivacion)} (hora de Colombia): la última firma registrada${interno ? ' por Auco' : ''}.`
                 : 'Fianza activa: firmaron todas las partes.'}
           </Aviso>
         )}
-        {enFirma && notaria?.cargado && (
-          // La carga quedó y la activación la termina el barrido (o está en curso).
+        {enFirma && notaria?.registro && (
+          // El registro quedó y la activación la termina el barrido (o está en curso).
           <Aviso>
-            Contrato cargado el {formatDateTime(notaria.cargado.en)} (hora de Colombia). La fianza se activa en unos minutos.
+            Contrato registrado el {formatDateTime(notaria.registro.en)} (hora de Colombia). La fianza se activa en unos minutos.
           </Aviso>
         )}
-        {/* Solo con el plazo de carga vivo: un último proceso cancelado o incompleto no espera la carga. */}
-        {enFirma && notaria && !notaria.cargado && s?.estado === 'en_firma' && (
+        {/* Adenda 6.1 §4: ya registrado, la constancia y, si falta, la carga del contrato autenticado (no cambia la fianza). */}
+        {(enFirma || firmado) && notaria?.registro && (
+          <CargaContratoNotaria
+            motivo={notaria.motivo}
+            aviso={notaria.aviso}
+            registro={notaria.registro}
+            puedeRegistrar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
+            quienCarga={
+              rol === 'inmobiliaria'
+                ? 'Lo carga un miembro de su inmobiliaria con permiso de edición.'
+                : 'La inmobiliaria carga el contrato autenticado.'
+            }
+            cargandoDocumento={accion === 'cargarDocumentoNotaria'}
+            onCargarDocumento={async (archivo) => {
+              const ok = await v3.cargarDocumentoNotaria(archivo)
+              if (ok) toast.success(`Contrato ${e.numero} autenticado cargado`)
+              return ok
+            }}
+          />
+        )}
+        {/* Solo con el plazo de registro vivo: un último proceso cancelado o incompleto no espera el registro. */}
+        {enFirma && notaria && !notaria.registro && s?.estado === 'en_firma' && (
           <CargaContratoNotaria
             motivo={notaria.motivo}
             aviso={notaria.aviso}
             vence={s.expiraEn}
-            puedeCargar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
-            quienCarga={
+            rango={notaria.rango}
+            puedeRegistrar={editable && (rol === 'inmobiliaria' || rol === 'administrador')}
+            quienRegistra={
               rol === 'inmobiliaria'
-                ? 'Lo carga un miembro de su inmobiliaria con permiso de edición.'
-                : 'La inmobiliaria carga el contrato firmado.'
+                ? 'Lo registra un miembro de su inmobiliaria con permiso de edición.'
+                : 'La inmobiliaria registra el contrato autenticado.'
             }
-            cargando={accion === 'cargarNotaria'}
+            registrando={accion === 'registrarNotaria'}
             descargando={descargandoNotaria}
             onDescargar={() => {
               // abrirEnPestana: Safari de iPhone bloquea el window.open que llega después de un await.
@@ -359,9 +381,9 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
                 .catch((err: unknown) => toast.error(err instanceof Error ? err.message : 'No se pudo descargar el contrato.'))
                 .finally(() => setDescargandoNotaria(false))
             }}
-            onCargar={async (archivo) => {
-              const ok = await v3.cargarNotaria(archivo)
-              if (ok) toast.success(`Contrato ${e.numero} cargado`)
+            onRegistrar={async (datos) => {
+              const ok = await v3.registrarNotaria(datos)
+              if (ok) toast.success(`Contrato ${e.numero} registrado`)
               return ok
             }}
           />
@@ -675,7 +697,7 @@ export function EstadoFirma({ enviado: e, expedienteId, editable, banner, v3 }: 
         title="¿Cancelar el contrato?"
         descripcion={
           enFirma && notaria
-            ? `Se cierra el plazo para cargar el contrato firmado en notaría, el número ${e.numero} queda anulado y el inmueble se libera.`
+            ? `Se cierra el plazo para registrar el contrato firmado en notaría, el número ${e.numero} queda anulado y el inmueble se libera.`
             : enFirma && creado
             ? `Se anula el proceso de firma${interno ? ' en Auco' : ''}, el número ${e.numero} queda anulado y el inmueble se libera.`
             : `El número ${e.numero} queda anulado y el inmueble se libera.`

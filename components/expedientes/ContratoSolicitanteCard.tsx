@@ -300,7 +300,7 @@ export function ContratoSolicitanteCard({ expedienteId, expedienteEstado }: Cont
         </h3>
         <p className="text-sm text-gray-600 mb-4">
           {enNotaria
-            ? 'Su contrato se firma con firma autenticada en notaría, a su costo. Quien tramita su arriendo le entregará el documento y le indicará cómo hacerlo; la fianza se activa cuando quien tramita su arriendo cargue el contrato firmado. No le llegará un enlace de firma por WhatsApp.'
+            ? 'Su contrato se firma con firma autenticada en notaría, a su costo. Quien tramita su arriendo le entregará el documento y le indicará cómo hacerlo; la fianza se activa cuando quien tramita su arriendo registre el contrato autenticado en la plataforma. No le llegará un enlace de firma por WhatsApp.'
             : (pasoIdentidad(verificaciones) ??
               (contrato.firma_notaria === false
                 ? // Adenda 6.1: con el cotejo al firmar terminado, no hay otra verificación de identidad.

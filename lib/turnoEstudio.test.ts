@@ -100,12 +100,12 @@ test('Adenda 6 §4: Cofianza verifica las listas del solicitante en un estudio a
   assert.equal(turnoPropio('cofianza', 'gestor', o), false)
 })
 
-test('Adenda 6 §2: en notaría no se esperan firmas: «Su turno: cargar el contrato firmado en notaría»', () => {
-  assert.equal(ACCION_CARGA_NOTARIA, 'cargar el contrato firmado en notaría')
-  assert.equal(textoTurno('gestor', 'gestor', { accion: ACCION_CARGA_NOTARIA }), 'Su turno: cargar el contrato firmado en notaría')
-  assert.equal(textoTurno('gestor', 'cofianza', { accion: ACCION_CARGA_NOTARIA }), 'Turno del gestor: cargar el contrato firmado en notaría')
+test('Adenda 6.1 §4: en notaría no se esperan firmas: «Su turno: registrar el contrato firmado en notaría»', () => {
+  assert.equal(ACCION_CARGA_NOTARIA, 'registrar el contrato firmado en notaría')
+  assert.equal(textoTurno('gestor', 'gestor', { accion: ACCION_CARGA_NOTARIA }), 'Su turno: registrar el contrato firmado en notaría')
+  assert.equal(textoTurno('gestor', 'cofianza', { accion: ACCION_CARGA_NOTARIA }), 'Turno del gestor: registrar el contrato firmado en notaría')
   // Si llega como 'firmas' con la marca, tampoco dice «Esperando las firmas».
-  assert.equal(textoTurno('firmas', 'gestor', { firmaNotaria: true }), 'Su turno: cargar el contrato firmado en notaría')
-  assert.equal(textoTurno('firmas', 'equipo', { firmaNotaria: true }), 'Turno de su equipo: cargar el contrato firmado en notaría')
+  assert.equal(textoTurno('firmas', 'gestor', { firmaNotaria: true }), 'Su turno: registrar el contrato firmado en notaría')
+  assert.equal(textoTurno('firmas', 'equipo', { firmaNotaria: true }), 'Turno de su equipo: registrar el contrato firmado en notaría')
   assert.equal(textoTurno('firmas', 'gestor'), 'Esperando las firmas')
 })
