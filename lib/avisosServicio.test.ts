@@ -11,7 +11,7 @@ import {
   avisosAMostrar,
   bogotaLocalAIso,
   claveOcultosDe,
-  recordarEnNavegador,
+  siNoSeGuardoElCierre,
   isoABogotaLocal,
   podarOcultos,
   tieneCamposPorLlenar,
@@ -49,13 +49,15 @@ test('punto 12: el respaldo del panel en el navegador es por persona y distinto 
   assert.equal(CLAVE_OCULTOS_PUBLICOS, 'hp-avisos-ocultos')
 })
 
-test('punto 12: si la API no guardó el cierre se recuerda en el navegador, salvo aviso retirado o que no se cierra', () => {
-  assert.equal(recordarEnNavegador(0), true) // sin red
-  assert.equal(recordarEnNavegador(500), true)
-  assert.equal(recordarEnNavegador(403), true) // «ver como»: solo en este navegador
-  assert.equal(recordarEnNavegador(undefined), true)
-  assert.equal(recordarEnNavegador(404), false)
-  assert.equal(recordarEnNavegador(409), false)
+test('punto 12: si la API no guardó el cierre, se recuerda en el navegador salvo aviso retirado, «fuera de servicio» o «ver como»', () => {
+  assert.equal(siNoSeGuardoElCierre('NETWORK_ERROR'), 'recordar')
+  assert.equal(siNoSeGuardoElCierre('INTERNAL_ERROR'), 'recordar')
+  // Una API sin la ruta responde 404 sin ese código: se recuerda en el navegador, como antes.
+  assert.equal(siNoSeGuardoElCierre('NOT_FOUND'), 'recordar')
+  assert.equal(siNoSeGuardoElCierre(undefined), 'recordar')
+  assert.equal(siNoSeGuardoElCierre('AVISO_NO_ENCONTRADO'), 'olvidar')
+  assert.equal(siNoSeGuardoElCierre('AVISO_NO_SE_CIERRA'), 'deshacer')
+  assert.equal(siNoSeGuardoElCierre('SOLO_LECTURA'), 'deshacer')
 })
 
 test('podarOcultos deja solo los vigentes', () => {

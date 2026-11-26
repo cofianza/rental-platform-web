@@ -129,7 +129,7 @@ export function TareasInicio() {
             <IconCheckCircle size={18} />
           </span>
           <div className="text-sm">
-            <p className="font-semibold text-gray-900">No tiene pendientes</p>
+            <p className="font-semibold text-gray-900">{puedeEditar ? 'No tiene pendientes' : 'No hay pendientes'}</p>
             <p className="mt-0.5 text-gray-600">
               Cuando una visita, un estudio o un contrato necesite algo, aparecerá aquí.
             </p>
@@ -279,7 +279,9 @@ function EstudioPendienteRow({ estudio }: { estudio: IEstudioPendiente }) {
           {estudio.solicitante && <p className="mt-0.5 truncate text-xs text-gray-500">{estudio.solicitante}</p>}
         </div>
         <span className="inline-flex shrink-0 items-center gap-1 rounded bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-700">
-          <IconAlertTriangle size={12} aria-hidden="true" />
+          <span aria-hidden="true">
+            <IconAlertTriangle size={12} />
+          </span>
           Ver qué falta
         </span>
       </Link>

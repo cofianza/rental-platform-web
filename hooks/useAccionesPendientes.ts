@@ -67,6 +67,9 @@ export interface AccionesPendientes {
   aprobadosConTraba: IExpediente[]
 }
 
+/** Estudios todavía sin decidir (la cláusula (a) de «Requieren su acción»): solo en ellos se habilita la evaluación. */
+const ESTADOS_SIN_DECIDIR = ['borrador', 'en_revision', 'informacion_incompleta']
+
 const EMPTY: AccionesPendientes = {
   porConfirmar: [],
   porRealizar: [],
@@ -132,11 +135,13 @@ export function useAccionesPendientes() {
             return new Date(f).getTime() <= today.getTime()
           })
           .slice(0, 5)
-        // «No habilitar» deja estudio_habilitado en false: ya se decidió, no es pendiente. Una vez por estudio (punto 10).
+        // «No habilitar» deja estudio_habilitado en false: ya se decidió, no es pendiente. Una vez por estudio y solo
+        // si el estudio sigue sin decidir (punto 10; el mismo criterio que el total de la API).
         const vistos = new Set<string>()
         porHabilitar = citas
           .filter((c) => {
             if (c.estado !== 'realizada' || c.expediente?.estudio_habilitado !== false || c.expediente.estudio_rechazado) return false
+            if (c.expediente.estado && !ESTADOS_SIN_DECIDIR.includes(c.expediente.estado)) return false
             if (vistos.has(c.expediente.id)) return false
             vistos.add(c.expediente.id)
             return true

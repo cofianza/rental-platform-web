@@ -343,13 +343,27 @@ export function AvisoServicioForm({ aviso, servicioInicial = 'otro', onClose, on
           )}
         </fieldset>
 
-        <div>
-          <p className="mb-1.5 text-sm font-medium text-gray-700">Así lo verán</p>
-          <AvisoServicioCard vistaPrevia servicio={servicio} nivel={nivel} titulo={titulo.trim()} mensaje={mensaje.trim()} />
-          <p className="mt-1 text-xs text-gray-500">
+        {/* Reporte de la Oficina Virtual (25-nov), punto 12: en el panel el aviso es una línea con el título; el mensaje
+            queda tras «Ver más». En las páginas de prospectos se ve completo. Las dos vistas, para escribir el título
+            con lo esencial. */}
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-gray-700">Así lo verán</p>
+          <div>
+            <p className="mb-1 text-xs font-medium text-gray-600">En el panel (inmobiliarias, propietarios y el equipo de Cofianza)</p>
+            <AvisoServicioCard vistaPrevia compacto servicio={servicio} nivel={nivel} titulo={titulo.trim()} mensaje={mensaje.trim()} />
+          </div>
+          {audiencia.includes('prospecto') && (
+            <div>
+              <p className="mb-1 text-xs font-medium text-gray-600">En las páginas de prospectos</p>
+              <AvisoServicioCard vistaPrevia servicio={servicio} nivel={nivel} titulo={titulo.trim()} mensaje={mensaje.trim()} />
+            </div>
+          )}
+          <p className="text-xs text-gray-500">
+            En el panel se ve en una línea, solo el título, con «Ver más» para el mensaje: ponga lo esencial en el título.
+            {audiencia.includes('prospecto') && ' En las páginas de prospectos se ve completo (en el celular, 3 líneas con «Ver más»).'}{' '}
             {nivel === 'caido'
-              ? '«Fuera de servicio» no se puede ocultar. En el celular el mensaje se recorta a 3 líneas con «Ver más».'
-              : 'Cada persona lo puede ocultar con la X; si usted lo edita, le vuelve a salir. En el celular el mensaje se recorta a 3 líneas con «Ver más».'}
+              ? '«Fuera de servicio» no se puede cerrar.'
+              : 'Cada persona lo puede cerrar con la X y no le vuelve a salir; si usted lo edita, le vuelve a salir.'}
           </p>
         </div>
       </div>

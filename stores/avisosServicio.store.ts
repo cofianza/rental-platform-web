@@ -7,14 +7,16 @@
  * se guarda en la CUENTA (POST /avisos-servicio/:id/cerrar; la API ya no manda
  * los que la persona cerró, hasta que el administrador los edite). Se oculta en
  * el acto; si la API no lo pudo guardar, se recuerda en este navegador para esa
- * persona (respaldo). Las páginas públicas (prospectos sin cuenta) siguen
+ * persona (respaldo), salvo los casos de siNoSeGuardoElCierre. Los cierres de
+ * antes (la clave del navegador sin persona) no se traen: un aviso cerrado
+ * antes de este cambio sale una vez más y, al cerrarlo, queda en la cuenta. Las páginas públicas (prospectos sin cuenta) siguen
  * recordándolo solo en el navegador, por versión (id + actualizado_en).
  */
 
 import { create } from 'zustand'
 import { ApiClientError } from '@/lib/api'
 import { cerrarAviso, getAvisosActivos } from '@/services/avisosServicioService'
-import { CLAVE_OCULTOS_PUBLICOS, claveOcultosDe, podarOcultos, recordarEnNavegador, type AvisosOcultos } from '@/lib/avisosServicio'
+import { CLAVE_OCULTOS_PUBLICOS, claveOcultosDe, podarOcultos, siNoSeGuardoElCierre, type AvisosOcultos } from '@/lib/avisosServicio'
 import type { IAvisoVisible } from '@/types/avisosServicio'
 
 function leerOcultos(clave: string): AvisosOcultos {
@@ -78,8 +80,14 @@ export const useAvisosServicioStore = create<AvisosServicioState>((set, get) => 
     const usuario = get().usuario
     set({ ocultos: { ...get().ocultos, [aviso.id]: aviso.actualizado_en } })
     cerrarAviso(aviso.id, aviso.actualizado_en).catch((err: unknown) => {
-      const status = err instanceof ApiClientError ? err.statusCode : undefined
-      if (!usuario || !recordarEnNavegador(status)) return
+      const que = siNoSeGuardoElCierre(err instanceof ApiClientError ? err.code : undefined)
+      if (que === 'deshacer') {
+        const { [aviso.id]: _quitado, ...resto } = get().ocultos
+        void _quitado
+        set({ ocultos: resto })
+        return
+      }
+      if (que === 'olvidar' || !usuario) return
       const clave = claveOcultosDe(usuario)
       guardarOcultos(clave, { ...leerOcultos(clave), [aviso.id]: aviso.actualizado_en })
     })

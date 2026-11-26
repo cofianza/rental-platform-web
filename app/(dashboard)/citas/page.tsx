@@ -170,7 +170,7 @@ export default function CitasPage() {
   if (!isInitialized) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Citas de visita" subtitle="Gestione las visitas a sus inmuebles" />
+        <PageHeader title="Visitas" subtitle="Gestione las visitas a sus inmuebles" />
         <Skeleton className="h-20 w-full rounded-lg" />
         <TableroSkeleton />
       </div>
@@ -179,7 +179,7 @@ export default function CitasPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Citas de visita" subtitle="Gestione las visitas a sus inmuebles" />
+      <PageHeader title="Visitas" subtitle="Gestione las visitas a sus inmuebles" />
 
       {/* Filtros */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">

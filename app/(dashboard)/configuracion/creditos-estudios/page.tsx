@@ -267,7 +267,11 @@ export default function CreditosEstudiosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Cupos de estudios"
-        subtitle="Compre paquetes de cupos y úselos para pagar los estudios de sus prospectos"
+        subtitle={
+          puedeEditar
+            ? 'Compre paquetes de cupos y úselos para pagar los estudios de sus prospectos'
+            : 'Consulte el saldo de cupos de la inmobiliaria. Para comprar cupos, pídaselo al titular.'
+        }
       />
 
       {/* P22: saldo en contra por el contracargo de una compra */}

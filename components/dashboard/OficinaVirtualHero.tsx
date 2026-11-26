@@ -55,7 +55,8 @@ export function OficinaVirtualHero() {
       ? notaContratosCerrados({ cancelados: stats.contratos_cancelados, finalizados: stats.contratos_finalizados }, { conPalabraContratos: true })
       : null
   const titulo = 'Su Oficina Virtual'
-  const subtitulo = 'Gestione propiedades, inquilinos y recaudos con seguridad y control total.'
+  // Sin «recaudos»: el canon de la franja es el contratado, no plata recaudada (la plataforma no recauda).
+  const subtitulo = 'Gestione propiedades, estudios y contratos en un solo lugar.'
 
   return (
     <section aria-labelledby="oficina-virtual-titulo" className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-800 text-white">
@@ -64,7 +65,7 @@ export function OficinaVirtualHero() {
 
       <div className="relative grid grid-cols-1 items-center gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_auto]">
         <div>
-          <h2 id="oficina-virtual-titulo" className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1.5">
+          <h2 id="oficina-virtual-titulo" className="text-xl md:text-2xl font-extrabold tracking-tight mb-1.5">
             {titulo}
           </h2>
           <p className="text-sm md:text-[15px] text-white/85 mb-4">{subtitulo}</p>
@@ -96,7 +97,7 @@ export function OficinaVirtualHero() {
             <button
               type="button"
               onClick={cargar}
-              className="underline underline-offset-2 hover:text-white"
+              className="inline-flex min-h-10 items-center underline underline-offset-2 hover:text-white"
             >
               Reintentar
             </button>

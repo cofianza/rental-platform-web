@@ -58,7 +58,9 @@ export function OficinaVirtualNav() {
                 <li key={s.clave} className="min-w-0">
                   <Link
                     href={s.href}
-                    aria-current={esta ? 'page' : undefined}
+                    // «page» solo en la pantalla exacta; en una subsección, la sección es la actual («true») y la
+                    // subpestaña es la página.
+                    aria-current={esta ? (pathname === s.href ? 'page' : 'true') : undefined}
                     className={cn(
                       // Celular: ícono sobre el nombre, las cinco a lo ancho. Desde sm: en fila.
                       'flex min-h-14 flex-col items-center justify-center gap-0.5 border-b-2 px-1 py-2 text-[11px] font-bold whitespace-nowrap transition-colors',

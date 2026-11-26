@@ -97,8 +97,8 @@ export function AvisoServicioCard({ servicio, nivel, titulo, mensaje, actualizad
   if (compacto) {
     return (
       <div
-        // «Fuera de servicio» se anuncia de una vez; lo demás, sin interrumpir.
-        role={nivel === 'caido' ? 'alert' : 'status'}
+        // «Fuera de servicio» se anuncia de una vez; lo demás, sin interrumpir. La vista previa, sin role.
+        role={vistaPrevia ? undefined : nivel === 'caido' ? 'alert' : 'status'}
         className={cn('rounded-xl border text-sm', estilo.caja, className)}
       >
         <div className="flex items-center gap-2 py-0.5 pr-1 pl-2 sm:gap-3 sm:pl-3">
@@ -106,7 +106,7 @@ export function AvisoServicioCard({ servicio, nivel, titulo, mensaje, actualizad
             <Icono size={16} />
           </span>
           <p className="min-w-0 flex-1 truncate" title={titulo}>
-            <strong className="font-semibold">{titulo}</strong>
+            <strong className="font-semibold">{titulo || 'Título del aviso'}</strong>
             <span className="sr-only"> ({etiquetaNivel(nivel)})</span>
           </p>
           <span className={cn('hidden shrink-0 rounded-full px-2 py-0.5 text-xs font-medium sm:inline-flex', estilo.etiqueta)} aria-hidden="true">
@@ -126,8 +126,8 @@ export function AvisoServicioCard({ servicio, nivel, titulo, mensaje, actualizad
         </div>
         <div id={idDetalle} hidden={!expandido} className="border-t border-current/10 px-3 pt-2 pb-3 sm:pl-12">
           {/* El título completo, por si en la línea quedó cortado. */}
-          <p className="font-semibold break-words">{titulo}</p>
-          <p className="mt-1 whitespace-pre-line break-words">{mensaje}</p>
+          <p className="font-semibold break-words">{titulo || 'Título del aviso'}</p>
+          <p className="mt-1 whitespace-pre-line break-words">{mensaje || 'Mensaje del aviso.'}</p>
           {(actualizadoEn || pie) && (
             <p className="mt-1.5 text-xs opacity-80">
               {actualizadoEn && <>Actualizado: {formatDateTime(actualizadoEn)}</>}
@@ -181,8 +181,8 @@ export function AvisoServicioCard({ servicio, nivel, titulo, mensaje, actualizad
         <button
           type="button"
           onClick={onOcultar}
-          aria-label={`Ocultar el aviso «${titulo}»`}
-          title="Ocultar este aviso"
+          aria-label={`Cerrar el aviso «${titulo}»`}
+          title="Cerrar este aviso"
           className="-m-1 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg opacity-70 hover:bg-black/5 hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
         >
           <IconX size={18} />

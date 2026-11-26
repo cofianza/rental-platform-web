@@ -61,7 +61,7 @@ const SECCIONES: Array<{
   {
     id: 'disponibilidad',
     href: '/disponibilidad',
-    titulo: 'Disponibilidad de visitas',
+    titulo: 'Horarios de visita',
     descripcion: 'Defina sus horarios para que los interesados agenden visitas solo en los espacios libres.',
     icon: IconCalendar,
     color: 'bg-cyan-100 text-cyan-600',

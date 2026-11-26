@@ -44,7 +44,7 @@ test('punto 11: en singular', () => {
     [
       'Tiene 1 contrato por generar',
       '1 estudio aprobado necesita otro inmueble',
-      '1 estudio aprobado espera al segundo firmante',
+      '1 estudio aprobado tiene pendiente al segundo firmante',
       'Tiene 1 evaluación por habilitar',
       'Tiene 1 visita por confirmar',
       'Tiene 1 visita por realizar',
@@ -69,7 +69,7 @@ test('punto 11: plural de cada grupo, con separador de miles', () => {
   assert.deepEqual(
     l.map((x) => x.texto),
     [
-      '2 estudios aprobados esperan al segundo firmante',
+      '2 estudios aprobados tienen pendiente al segundo firmante',
       'Tiene 3 evaluaciones por habilitar',
       'Tiene 1.200 visitas por confirmar',
       'Tiene 5 visitas por realizar',
@@ -126,6 +126,9 @@ test('«Ver los N en …»', () => {
   assert.equal(textoVerTodos(c), 'Ver los 11 en Contratos')
   assert.equal(textoVerTodos(v), 'Ver las 3 en Visitas')
   assert.equal(textoVerTodos(o), 'Ver todos los que requieren su acción en Estudios')
+  // Los aprobados con algo por resolver están juntos en un panel de Contratos: se nombra el panel, sin número.
+  const [canon] = lineasDeInicio(a({ aprobados_canon_excede: 4 }))
+  assert.equal(textoVerTodos(canon), 'Ver en Contratos, «Aprobados con algo por resolver»')
 })
 
 test('API anterior: las líneas salen de las filas que se ven, sin «espera autorización»', () => {

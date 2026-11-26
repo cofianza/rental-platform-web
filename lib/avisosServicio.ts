@@ -167,11 +167,17 @@ export function claveOcultosDe(usuarioId: string): string {
 }
 
 /**
- * ¿El cierre que la API no guardó se recuerda en el navegador? Sí, salvo que el aviso ya no esté publicado (404) o
- * no se pueda cerrar (409, «fuera de servicio»): ahí no hay nada que recordar.
+ * Qué hacer cuando la API no guardó el cierre (por el código de error, no por el estado HTTP: con una API sin la ruta
+ * también es un 404):
+ * - `olvidar`: el aviso ya no está publicado (AVISO_NO_ENCONTRADO): sigue oculto y no hay nada que recordar.
+ * - `deshacer`: no se puede cerrar («fuera de servicio», AVISO_NO_SE_CIERRA) o es «ver como» (SOLO_LECTURA, que
+ *   la web ya avisó): vuelve a mostrarse.
+ * - `recordar`: cualquier otra falla (sin red, la API caída o anterior): se recuerda en este navegador.
  */
-export function recordarEnNavegador(statusCode: number | undefined): boolean {
-  return statusCode !== 404 && statusCode !== 409
+export function siNoSeGuardoElCierre(codigo: string | undefined): 'olvidar' | 'deshacer' | 'recordar' {
+  if (codigo === 'AVISO_NO_ENCONTRADO') return 'olvidar'
+  if (codigo === 'AVISO_NO_SE_CIERRA' || codigo === 'SOLO_LECTURA') return 'deshacer'
+  return 'recordar'
 }
 
 /** Deja solo lo de avisos que siguen vigentes, para que la lista no crezca sin fin. */

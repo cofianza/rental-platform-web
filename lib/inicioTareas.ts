@@ -90,7 +90,8 @@ export function lineasDeInicio(a: AccionesInicio): LineaTarea[] {
   agregar(
     'aprobados_segundo_firmante',
     a.aprobados_segundo_firmante,
-    (n) => segun(n, '1 estudio aprobado espera al segundo firmante', '{n} estudios aprobados esperan al segundo firmante'),
+    // Incluye al segundo firmante invitado, evaluándose o en verificación de Cofianza: un texto que vale para los tres.
+    (n) => segun(n, '1 estudio aprobado tiene pendiente al segundo firmante', '{n} estudios aprobados tienen pendiente al segundo firmante'),
     'accion',
     CONTRATOS,
   )
@@ -161,9 +162,17 @@ export function accionesDesdeFilas(f: {
   }
 }
 
-/** «Ver los 11 en Contratos» / «Ver las 3 en Visitas» (citas y evaluaciones en femenino). */
+/** Los tres grupos de aprobados con algo por resolver: en Contratos van juntos en un solo panel. */
+const APROBADOS_CON_TRABA: ClaveTarea[] = ['aprobados_canon_excede', 'aprobados_segundo_firmante', 'aprobados_en_verificacion']
+
+/**
+ * «Ver los 11 en Contratos» / «Ver las 3 en Visitas» (citas y evaluaciones en femenino). Los aprobados con algo por
+ * resolver están en Contratos en un panel que junta los tres grupos: se nombra el panel, sin un número que allí no
+ * cuadra.
+ */
 export function textoVerTodos(linea: Pick<LineaTarea, 'clave' | 'total' | 'destino'>): string {
   const femenino = linea.clave === 'citas_por_confirmar' || linea.clave === 'citas_por_realizar' || linea.clave === 'evaluaciones_por_habilitar'
   if (linea.clave === 'requieren_accion_otros') return 'Ver todos los que requieren su acción en Estudios'
+  if (APROBADOS_CON_TRABA.includes(linea.clave)) return 'Ver en Contratos, «Aprobados con algo por resolver»'
   return `Ver ${femenino ? 'las' : 'los'} ${miles(linea.total)} en ${linea.destino.seccion}`
 }
