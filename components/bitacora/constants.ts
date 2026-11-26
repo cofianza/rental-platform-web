@@ -192,6 +192,8 @@ export const ACTION_LABELS: Record<string, string> = {
   mora_escalada: 'Mora escalada',
   mora_pagada: 'Mora marcada como pagada',
   mora_cancelada: 'Mora cancelada',
+  mora_notaria_presentada: 'Contrato autenticado presentado en la mora',
+  mora_notaria_verificada: 'Verificación del contrato autenticado de la mora',
 
   // Equipo de la inmobiliaria
   miembro_invitado: 'Miembro invitado',
@@ -474,7 +476,7 @@ export const ACTION_GROUPS: Array<{
   },
   {
     label: 'Moras',
-    options: ['mora_reportada', 'mora_escalada', 'mora_pagada', 'mora_cancelada'].map(toOption),
+    options: ['mora_reportada', 'mora_escalada', 'mora_pagada', 'mora_cancelada', 'mora_notaria_presentada', 'mora_notaria_verificada'].map(toOption),
   },
   {
     label: 'WhatsApp',
