@@ -142,10 +142,10 @@ export function ContratoEstadoCard({ expedienteId, onVerContratos, cierreSinActa
         : isIncompleta && puedeEditar
         ? 'Abrir el contrato para resolverlo'
         : contrato.firma_notaria === true && contrato.estado === 'pendiente_firma'
-          ? // Adenda 6 §2: en notaría lo pendiente es la carga del contrato firmado (solo para quien puede cargarlo);
-            // quien no puede cargarlo solo ve el contrato (no hay firmantes que esperar).
+          ? // Adenda 6.1 §4: en notaría lo pendiente es el registro del contrato firmado (solo para quien puede
+            // registrarlo); quien no puede solo ve el contrato (no hay firmantes que esperar).
             puedeEditar
-            ? 'Cargar el contrato firmado en notaría'
+            ? 'Registrar el contrato firmado en notaría'
             : 'Ver el contrato'
           : contrato.estado === 'pendiente_firma'
           ? 'Ver quién falta por firmar'

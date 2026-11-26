@@ -27,6 +27,7 @@ import { useRefrescoExpediente } from '@/components/expedientes/ExpedienteRefres
 import { fechaCompleta } from '@/lib/constants'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 import { VerBiometria } from '@/components/expedientes/VerBiometria'
+import { esTextoV3 } from '@/lib/autorizacionV3'
 
 interface AutorizacionSectionProps {
   expedienteId: string
@@ -77,6 +78,12 @@ const METODO_LABELS: Record<string, string> = {
   otp: 'Verificación por código OTP',
   // Adenda 1 §7: aceptación por casilla, sin OTP (Decreto 1377/2013 art. 7).
   casilla: 'Aceptación por casilla',
+}
+
+// Adenda 6.1 §2: por cuál canal llegó el enlace con que la persona aceptó.
+const CANAL_ENLACE_LABELS: Record<string, string> = {
+  whatsapp: 'WhatsApp',
+  correo: 'Correo',
 }
 
 export function AutorizacionSection({
@@ -165,8 +172,8 @@ export function AutorizacionSection({
   // Con el enlace vencido ya no hay firma que esperar (el backend la marca
   // 'expirado' solo cuando alguien abre el link), y con la pestaña oculta no
   // se pregunta.
-  // Adenda 6 §2: la autorización se firmó con el texto V3 (casilla 4A, dos finalidades opcionales).
-  const esV3 = /^V3(-|$)/.test(autorizacion?.version_terminos ?? '')
+  // Adenda 6 §2 / 6.1: la autorización se firmó con el texto V3.1 (casilla 4A, dos finalidades opcionales).
+  const esV3 = esTextoV3(autorizacion?.version_terminos)
   const tokenExpiracion = autorizacion?.token_expiracion
   useEffect(() => {
     if (autorizacion?.estado !== 'pendiente') return
@@ -701,7 +708,7 @@ export function AutorizacionSection({
                 { txt: 'Historial de comportamiento de pago', on: true, oblig: true },
                 { txt: 'Analítica y personalización', on: !!autorizacion?.consent_analitica, oblig: false },
                 { txt: 'Ofertas y comunicaciones comerciales', on: !!autorizacion?.consent_comercial, oblig: false },
-                // Adenda 6 §2: el texto V3 no ofrece la tercera finalidad y trae la casilla 4A (cotejo biométrico).
+                // Adenda 6 §2 / 6.1: el texto V3.1 no ofrece la tercera finalidad y trae la casilla 4A (cotejo biométrico).
                 ...(esV3
                   ? [
                       {
@@ -756,6 +763,22 @@ export function AutorizacionSection({
                   <dt className="text-gray-500">Dispositivo (user-agent)</dt>
                   <dd className="text-gray-900 break-all">{autorizacion?.user_agent || '—'}</dd>
                 </div>
+                {/* Adenda 6.1 §2: el canal por el que llegó el enlace y (solo Cofianza) a qué número o correo se envió.
+                    Sin el dato (API anterior o lectura fallida) no se muestra; un enlace sin marca es de antes. */}
+                {autorizacion?.canal_enlace !== undefined && (
+                  <div>
+                    <dt className="text-gray-500">Canal del enlace</dt>
+                    <dd className="text-gray-900 font-medium">
+                      {autorizacion.canal_enlace ? CANAL_ENLACE_LABELS[autorizacion.canal_enlace] : 'Sin registro (enlace anterior)'}
+                    </dd>
+                  </div>
+                )}
+                {autorizacion?.canal_enlace && autorizacion.destino_enlace !== undefined && (
+                  <div>
+                    <dt className="text-gray-500">Enviado a</dt>
+                    <dd className="text-gray-900 break-all">{autorizacion.destino_enlace || 'Sin registro del envío'}</dd>
+                  </div>
+                )}
                 <div className="sm:col-span-2">
                   <dt className="text-gray-500">Hash SHA-256 del documento</dt>
                   <dd className="text-gray-900 font-mono break-all select-all">{autorizacion?.hash_documento || '—'}</dd>

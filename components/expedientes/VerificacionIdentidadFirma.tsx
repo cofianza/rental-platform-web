@@ -24,7 +24,25 @@ import { firmaService } from '@/services/firmaService'
 import { formatDateTime } from '@/lib/constants'
 import type { IVerificacionIdentidad } from '@/types/firma'
 
+/** Adenda 6.1 §3: cómo terminó el cotejo al firmar (solo Cofianza). Sin revisión del analista: o firma digital o notaría. */
+function detalleCotejoFirma(v: IVerificacionIdentidad): { texto: string; tono: 'ok' | 'alerta' | 'error' | 'neutro' } {
+  const heredado = v.heredado ? ' (de otro contrato de este estudio: el cotejo se hace una sola vez)' : ''
+  switch (v.desenlace) {
+    case 'aprobado':
+      return { texto: `Cotejo aprobado${heredado}: firma digital.`, tono: 'ok' }
+    case 'sin_autorizacion_4a':
+      return { texto: `No autorizó el cotejo biométrico (numeral 4A)${heredado}: firma en notaría.`, tono: 'alerta' }
+    case 'intentos_agotados':
+      return { texto: `Usó ${v.intentos ?? 0} intentos sin un cotejo aprobado${heredado}: firma en notaría.`, tono: 'alerta' }
+    case 'no_cotejable':
+      return { texto: 'Su tipo de documento no se puede cotejar: firma en notaría.', tono: 'alerta' }
+    default:
+      return { texto: 'Cotejo terminado.', tono: 'neutro' }
+  }
+}
+
 function detalleCofianza(v: IVerificacionIdentidad): { texto: string; tono: 'ok' | 'alerta' | 'error' | 'neutro' } {
+  if (v.regla === 'adenda61') return detalleCotejoFirma(v)
   if (v.revision === 'suplantacion') return { texto: `Suplantación detectada: ${v.revision_nota ?? ''}`, tono: 'error' }
   if (v.revision === 'confirmada') return { texto: `Identidad confirmada por un analista: ${v.revision_nota ?? ''}`, tono: 'ok' }
   if (v.requiere_analista) {
@@ -67,6 +85,8 @@ export function VerificacionIdentidadFirma({
   const [guardando, setGuardando] = useState(false)
 
   const pendiente = verificaciones.some((v) => v.estado === 'pendiente')
+  // Adenda 6.1 §3: el cotejo de identidad al firmar (reemplaza la verificación de la Adenda 2 §9).
+  const cotejo61 = verificaciones.some((v) => v.regla === 'adenda61')
 
   // Reenviar el enlace o, si la verificación ya terminó y el sobre no salió
   // (Auco falló), volver a enviarlo: el mismo "Enviar a firma" decide.
@@ -109,7 +129,7 @@ export function VerificacionIdentidadFirma({
     <div className="mb-3 rounded-lg border border-gray-200 p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-sm font-semibold text-gray-900">
-          <IconShieldCheck size={15} className="text-primary-600" /> Verificación de identidad
+          <IconShieldCheck size={15} className="text-primary-600" /> {cotejo61 ? 'Cotejo de identidad' : 'Verificación de identidad'}
         </p>
         {canManage && (pendiente || !hayFirmantes) && (
           <button
@@ -133,17 +153,25 @@ export function VerificacionIdentidadFirma({
               </p>
               {v.estado === 'pendiente' ? (
                 <p className="flex items-center gap-1 text-xs text-gray-500">
-                  <IconClock size={11} /> Le enviamos el enlace a {v.email}. El contrato sale a firma cuando confirme su identidad.
+                  <IconClock size={11} />
+                  {v.regla === 'adenda61'
+                    ? ` Le enviamos el enlace del cotejo de identidad a ${v.email}. El contrato sale a firma digital cuando todas las personas arrendatarias lo aprueben.`
+                    : ` Le enviamos el enlace a ${v.email}. El contrato sale a firma cuando confirme su identidad.`}
                   {v.token_expiracion && ` Vence el ${formatDateTime(v.token_expiracion)}.`}
                 </p>
               ) : det ? (
                 <p className={`mt-1 rounded-md border px-2 py-1.5 text-xs ${TONO[det.tono]}`}>{det.texto}</p>
+              ) : v.regla === 'adenda61' ? (
+                // A quien tramita no se le dice el resultado del cotejo de nadie (6.1): solo que terminó su paso.
+                <p className="flex items-center gap-1 text-xs text-gray-600">
+                  <IconCheck size={11} /> Terminó su paso del cotejo de identidad.
+                </p>
               ) : (
                 <p className="flex items-center gap-1 text-xs text-green-700">
                   <IconCheck size={11} /> Completó la verificación de identidad.
                 </p>
               )}
-              {!hayFirmantes && v.estado !== 'pendiente' && (
+              {!hayFirmantes && v.estado !== 'pendiente' && v.regla !== 'adenda61' && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-amber-700">
                   <IconAlertTriangle size={11} /> El contrato no salió a firma{esCofianzaVista ? ' en Auco' : ' electrónica'}. Vuelva a enviarlo.
                 </p>

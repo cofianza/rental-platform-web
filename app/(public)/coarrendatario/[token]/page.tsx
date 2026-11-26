@@ -26,9 +26,8 @@ import { correoParaEnviar, correoResultadoValido, destinoDelCorreo, documentoPar
 import { esInvitacionRetirada, faseInicialInvitacion, TEXTO_YA_NO_HACE_PARTE } from '@/lib/coarrendatarioPublico'
 import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
 import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
-import { CapturaBiometrica } from '@/components/public/CapturaBiometrica'
-import type { EstadoBiometria } from '@/types/autorizacion'
-import { CASILLAS_5_2_V3, SIN_COTEJO_NOTARIA, cotejoNoDisponible, versionVisible } from '@/lib/autorizacionV3'
+import { AYUDA_CASILLA_4A, CASILLAS_5_2_V3, COTEJO_AL_FIRMAR, versionVisible } from '@/lib/autorizacionV3'
+import { canalDeEstaPagina, leerEnlace } from '@/lib/canalEnlace'
 
 /** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
 const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
@@ -57,18 +56,26 @@ function esEnlaceReemplazado(err: unknown): boolean {
 }
 
 /**
- * Adenda 6 §2: aceptó con la 4A, el cotejo se puede hacer y todavía no quedó aprobado ni dijo que seguía sin él
- * (un «verificada» sin documento confirmado no está aprobado: puede reintentar).
+ * Adenda 6 §2 / 6.1: lo que se le dice tras aceptar sobre la casilla 4A. El cotejo no se hace aquí: es al firmar el
+ * contrato (6.1 §3), y la 4A también se puede autorizar en ese momento.
  */
-function cotejoPendiente(c: ICoarrendatarioPublicView['cotejo']): boolean {
-  return !!c?.opcional && c.autorizado === true && c.aprobado !== true && c.estado !== 'omitida'
+function textoCotejoTrasAceptar(autorizado: boolean | null): string {
+  if (autorizado === true) {
+    return 'Autorizó el cotejo con foto (numeral 4A): se hace al firmar el contrato. Si el cotejo de todas las personas del contrato queda aprobado, se firma digitalmente; si no, con firma autenticada en notaría, a su costo.'
+  }
+  if (autorizado === false) {
+    return 'No autorizó el cotejo con foto (numeral 4A). Puede autorizarlo al firmar el contrato; sin él, el contrato se firma con firma autenticada en notaría, a su costo.'
+  }
+  return COTEJO_AL_FIRMAR
 }
 
-type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'cotejo' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'retirado' | 'error'
+type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'retirado' | 'error'
 
 export default function CoarrendatarioPublicPage() {
   const params = useParams<{ token: string }>()
-  const token = params?.token as string | undefined
+  // Adenda 6.1 §2: el botón del WhatsApp trae la ficha con la marca del canal al final (`-w`); a la API va la limpia.
+  const tokenParam = params?.token as string | undefined
+  const token = tokenParam ? leerEnlace(tokenParam).token : undefined
 
   const [view, setView] = useState<ICoarrendatarioPublicView | null>(null)
   const [phase, setPhase] = useState<Phase>('cargando')
@@ -105,14 +112,10 @@ export default function CoarrendatarioPublicPage() {
   const [municipio, setMunicipio] = useState('')
   // Adenda 6 §8: tres opciones; por defecto «Prefiero no indicarlo» (quien tramita ve «No lo indicó»).
   const [habitara, setHabitara] = useState<Habitara>(HABITARA_POR_DEFECTO)
-  // Adenda 6 §2 (texto V3): la casilla 4A y las dos finalidades opcionales del 5.2. Desmarcadas por defecto.
+  // Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A y las dos finalidades opcionales del 5.2. Desmarcadas por defecto.
   const [aceptaCotejo, setAceptaCotejo] = useState(false)
   const [consentAnalitica, setConsentAnalitica] = useState(false)
   const [consentComercial, setConsentComercial] = useState(false)
-  // Veredicto del cotejo en esta visita (la vista trae el guardado).
-  const [cotejoEstado, setCotejoEstado] = useState<EstadoBiometria | null>(null)
-  // Adenda 6 §2: el cotejo quedó aprobado (rostro y documento); un «verificada» sin documento confirmado no lo está.
-  const [cotejoOk, setCotejoOk] = useState(false)
   // El texto de la autorización cambió mientras lo leía (409): se ofrece cargar el vigente.
   const [textoCambio, setTextoCambio] = useState(false)
   // El correo para el resultado de su evaluación: solo si la API lo pide (prellenado con el de la invitación).
@@ -138,11 +141,8 @@ export default function CoarrendatarioPublicPage() {
       } else if (data.estado === 'estudio_completado') {
         setResultMsg('Ya había aceptado esta invitación y su evaluación terminó.')
       }
-      setCotejoEstado(data.cotejo?.estado ?? null)
-      setCotejoOk(data.cotejo?.aprobado === true)
       setTextoCambio(false)
-      // Adenda 6 §2: aceptó con la 4A y todavía no hizo el cotejo (ni dijo que seguía sin él): se le ofrece.
-      setPhase(fase === 'aceptado' && cotejoPendiente(data.cotejo) ? 'cotejo' : fase)
+      setPhase(fase)
     } catch (err) {
       // Ya salió del estudio: una pantalla final, no un error.
       if (esInvitacionRetirada(err)) {
@@ -159,20 +159,6 @@ export default function CoarrendatarioPublicPage() {
   }, [token])
 
   useEffect(() => { fetchView() }, [fetchView])
-
-  // Adenda 6 §2: la API dijo que el cotejo no se puede hacer. Se vuelve a pedir la vista sin cambiar de pantalla
-  // (el aviso de la API sigue a la vista) para no ofrecer otra vez «Hacer el cotejo con foto» con datos viejos.
-  const refrescarCotejo = useCallback(async () => {
-    if (!token) return
-    try {
-      const data = await coarrendatarioService.getPublicByToken(token)
-      setView(data)
-      setCotejoEstado(data.cotejo?.estado ?? null)
-      setCotejoOk(data.cotejo?.aprobado === true)
-    } catch {
-      // Se queda lo que había: el aviso de la API ya está a la vista.
-    }
-  }, [token])
 
   const pideDocumento = !!view?.contacto_resultado?.documento_requerido
 
@@ -205,6 +191,7 @@ export default function CoarrendatarioPublicPage() {
     }
     setErrorMsg(null)
     setPhase('aceptando')
+    const canal = tokenParam ? canalDeEstaPagina(tokenParam) : null
     try {
       const v3 = !!view?.cotejo
       const r = await coarrendatarioService.aceptar(
@@ -217,6 +204,8 @@ export default function CoarrendatarioPublicPage() {
         {
           // Adenda 6 §2: la API comprueba que el texto aceptado sea el vigente.
           version_terminos: view?.version_terminos,
+          // Adenda 6.1 §2: por cuál canal llegó (la marca del enlace). El correo o celular lo pone la API.
+          ...(canal ? { canal_enlace: canal } : {}),
           ...(v3
             ? {
                 acepta_cotejo_biometrico: aceptaCotejo,
@@ -226,9 +215,9 @@ export default function CoarrendatarioPublicPage() {
         },
       )
       setResultMsg(r.mensaje)
-      // Adenda 6 §2: con la 4A marcada, el cotejo va ahora, en esta misma página.
-      setView((v) => (v?.cotejo ? { ...v, cotejo: { ...v.cotejo, autorizado: aceptaCotejo } } : v))
-      setPhase(v3 && aceptaCotejo && view?.cotejo?.opcional ? 'cotejo' : 'aceptado')
+      // Adenda 6.1 §3: la 4A queda registrada; el cotejo no es aquí, es al firmar el contrato.
+      setView((v) => (v?.cotejo ? { ...v, cotejo: { autorizado: aceptaCotejo } } : v))
+      setPhase('aceptado')
     } catch (err) {
       setTextoCambio((err as { code?: string } | null)?.code === 'TEXTO_AUTORIZACION_CAMBIO')
       setErrorMsg(esEnlaceReemplazado(err) ? ENLACE_REEMPLAZADO : mensajeParaProspecto(err, 'No se pudo registrar su aceptación.'))
@@ -367,41 +356,6 @@ export default function CoarrendatarioPublicPage() {
     )
   }
 
-  if (phase === 'cotejo' && token) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-start gap-2 rounded-xl border border-primary-200 bg-primary-50 p-3.5">
-          <IconCheck size={18} className="mt-0.5 shrink-0 text-primary-700" />
-          <p className="text-sm text-primary-900">
-            <strong>Su aceptación quedó registrada.</strong> Falta el cotejo con foto que autorizó (numeral 4A). Es
-            opcional: su evaluación es la misma con él o sin él.
-          </p>
-        </div>
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
-          <CapturaBiometrica
-            token={token}
-            estadoPrevio={cotejoEstado}
-            aprobadoPrevio={cotejoOk}
-            documentoNombre="documento de identidad"
-            v3
-            servicio={{
-              verificar: (input) => coarrendatarioService.verificarBiometria(token, input),
-              omitir: () => coarrendatarioService.omitirBiometria(token),
-            }}
-            onResultado={(estado, aprobado) => {
-              setCotejoEstado(estado)
-              setCotejoOk(aprobado === true)
-            }}
-            onContinuar={() => setPhase('aceptado')}
-            onVolver={() => setPhase('aceptado')}
-            onNoDisponible={refrescarCotejo}
-            textoVolver="Hacerlo después"
-          />
-        </div>
-      </div>
-    )
-  }
-
   if (phase === 'aceptado') {
     return (
       <div className="bg-white rounded-2xl shadow-sm border border-primary-200 p-5 sm:p-8 text-center">
@@ -413,8 +367,8 @@ export default function CoarrendatarioPublicPage() {
           {resultMsg || 'Aceptación registrada. Estamos procesando su evaluación.'}
         </p>
         <p className="text-sm text-gray-700 mt-2">
-          {/* Adenda 6 §2: sin el cotejo aprobado no hay enlace de firma (el contrato se firma en notaría). */}
-          {view?.cotejo && !cotejoOk ? (
+          {/* Adenda 6.1 §3: con la V3.1 el cotejo es al firmar y quien tramita indica cómo (digital o en notaría). */}
+          {view?.cotejo ? (
             <>
               Si el arriendo se aprueba, quien tramita el arriendo le indicará cómo firmar el contrato junto con{' '}
               {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
@@ -426,30 +380,8 @@ export default function CoarrendatarioPublicPage() {
             </>
           )}
         </p>
-        {/* Adenda 6 §2: cómo se firmará el contrato, según el cotejo (y, si quedó pendiente, hasta cuándo puede hacerlo). */}
-        {view?.cotejo && (
-          <p className="text-sm text-gray-700 mt-2">
-            {cotejoOk
-              ? 'Su cotejo quedó aprobado. El contrato se firma digitalmente si todas las personas del contrato tienen el cotejo aprobado; si no, se firma con firma autenticada en notaría, a su costo.'
-              : SIN_COTEJO_NOTARIA}
-          </p>
-        )}
-        {view?.cotejo && !cotejoOk && cotejoPendiente({ ...view.cotejo, estado: cotejoEstado, aprobado: cotejoOk }) && (
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => setPhase('cotejo')}
-              className="min-h-11 w-full rounded-lg bg-primary-700 px-5 py-3 text-sm font-semibold text-white hover:bg-primary-800 sm:w-auto"
-            >
-              Hacer el cotejo con foto
-            </button>
-            {view.cotejo.vence_en && (
-              <p className="mt-2 text-xs text-gray-600">
-                Puede hacerlo con este enlace hasta el {new Date(view.cotejo.vence_en).toLocaleDateString('es-CO', { day: 'numeric', month: 'long', timeZone: 'America/Bogota' })}.
-              </p>
-            )}
-          </div>
-        )}
+        {/* Adenda 6 §2 / 6.1: la casilla 4A y cuándo se hace el cotejo (al firmar el contrato). */}
+        {view?.cotejo && <p className="text-sm text-gray-700 mt-2">{textoCotejoTrasAceptar(view.cotejo.autorizado)}</p>}
         {/* Al reabrir con 'aceptado' el mensaje de arriba ya nombra el correo. */}
         {view?.estado !== 'aceptado' && (
           <p className="text-xs text-gray-500 mt-4 break-words">
@@ -719,31 +651,25 @@ export default function CoarrendatarioPublicPage() {
             </label>
           </div>
 
-          {/* Adenda 6 §2 (texto V3): la casilla 4A y las dos finalidades opcionales del 5.2. Todas desmarcadas. */}
+          {/* Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A y las dos finalidades opcionales del 5.2. Todas desmarcadas.
+              La 4A queda registrada al aceptar; el cotejo se hace al firmar el contrato (6.1 §3). */}
           {view?.cotejo && (
             <fieldset className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3.5">
               <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-600">Opcionales</legend>
-              {view.cotejo.opcional ? (
-                <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={aceptaCotejo}
-                    onChange={(e) => setAceptaCotejo(e.target.checked)}
-                    disabled={procesando}
-                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                  />
-                  <span>
-                    <strong>Opcional (numeral 4A):</strong> autorizo el tratamiento de mis datos biométricos para el cotejo de
-                    identidad descrito en ese numeral.
-                    <span className="mt-1 block text-xs text-gray-600">
-                      Si no la marca, su solicitud se estudia igual, pero el contrato se firmará con firma autenticada en
-                      notaría, a su costo, en lugar de la firma digital.
-                    </span>
-                  </span>
-                </label>
-              ) : (
-                <p className="text-xs text-gray-600">{cotejoNoDisponible(view.cotejo.no_cotejable)} {SIN_COTEJO_NOTARIA}</p>
-              )}
+              <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aceptaCotejo}
+                  onChange={(e) => setAceptaCotejo(e.target.checked)}
+                  disabled={procesando}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span>
+                  <strong>Opcional (numeral 4A):</strong> autorizo el tratamiento de mis datos biométricos para el cotejo de
+                  identidad descrito en ese numeral.
+                  <span className="mt-1 block text-xs text-gray-600">{AYUDA_CASILLA_4A}</span>
+                </span>
+              </label>
               <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
                 <input
                   type="checkbox"

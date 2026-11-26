@@ -299,12 +299,24 @@ class ContratoService {
   // Archivos asociados al contrato
   // ============================================================
 
-  /** Adenda 6 §2 (flujo anterior): carga el contrato firmado en notaría (PDF) tras aceptar el aviso. */
-  async cargarNotaria(id: string, file: File): Promise<{ ok: true; message: string }> {
+  /**
+   * Adenda 6.1 §4 (flujo anterior): registra el contrato firmado en notaría (fecha de autenticación del sello y,
+   * opcional, el PDF) tras aceptar el aviso.
+   */
+  async registrarNotaria(id: string, datos: { fechaAutenticacion: string; archivo: File | null }): Promise<{ ok: true; message: string }> {
     const formData = new FormData()
     formData.append('acepta_aviso', 'true')
-    formData.append('archivo', file)
+    formData.append('fecha_autenticacion', datos.fechaAutenticacion)
+    if (datos.archivo) formData.append('archivo', datos.archivo)
     const response = await apiClient.raw(`/contratos/${id}/notaria`, { method: 'POST', body: formData })
+    return ((await response.json()) as { data: { ok: true; message: string } }).data
+  }
+
+  /** Adenda 6.1 §4 (caso 9, flujo anterior): carga el contrato autenticado (PDF) después del registro. */
+  async cargarDocumentoNotaria(id: string, file: File): Promise<{ ok: true; message: string }> {
+    const formData = new FormData()
+    formData.append('archivo', file)
+    const response = await apiClient.raw(`/contratos/${id}/notaria/documento`, { method: 'POST', body: formData })
     return ((await response.json()) as { data: { ok: true; message: string } }).data
   }
 

@@ -1,6 +1,10 @@
 /**
  * Verificación de identidad antes de firmar el contrato — Adenda 2 §9.
  *
+ * Adenda 6.1 §3: con la 6.1 la verificación de la §9 se elimina y esta misma página sirve para el COTEJO DE IDENTIDAD
+ * AL FIRMAR (la API marca el enlace con `regla: 'adenda61'`): lo arma CotejoFirmaPublico, con la casilla 4A, los
+ * intentos y el resultado de la persona (aprobado = firma digital; si no, notaría). Lo de abajo es la §9.
+ *
  * El arrendatario llega aquí por correo cuando le envían el contrato a firma.
  * §9.2: el texto de consentimiento se muestra COMPLETO en pantalla (no detrás
  * de un enlace). §9.3: dos casillas separadas y excluyentes, ninguna marcada.
@@ -33,6 +37,7 @@ import {
   IconUser,
 } from '@/components/icons'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
+import { CotejoFirmaPublico } from '@/components/public/CotejoFirmaPublico'
 
 type Paso = 'cargando' | 'error' | 'consentimiento' | 'fotos' | 'listo'
 type Opcion = 'autoriza' | 'analista'
@@ -140,7 +145,28 @@ export default function VerificarIdentidadPage() {
     )
   }
 
-  if (paso === 'listo') {
+  // Adenda 6.1 §3: el cotejo al firmar (otra regla, su propio flujo).
+  if (data.regla === 'adenda61') {
+    return (
+      <div>
+        <CotejoFirmaPublico
+          token={token}
+          data={data}
+          recargar={cargar}
+          onError={(m) => {
+            setError(m)
+            setReintentable(false)
+            setPaso('error')
+          }}
+        />
+        <ContactoCofianza />
+      </div>
+    )
+  }
+
+  const consentimiento = data.consentimiento
+
+  if (paso === 'listo' || !consentimiento) {
     return (
       <div className="rounded-xl border border-primary-200 bg-white p-5 sm:p-8 text-center">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-700">
@@ -171,7 +197,7 @@ export default function VerificarIdentidadPage() {
       {paso === 'consentimiento' ? (
         <>
           <div className="space-y-3 rounded-lg bg-gray-50 p-4 text-sm leading-relaxed text-gray-700">
-            {data.consentimiento.parrafos.map((p) => (
+            {consentimiento.parrafos.map((p) => (
               <p key={p}>{p}</p>
             ))}
           </div>
@@ -193,7 +219,7 @@ export default function VerificarIdentidadPage() {
                   disabled={enviando}
                   className="mt-0.5 h-5 w-5 shrink-0 accent-primary-600"
                 />
-                <span className="text-sm font-medium text-gray-800">{data.consentimiento.opciones[k]}</span>
+                <span className="text-sm font-medium text-gray-800">{consentimiento.opciones[k]}</span>
               </label>
             ))}
           </fieldset>

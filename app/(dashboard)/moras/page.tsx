@@ -12,7 +12,7 @@
 import { Modal } from '@/components/ui/Modal'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { Suspense, useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useRef, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -26,6 +26,8 @@ import {
   IconLoader,
   IconX,
   IconChevronRight,
+  IconEye,
+  IconUpload,
 } from '@/components/icons'
 import { contratoService } from '@/services/contratoService'
 import {
@@ -35,7 +37,24 @@ import {
   type IMorasStats,
   type MoraEstado,
   type WhatsappEstado,
+  type IDatosReporteMora,
+  type ResultadoVerificacion,
 } from '@/services/morasService'
+import {
+  avisoFueraDeVentana,
+  avisoNotariaFormulario,
+  chipReporte,
+  CRONOGRAMA_MORA,
+  escalaEn as escalaEnMora,
+  estadoReporte,
+  fechaDia,
+  fechaDiaColombia,
+  FRASE_VENTANA_REPORTE,
+  motivoNoPaga,
+  NOTA_MENSAJES_MORA,
+  textoReporte,
+} from '@/lib/reporteMora'
+import { abrirEnPestana } from '@/lib/utils'
 import { formatCurrency, fechaCompleta } from '@/lib/constants'
 import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { SearchInput } from '@/components/ui/SearchInput'
@@ -121,14 +140,25 @@ function avisarResultado(
   }
 }
 
-const FILTROS: Array<{ key: 'todas' | 'activas' | MoraEstado; label: string }> = [
+// 'por_verificar' = la cola de Operaciones (Adenda 6.1 §4): reportes de contratos en notaría con el contrato
+// autenticado cargado, por verificar. Solo la ve Cofianza.
+type FiltroMoras = 'todas' | 'activas' | MoraEstado | 'por_verificar'
+
+const FILTROS: Array<{ key: FiltroMoras; label: string; soloInterno?: boolean }> = [
   { key: 'activas', label: 'Activas' },
+  { key: 'por_verificar', label: 'Por verificar', soloInterno: true },
   { key: 'todas', label: 'Todas' },
   { key: 'fase_1', label: 'Fase 1' },
   { key: 'fase_2', label: 'Fase 2' },
   { key: 'fase_3', label: 'Fase 3' },
   { key: 'pagada', label: 'Pagadas' },
 ]
+
+const TONO_CHIP: Record<'amber' | 'gray' | 'red', string> = {
+  amber: 'bg-amber-50 border-amber-200 text-amber-800',
+  gray: 'bg-gray-100 border-gray-200 text-gray-700',
+  red: 'bg-red-50 border-red-200 text-red-700',
+}
 
 // useSearchParams necesita un Suspense por encima (si no, la build falla al
 // prerenderizar la página).
@@ -160,7 +190,7 @@ function ReportarMora() {
   const [totalContratos, setTotalContratos] = useState(0)
   const [filtroContrato, setFiltroContrato] = useState('')
   // El operador arranca en la cola (activas): «Todas» suma pagadas y canceladas.
-  const [filtro, setFiltro] = useState<'todas' | 'activas' | MoraEstado>(esInterno ? 'activas' : 'todas')
+  const [filtro, setFiltro] = useState<FiltroMoras>(esInterno ? 'activas' : 'todas')
   const [totalMoras, setTotalMoras] = useState(0)
   const [loading, setLoading] = useState(true)
   // Si la carga falla no se puede decir «Aún no hay moras» ni pintar KPI en 0:
@@ -187,14 +217,15 @@ function ReportarMora() {
   const [descripcion, setDescripcion] = useState('')
   // Hoy en Colombia (YYYY-MM-DD): un canon que aún no vence no está en mora.
   const [hoy] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }))
-
-  // Default: el último día 5 que ya pasó (vencimiento típico). Antes era el 5
-  // del mes en curso también los días 1 a 4, o sea una fecha futura.
-  useEffect(() => {
-    const [y, m, d] = hoy.split('-').map(Number)
-    const [yy, mm] = d >= 5 ? [y, m] : m === 1 ? [y - 1, 12] : [y, m - 1]
-    setFechaVencimiento(`${yy}-${String(mm).padStart(2, '0')}-05`)
-  }, [hoy])
+  // Reporte de la Oficina Virtual (punto 2): al elegir el contrato, la API dice el canon, la fecha de pago pactada del
+  // mes en curso (V3: día 1; plantilla anterior: día 5) y si es de notaría. La pantalla no calcula nada de eso.
+  const [datosContrato, setDatosContrato] = useState<IDatosReporteMora | null>(null)
+  const [cargandoDatos, setCargandoDatos] = useState(false)
+  const [falloDatos, setFalloDatos] = useState(false)
+  const pedidoDatos = useRef(0)
+  // Adenda 6.1 §4: el contrato autenticado de un contrato en notaría (se carga después de crear la mora).
+  const [archivoNotaria, setArchivoNotaria] = useState<File | null>(null)
+  const [confirmarIncompleto, setConfirmarIncompleto] = useState(false)
 
   const cargarDatos = useCallback(async () => {
     setLoading(true)
@@ -204,7 +235,11 @@ function ReportarMora() {
         morasService.stats(),
         // El operador atiende primero lo más viejo: el API ordena y corta, así
         // las 100 que llegan son las más viejas y no las más recientes.
-        morasService.list({ estado: filtro, limit: 100, orden: esInterno ? 'asc' : 'desc' }),
+        morasService.list(
+          filtro === 'por_verificar'
+            ? { estado: 'activas', reporte: 'por_verificar', limit: 100, orden: 'asc' }
+            : { estado: filtro, limit: 100, orden: esInterno ? 'asc' : 'desc' },
+        ),
       ])
       setStats(statsRes)
       setMoras(morasRes.data)
@@ -222,10 +257,36 @@ function ReportarMora() {
     cargarDatos()
   }, [cargarDatos])
 
-  // Contratos vigentes para el dropdown — separado del refresh principal.
+  // Canon, fecha pactada y notaría del contrato elegido (la API es la única fuente). Si llega tarde (se eligió otro
+  // contrato), se descarta. Sin respuesta, el monto sale del listado y la fecha se escribe a mano.
+  const cargarDatosContrato = useCallback(async (id: string, montoListado?: number) => {
+    const pedido = ++pedidoDatos.current
+    setDatosContrato(null)
+    setFalloDatos(false)
+    setArchivoNotaria(null)
+    if (!id) return
+    setCargandoDatos(true)
+    try {
+      const d = await morasService.datosReporte(id)
+      if (pedido !== pedidoDatos.current) return
+      setDatosContrato(d)
+      setMonto(String(d.canon ?? montoListado ?? ''))
+      setFechaVencimiento(d.fecha_vencimiento)
+    } catch {
+      if (pedido !== pedidoDatos.current) return
+      setFalloDatos(true)
+      if (montoListado) setMonto(String(montoListado))
+      setFechaVencimiento('')
+    } finally {
+      if (pedido === pedidoDatos.current) setCargandoDatos(false)
+    }
+  }, [])
+
+  // Contratos firmados o vigentes para el dropdown (los que la API acepta para reportar; un registro en notaría del
+  // flujo anterior puede quedar «firmado» si su activación no terminó) — separado del refresh principal.
   useEffect(() => {
     contratoService
-      .getAllContratos({ estado: 'vigente', limit: 100 })
+      .getAllContratos({ estado: 'vigente,firmado', limit: 100 })
       .then((res) => {
         // El listado embebe expedientes.solicitantes + inmuebles.codigo, así
         // que mostramos arrendatario + código del inmueble (auto-llenado).
@@ -240,15 +301,15 @@ function ReportarMora() {
           }
         })
         setContratos(items)
-        // Deep link: pre-llena el monto del contrato que vino en la URL (si el
-        // usuario aún no escribió uno).
+        // Deep link: el contrato que vino en la URL trae su canon y su fecha pactada.
+        // Aunque no esté entre los primeros 100: la API responde por el contrato (o 404 si no es de su cartera).
         const delEnlace = contratoIdUrl ? items.find((c) => c.id === contratoIdUrl) : undefined
-        if (delEnlace) setMonto((m) => m || String(delEnlace.monto))
+        if (contratoIdUrl) void cargarDatosContrato(contratoIdUrl, delEnlace?.monto)
         setTotalContratos(res.meta.total)
         setFalloContratos(false)
       })
       .catch(() => { setContratos([]); setFalloContratos(true) })
-  }, [contratoIdUrl])
+  }, [contratoIdUrl, cargarDatosContrato])
 
   // El select traía 100 contratos sin forma de buscar: encontrar el correcto
   // era ir bajando a ojo.
@@ -259,12 +320,16 @@ function ReportarMora() {
     : contratos
 
   const contratoSeleccionado = contratos.find((c) => c.id === contratoId)
-  // Pre-llenar monto al elegir contrato (puede editarse si difiere).
+  // Al elegir el contrato: monto = canon (editable) y fecha = la de pago pactada del mes en curso.
   const elegirContrato = (id: string) => {
     setContratoId(id)
-    const elegido = contratos.find((c) => c.id === id)
-    if (elegido && !monto) setMonto(String(elegido.monto))
+    void cargarDatosContrato(id, contratos.find((c) => c.id === id)?.monto)
   }
+  // Adenda 6.1 §4: contrato en notaría sin el contrato autenticado cargado. El operador no lo carga (lo custodia la
+  // inmobiliaria o el propietario; el administrador sí puede).
+  const notariaSinDocumento =
+    !!datosContrato?.notaria && !datosContrato.notaria.documento_cargado && datosContrato.notaria.fecha_en_rango !== false
+  const puedeCargarDocumento = rol !== 'operador_analista'
 
   async function handleReportar(e: React.FormEvent) {
     e.preventDefault()
@@ -281,6 +346,15 @@ function ReportarMora() {
       toast.error('Monto inválido')
       return
     }
+    // El formulario exige el contrato autenticado: sin él se pide confirmar que el reporte queda incompleto.
+    if (notariaSinDocumento && puedeCargarDocumento && !archivoNotaria) {
+      setConfirmarIncompleto(true)
+      return
+    }
+    await enviarReporte(montoNum)
+  }
+
+  async function enviarReporte(montoNum: number) {
     setReportando(true)
     try {
       const creada = await morasService.reportar({
@@ -290,6 +364,36 @@ function ReportarMora() {
         descripcion: descripcion.trim() || undefined,
       })
       avisarResultado(esInterno ? 'Mora registrada' : 'Mora reportada a Cofianza', creada)
+      // Adenda 6.1 §4: el contrato autenticado va después de crear la mora (queda en el contrato, una sola vez).
+      let reporte = estadoReporte(creada)
+      if (reporte === 'incompleto' && archivoNotaria) {
+        try {
+          const conDocumento = await morasService.cargarDocumentoNotaria(creada.id, archivoNotaria)
+          reporte = estadoReporte(conDocumento)
+        } catch (err) {
+          const detalle = err instanceof Error && err.message ? `: ${err.message}` : '.'
+          toast.error(`La mora quedó reportada, pero el contrato autenticado no quedó presentado${detalle}`, { duration: 12000 })
+        }
+      }
+      if (reporte === 'completo' && creada.plazo_pago_hasta) {
+        toast.info(
+          creada.reporte_en_ventana === false
+            ? 'Reporte completo, fuera de la ventana del día 6 al 10: Cofianza revisa si cubre esta mora.'
+            : `Reporte completo: Cofianza paga a más tardar el ${fechaDia(creada.plazo_pago_hasta)}.`,
+          { duration: 10000 },
+        )
+      } else if (reporte === 'por_verificar') {
+        toast.info('Cofianza verifica el contrato autenticado. Si lo confirma, el reporte queda completo desde hoy.', { duration: 10000 })
+      } else if (reporte === 'incompleto' && !archivoNotaria) {
+        toast.warning(
+          puedeCargarDocumento
+            ? 'Reporte incompleto: cargue el contrato autenticado desde el detalle de la mora para que empiece a correr el plazo de pago.'
+            : 'Reporte incompleto: le avisamos a la inmobiliaria o al propietario para que cargue el contrato autenticado.',
+          { duration: 12000 },
+        )
+      } else if (reporte === 'no_paga') {
+        toast.warning('La fecha de autenticación registrada no está dentro del rango: Cofianza no paga esta mora.', { duration: 12000 })
+      }
       // Contrato migrado (Adenda 1 §3): la mora le pide a la inmobiliaria lo que no se pidió al migrar.
       // Quien la reporta suele ser la inmobiliaria: a ella se le dice qué entregar, no «se le pidieron a la inmobiliaria».
       if (creada.diferidos?.items.some((i) => i.pendiente) && creada.diferidos.vence_en) {
@@ -308,6 +412,8 @@ function ReportarMora() {
       setContratoId('')
       setMonto('')
       setDescripcion('')
+      setFechaVencimiento('')
+      void cargarDatosContrato('')
       cargarDatos()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al reportar la mora')
@@ -326,15 +432,23 @@ function ReportarMora() {
       </summary>
       <div className="px-4 sm:px-5 pb-5">
       <form onSubmit={handleReportar} className="space-y-4">
+        {/* Reporte de la Oficina Virtual, punto 2: la frase va literal, antes del formulario. */}
+        <p className="text-sm font-semibold text-gray-900">{FRASE_VENTANA_REPORTE}</p>
+        {avisoFueraDeVentana(hoy) && <p className="-mt-2 text-xs text-amber-700">{avisoFueraDeVentana(hoy)}</p>}
+        {/* Un solo cronograma (el de las fases, como lo ejecuta la API); la regla de los WhatsApp, aparte. */}
         <div className="flex items-start gap-3 bg-primary-50 border-l-4 border-primary-500 rounded-r-lg p-3 text-sm text-primary-900">
           <IconAlertTriangle size={18} className="text-primary-600 shrink-0 mt-0.5" />
-          <p>
-            <strong>Flujo de 3 fases:</strong> al reportar enviamos un WhatsApp amistoso
-            al inquilino (Fase 1). Si no paga en 4 días, Cofianza lo pasa a Fase 2 (Urgencia) y a
-            los 10 días a Fase 3 (Legal), donde toma el control del caso. Los WhatsApp salen en el
-            horario de cobranza que permite la ley (L-V 7 a. m.-7 p. m., sábados 8 a. m.-3 p. m.) y
-            con al menos 7 días entre uno y otro (el de Fase 2 sale hacia el día 7 y el de Fase 3, hacia el 14).
-          </p>
+          <div className="min-w-0">
+            <p className="font-bold">Cómo sigue el caso</p>
+            <ul className="mt-1 space-y-0.5">
+              {CRONOGRAMA_MORA.map((p) => (
+                <li key={p.cuando}>
+                  <strong>{p.cuando}:</strong> {p.que}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-primary-800">{NOTA_MENSAJES_MORA}</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -372,7 +486,7 @@ function ReportarMora() {
               </p>
             ) : contratos.length === 0 ? (
               <p className="text-xs text-amber-600 mt-1">
-                No hay contratos vigentes para reportar
+                No hay contratos firmados o vigentes para reportar
               </p>
             ) : (
               <p className="text-xs text-gray-500 mt-1">
@@ -390,11 +504,58 @@ function ReportarMora() {
               max={hoy}
               value={fechaVencimiento}
               onChange={(e) => setFechaVencimiento(e.target.value)}
+              aria-describedby="moras-fecha-ayuda"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-primary-500"
               required
             />
+            <p id="moras-fecha-ayuda" className="text-xs text-gray-500 mt-1" aria-live="polite">
+              {!contratoId
+                ? 'Se llena con la fecha de pago del contrato al elegirlo.'
+                : cargandoDatos
+                  ? 'Buscando la fecha de pago del contrato…'
+                  : falloDatos
+                    ? 'No pudimos traer la fecha de pago del contrato: escríbala.'
+                    : datosContrato?.explicacion_fecha}
+            </p>
           </div>
         </div>
+
+        {/* Adenda 6.1 §4: contrato con firma en notaría. */}
+        {datosContrato?.notaria && (() => {
+          const aviso = avisoNotariaFormulario(datosContrato.notaria)
+          return (
+            <div className={cn('rounded-lg border p-3 text-sm space-y-2', TONO_CHIP[aviso.tono])}>
+              <p role="status" aria-live="polite">{aviso.texto}</p>
+              {notariaSinDocumento && (
+                puedeCargarDocumento ? (
+                  <div>
+                    <label htmlFor="moras-contrato-notaria" className="block text-sm font-medium text-gray-800 mb-1">
+                      Contrato autenticado en notaría (PDF, hasta 20 MB) <span className="text-coral-700">*</span>
+                    </label>
+                    <input
+                      id="moras-contrato-notaria"
+                      type="file"
+                      accept="application/pdf"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null
+                        if (f && (f.type !== 'application/pdf' || f.size > 20 * 1024 * 1024)) {
+                          toast.error('El contrato autenticado debe ser un PDF de hasta 20 MB.')
+                          e.target.value = ''
+                          setArchivoNotaria(null)
+                          return
+                        }
+                        setArchivoNotaria(f)
+                      }}
+                      className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-800 hover:file:bg-gray-50"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-xs">Al registrar la mora le avisamos a la inmobiliaria o al propietario para que cargue el contrato autenticado desde el detalle de la mora.</p>
+                )
+              )}
+            </div>
+          )
+        })()}
 
         {/* Datos auto-llenados del contrato seleccionado (mockup 13_v2). */}
         {contratoId && (
@@ -458,7 +619,7 @@ function ReportarMora() {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={reportando || !contratoId || !monto}
+            disabled={reportando || cargandoDatos || !contratoId || !monto}
             className="inline-flex w-full sm:w-auto justify-center items-center gap-2 px-5 py-2.5 text-sm font-bold text-ink-900 bg-coral-500 hover:bg-coral-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-sm transition-colors"
           >
             {reportando ? <IconLoader size={16} className="animate-spin" /> : <IconAlertTriangle size={16} />}
@@ -467,6 +628,20 @@ function ReportarMora() {
         </div>
       </form>
       </div>
+      <ConfirmDialog
+        isOpen={confirmarIncompleto}
+        onClose={() => setConfirmarIncompleto(false)}
+        onConfirm={async () => {
+          setConfirmarIncompleto(false)
+          await enviarReporte(Number(monto.replace(/\D/g, '')))
+        }}
+        isLoading={reportando}
+        variant="danger"
+        title="Reportar sin el contrato autenticado"
+        message="Sin el contrato autenticado en notaría el reporte queda incompleto: no empieza a correr el plazo de pago de Cofianza y el caso no pasa a Fase 3. Puede cargarlo después desde el detalle de la mora."
+        confirmLabel="Reportar incompleto"
+        cancelLabel="Volver y cargarlo"
+      />
     </details>
   )
 
@@ -485,7 +660,7 @@ function ReportarMora() {
           </p>
         </div>
         <div className="-mx-1 flex max-w-full gap-2 overflow-x-auto px-1 pb-1 sm:pb-0">
-        {FILTROS.map((f) => (
+        {FILTROS.filter((f) => !f.soloInterno || esInterno).map((f) => (
           <button
             key={f.key}
             type="button"
@@ -497,7 +672,7 @@ function ReportarMora() {
                 : 'border-gray-200 bg-white text-gray-600 hover:border-primary-600'
             }`}
           >
-            {f.key !== 'todas' && f.key !== 'activas' && (
+            {f.key in FASE_CONFIG && (
               <span className={`h-1.5 w-1.5 rounded-full ${FASE_CONFIG[f.key as MoraEstado].bdot}`} />
             )}
             {f.label}
@@ -526,7 +701,9 @@ function ReportarMora() {
             ? 'Aún no hay moras reportadas. Cuando reporte una aparecerá aquí.'
             : filtro === 'activas'
               ? 'No hay moras en gestión.'
-              : 'Sin resultados para este filtro.'}
+              : filtro === 'por_verificar'
+                ? 'No hay contratos autenticados en notaría por verificar.'
+                : 'Sin resultados para este filtro.'}
         </div>
       ) : (
         <div className={cn('overflow-x-auto transition-opacity', loading && 'pointer-events-none opacity-60')} aria-busy={loading}>
@@ -568,9 +745,10 @@ function ReportarMora() {
                 (Date.now() - new Date(m.reportado_at).getTime()) / 86_400_000,
               )
               // Nada en la tabla decía cuándo escalaría sola la mora, así que
-              // el operador no sabía a cuál llegarle hoy.
-              const escalaEn =
-                m.estado === 'fase_1' ? 4 - dias : m.estado === 'fase_2' ? 10 - dias : null
+              // el operador no sabía a cuál llegarle hoy. La Fase 3 espera el
+              // reporte completo (Adenda 6.1 §4).
+              const escalaEn = escalaEnMora(m, Date.now())
+              const chip = chipReporte(m.reporte_estado)
               const cfg = FASE_CONFIG[m.estado]
               return (
                 <tr
@@ -606,14 +784,16 @@ function ReportarMora() {
                   <td className="px-4 py-3 text-center text-gray-700">{dias}</td>
                   <td
                     className={`px-4 py-3 text-center ${
-                      escalaEn !== null && escalaEn <= 1
+                      typeof escalaEn === 'number' && escalaEn <= 1
                         ? 'font-semibold text-amber-700'
                         : 'text-gray-700'
                     }`}
                   >
                     {escalaEn === null
                       ? '—'
-                      : escalaEn === 0
+                      : escalaEn === 'espera_reporte'
+                        ? 'Espera reporte completo'
+                        : escalaEn === 0
                         ? 'Hoy'
                         : escalaEn < 0
                           ? `Vencida hace ${-escalaEn} d`
@@ -635,6 +815,11 @@ function ReportarMora() {
                       <span className={`w-1.5 h-1.5 rounded-full ${cfg.bdot}`} />
                       {cfg.label}
                     </span>
+                    {chip && (
+                      <span className={cn('mt-1 block w-fit rounded-full border px-2 py-0.5 text-[11px] font-semibold', TONO_CHIP[chip.tono])}>
+                        {chip.texto}
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <Link
@@ -657,10 +842,10 @@ function ReportarMora() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={esInterno ? 'Gestión de mora' : 'Reportar Mora'}
+        title={esInterno ? 'Gestión de mora' : 'Reportar mora'}
         subtitle={
           esInterno
-            ? 'Cola de moras reportadas por propietarios e inmobiliarias. Cada caso pasa a Fase 2 a los 4 días y a Fase 3 a los 10; la columna “Escala en” marca los que ya toca escalar.'
+            ? 'Cola de moras reportadas por propietarios e inmobiliarias. Cada caso pasa a Fase 2 a los 4 días del reporte y a Fase 3 a los 10, si el reporte está completo; la columna “Escala en” marca los que ya toca escalar.'
             : 'Avise a Cofianza cuando un inquilino se atrase. Cofianza gestiona el caso en 3 fases (Recordatorio → Urgencia → Legal).'
         }
       />
@@ -867,6 +1052,80 @@ function MoraDetalleModal({
     }
   }
 
+  // ── Adenda 6.1 §4: contrato autenticado de un contrato en notaría ──
+  const [archivoDetalle, setArchivoDetalle] = useState<File | null>(null)
+  const [verificarAbierto, setVerificarAbierto] = useState(false)
+  const [rechazo, setRechazo] = useState<Exclude<ResultadoVerificacion, 'verificado'> | null>(null)
+
+  async function handleCargarDocumento() {
+    if (!archivoDetalle) return
+    setActing(true)
+    try {
+      const r = await morasService.cargarDocumentoNotaria(moraId, archivoDetalle)
+      toast.success(
+        r.documento_previo
+          ? 'Este contrato ya tenía cargado el documento autenticado en notaría: Cofianza verifica ese.'
+          : 'Contrato autenticado cargado: Cofianza lo verifica y, si lo confirma, el reporte queda completo desde hoy.',
+      )
+      setArchivoDetalle(null)
+      await recargar()
+      onChange()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo cargar el contrato autenticado')
+    } finally {
+      setActing(false)
+    }
+  }
+
+  /** `false` si falló sin que otra persona lo resolviera: el diálogo conserva la nota para reintentar. */
+  async function handleVerificar(resultado: ResultadoVerificacion, nota?: string): Promise<boolean> {
+    setActing(true)
+    try {
+      const r = await morasService.verificarNotaria(moraId, resultado, nota)
+      toast.success(
+        resultado === 'verificado'
+          ? `Reporte completo${r.plazo_pago_hasta ? `: plazo de pago de Cofianza hasta el ${fechaDia(r.plazo_pago_hasta)}` : ''}. Le dejamos el aviso a la inmobiliaria o al propietario.`
+          : 'Quedó registrado que Cofianza no paga esta mora. Le dejamos el aviso a la inmobiliaria o al propietario.',
+      )
+      setVerificarAbierto(false)
+      setRechazo(null)
+      await recargar()
+      onChange()
+      return true
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo registrar la verificación')
+      if (err instanceof ApiClientError && err.statusCode === 409) {
+        setVerificarAbierto(false)
+        setRechazo(null)
+        await recargar()
+        onChange()
+        return true
+      }
+      return false
+    } finally {
+      setActing(false)
+    }
+  }
+
+  const [abriendoDocumento, setAbriendoDocumento] = useState(false)
+  async function handleVerDocumento() {
+    if (!mora || abriendoDocumento) return
+    setAbriendoDocumento(true)
+    try {
+      // Solo el documento cargado a mano (el autenticado): nunca el PDF original sin firmas en su lugar.
+      const abierto = await abrirEnPestana(async () => {
+        const d = await contratoService.descargarContratoFirmado(mora.contrato_id)
+        return d.fuente === 'manual' ? d.url : null
+      })
+      if (!abierto) toast.error('El contrato no tiene el documento autenticado cargado.')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo abrir el documento')
+    } finally {
+      setAbriendoDocumento(false)
+    }
+  }
+
+  const [hoyColombia] = useState(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' }))
   const cfg = mora ? FASE_CONFIG[mora.estado] : null
   const esTerminal = mora?.estado === 'pagada' || mora?.estado === 'cancelada'
   // Solo lectura: ve el caso y el historial, pero no escribe ni cambia la fase.
@@ -875,12 +1134,23 @@ function MoraDetalleModal({
   // P27: la Fase 3 la decide Cofianza; el dueño escala a Fase 2 desde el día 4
   // del reporte y, en Fase 3, ya no cierra el caso (anota el pago en el historial).
   const fase2Desde = mora ? new Date(new Date(mora.reportado_at).getTime() + 4 * 86_400_000) : null
-  const puedeEscalar = esInterno
+  // Adenda 6.1 §4: con «Cofianza no paga» no se escala; a Fase 3 solo con el reporte completo (la API también lo frena).
+  const reporte = mora ? estadoReporte(mora) : 'completo'
+  const escalaPorReporte = reporte !== 'no_paga' && (mora?.estado !== 'fase_2' || reporte === 'completo')
+  const puedeEscalar = escalaPorReporte && (esInterno
     ? mora?.estado !== 'fase_3'
-    : mora?.estado === 'fase_1' && !!fase2Desde && Date.now() >= fase2Desde.getTime()
+    : mora?.estado === 'fase_1' && !!fase2Desde && Date.now() >= fase2Desde.getTime())
   const puedeCerrar = esInterno || mora?.estado !== 'fase_3'
+  const notaReporte =
+    !mora || mora.estado === 'fase_3'
+      ? null
+      : reporte === 'no_paga'
+        ? 'Cofianza no paga esta mora: el caso no se escala.'
+        : mora.estado === 'fase_2' && reporte !== 'completo'
+          ? 'El caso pasa a Fase 3 cuando el reporte esté completo.'
+          : null
   const notaDueno =
-    esInterno || !mora
+    notaReporte ?? (esInterno || !mora
       ? null
       : mora.estado === 'fase_3'
         ? 'Cofianza gestiona el caso. Si el inquilino le pagó, anótelo en el historial del caso.'
@@ -888,7 +1158,7 @@ function MoraDetalleModal({
           ? 'El paso a Fase 3 lo decide Cofianza.'
           : !puedeEscalar && fase2Desde
             ? `Podrá escalar a Fase 2 desde el ${fase2Desde.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' })}.`
-            : null
+            : null)
 
   return (
     <>
@@ -960,6 +1230,8 @@ function MoraDetalleModal({
                   })}
                 />
                 <Field label="Teléfono inquilino" value={mora.inquilino_telefono ?? '—'} />
+                {/* Reporte de la Oficina Virtual (punto 2) y Adenda 6.1 §4: estado del reporte y plazo de pago. */}
+                <Field label="Estado del reporte" value={textoReporte(mora, { esInterno, hoy: hoyColombia })} />
                 {/* Contrato migrado (§5.1.4): solo los REPORTABLE autorizan el reporte a centrales. */}
                 {mora.reportable_centrales && (
                   <Field
@@ -980,6 +1252,139 @@ function MoraDetalleModal({
                   />
                 )}
               </div>
+
+              {/* Adenda 6.1 §4: contrato con firma en notaría. */}
+              {mora.reporte_notaria && (
+                <div
+                  className={cn(
+                    'rounded-lg border p-3 text-sm space-y-2',
+                    reporte === 'no_paga'
+                      ? 'border-red-200 bg-red-50 text-red-900'
+                      : reporte === 'incompleto'
+                        ? 'border-amber-200 bg-amber-50 text-amber-900'
+                        : 'border-gray-200 bg-gray-50 text-gray-800',
+                  )}
+                >
+                  <p className="font-semibold">Contrato con firma en notaría</p>
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    <div>
+                      <dt className="inline font-semibold">Fecha de autenticación registrada: </dt>
+                      <dd className="inline">{mora.reporte_notaria.fecha_autenticacion ? fechaDia(mora.reporte_notaria.fecha_autenticacion) : '—'}</dd>
+                    </div>
+                    {mora.reporte_notaria.rango && (
+                      <div>
+                        <dt className="inline font-semibold">Rango permitido: </dt>
+                        <dd className="inline">
+                          del {fechaDia(mora.reporte_notaria.rango.desde)} al {fechaDia(mora.reporte_notaria.rango.hasta)}
+                          {mora.reporte_notaria.fecha_en_rango === false ? ' (fuera de rango)' : ''}
+                        </dd>
+                      </div>
+                    )}
+                    <div className="sm:col-span-2 break-words">
+                      <dt className="inline font-semibold">Contrato autenticado: </dt>
+                      <dd className="inline">{mora.reporte_notaria.documento ? mora.reporte_notaria.documento.nombre_archivo : 'no está cargado'}</dd>
+                    </div>
+                  </dl>
+
+                  {reporte === 'incompleto' && (
+                    <p>Sin el contrato autenticado el reporte está incompleto: no corre el plazo de pago y el caso no pasa a Fase 3. Si no lo presenta, Cofianza no paga.</p>
+                  )}
+                  {reporte === 'por_verificar' && !esInterno && (
+                    <p>Cofianza verifica que el documento corresponda al contrato y que la fecha de autenticación esté en el rango. Si lo confirma, el reporte queda completo desde que se cargó el documento.</p>
+                  )}
+                  {reporte === 'no_paga' && (
+                    <p>
+                      Cofianza no paga esta mora: {motivoNoPaga(mora.reporte_notaria.verificacion?.resultado, mora.reporte_notaria.rango?.dias, mora.reporte_notaria.verificacion?.automatica)}.
+                      {mora.reporte_notaria.verificacion?.nota ? ` Nota de Cofianza: ${mora.reporte_notaria.verificacion.nota}` : ''}
+                    </p>
+                  )}
+                  {reporte === 'completo' && mora.reporte_notaria.verificacion?.resultado === 'verificado' && (
+                    <p>Cofianza verificó el contrato autenticado el {fechaDiaColombia(mora.reporte_notaria.verificacion.en)}.</p>
+                  )}
+
+                  {/* Cargar el contrato autenticado (quien custodia: inmobiliaria o propietario; o el administrador). */}
+                  {reporte === 'incompleto' && !esTerminal && puedeEditar && rol !== 'operador_analista' && (
+                    <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+                      <div className="min-w-0 flex-1">
+                        <label htmlFor="mora-detalle-notaria" className="block text-xs font-medium mb-1">
+                          Contrato autenticado en notaría (PDF, hasta 20 MB)
+                        </label>
+                        <input
+                          id="mora-detalle-notaria"
+                          type="file"
+                          accept="application/pdf"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0] ?? null
+                            if (f && (f.type !== 'application/pdf' || f.size > 20 * 1024 * 1024)) {
+                              toast.error('El contrato autenticado debe ser un PDF de hasta 20 MB.')
+                              e.target.value = ''
+                              setArchivoDetalle(null)
+                              return
+                            }
+                            setArchivoDetalle(f)
+                          }}
+                          className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-800 hover:file:bg-gray-50"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCargarDocumento}
+                        disabled={acting || !archivoDetalle}
+                        className="inline-flex min-h-10 justify-center items-center gap-1.5 rounded-lg bg-primary-700 px-3 py-2 text-xs font-bold text-white hover:bg-primary-800 disabled:opacity-50"
+                      >
+                        {acting ? <IconLoader size={14} className="animate-spin" /> : <IconUpload size={14} />}
+                        Cargar el contrato autenticado
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Operaciones: verifica documento y fecha. */}
+                  {reporte === 'por_verificar' && esInterno && puedeEditar && !esTerminal && (
+                    <div className="space-y-2">
+                      <p className="text-xs">
+                        Revise que el documento corresponda a este contrato y que la fecha del sello notarial esté en el rango.
+                        Si lo da por verificado, el reporte queda completo desde que se cargó el documento
+                        {mora.reporte_notaria.presentado_en ? ` (${fechaDiaColombia(mora.reporte_notaria.presentado_en)})` : ''} y desde ese día
+                        corren los 20 días calendario del plazo de pago.
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={handleVerDocumento}
+                          disabled={abriendoDocumento}
+                          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-800 hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          <IconEye size={14} /> Ver documento
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setVerificarAbierto(true)}
+                          disabled={acting || mora.reporte_notaria.fecha_en_rango === false}
+                          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-primary-300 bg-primary-50 px-3 py-2 text-xs font-bold text-primary-700 hover:bg-primary-100 disabled:opacity-50"
+                        >
+                          <IconCheck size={14} /> Dar por verificado
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRechazo('no_corresponde')}
+                          disabled={acting}
+                          className="min-h-10 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          No corresponde
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setRechazo('fecha_fuera_de_rango')}
+                          disabled={acting}
+                          className="min-h-10 rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                        >
+                          Fecha fuera de rango
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Contrato migrado (Adenda 1 §3): lo que la inmobiliaria debe entregar por la mora. */}
               {mora.diferidos && (
@@ -1179,6 +1584,28 @@ function MoraDetalleModal({
         title={`Escalar a ${mora?.estado === 'fase_1' ? 'Fase 2 (Urgencia)' : 'Fase 3 (Legal)'}`}
         message="Al inquilino le llega el WhatsApp de escalación cuando la ley lo permite: en el horario de cobranza y a los 7 días del anterior. No se puede deshacer."
         confirmLabel="Escalar"
+      />
+      <ConfirmDialog
+        isOpen={verificarAbierto}
+        onClose={() => setVerificarAbierto(false)}
+        onConfirm={() => handleVerificar('verificado')}
+        isLoading={acting}
+        title="Dar por verificado el contrato autenticado"
+        message="Confirma que el documento corresponde a este contrato y que la fecha del sello notarial está en el rango. El reporte queda completo desde que se cargó el documento y desde ese día corren los 20 días calendario del plazo de pago de Cofianza."
+        confirmLabel="Dar por verificado"
+      />
+      <MotivoDialog
+        key={rechazo ?? 'sin-rechazo'}
+        isOpen={rechazo !== null}
+        onClose={() => setRechazo(null)}
+        onConfirm={(nota) => handleVerificar(rechazo!, nota)}
+        isLoading={acting}
+        title={rechazo === 'fecha_fuera_de_rango' ? 'Fecha de autenticación fuera de rango' : 'El documento no corresponde al contrato'}
+        descripcion="Cofianza no paga esta mora y el caso no se escala. Es definitivo: la inmobiliaria o el propietario reciben el aviso con su nota."
+        label="Nota para la inmobiliaria o el propietario"
+        placeholder="Ej.: el documento cargado es el contrato de otro inmueble"
+        confirmLabel="Cofianza no paga"
+        variant="danger"
       />
       <MotivoDialog
         isOpen={cancelarAbierto}

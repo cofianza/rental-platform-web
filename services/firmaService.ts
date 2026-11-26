@@ -106,17 +106,21 @@ class FirmaService {
     return res.data
   }
 
-  async consentimientoIdentidad(token: string, opcion: 'autoriza' | 'analista'): Promise<{ completada: boolean }> {
+  /** 'no_autoriza': Adenda 6.1, casilla 4A al firmar sin marcar (o desiste del cotejo): firma en notaría. */
+  async consentimientoIdentidad(token: string, opcion: 'autoriza' | 'analista' | 'no_autoriza'): Promise<{ completada: boolean }> {
     const res = await apiClient.post<{ completada: boolean }>(`/public/verificacion-identidad/${token}/consentimiento`, { opcion })
     return res.data
   }
 
-  /** Nunca bloquea: un cotejo que no coincide responde 200 con `completada: false` y un motivo. */
+  /**
+   * Un cotejo que no queda aprobado responde 200 con `completada: false` y un motivo. Adenda 6.1: además `aprobado` e
+   * `intentos_restantes` (agotados, `completada: true` sin aprobar = notaría).
+   */
   async biometriaIdentidad(
     token: string,
     input: { documentImage: string; photo: string },
-  ): Promise<{ completada: boolean; motivo: string | null }> {
-    const res = await apiClient.post<{ completada: boolean; motivo: string | null }>(
+  ): Promise<{ completada: boolean; motivo: string | null; aprobado?: boolean; intentos_restantes?: number }> {
+    const res = await apiClient.post<{ completada: boolean; motivo: string | null; aprobado?: boolean; intentos_restantes?: number }>(
       `/public/verificacion-identidad/${token}/biometria`,
       input,
     )
