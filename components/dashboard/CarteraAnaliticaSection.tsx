@@ -2,7 +2,8 @@
  * Analítica de cartera de la inmobiliaria (mockup 13_v2), agregada en /reportes
  * SIN tocar el grid de reportes existente. Se auto-restringe a rol inmobiliaria
  * (devuelve null para otros). Solo secciones con datos reales: Salud de cartera
- * + Desempeño de estudios + Próximas acciones pendientes (widget existente).
+ * + Desempeño de estudios. Solo métricas: las próximas acciones están en Inicio
+ * (reporte de la Oficina Virtual del 25-nov, punto 10: antes se repetían aquí).
  * No incluye tiers/comisión/cashback/comparación-sector (no existen / inventados).
  *
  * Re-skin (mockup 13_v2): stat-cards grandes estilo "est-stat" (igual que
@@ -22,7 +23,6 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useAuthStore } from '@/stores/auth.store'
 import { dashboardService, type MiCarteraAnalitica } from '@/services/dashboardService'
 import { moneyCompact } from '@/components/dashboard/secciones/_shared'
-import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
 import { cn } from '@/lib/utils'
 import { desgloseDeCifras, fraseDesgloseAprobacion, tasaLegible } from '@/lib/conteosEstudios'
 import { Skeleton, SkeletonCards } from '@/components/ui/Skeleton'
@@ -270,11 +270,6 @@ export function CarteraAnaliticaSection() {
             )}
           </div>
         </div>
-      </Panel>
-
-      {/* Próximas acciones pendientes */}
-      <Panel title="Próximas acciones pendientes">
-        <AccionesPendientesWidget />
       </Panel>
     </div>
   )

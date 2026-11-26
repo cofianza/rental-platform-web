@@ -56,14 +56,30 @@ export interface IContratosOficina {
   aprobados_sin_contrato: IAprobadosSinContrato
 }
 
+/** Un estudio de «Requieren su acción» sin grupo propio en el Inicio: lo justo para listarlo (sin datos del estudio). */
+export interface IEstudioPendiente {
+  id: string
+  numero: string
+  direccion: string | null
+  solicitante: string | null
+}
+
 /** Punto 11: los totales de cada grupo de acción del Inicio, sin recortes. */
 export interface IAccionesOficina {
   periodo: 'ahora'
   requieren_accion: number
+  /**
+   * Punto 10: «Requieren su acción» sin los estudios que el Inicio ya muestra en otro grupo (cada estudio una vez).
+   * null o ausente = no se sabe (Cofianza, o una API anterior).
+   */
+  requieren_accion_otros?: number | null
+  /** Hasta 5 de esos estudios (los más antiguos primero). Ausente con una API anterior. */
+  otros_muestra?: IEstudioPendiente[]
   /** null con una API anterior (no se sabe). */
   esperando_autorizacion: number | null
   citas_por_confirmar: number
   citas_por_realizar: number
+  /** Estudios (uno por estudio) con la visita realizada y la evaluación sin habilitar, todavía sin decidir. */
   evaluaciones_por_habilitar: number
   contratos_por_generar: number
   aprobados_canon_excede: number

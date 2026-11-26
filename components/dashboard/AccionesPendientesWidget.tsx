@@ -241,7 +241,8 @@ function CitaSection({
   )
 }
 
-function CitaItemRow({
+/** Una visita con su acción (también la usa el Inicio de la inmobiliaria, TareasInicio). */
+export function CitaItemRow({
   cita,
   ctaLabel,
   destino,
@@ -326,7 +327,8 @@ function ExpedienteSection({
   )
 }
 
-function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; ctaLabel: string }) {
+/** Un estudio aprobado sin contrato con su acción (también la usa el Inicio de la inmobiliaria, TareasInicio). */
+export function ExpedienteItemRow({ expediente, ctaLabel }: { expediente: IExpediente; ctaLabel: string }) {
   const inmueble = expediente.inmueble
   const solicitante = expediente.solicitante
   // Aprobado con traba (canon o segundo firmante sin terminar): el mismo nombre que la lista.

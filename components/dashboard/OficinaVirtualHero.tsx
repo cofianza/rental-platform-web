@@ -1,7 +1,9 @@
 /**
- * Hero gradient esmeralda (full-width) con stats reales del portafolio de la
- * inmobiliaria. Persistente en el shell, sobre los tabs (mockup
- * htmls/13_COFIANZA_Oficina_Virtual_v2.html).
+ * Franja esmeralda «Su Oficina Virtual» con stats reales del portafolio de la
+ * inmobiliaria (mockup htmls/13_COFIANZA_Oficina_Virtual_v2.html). Reporte de la
+ * Oficina Virtual (25-nov), punto 12: va SOLO en Inicio, debajo de los pendientes
+ * (antes estaba en el shell, sobre las pestañas de todas las secciones, y ocupaba
+ * media pantalla). En el Inicio el h1 es «Sus pendientes»: aquí va un h2.
  */
 
 'use client'
@@ -9,7 +11,6 @@
 import { IconPlus } from '@/components/icons'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import { dashboardService, type PortfolioStats } from '@/services/dashboardService'
 import { formatCurrency } from '@/lib/constants'
@@ -29,8 +30,6 @@ function formatCompactCOP(monto: number): string {
 
 export function OficinaVirtualHero() {
   const puedeEditar = usePuedeEditar()
-  // Un solo h1 por pantalla: solo /dashboard no trae título propio (PageHeader).
-  const Titulo = usePathname() === '/dashboard' ? 'h1' : 'p'
   const [stats, setStats] = useState<PortfolioStats | null>(null)
   const [loading, setLoading] = useState(true)
   // Tercer estado. El catch devolvia un objeto de ceros, asi que un fallo de red
@@ -59,15 +58,15 @@ export function OficinaVirtualHero() {
   const subtitulo = 'Gestione propiedades, inquilinos y recaudos con seguridad y control total.'
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary-700 to-primary-800 text-white">
+    <section aria-labelledby="oficina-virtual-titulo" className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-700 to-primary-800 text-white">
       <div className="absolute -top-12 -right-12 w-56 h-56 bg-white/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-8 -left-8 w-44 h-44 bg-coral-300/15 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_auto]">
+      <div className="relative grid grid-cols-1 items-center gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1fr_auto]">
         <div>
-          <Titulo className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1.5">
+          <h2 id="oficina-virtual-titulo" className="text-2xl md:text-3xl font-extrabold tracking-tight mb-1.5">
             {titulo}
-          </Titulo>
+          </h2>
           <p className="text-sm md:text-[15px] text-white/85 mb-4">{subtitulo}</p>
           {puedeEditar && (
             <Link

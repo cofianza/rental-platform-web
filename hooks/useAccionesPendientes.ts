@@ -25,6 +25,12 @@
  * Reporte de la Oficina Virtual (25-nov), puntos 1 y 11: cada grupo muestra hasta 5 filas, pero su número es el TOTAL
  * de la API (GET /oficina-virtual/conteos, sección «acciones»: los mismos criterios de cada lista, sin recortes). Antes
  * el inicio contaba las 5 filas que mostraba y Contratos el total. Con una API anterior, el número de filas, como antes.
+ *
+ * Puntos 10 y 11 (segunda parte): el Inicio de la inmobiliaria (TareasInicio) lee además la sección completa
+ * (`acciones`, con «Requieren su acción» sin los de los otros grupos), de dónde salen los totales (`fuente`: si la
+ * sección falló, el Inicio muestra «Reintentar», nunca un «Todo al día» falso) y todos los aprobados con traba
+ * leídos (para desplegar cada grupo: canon, segundo firmante, verificación). Una evaluación por habilitar sale una
+ * vez por estudio aunque tenga dos visitas realizadas.
  */
 
 'use client'
@@ -36,6 +42,7 @@ import { expedienteService } from '@/services/expedienteService'
 import { oficinaVirtualService } from '@/services/oficinaVirtualService'
 import type { ICita } from '@/types/cita'
 import type { IExpediente } from '@/types/expediente'
+import type { IAccionesOficina } from '@/types/oficinaVirtual'
 import { totalesDeAcciones, type TotalesAcciones } from '@/lib/conteosOficina'
 
 
@@ -52,6 +59,12 @@ export interface AccionesPendientes {
   total: number
   /** Total del filtro «Requieren mi acción» de /expedientes (0 si no se pudo leer). */
   requierenAccion: number
+  /** La sección «acciones» de GET /oficina-virtual/conteos (null si no llegó). */
+  acciones: IAccionesOficina | null
+  /** De dónde salen los totales: la API; las filas (API anterior, sin el endpoint); o la sección falló. */
+  fuente: 'api' | 'filas' | 'fallo'
+  /** Todos los aprobados con traba leídos (sin el vencido), para desplegar cada grupo en el Inicio. */
+  aprobadosConTraba: IExpediente[]
 }
 
 const EMPTY: AccionesPendientes = {
@@ -63,6 +76,9 @@ const EMPTY: AccionesPendientes = {
   totales: { porConfirmar: 0, porRealizar: 0, porHabilitar: 0, porGenerarContrato: 0, conTrabaContrato: 0, esperandoAutorizacion: null },
   total: 0,
   requierenAccion: 0,
+  acciones: null,
+  fuente: 'filas',
+  aprobadosConTraba: [],
 }
 
 export function useAccionesPendientes() {
@@ -86,6 +102,9 @@ export function useAccionesPendientes() {
         oficinaVirtualService.getConteos(['acciones']),
       ])
       const acciones = conteosRes.status === 'fulfilled' ? (conteosRes.value?.acciones ?? null) : null
+      // null del servicio = la API no tiene el endpoint (versión anterior); una sección en null = no se pudo calcular.
+      const fuente: AccionesPendientes['fuente'] =
+        conteosRes.status === 'rejected' ? 'fallo' : conteosRes.value === null ? 'filas' : acciones ? 'api' : 'fallo'
       // Sin los totales (API anterior, o la sección no se pudo calcular), el de «Requieren mi acción» como antes
       // (limit 1): sin él el inicio diría «Todo al día» con estudios esperando.
       const requierenAccion = acciones
@@ -113,21 +132,25 @@ export function useAccionesPendientes() {
             return new Date(f).getTime() <= today.getTime()
           })
           .slice(0, 5)
-        // «No habilitar» deja estudio_habilitado en false: ya se decidió, no es pendiente.
+        // «No habilitar» deja estudio_habilitado en false: ya se decidió, no es pendiente. Una vez por estudio (punto 10).
+        const vistos = new Set<string>()
         porHabilitar = citas
-          .filter(
-            (c) =>
-              c.estado === 'realizada' && c.expediente?.estudio_habilitado === false && !c.expediente.estudio_rechazado,
-          )
+          .filter((c) => {
+            if (c.estado !== 'realizada' || c.expediente?.estudio_habilitado !== false || c.expediente.estudio_rechazado) return false
+            if (vistos.has(c.expediente.id)) return false
+            vistos.add(c.expediente.id)
+            return true
+          })
           .slice(0, 5)
       }
 
       // ── Categoria contratos por generar (5 visibles, como las otras) ──
       const aprobadosSinContrato = expedientesRes.status === 'fulfilled' ? expedientesRes.value : []
       const porGenerarContrato: IExpediente[] = aprobadosSinContrato.filter((e) => !tieneTrabaContrato(e)).slice(0, 5)
-      const conTrabaContrato: IExpediente[] = aprobadosSinContrato
-        .filter((e) => tieneTrabaContrato(e) && e.traba_contrato?.codigo !== 'vencido')
-        .slice(0, 5)
+      const aprobadosConTraba: IExpediente[] = aprobadosSinContrato.filter(
+        (e) => tieneTrabaContrato(e) && e.traba_contrato?.codigo !== 'vencido',
+      )
+      const conTrabaContrato: IExpediente[] = aprobadosConTraba.slice(0, 5)
 
       const totales = totalesDeAcciones(acciones, {
         porConfirmar: porConfirmar.length,
@@ -145,6 +168,9 @@ export function useAccionesPendientes() {
         totales,
         total: totales.porConfirmar + totales.porRealizar + totales.porHabilitar + totales.porGenerarContrato + totales.conTrabaContrato,
         requierenAccion,
+        acciones,
+        fuente,
+        aprobadosConTraba,
       })
 
       // Si AMBAS llamadas fallaron, exponemos error visible. Si solo falla
