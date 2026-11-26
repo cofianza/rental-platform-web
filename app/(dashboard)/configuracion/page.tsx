@@ -8,7 +8,7 @@
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui'
 import { useAuth } from '@/hooks/useAuth'
-import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconReceipt, IconUser, IconBank, IconCalendar, IconCreditCard, IconAlertTriangle } from '@/components/icons'
+import { IconBuilding2, IconFileText, IconBell, IconUsers, IconChevronRight, IconUser, IconBank, IconCalendar, IconCreditCard, IconAlertTriangle } from '@/components/icons'
 
 // Configuración de secciones. `soloRoles` (opcional) restringe la visibilidad.
 const SECCIONES: Array<{
@@ -55,15 +55,9 @@ const SECCIONES: Array<{
     color: 'bg-violet-100 text-violet-600',
     soloRoles: ['inmobiliaria'],
   },
-  {
-    id: 'creditos-estudios',
-    href: '/configuracion/creditos-estudios',
-    titulo: 'Cupos de estudios',
-    descripcion: 'Compre paquetes de cupos y úselos para pagar los estudios de sus prospectos.',
-    icon: IconReceipt,
-    color: 'bg-emerald-100 text-emerald-600',
-    soloRoles: ['inmobiliaria'],
-  },
+  // Reporte de la Oficina Virtual (25-nov), punto 9: para la inmobiliaria, los cupos de estudios se gestionan solo en
+  // Pagos › Cupos de estudios, y las visitas y sus horarios están en Inmuebles (Visitas, Horarios de visita): sus
+  // tarjetas ya no van aquí. El propietario conserva la de horarios (su menú lateral no cambió).
   {
     id: 'disponibilidad',
     href: '/disponibilidad',
@@ -71,18 +65,7 @@ const SECCIONES: Array<{
     descripcion: 'Defina sus horarios para que los interesados agenden visitas solo en los espacios libres.',
     icon: IconCalendar,
     color: 'bg-cyan-100 text-cyan-600',
-    soloRoles: ['propietario', 'inmobiliaria'],
-  },
-  {
-    // La pestaña "Visitas" se quitó del nav de la oficina virtual; queda
-    // accesible desde aquí (y desde cada expediente).
-    id: 'visitas',
-    href: '/citas',
-    titulo: 'Visitas',
-    descripcion: 'Agenda y tablero de las visitas a sus inmuebles.',
-    icon: IconCalendar,
-    color: 'bg-teal-100 text-teal-600',
-    soloRoles: ['inmobiliaria'],
+    soloRoles: ['propietario'],
   },
   {
     id: 'empresa',

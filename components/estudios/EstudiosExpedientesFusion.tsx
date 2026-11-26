@@ -45,7 +45,7 @@ import { AvisoCifras } from '@/components/ui/AvisoCifras'
 import { ExpedientesFilters } from '@/components/expedientes/ExpedientesFilters'
 import { ExpedientesTable } from '@/components/expedientes/ExpedientesTable'
 import { ExpedientesTablaCofianzaSkeleton } from '@/components/expedientes/ExpedientesTablaCofianza'
-import { AdquirirEstudiosCredito } from './AdquirirEstudiosCredito'
+import { RUTA_CUPOS } from '@/lib/constants'
 
 /** Lo que muestra esta pantalla: las pestañas (con «este mes») y la tasa de los últimos 30 días. */
 const SECCIONES: readonly SeccionOficina[] = ['estudios', 'aprobacion']
@@ -174,15 +174,22 @@ export function EstudiosExpedientesFusion() {
             ))}
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Reporte de la Oficina Virtual (25-nov), punto 9: los cupos se gestionan en un solo lugar (Pagos › Cupos de
+              estudios); aquí solo el saldo, con el enlace. */}
           {!esPropietario && (
-            <span className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3.5 text-sm font-semibold text-primary-800">
+            <Link
+              href={RUTA_CUPOS}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-primary-200 bg-primary-50 px-3.5 text-sm font-semibold text-primary-800 hover:bg-primary-100"
+            >
               <IconCheckCircle size={14} />
               {saldo
-                ? `${disponibles} ${disponibles === 1 ? 'cupo disponible' : 'cupos disponibles'}`
+                ? `${disponibles.toLocaleString('es-CO')} ${disponibles === 1 ? 'cupo disponible' : 'cupos disponibles'}`
                 : saldoError
                   ? 'Cupos: no se pudo cargar'
                   : 'Cupos: cargando…'}
-            </span>
+              <span className="font-medium text-primary-700">· Ver en Pagos</span>
+              <IconArrowRight size={14} />
+            </Link>
           )}
           {puedeEditar && (
             <Link href="/expedientes/nuevo" className={buttonClasses('accent')}>
@@ -354,9 +361,6 @@ export function EstudiosExpedientesFusion() {
           )}
         </div>
       </section>
-
-      {/* Compra de paquetes de estudios */}
-      {!esPropietario && <AdquirirEstudiosCredito />}
     </div>
   )
 }
