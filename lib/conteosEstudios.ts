@@ -40,7 +40,7 @@ export const CHIPS_ESTUDIO: readonly ChipEstudio[] = [
   {
     id: 'espera_autorizacion',
     label: 'Esperan la autorización',
-    ayuda: 'El enlace de autorización sigue vigente y el solicitante todavía no lo firma; por ahora no hay nada que hacer.',
+    ayuda: 'El enlace de autorización sigue vigente y el solicitante todavía no autoriza; por ahora no hay nada que hacer.',
   },
   { id: 'sin_estudio', label: 'Antes de la evaluación', ayuda: 'Visita pendiente o evaluación sin habilitar.' },
   // U13: el mismo nombre que la pestaña de la lista de Cofianza.
@@ -72,7 +72,7 @@ export const CHIPS_ESTUDIO: readonly ChipEstudio[] = [
   {
     id: 'cerrado',
     label: 'Cerrados y cancelados',
-    ayuda: 'Estudios cancelados o vencidos sin terminar, y los que se cerraron sin un resultado.',
+    ayuda: 'Estudios cancelados, los que se cerraron solos porque el solicitante no autorizó a tiempo y los que se cerraron sin un resultado.',
   },
 ]
 

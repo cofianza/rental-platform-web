@@ -10,8 +10,8 @@
  * No duplicamos modales aqui — el usuario ejecuta desde el destino.
  *
  * Reporte de la Oficina Virtual (25-nov), punto 1: cada grupo dice su TOTAL (el de su lista, de la API) aunque
- * muestre hasta 5 filas, con «Ver los N» hacia la lista completa: el inicio decía «Contratos por generar (5)» y
- * Contratos 11.
+ * muestre hasta 5 filas, con «Ver los N» hacia la lista completa: el inicio contaba las filas que mostraba (5) y
+ * Contratos el total.
  */
 
 'use client'
@@ -170,7 +170,22 @@ function AccionesPendientes() {
 }
 
 /** El encabezado del grupo con su TOTAL y, si hay más que las filas que se ven, «Ver los N» hacia la lista completa. */
-function EncabezadoGrupo({ title, icon, total, vistos, verTodas }: { title: string; icon: React.ReactNode; total: number; vistos: number; verTodas: string }) {
+function EncabezadoGrupo({
+  title,
+  icon,
+  total,
+  vistos,
+  verTodas,
+  femenino = false,
+}: {
+  title: string
+  icon: React.ReactNode
+  total: number
+  vistos: number
+  verTodas: string
+  /** «Ver las 7» (citas, evaluaciones) o «Ver los 7» (contratos, aprobados). */
+  femenino?: boolean
+}) {
   return (
     <div className="mb-3 flex flex-wrap items-center justify-between gap-x-3">
       <div className="flex items-center gap-2">
@@ -180,8 +195,12 @@ function EncabezadoGrupo({ title, icon, total, vistos, verTodas }: { title: stri
         </h3>
       </div>
       {total > vistos && (
-        <Link href={verTodas} className="inline-flex min-h-10 items-center gap-1 text-sm font-medium text-primary-600 hover:text-primary-700">
-          {vistos > 0 ? `Ver los ${total.toLocaleString('es-CO')}` : 'Ver la lista'}
+        <Link
+          href={verTodas}
+          aria-label={`Ver ${femenino ? 'las' : 'los'} ${total.toLocaleString('es-CO')}: ${title.toLowerCase()}`}
+          className="inline-flex min-h-10 items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800"
+        >
+          {vistos > 0 ? `Ver ${femenino ? 'las' : 'los'} ${total.toLocaleString('es-CO')}` : 'Ver la lista'}
           <IconChevronRight size={14} />
         </Link>
       )}
@@ -210,7 +229,7 @@ function CitaSection({
 }) {
   return (
     <div>
-      <EncabezadoGrupo title={title} icon={icon} total={total} vistos={items.length} verTodas={verTodas} />
+      <EncabezadoGrupo title={title} icon={icon} total={total} vistos={items.length} verTodas={verTodas} femenino />
       {items.length > 0 && (
         <ul className="divide-y divide-gray-100 border border-gray-100 rounded-lg">
           {items.map((cita) => (

@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils'
 import { desgloseDeCifras, fraseDesgloseAprobacion, tasaLegible } from '@/lib/conteosEstudios'
 import { Skeleton, SkeletonCards } from '@/components/ui/Skeleton'
 import { InfoTip } from '@/components/ui/InfoTip'
+import { AvisoCifras } from '@/components/ui/AvisoCifras'
 import { useConteosOficina } from '@/hooks/useConteosOficina'
 import { detalleAprobacion, textoAprobamos, TEXTO_PERIODO } from '@/lib/conteosOficina'
 import { notaContratosCerrados } from '@/lib/contratosCancelados'
@@ -116,8 +117,12 @@ export function CarteraAnaliticaSection() {
       }
     : { aprobados: d.aprobados, conSegundo: d.con_segundo_firmante, rechazados: d.rechazados, bloqueados: d.bloqueados }
 
+  // Alguna de las cifras compartidas no se pudo calcular: quedan en «—» y se puede reintentar.
+  const faltanCifras = conConteos && !ov.isLoading && (!pestanas || !aprob || !contratos)
+
   return (
     <div className="space-y-6">
+      {faltanCifras && <AvisoCifras onReintentar={() => void ov.refetch()} />}
       {/* Salud de su cartera */}
       <Panel title="Salud de su cartera">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -168,7 +173,13 @@ export function CarteraAnaliticaSection() {
             value={cifra(pestanas?.aprobado, e.aprobados)}
             cargando={cargando}
             color="text-primary-600"
-            sub={conConteos ? (typeof pestanas?.todos === 'number' ? `de ${pestanas.todos} ${TEXTO_PERIODO.desde_el_inicio}` : TEXTO_PERIODO.desde_el_inicio) : `de ${e.total} en total`}
+            sub={
+              conConteos
+                ? typeof pestanas?.todos === 'number'
+                  ? `de ${pestanas.todos.toLocaleString('es-CO')} ${TEXTO_PERIODO.desde_el_inicio}`
+                  : TEXTO_PERIODO.desde_el_inicio
+                : `de ${e.total} en total`
+            }
           />
           {/* La API puede no enviar este dato: entonces la tarjeta no se muestra. */}
           {e.scorePromedio !== undefined && (
@@ -334,7 +345,14 @@ function DecisionCard({
 }) {
   return (
     <div className={cn('rounded-xl border px-4 py-3.5 text-center', variant)}>
-      {value === null ? <Skeleton className="mx-auto h-8 w-10" /> : <div className="text-2xl font-black">{value}</div>}
+      {value === null ? (
+        <>
+          <span className="sr-only">Cargando…</span>
+          <Skeleton className="mx-auto h-8 w-10" />
+        </>
+      ) : (
+        <div className="text-2xl font-black">{value}</div>
+      )}
       <div className="mt-1 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</div>
     </div>
   )

@@ -24,7 +24,7 @@
  *
  * Reporte de la Oficina Virtual (25-nov), puntos 1 y 11: cada grupo muestra hasta 5 filas, pero su número es el TOTAL
  * de la API (GET /oficina-virtual/conteos, sección «acciones»: los mismos criterios de cada lista, sin recortes). Antes
- * el inicio decía «Contratos por generar (5)» y Contratos 11. Con una API anterior, el número de filas, como antes.
+ * el inicio contaba las 5 filas que mostraba y Contratos el total. Con una API anterior, el número de filas, como antes.
  */
 
 'use client'
@@ -86,15 +86,14 @@ export function useAccionesPendientes() {
         oficinaVirtualService.getConteos(['acciones']),
       ])
       const acciones = conteosRes.status === 'fulfilled' ? (conteosRes.value?.acciones ?? null) : null
-      // Con una API anterior (sin el endpoint), el total de «Requieren mi acción» como antes (limit 1).
+      // Sin los totales (API anterior, o la sección no se pudo calcular), el de «Requieren mi acción» como antes
+      // (limit 1): sin él el inicio diría «Todo al día» con estudios esperando.
       const requierenAccion = acciones
         ? acciones.requieren_accion
-        : conteosRes.status === 'fulfilled' && conteosRes.value === null
-          ? await expedienteService
-              .getExpedientes({ estudio_filtro: 'requiere_accion', page: 1, limit: 1 })
-              .then((r) => r.meta.total)
-              .catch(() => 0)
-          : 0
+        : await expedienteService
+            .getExpedientes({ estudio_filtro: 'requiere_accion', page: 1, limit: 1 })
+            .then((r) => r.meta.total)
+            .catch(() => 0)
 
       const today = new Date()
       today.setHours(23, 59, 59, 999) // "antes o igual a hoy"

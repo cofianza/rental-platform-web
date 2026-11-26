@@ -41,6 +41,7 @@ import { chipsVisibles, type ConteosEstudios } from '@/lib/conteosEstudios'
 import { detalleAprobacion, textoAprobamos, textoEstudiosPeriodo } from '@/lib/conteosOficina'
 import { InfoTip } from '@/components/ui/InfoTip'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { AvisoCifras } from '@/components/ui/AvisoCifras'
 import { ExpedientesFilters } from '@/components/expedientes/ExpedientesFilters'
 import { ExpedientesTable } from '@/components/expedientes/ExpedientesTable'
 import { ExpedientesTablaCofianzaSkeleton } from '@/components/expedientes/ExpedientesTablaCofianza'
@@ -152,6 +153,10 @@ export function EstudiosExpedientesFusion() {
               return periodo ? `: ${periodo}.` : '.'
             })()}
           </p>
+          {/* Sin las cifras (o sin una de sus secciones): un aviso con «Reintentar»; los chips quedan sin número. */}
+          {ov.disponible !== false && !ov.isLoading && (!ov.data?.estudios || !ov.data?.aprobacion) && (
+            <AvisoCifras className="mt-1.5" onReintentar={() => void ov.refetch()} />
+          )}
           {ov.disponible !== false &&
             (ov.isLoading && !ov.data ? (
               <div role="status" className="mt-1.5">

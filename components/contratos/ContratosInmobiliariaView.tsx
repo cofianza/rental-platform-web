@@ -14,7 +14,7 @@
  *
  * Reporte de la Oficina Virtual (25-nov), puntos 1 y 7: los contadores salen de GET /oficina-virtual/conteos (el
  * mismo «por generar» del Inicio, sin el tope de 50 de la lista), con esqueleto mientras cargan (antes un 0 que luego
- * saltaba a 11), y «Activos» dice los cancelados y terminados («0 (4 cancelados)»), que antes solo se veían
+ * saltaba al total), y «Activos» dice los cancelados y terminados («0 (4 cancelados)»), que antes solo se veían
  * desplegando el panel de abajo.
  */
 
@@ -34,6 +34,7 @@ import { notaContratosCerrados } from '@/lib/contratosCancelados'
 import type { SeccionOficina } from '@/types/oficinaVirtual'
 import { ContratosFilters } from './ContratosFilters'
 import { Skeleton, SkeletonCards, SkeletonTable } from '@/components/ui/Skeleton'
+import { AvisoCifras } from '@/components/ui/AvisoCifras'
 import {
   IconAlertTriangle,
   IconFileText,
@@ -372,7 +373,9 @@ export function ContratosInmobiliariaView() {
         hasActiveFilters={hasActiveFilters}
       />
 
-      {/* Stat cards: mientras cargan, esqueleto; sin la cifra (falló), «—»: un 0 contradecía los paneles de abajo. */}
+      {/* Stat cards: mientras cargan, esqueleto; sin la cifra (falló), «—» y se puede reintentar: un 0 contradecía los
+          paneles de abajo. */}
+      {!sinConteos && !cargandoConteos && !conteos && <AvisoCifras onReintentar={() => void ov.refetch()} cargando={ov.isLoading} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Pendientes de generar"
@@ -421,16 +424,25 @@ export function ContratosInmobiliariaView() {
         {loadingSinContrato ? (
           <SkeletonTable filas={2} columnas={4} etiqueta="Buscando estudios aprobados…" className="rounded-none border-0" />
         ) : porGenerarVisibles.length === 0 ? (
-          <EmptyRow
-            texto={porGenerar.length > 0 ? 'Ningún estudio aprobado coincide con la búsqueda.' : 'Ningún estudio aprobado espera contrato.'}
-          />
+          // Sin filas cargadas pero con pendientes (la lista trae los aprobados más recientes), no se dice «ninguno».
+          porGenerar.length === 0 && (conteos?.aprobados_sin_contrato.por_generar ?? 0) > 0 ? null : (
+            <EmptyRow
+              texto={porGenerar.length > 0 ? 'Ningún estudio aprobado coincide con la búsqueda.' : 'Ningún estudio aprobado espera contrato.'}
+            />
+          )
         ) : (
           tablaAprobados(porGenerarVisibles)
         )}
-        {/* La lista trae los aprobados más recientes: si hay más que los listados, se dice (el contador es el total). */}
+        {/* La lista trae los aprobados más recientes (con contrato o sin él): si hay más pendientes que los listados, se
+            dice y se lleva a la pestaña «Aprobados» de Estudios, donde están todos. El contador de arriba es el total. */}
         {!loadingSinContrato && !searchAplicado && conteos && conteos.aprobados_sin_contrato.por_generar > porGenerar.length && (
-          <p className="border-t border-gray-200 px-6 py-3 text-xs text-gray-500">
-            Mostrando {porGenerar.length} de {conteos.aprobados_sin_contrato.por_generar}. Use la búsqueda para encontrar los demás.
+          <p className="border-t border-gray-200 px-4 py-3 text-xs text-gray-600 sm:px-6">
+            Se muestran los {porGenerar.length.toLocaleString('es-CO')} más recientes de{' '}
+            {conteos.aprobados_sin_contrato.por_generar.toLocaleString('es-CO')}. Los demás están en{' '}
+            <Link href="/expedientes?estudio_filtro=aprobado" className="font-semibold text-primary-700 underline underline-offset-2 hover:text-primary-800">
+              Estudios, pestaña «Aprobados»
+            </Link>
+            .
           </p>
         )}
       </Panel>
@@ -594,7 +606,7 @@ export function ContratosInmobiliariaView() {
           aria-expanded={verCerrados}
           className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-4 text-left hover:bg-gray-50/60 sm:px-6 sm:py-5"
         >
-          <span className="flex items-center gap-2.5 text-base font-bold text-gray-900">
+          <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-base font-bold text-gray-900">
             <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
             Terminados y cancelados
             {/* Punto 7: cuántos hay, sin tener que desplegarlo. */}
