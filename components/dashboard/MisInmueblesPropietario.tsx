@@ -28,6 +28,7 @@ import {
   IconPlus,
 } from '@/components/icons'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { notaContratosCancelados } from '@/lib/contratosCancelados'
 import {
   money,
   moneyCompact,
@@ -410,6 +411,9 @@ export function MisInmueblesPropietario() {
   const { data, loading, error, reload } = useSeccion(() => dashboardService.getMisInmuebles())
   const r = data?.resumen
   const inmuebles = data?.inmuebles ?? []
+  // Adenda 6 §9: un cero porque todos los contratos están cancelados se explica («(4 contratos cancelados)»), bajo
+  // «Arrendados»; el canon conserva su definición.
+  const notaCancelados = r ? notaContratosCancelados(r.arrendados, r.contratosCancelados, r.contratosNoCancelados) : null
 
   const agregarBtn = (
     <Link href="/inmuebles/nuevo" className={`${btnP} px-4 py-2 text-sm`}>
@@ -429,7 +433,7 @@ export function MisInmueblesPropietario() {
           abajo. Y "Ingreso mes" mentía: no es plata recaudada, es la suma de
           los cánones contratados (con mora o sin ella). */}
       <KpiRow cols={4}>
-        <Kpi label="Arrendados" value={r?.arrendados ?? 0} tone="green" Icon={IconCheckCircle} />
+        <Kpi label="Arrendados" value={r?.arrendados ?? 0} sub={notaCancelados ?? undefined} tone="green" Icon={IconCheckCircle} />
         <Kpi label="Disponibles" value={r?.disponibles ?? 0} tone="orange" Icon={IconClock} />
         <Kpi label="En vitrina" value={r?.enVitrina ?? 0} tone="blue" Icon={IconBuilding2} />
         <Kpi
