@@ -7,7 +7,7 @@
  * (similitud, documento, cada intento) y las fotos que Cofianza conserva,
  * cifradas, de quien autorizó con un texto que lo permite:
  *   - texto anterior (3.3): solo los intentos fallidos, hasta decidir el estudio o 30 días;
- *   - autorización de datos versión 3 (Adenda 6 §2, casilla 4A): aprobados y fallidos de
+ *   - autorización de datos versión 3.1 (Adenda 6 §2, casilla 4A): aprobados y fallidos de
  *     las dos personas, con los plazos del panel; los fallidos de una persona se pueden
  *     vincular a una denuncia o proceso (solo el administrador).
  * Las fotos se piden al abrir esta ventana, una por una, y al cerrarla se olvidan.
@@ -312,7 +312,7 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
                       <p className="flex items-start gap-2">
                         <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
                         <span>
-                          Con la autorización de datos versión 3 (numeral 4A), Cofianza conserva cifradas las fotos de los
+                          Con la autorización de datos versión 3.1 (numeral 4A), Cofianza conserva cifradas las fotos de los
                           cotejos aprobados y fallidos.{' '}
                           {anios
                             ? `Los fallidos, ${anios.fallido} ${anios.fallido === 1 ? 'año' : 'años'} desde el intento (o hasta que termine la denuncia o el proceso al que se vinculen); los aprobados, mientras la fianza esté vigente y ${anios.aprobado} ${anios.aprobado === 1 ? 'año' : 'años'} después de terminada, o ${anios.fallido} ${anios.fallido === 1 ? 'año' : 'años'} desde el intento si no hubo fianza.`
@@ -381,7 +381,7 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
         onClose={() => setPedirRetencion(null)}
         onConfirm={async (motivo) => (pedirRetencion ? guardarRetencion(pedirRetencion, motivo) : false)}
         title="Vincular a una denuncia o proceso"
-        descripcion={`Mientras esté la marca, las fotos de los cotejos fallidos ${pedirRetencion ? dePersona(pedirRetencion) : ''} de la autorización de datos versión 3 no se eliminan al vencer su plazo. Indique de qué denuncia o proceso se trata (entidad, número de radicado y fecha).`}
+        descripcion={`Mientras esté la marca, las fotos de los cotejos fallidos ${pedirRetencion ? dePersona(pedirRetencion) : ''} de la autorización de datos versión 3.1 no se eliminan al vencer su plazo. Indique de qué denuncia o proceso se trata (entidad, número de radicado y fecha).`}
         label="Denuncia o proceso"
         placeholder="Por ejemplo: denuncia por suplantación ante la Fiscalía, radicado 000-0000, del 3 de diciembre"
         confirmLabel="Vincular"
@@ -414,7 +414,7 @@ export function VerBiometria({ expedienteId, contenedor }: { expedienteId: strin
           <p>
             Úselo cuando la persona pida la supresión de sus fotos. Se eliminan las fotos guardadas por {dias} días (texto
             de autorización anterior) y no se pueden recuperar.
-            {intentosA6.length > 0 && ' Las de la autorización de datos versión 3 se conservan con sus plazos.'} El
+            {intentosA6.length > 0 && ' Las de la autorización de datos versión 3.1 se conservan con sus plazos.'} El
             resultado del cotejo se conserva, y la eliminación queda en la bitácora.
           </p>
         }
@@ -659,10 +659,10 @@ function motivoNoAprobado(i: IIntentoConFotos, persona: PersonaCotejo): string |
 /** Hasta cuándo se conserva hoy una foto de la Adenda 6. */
 function conservacionVisible(i: IIntentoConFotos): string {
   const c = i.conservacion
-  if (!c) return 'Se conserva con los plazos de la autorización de datos versión 3.'
+  if (!c) return 'Se conserva con los plazos de la autorización de datos versión 3.1.'
   if (c.por_proceso) return 'Se conserva hasta que termine la denuncia o el proceso al que está vinculada.'
   if (c.mientras_fianza) return 'Se conserva mientras la fianza esté vigente y los años del panel después de terminada.'
-  return c.hasta ? `Se conserva hasta el ${fecha(c.hasta)}.` : 'Se conserva con los plazos de la autorización de datos versión 3.'
+  return c.hasta ? `Se conserva hasta el ${fecha(c.hasta)}.` : 'Se conserva con los plazos de la autorización de datos versión 3.1.'
 }
 
 function Foto({

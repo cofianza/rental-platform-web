@@ -360,7 +360,7 @@ const META_A5D: Record<string, MetaParametro> = {
     },
     rige: 'a5d',
   },
-  // Adenda 6 §2 y §10 (en la Adenda: AÑOS_CONSERVACION_COTEJO_*): las imágenes de los cotejos de la autorización V3.
+  // Adenda 6 §2 y §10 (en la Adenda: AÑOS_CONSERVACION_COTEJO_*): las imágenes de los cotejos de la autorización V3.1.
   ANIOS_CONSERVACION_COTEJO_APROBADO: {
     nombre: 'Conservación de las imágenes de un cotejo aprobado',
     seccion: 'plazos',
@@ -370,7 +370,7 @@ const META_A5D: Record<string, MetaParametro> = {
     ejemplo: (v) =>
       `Con ${v.ANIOS_CONSERVACION_COTEJO_APROBADO}: si la fianza termina el 1 de marzo de 2028, las imágenes se eliminan el 1 de marzo de ${2028 + v.ANIOS_CONSERVACION_COTEJO_APROBADO}.`,
     rige: 'parcial',
-    notaRige: 'Rige con la autorización de datos versión 3, cuando Cofianza la active.',
+    notaRige: 'Rige con la autorización de datos versión 3.1, cuando Cofianza la active.',
   },
   ANIOS_CONSERVACION_COTEJO_FALLIDO: {
     nombre: 'Conservación de las imágenes de un cotejo fallido',
@@ -381,7 +381,7 @@ const META_A5D: Record<string, MetaParametro> = {
     ejemplo: (v) =>
       `Con ${v.ANIOS_CONSERVACION_COTEJO_FALLIDO}: un cotejo fallido del 10 de enero de 2027 se elimina el 10 de enero de ${2027 + v.ANIOS_CONSERVACION_COTEJO_FALLIDO}.`,
     rige: 'parcial',
-    notaRige: 'Rige con la autorización de datos versión 3, cuando Cofianza la active.',
+    notaRige: 'Rige con la autorización de datos versión 3.1, cuando Cofianza la active.',
   },
   SCORE_MINIMO_SOLO: {
     nombre: 'Puntaje mínimo en la central para ir sin segundo firmante',

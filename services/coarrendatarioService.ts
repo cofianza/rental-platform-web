@@ -9,7 +9,6 @@ import type { IPersonaA5d } from '@/types/estudio'
 import { apiClient } from '@/lib/api'
 import { coalesceRequest, descartarEnVuelo } from '@/lib/requestCoalesce'
 import type { Habitara } from '@/lib/habitara'
-import type { EstadoBiometria, IBiometriaResponse } from '@/types/autorizacion'
 
 export type CoarrendatarioEstado =
   | 'pendiente_aceptacion'
@@ -128,20 +127,11 @@ export interface ICoarrendatarioPublicView {
   texto_legal: string
   version_terminos: string
   /**
-   * Adenda 6 §2 (texto V3): la casilla 4A y el cotejo después de aceptar. Ausente con un texto anterior.
-   * `opcional`: el cotejo se puede hacer; `autorizado`: ya aceptó y marcó la 4A (null antes de aceptar);
-   * `estado`: el veredicto guardado.
+   * Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A. Ausente con un texto anterior. `autorizado`: ya aceptó y marcó
+   * (true) o no (false) la 4A; null antes de aceptar. El cotejo no se hace aquí: es al firmar el contrato.
    */
   cotejo?: {
-    opcional: boolean
-    /** Tras aceptar: hasta cuándo puede hacer el cotejo con este enlace. */
-    vence_en?: string | null
-    /** El cotejo quedó aprobado (rostro y documento). */
-    aprobado?: boolean
     autorizado: boolean | null
-    estado: EstadoBiometria | null
-    /** No se ofrece porque Auco no coteja su tipo de documento. Ausente por otra razón o en APIs viejas. */
-    no_cotejable?: 'tipo_documento'
   }
 }
 
@@ -258,12 +248,14 @@ export const coarrendatarioService = {
     /** Solo si la pantalla lo pide (contacto_resultado): el correo para el resultado de su evaluación y su documento. */
     contacto?: { correo_resultado?: string; numero_documento?: string },
     /**
-     * Adenda 6 §2 (texto V3): la versión que la pantalla mostró, la casilla 4A y las dos finalidades opcionales.
+     * Adenda 6 §2 / 6.1 (texto V3.1): la versión que la pantalla mostró, la casilla 4A, las dos finalidades opcionales
+     * y, Adenda 6.1 §2, por cuál canal llegó (el número o correo lo pone la API).
      */
     autorizacion?: {
       version_terminos?: string
       acepta_cotejo_biometrico?: boolean
       consentimientos_opcionales?: { analitica?: boolean; comercial?: boolean }
+      canal_enlace?: 'whatsapp' | 'correo'
     },
   ): Promise<{ ok: true; estudio_id: string | null; mensaje: string }> {
     const res = (await apiClient.post(`/public/coarrendatario/${token}/aceptar`, {
@@ -273,18 +265,6 @@ export const coarrendatarioService = {
       ...contacto,
       ...autorizacion,
     })) as unknown as { data: { ok: true; estudio_id: string | null; mensaje: string } }
-    return res.data
-  },
-
-  /** Adenda 6 §2: cotejo con foto del segundo firmante, después de aceptar (solo con la casilla 4A). */
-  async verificarBiometria(token: string, input: { documentImage: string; photo: string }): Promise<IBiometriaResponse> {
-    const res = (await apiClient.post(`/public/coarrendatario/${token}/biometria`, input)) as unknown as { data: IBiometriaResponse }
-    return res.data
-  },
-
-  /** Adenda 6 §2: sigue sin el cotejo (el contrato se firmará en notaría). */
-  async omitirBiometria(token: string): Promise<IBiometriaResponse> {
-    const res = (await apiClient.post(`/public/coarrendatario/${token}/biometria/omitir`, {})) as unknown as { data: IBiometriaResponse }
     return res.data
   },
 
