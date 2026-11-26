@@ -337,7 +337,7 @@ export function BloqueosContrato({
       case 'datos_contrato': {
         if (!esTitular) {
           return (
-            <p className="text-xs text-gray-600">Pídale al titular de la inmobiliaria que complete los Datos de mi inmobiliaria.</p>
+            <p className="text-xs text-gray-600">Pídale al titular de la inmobiliaria que complete los datos de la inmobiliaria (Configuración › Datos de mi inmobiliaria).</p>
           )
         }
         return (

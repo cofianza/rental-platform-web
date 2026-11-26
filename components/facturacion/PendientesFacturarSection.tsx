@@ -87,7 +87,7 @@ export function PendientesFacturarSection({
           // Los datos son de quien pagó (o de la inmobiliaria que compró el
           // paquete), no de quien está mirando la lista.
           const aviso = pago.compra_id
-            ? `Faltan datos fiscales de ${pago.cliente_nombre || 'la inmobiliaria'}: ${faltantes}. Debe completarlos en Configuración › Datos de mi inmobiliaria.`
+            ? `Faltan datos fiscales de ${pago.cliente_nombre || 'la inmobiliaria'}: ${faltantes}. La inmobiliaria debe completarlos en Configuración › Datos de mi inmobiliaria.`
             : `Faltan datos fiscales de quien pagó: ${faltantes}. Si pagó el arrendatario, los completa en Facturación › Datos Fiscales; si pagó la inmobiliaria, en Configuración › Datos de mi inmobiliaria; si pagó el propietario, en Configuración › Mis datos de propietario.`
           setFaltaDatos((prev) => ({ ...prev, [id]: aviso }))
           toast.error('No se emitió la factura: faltan datos fiscales de quien pagó.')

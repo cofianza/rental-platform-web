@@ -19,9 +19,11 @@ import { IconCheck, IconChevronRight } from '@/components/icons'
 import { usePerfilCompletitud } from '@/hooks/usePerfilCompletitud'
 import { dashboardService } from '@/services/dashboardService'
 import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
+import { useAuth } from '@/hooks/useAuth'
 
 export function PrimerosPasosWidget() {
   const puedeEditar = usePuedeEditar()
+  const { user } = useAuth()
   const { completitud, loading, noAplica } = usePerfilCompletitud()
   const [propiedades, setPropiedades] = useState<number | null>(null)
 
@@ -50,7 +52,7 @@ export function PrimerosPasosWidget() {
 
   const pasos = [
     {
-      titulo: 'Complete los datos de su inmobiliaria',
+      titulo: user?.rol === 'propietario' ? 'Complete sus datos de propietario' : 'Complete los datos de su inmobiliaria',
       detalle: perfilCompleto
         ? 'Listo'
         : faltantes

@@ -35,7 +35,7 @@ const SECCIONES: Array<{
     id: 'datos-inmobiliaria',
     href: RUTA_DATOS_INMOBILIARIA,
     titulo: 'Datos de mi inmobiliaria',
-    descripcion: 'Razón social, NIT, logo, domicilio, cuenta de recaudo y matrícula de sus contratos y facturas, su contacto y sus documentos legales.',
+    descripcion: 'Los datos de sus contratos y facturas (domicilio, cuenta de recaudo y, si es inmobiliaria, razón social, NIT, logo y matrícula), su contacto y sus documentos legales.',
     icon: IconBuilding2,
     color: 'bg-primary-100 text-primary-600',
     soloRoles: ['propietario', 'inmobiliaria'],

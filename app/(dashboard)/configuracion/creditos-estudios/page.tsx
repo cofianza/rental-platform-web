@@ -495,7 +495,7 @@ export default function CreditosEstudiosPage() {
                       {p.vigencia_meses != null && (
                         <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                           <IconClock size={14} />
-                          Vigencia: {p.vigencia_meses} meses desde el pago
+                          Vigencia: {p.vigencia_meses} {p.vigencia_meses === 1 ? 'mes' : 'meses'} desde el pago
                         </p>
                       )}
                       {p.descripcion && (
@@ -782,7 +782,7 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
             y no se le vuelven a pedir.
           </>
         ) : (
-          'Se usan para esta factura; para que no se le vuelvan a pedir, el titular debe completarlos en Datos de mi inmobiliaria.'
+          'Se usan para esta factura; para que no se le vuelvan a pedir, el titular debe completarlos en Configuración › Datos de mi inmobiliaria.'
         )}
       </div>
 

@@ -366,7 +366,7 @@ export function ExpedientesTable({
   }
 
   const filas: Fila[] = expedientes.map((expediente) => {
-    const d = datosEstadoFila(expediente, { interno: false, vista, ahora, yo })
+    const d = datosEstadoFila(expediente, { interno: false, vista, ahora, yo, propietario: rol === 'propietario' })
     // «Qué sigue» ya dice que hay que comunicarse con Cofianza: la etapa no lo repite.
     const datos = identidadRechazada(expediente) ? { ...d, texto: 'Identidad rechazada' } : d
     const propio =

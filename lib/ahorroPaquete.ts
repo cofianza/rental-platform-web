@@ -30,8 +30,8 @@ export const textoAhorro = (pct: number): string =>
 export function condicionesCompraPaquete(vigenciaMeses: number | null | undefined): [string, string] {
   const vigencia =
     typeof vigenciaMeses === 'number' && vigenciaMeses > 0
-      ? `Cada paquete vence ${vigenciaMeses} ${vigenciaMeses === 1 ? 'mes' : 'meses'} después de la compra`
-      : 'Cada paquete tiene una vigencia desde la fecha de compra'
+      ? `Cada paquete vence ${vigenciaMeses} ${vigenciaMeses === 1 ? 'mes' : 'meses'} después del pago`
+      : 'Cada paquete tiene una vigencia que cuenta desde el pago'
   return [
     `${vigencia}: los cupos que no use antes de esa fecha se extinguen.`,
     'Los cupos no usados no se reembolsan ni se abonan a otro concepto.',

@@ -120,7 +120,9 @@ export function lineasDeInicio(a: AccionesInicio): LineaTarea[] {
   agregar(
     'esperando_autorizacion',
     a.esperando_autorizacion,
-    (n) => segun(n, '1 estudio espera autorización', '{n} estudios esperan autorización'),
+    // Punto 13: el mismo nombre que su filtro en Estudios («Solo falta la autorización»), no el de la pestaña
+    // «Esperando autorización», que también trae los que piden algo a quien gestiona.
+    (n) => segun(n, 'A 1 estudio solo le falta la autorización', 'A {n} estudios solo les falta la autorización'),
     'espera',
     { href: '/expedientes?estudio_filtro=espera_autorizacion', seccion: 'Estudios' },
   )

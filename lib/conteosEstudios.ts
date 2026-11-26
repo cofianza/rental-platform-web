@@ -40,7 +40,7 @@ export const CHIPS_ESTUDIO: readonly ChipEstudio[] = [
   // quien gestiona (el nombre no se confunde con esa pestaña).
   {
     id: 'espera_autorizacion',
-    label: 'Solo falta que autorice',
+    label: 'Solo falta la autorización',
     ayuda: 'El enlace de autorización sigue vigente y el solicitante todavía no autoriza; por ahora no hay nada que hacer.',
   },
   // Punto 13: antes «Antes de la evaluación». Son los estudios SIN evaluación habilitada: el nombre lo dice. Solo se ve
@@ -57,7 +57,7 @@ export const CHIPS_ESTUDIO: readonly ChipEstudio[] = [
   {
     id: 'en_proceso',
     label: 'En estudio',
-    ayuda: 'Ya autorizó y todavía no hay resultado: falta el pago, la consulta está en curso o hay que reintentarla. También los estudios reabiertos por un cambio de persona.',
+    ayuda: 'Todavía sin resultado y sin esperar la autorización: falta el pago, la consulta está en curso o hay que reintentarla, o el estudio se reabrió por un cambio de persona.',
   },
   // La API cuenta aquí el condicionado sin «aprobado con segundo firmante» ni «bloqueado por listas»:
   // la revisión manual y las verificaciones abiertas (identidad, una coincidencia en listas).

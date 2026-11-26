@@ -140,7 +140,8 @@ export function EnviarFirmaPreviewModal({ isOpen, firmantes, puedeEnviar, biomet
               Todavía no se puede enviar: hay firmantes con el <strong>mismo número</strong>, con el
               <strong> mismo correo</strong> o con datos faltantes. Cada parte necesita un número de WhatsApp
               y un correo distintos. Corrija el teléfono con «Editar» en cada firmante (el correo, en la
-              ficha del solicitante o en «Datos de mi inmobiliaria») y vuelva a intentar.
+              ficha del solicitante o en Configuración › Datos de mi inmobiliaria o Mis datos de propietario) y
+              vuelva a intentar.
             </span>
           </div>
         )}

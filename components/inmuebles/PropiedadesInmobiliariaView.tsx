@@ -107,7 +107,7 @@ function vitrinaKind(i: IInmueble): VitrinaKind {
 }
 
 // Chips de filtro: reutilizan el mapeo de patch de VitrinaFilterChips (page).
-type ChipKey = 'todas' | 'vitrina' | 'pausadas' | 'inactivas'
+type ChipKey = 'todas' | 'vitrina' | 'pausadas' | 'arrendadas' | 'inactivas'
 
 const CHIPS: Array<{
   key: ChipKey
@@ -119,6 +119,9 @@ const CHIPS: Array<{
   { key: 'vitrina', label: 'En vitrina', patch: { visible_vitrina: true, estado: 'disponible' } },
   // 2.5: "Pausadas" = fuera de vitrina estando disponible (lo que produce Pausar).
   { key: 'pausadas', label: 'Pausadas', patch: { visible_vitrina: false, estado: 'disponible' } },
+  // Punto 14 del reporte de la Oficina Virtual: el contador «Arrendadas» lleva a su lista (estado 'ocupado': arrendadas y
+  // reservadas, con contrato vigente o en firma).
+  { key: 'arrendadas', label: 'Arrendadas', patch: { visible_vitrina: '', estado: 'ocupado' } },
   { key: 'inactivas', label: 'Inactivas', patch: { visible_vitrina: '', estado: 'inactivo' } },
 ]
 
@@ -185,9 +188,11 @@ export function PropiedadesInmobiliariaView() {
       ? 'vitrina'
       : filters.visible_vitrina === false && filters.estado === 'disponible'
         ? 'pausadas'
-        : filters.estado === 'inactivo'
-          ? 'inactivas'
-          : 'todas'
+        : filters.estado === 'ocupado'
+          ? 'arrendadas'
+          : filters.estado === 'inactivo'
+            ? 'inactivas'
+            : 'todas'
 
   // "Agregar propiedad": gate por perfil incompleto → «Datos de mi inmobiliaria» con returnTo.
   function handleCreateClick() {

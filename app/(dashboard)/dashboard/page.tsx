@@ -987,7 +987,10 @@ function SolicitanteDashboard() {
                           label={
                             noContinua
                               ? 'No continúa'
-                              : exp.estado === 'borrador'
+                              : // Flujo §10: al prospecto, «No aprobable por ahora» (no el «No aprobado» de la Oficina Virtual).
+                                isRejected
+                                ? 'No aprobable por ahora'
+                                : exp.estado === 'borrador'
                                 ? 'En preparación'
                                 : // Sin nada que hacer mientras Cofianza verifica: el mismo nombre del detalle.
                                   isConditioned && textoRevision

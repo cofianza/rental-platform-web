@@ -21,7 +21,7 @@ test('punto 11: las frases del reporte, en plural', () => {
   const l = lineasDeInicio(a({ contratos_por_generar: 11, aprobados_canon_excede: 4, esperando_autorizacion: 3 }))
   assert.deepEqual(
     l.map((x) => x.texto),
-    ['Tiene 11 contratos por generar', '4 estudios aprobados necesitan otro inmueble', '3 estudios esperan autorización'],
+    ['Tiene 11 contratos por generar', '4 estudios aprobados necesitan otro inmueble', 'A 3 estudios solo les falta la autorización'],
   )
 })
 
@@ -49,7 +49,7 @@ test('punto 11: en singular', () => {
       'Tiene 1 visita por confirmar',
       'Tiene 1 visita por realizar',
       'Otro estudio requiere su acción',
-      '1 estudio espera autorización',
+      'A 1 estudio solo le falta la autorización',
       '1 estudio aprobado está en verificación de Cofianza',
     ],
   )

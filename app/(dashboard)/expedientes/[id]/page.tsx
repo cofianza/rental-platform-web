@@ -635,7 +635,10 @@ function ExpedienteDetalleContenido() {
       ? // El vocabulario de su barra y de rutas-resultado (no «Borrador» ni «Condicionado»).
         expediente.estado === 'borrador'
         ? 'En preparación'
-        : expediente.estado === 'condicionado'
+        : // Flujo §10: al prospecto, «No aprobable por ahora» (no el «No aprobado» de la Oficina Virtual).
+          expediente.estado === 'rechazado' || (expediente.estado === 'cerrado' && expediente.estado_pre_cancelacion === 'rechazado')
+          ? 'No aprobable por ahora'
+          : expediente.estado === 'condicionado'
           ? condicionCoa && !prospectoSinAccion
             ? condicionCoa.obligatoria ? 'Necesita un coarrendatario' : 'Está cerca'
             : 'En revisión'
@@ -976,7 +979,10 @@ function ExpedienteDetalleContenido() {
                           ACCION_CARGA_NOTARIA
                         : undefined,
             // Oficina Virtual (punto 13), como la lista: «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon».
-            fraseGestor: turno === 'gestor' && etapaTurno === 'canon_excede' ? fraseCanonGestor(expediente.traba_contrato) : undefined,
+            fraseGestor:
+              turno === 'gestor' && etapaTurno === 'canon_excede'
+                ? fraseCanonGestor(expediente.traba_contrato, { propietario: user?.rol === 'propietario' })
+                : undefined,
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» (o «Lo verifica X») y sin coral.
             tomadoPor: (revisionAnalista || verificacion) && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
           }
@@ -1147,7 +1153,7 @@ function ExpedienteDetalleContenido() {
                 titulo="Estudio cerrado"
                 descripcion={
                   <>
-                    <p>El estudio no quedó aprobado y el caso quedó cerrado.</p>
+                    <p>El estudio no quedó aprobado y se cerró.</p>
                     {textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) }) && (
                       <p className="mt-1">
                         <span className="font-semibold">Motivo:</span>{' '}

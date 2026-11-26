@@ -225,7 +225,7 @@ export function TransicionModal({
   const CONSECUENCIAS: Record<string, string> = {
     rechazado: `Se libera la reserva del inmueble, se cancelan los contratos que aún no se hayan firmado y se le avisa por correo al coarrendatario${
       estadoActual === 'condicionado' ? ' y al prospecto, con su derecho de apelación' : ''
-    }. Desde No aprobado el estudio solo puede cerrarse. Si lo cierra, una apelación del prospecto ya no podrá reabrirlo.`,
+    }. Desde «No aprobado» el estudio solo puede cerrarse. Si lo cierra, una apelación del prospecto ya no podrá reabrirlo.`,
     cerrado:
       'El estudio queda archivado y sale del flujo. Se cancelan los contratos que aún no se hayan firmado y se libera la reserva del inmueble. No se puede reabrir.',
   }

@@ -160,12 +160,12 @@ test('Oficina Virtual (punto 1): «Cerrados y cancelados» con alguno; con cero 
   assert.equal(visibles.reduce((s, id) => s + (c[id as keyof typeof c] ?? 0), 0), c.todos)
 })
 
-test('Oficina Virtual (punto 11): «Solo falta que autorice» solo se ve elegido (es un filtro, no una pestaña)', () => {
+test('Oficina Virtual (punto 11): «Solo falta la autorización» solo se ve elegido (es un filtro, no una pestaña)', () => {
   const c = { todos: 3, requiere_accion: 0, sin_estudio: 1, en_proceso: 2, aprobado: 0, rechazado: 0, segundo_firmante: 0, revision_cofianza: 0, bloqueado: 0 }
   assert.equal(ids(c).includes('espera_autorizacion'), false)
   assert.equal(ids(c, 'espera_autorizacion')[2], 'espera_autorizacion')
   // No se llama como la pestaña «Esperando autorización».
-  assert.equal(chipsVisibles(c, 'espera_autorizacion').find((x) => x.id === 'espera_autorizacion')?.label, 'Solo falta que autorice')
+  assert.equal(chipsVisibles(c, 'espera_autorizacion').find((x) => x.id === 'espera_autorizacion')?.label, 'Solo falta la autorización')
 })
 
 test('Oficina Virtual (punto 13): «Esperando autorización» y «En estudio»; «Evaluación sin habilitar» con alguno', () => {
@@ -176,7 +176,7 @@ test('Oficina Virtual (punto 13): «Esperando autorización» y «En estudio»; 
   assert.equal(label('sin_estudio')?.label, 'Evaluación sin habilitar')
   assert.equal(label('sin_autorizar')?.label, 'Esperando autorización')
   assert.equal(label('en_proceso')?.label, 'En estudio')
-  assert.match(label('en_proceso')?.ayuda ?? '', /^Ya autorizó/)
+  assert.match(label('en_proceso')?.ayuda ?? '', /^Todavía sin resultado y sin esperar la autorización/)
   // Las visibles de resultado suman «Todos».
   const visibles = chipsVisibles(c, 'todos').map((x) => x.id).filter((id) => !['todos', 'requiere_accion', 'condicionado'].includes(id))
   assert.equal(visibles.reduce((s, id) => s + (c[id as keyof typeof c] ?? 0), 0), c.todos)

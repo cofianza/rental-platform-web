@@ -180,6 +180,7 @@ export function datosEstadoFila(
     analista = false,
     ahora,
     yo,
+    propietario = false,
   }: {
     interno: boolean
     vista: VistaTurno
@@ -187,6 +188,8 @@ export function datosEstadoFila(
     ahora: number
     /** Id de quien mira: si la revisión la tomó otro analista, «En revisión de X» en vez de «Su turno». */
     yo?: string | null
+    /** Quien gestiona es el propietario directo: él fija el canon (punto 13: «baje el canon», no «pida bajar»). */
+    propietario?: boolean
   },
 ): DatosEstadoFila {
   const etapa = etapaDeFila(expediente)
@@ -263,7 +266,7 @@ export function datosEstadoFila(
             tomadoPor: deCofianza && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
             // Oficina Virtual (punto 13): a quien gestiona, «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon».
-            fraseGestor: turno === 'gestor' && etapa === 'canon_excede' ? fraseCanonGestor(expediente.traba_contrato) : undefined,
+            fraseGestor: turno === 'gestor' && etapa === 'canon_excede' ? fraseCanonGestor(expediente.traba_contrato, { propietario }) : undefined,
           }
         : null,
     // Solo con el turno de quien gestiona: con el segundo firmante en curso (se le espera) o en verificación,
@@ -378,7 +381,8 @@ export function EstadoFila({
   // Hora fijada al montar: Date.now() en render es impuro (cambia en cada render).
   const [ahora] = useState(() => Date.now())
   const yo = useAuthStore((st) => st.user?.id)
-  const d = datosEstadoFila(expediente, { interno, vista, analista, ahora, yo })
+  const propietario = useAuthStore((st) => st.user?.rol) === 'propietario'
+  const d = datosEstadoFila(expediente, { interno, vista, analista, ahora, yo, propietario })
 
   return (
     <div className={cn('flex items-start gap-1', compacto ? 'flex-row flex-wrap items-center gap-1.5' : 'flex-col')}>

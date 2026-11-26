@@ -22,9 +22,9 @@ test('punto 6: el precio individual lo dice la API (panel); sin él, o sin ahorr
 
 test('punto 6: antes de pagar, la vigencia (la de la API) y que los cupos no usados no se reembolsan', () => {
   assert.deepEqual(condicionesCompraPaquete(6), [
-    'Cada paquete vence 6 meses después de la compra: los cupos que no use antes de esa fecha se extinguen.',
+    'Cada paquete vence 6 meses después del pago: los cupos que no use antes de esa fecha se extinguen.',
     'Los cupos no usados no se reembolsan ni se abonan a otro concepto.',
   ])
   assert.match(condicionesCompraPaquete(1)[0], /vence 1 mes después/)
-  assert.match(condicionesCompraPaquete(undefined)[0], /^Cada paquete tiene una vigencia desde la fecha de compra:/)
+  assert.match(condicionesCompraPaquete(undefined)[0], /^Cada paquete tiene una vigencia que cuenta desde el pago:/)
 })

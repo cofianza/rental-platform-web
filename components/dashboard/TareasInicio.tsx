@@ -2,7 +2,7 @@
  * Inicio de la inmobiliaria como lista de tareas (reporte de la Oficina Virtual del 25-nov, puntos 10 y 11).
  *
  * Primero, una línea por grupo con su total real (GET /oficina-virtual/conteos, sección «acciones»): «Tiene 11
- * contratos por generar», «4 estudios aprobados necesitan otro inmueble», «1 estudio espera autorización». Al tocar
+ * contratos por generar», «4 estudios aprobados necesitan otro inmueble», «A 1 estudio solo le falta la autorización». Al tocar
  * la línea se despliega aquí su lista (hasta 5, con «Ver los N en …» hacia la sección que tiene la lista completa) o,
  * si aquí no hay filas que mostrar, se va directo a esa sección con su filtro. Cada estudio sale en UN grupo: la API
  * da «Requieren su acción» sin los que ya tienen el suyo (lib/inicioTareas.ts).
