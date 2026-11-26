@@ -7,8 +7,11 @@ import {
   SERVICIOS_AVISO,
   LIMITE_MENSAJE,
   LIMITE_TITULO,
+  CLAVE_OCULTOS_PUBLICOS,
   avisosAMostrar,
   bogotaLocalAIso,
+  claveOcultosDe,
+  recordarEnNavegador,
   isoABogotaLocal,
   podarOcultos,
   tieneCamposPorLlenar,
@@ -36,6 +39,23 @@ test('ocultar: solo la versión ocultada; si se edita vuelve a salir', () => {
 test('«fuera de servicio» no se oculta', () => {
   const a = aviso({ id: 'a', nivel: 'caido' })
   assert.deepEqual(avisosAMostrar([a], { a: a.actualizado_en }), [a])
+})
+
+test('punto 12: el respaldo del panel en el navegador es por persona y distinto del de las páginas públicas', () => {
+  const a = claveOcultosDe('00000000-0000-4000-8000-000000000001')
+  const b = claveOcultosDe('00000000-0000-4000-8000-000000000002')
+  assert.notEqual(a, b)
+  assert.notEqual(a, CLAVE_OCULTOS_PUBLICOS)
+  assert.equal(CLAVE_OCULTOS_PUBLICOS, 'hp-avisos-ocultos')
+})
+
+test('punto 12: si la API no guardó el cierre se recuerda en el navegador, salvo aviso retirado o que no se cierra', () => {
+  assert.equal(recordarEnNavegador(0), true) // sin red
+  assert.equal(recordarEnNavegador(500), true)
+  assert.equal(recordarEnNavegador(403), true) // «ver como»: solo en este navegador
+  assert.equal(recordarEnNavegador(undefined), true)
+  assert.equal(recordarEnNavegador(404), false)
+  assert.equal(recordarEnNavegador(409), false)
 })
 
 test('podarOcultos deja solo los vigentes', () => {

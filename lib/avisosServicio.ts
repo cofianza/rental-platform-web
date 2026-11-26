@@ -153,6 +153,27 @@ export function avisosAMostrar(avisos: IAvisoVisible[], ocultos: AvisosOcultos):
   return avisos.filter((a) => a.nivel === 'caido' || ocultos[a.id] !== a.actualizado_en)
 }
 
+/**
+ * Reporte de la Oficina Virtual (25-nov), punto 12: en el panel el cierre se guarda en la cuenta (la API ya no manda
+ * los que la persona cerró). El navegador solo es el respaldo cuando la API no lo pudo guardar, y por persona (en un
+ * equipo compartido, lo que cierra una no se le oculta a otra). Las páginas públicas (prospectos sin cuenta) siguen
+ * con la clave del navegador.
+ */
+export const CLAVE_OCULTOS_PUBLICOS = 'hp-avisos-ocultos'
+
+/** La clave del respaldo en el navegador de lo que esta persona cerró en el panel. */
+export function claveOcultosDe(usuarioId: string): string {
+  return `${CLAVE_OCULTOS_PUBLICOS}:${usuarioId}`
+}
+
+/**
+ * ¿El cierre que la API no guardó se recuerda en el navegador? Sí, salvo que el aviso ya no esté publicado (404) o
+ * no se pueda cerrar (409, «fuera de servicio»): ahí no hay nada que recordar.
+ */
+export function recordarEnNavegador(statusCode: number | undefined): boolean {
+  return statusCode !== 404 && statusCode !== 409
+}
+
 /** Deja solo lo de avisos que siguen vigentes, para que la lista no crezca sin fin. */
 export function podarOcultos(ocultos: AvisosOcultos, vigentes: IAvisoVisible[]): AvisosOcultos {
   const ids = new Set(vigentes.map((a) => a.id))
