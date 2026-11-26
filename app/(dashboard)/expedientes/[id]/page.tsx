@@ -1426,7 +1426,7 @@ function ExpedienteDetalleContenido() {
                   <div className="space-y-3 text-sm">
                     <InfoRow label="Dirección" value={expediente.inmueble.direccion} />
                     <InfoRow
-                      label="Ciudad"
+                      label="Municipio"
                       value={etiquetaMunicipio(expediente.inmueble.ciudad, expediente.inmueble.departamento)}
                     />
                     <InfoRow
@@ -1527,7 +1527,7 @@ function ExpedienteDetalleContenido() {
                     )}
                     {expediente.solicitante.ciudad && (
                       <InfoRow
-                        label="Ciudad"
+                        label="Municipio"
                         value={etiquetaMunicipio(expediente.solicitante.ciudad, expediente.solicitante.departamento)}
                       />
                     )}

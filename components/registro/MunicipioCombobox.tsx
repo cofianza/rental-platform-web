@@ -61,7 +61,8 @@ async function buscarMunicipios(nombre: string, authToken?: string): Promise<Mun
   // enlace del coarrendatario), el público.
   const path = authToken ? '/factus/municipalities' : '/public/factus/municipalities'
   const res = await fetch(`${API_BASE_URL}${path}?name=${encodeURIComponent(nombre)}`, { headers })
-  if (!res.ok) return []
+  // Una falla no es «sin resultados»: quien llama la distingue.
+  if (!res.ok) throw new Error(`municipios ${res.status}`)
   const json = await res.json()
   return Array.isArray(json.data) ? json.data : []
 }
@@ -83,8 +84,13 @@ export function MunicipioCombobox({
   const [results, setResults] = useState<MunicipioOption[]>([])
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  // La ciudad guardada a mano que no se encontró en el catálogo (se pide elegirla).
-  const [fueraDeCatalogo, setFueraDeCatalogo] = useState(false)
+  // La búsqueda falló (API caída, sin red): se ofrece reintentar.
+  const [fallo, setFallo] = useState(false)
+  const [intento, setIntento] = useState(0)
+  // La ciudad guardada a mano que no se reconoció en el catálogo: no se encontró o no se pudo consultar.
+  const [guardadoSinElegir, setGuardadoSinElegir] = useState<'no_encontrado' | 'sin_consulta' | null>(null)
+  // Si la persona ya escribió, la respuesta tardía sobre la ciudad guardada no pisa lo escrito.
+  const escribioRef = useRef(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   // Generado: el combobox se usa en varias pantallas y un id fijo se repetiria.
@@ -106,7 +112,7 @@ export function MunicipioCombobox({
   const handleSelect = (m: MunicipioOption) => {
     const label = etiquetaMunicipio(m.name, m.department.name)
     setQuery(label)
-    setFueraDeCatalogo(false)
+    setGuardadoSinElegir(null)
     onChange({ codigo: m.code, nombre: label }, m)
     setOpen(false)
   }
@@ -123,26 +129,23 @@ export function MunicipioCombobox({
   useEffect(() => {
     if (tieneValor || ciudadGuardada.length < 2) return
     let vigente = true
+    const sinElegir = (motivo: 'no_encontrado' | 'sin_consulta') => {
+      // Llegó después del primer render (datos cargados aparte): que se vea.
+      const texto = etiquetaMunicipio(ciudadGuardada, departamentoGuardado)
+      setQuery((q) => q || texto)
+      setGuardadoSinElegir(motivo)
+    }
     buscarMunicipios(ciudadGuardada, authToken)
       .then((opciones) => {
-        if (!vigente) return
+        if (!vigente || escribioRef.current) return
         const m = opciones.find((o) => esElMunicipio(o, ciudadGuardada, departamentoGuardado))
-        if (m) {
-          const label = etiquetaMunicipio(m.name, m.department.name)
-          setQuery(label)
-          onChangeRef.current({ codigo: m.code, nombre: label }, m, { automatico: true })
-        } else {
-          // Llegó después del primer render (datos cargados aparte): que se vea.
-          const texto = etiquetaMunicipio(ciudadGuardada, departamentoGuardado)
-          setQuery((q) => q || texto)
-          setFueraDeCatalogo(true)
-        }
+        if (!m) return sinElegir('no_encontrado')
+        const label = etiquetaMunicipio(m.name, m.department.name)
+        setQuery(label)
+        onChangeRef.current({ codigo: m.code, nombre: label }, m, { automatico: true })
       })
       .catch(() => {
-        if (!vigente) return
-        const texto = etiquetaMunicipio(ciudadGuardada, departamentoGuardado)
-        setQuery((q) => q || texto)
-        setFueraDeCatalogo(true)
+        if (vigente && !escribioRef.current) sinElegir('sin_consulta')
       })
     return () => {
       vigente = false
@@ -151,19 +154,24 @@ export function MunicipioCombobox({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ciudadGuardada, departamentoGuardado])
 
+  // Con un municipio elegido y el texto sin tocar no se busca (el texto es «Municipio, Departamento»).
+  const consulta = value && query === value.nombre ? '' : query.trim()
+
   // Buscar con debounce.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    if (query.trim().length < 2) {
+    if (consulta.length < 2) {
       setResults([])
       return
     }
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
+      setFallo(false)
       try {
-        setResults(await buscarMunicipios(query.trim(), authToken))
+        setResults(await buscarMunicipios(consulta, authToken))
       } catch {
         setResults([])
+        setFallo(true)
       } finally {
         setLoading(false)
       }
@@ -171,16 +179,17 @@ export function MunicipioCombobox({
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [query, authToken])
+  }, [consulta, authToken, intento])
 
   const handleClear = () => {
+    escribioRef.current = true
     setQuery('')
     onChange(null)
     setResults([])
   }
 
-  const avisoGuardado = !value && fueraDeCatalogo && textoGuardado && query === textoGuardado
-  const textoAyuda = error ? null : avisoGuardado ? null : ayuda
+  const avisoGuardado = !value && guardadoSinElegir && textoGuardado && query === textoGuardado ? guardadoSinElegir : null
+  const textoAyuda = error || avisoGuardado ? null : ayuda
 
   return (
     <div ref={containerRef} className="relative">
@@ -196,6 +205,7 @@ export function MunicipioCombobox({
           value={query}
           disabled={disabled}
           onChange={(e) => {
+            escribioRef.current = true
             setQuery(e.target.value)
             // Si el usuario edita el texto, invalidamos la selección (o la ciudad guardada) hasta que elija otra.
             if (value || guardado) onChange(null)
@@ -210,9 +220,9 @@ export function MunicipioCombobox({
             if (open && !loading && results.length > 0 && !value) handleSelect(results[0])
           }}
           placeholder={placeholder}
-          aria-invalid={!!error || !!avisoGuardado}
+          aria-invalid={!!error}
           aria-describedby={error || avisoGuardado || textoAyuda ? ayudaId : undefined}
-          className={`w-full min-h-11 rounded-lg border pl-3 pr-10 py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+          className={`w-full min-h-11 rounded-lg border pl-3 pr-11 py-2 text-base sm:text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed ${
             error ? 'border-red-300 bg-red-50' : avisoGuardado ? 'border-amber-300 bg-amber-50' : 'border-gray-300'
           }`}
           autoComplete="off"
@@ -221,20 +231,31 @@ export function MunicipioCombobox({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-gray-500 hover:text-gray-600"
-            aria-label="Limpiar"
+            className="absolute right-0.5 top-1/2 -translate-y-1/2 flex min-h-10 min-w-10 items-center justify-center text-gray-500 hover:text-gray-600"
+            aria-label="Borrar el municipio"
           >
             <IconX size={14} aria-hidden />
           </button>
         )}
       </div>
 
-      {open && !disabled && query.trim().length >= 2 && (
+      {open && !disabled && consulta.length >= 2 && (
         <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-auto">
           {loading ? (
-            <div className="px-3 py-2 text-sm text-gray-500">Buscando…</div>
+            <div role="status" className="px-3 py-2 text-sm text-gray-500">Buscando…</div>
+          ) : fallo ? (
+            <div role="status" className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm text-gray-600">
+              <span>No pudimos cargar el listado de municipios.</span>
+              <button
+                type="button"
+                onClick={() => setIntento((n) => n + 1)}
+                className="min-h-10 rounded-md px-2 font-medium text-primary-700 hover:bg-primary-50"
+              >
+                Reintentar
+              </button>
+            </div>
           ) : results.length === 0 ? (
-            <div className="px-3 py-2 text-sm text-gray-500">Sin resultados</div>
+            <div role="status" className="px-3 py-2 text-sm text-gray-500">Sin resultados</div>
           ) : (
             results.map((m) => {
               // «Caldas, Antioquia»; Bogotá sin repetir su departamento.
@@ -260,7 +281,12 @@ export function MunicipioCombobox({
       ) : avisoGuardado ? (
         <p id={ayudaId} className="mt-1 flex items-start gap-1.5 text-xs text-amber-800">
           <IconAlertTriangle size={14} className="mt-px shrink-0" aria-hidden />
-          <span>«{textoGuardado}» no está en el listado oficial de municipios. Búsquelo y elíjalo de la lista.</span>
+          <span>
+            {avisoGuardado === 'sin_consulta'
+              ? `No pudimos comprobar «${textoGuardado}» en el listado oficial de municipios.`
+              : `No encontramos «${textoGuardado}» en el listado oficial de municipios.`}{' '}
+            Búsquelo y elíjalo de la lista; si no lo cambia, se guarda como está.
+          </span>
         </p>
       ) : textoAyuda ? (
         <p id={ayudaId} className="mt-1 text-xs text-gray-500">{textoAyuda}</p>

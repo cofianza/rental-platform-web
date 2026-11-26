@@ -233,7 +233,7 @@ const initialFormData: FormData = {
 
 // Etiquetas para el aviso de 'falta X' (antes: 'completa todos los campos requeridos' sin decir cual).
 const FIELD_LABELS: Record<string, string> = {
-  codigo: 'código', direccion: 'dirección', ciudad: 'ciudad', departamento: 'departamento', tipo: 'tipo de inmueble',
+  codigo: 'código', direccion: 'dirección', ciudad: 'municipio', departamento: 'municipio', tipo: 'tipo de inmueble',
   estrato: 'estrato', valor_arriendo: 'valor del arriendo', propietario_id: 'propietario', foto_fachada_url: 'foto de fachada',
   area_m2: 'área', habitaciones: 'habitaciones', banos: 'baños', parqueaderos: 'parqueaderos', administracion: 'administración',
 }
@@ -1265,7 +1265,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 <Campo
                   id="ubicacion_detallada"
                   label="Ubicación detallada"
-                  ayuda="Cómo se describe la ubicación en el contrato. Si lo deja vacío, usamos dirección, barrio y ciudad."
+                  ayuda="Cómo se describe la ubicación en el contrato. Si lo deja vacío, usamos dirección, barrio y municipio."
                 >
                   <textarea
                     id="ubicacion_detallada"

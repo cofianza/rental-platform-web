@@ -91,6 +91,7 @@ export default function CoarrendatarioPublicPage() {
   // Sus datos de notificación: el contrato los imprime (cláusula de notificaciones).
   const [direccion, setDireccion] = useState('')
   const [municipio, setMunicipio] = useState('')
+  const [faltaMunicipio, setFaltaMunicipio] = useState(false)
   // El correo para el resultado de su evaluación: solo si la API lo pide (prellenado con el de la invitación).
   const [correoResultado, setCorreoResultado] = useState('')
   const [errorCorreo, setErrorCorreo] = useState(false)
@@ -148,6 +149,7 @@ export default function CoarrendatarioPublicPage() {
     }
     setFaltaConfirmarDocumento(false)
     if (direccion.trim().length < 5 || municipio.trim().length < 2) {
+      setFaltaMunicipio(municipio.trim().length < 2)
       setErrorMsg('Escriba su dirección de residencia y elija su municipio de la lista.')
       return
     }
@@ -532,7 +534,11 @@ export default function CoarrendatarioPublicPage() {
                   ayuda={null}
                   placeholder="Escriba su municipio"
                   value={municipio ? { codigo: '', nombre: municipio } : null}
-                  onChange={(v) => setMunicipio(v?.nombre ?? '')}
+                  onChange={(v) => {
+                    setMunicipio(v?.nombre ?? '')
+                    if (v) setFaltaMunicipio(false)
+                  }}
+                  error={faltaMunicipio ? 'Elija su municipio de la lista.' : undefined}
                   disabled={procesando}
                 />
               </div>

@@ -424,6 +424,7 @@ export function Step2Solicitante({
           formData={editForm}
           errors={{}}
           onUpdateField={(field, value) => setEditForm((prev) => (prev ? { ...prev, [field]: value } : prev))}
+          edicion
         />
 
         <div className="flex flex-wrap items-center gap-2">
@@ -792,12 +793,15 @@ function SolicitanteForm({
   errors,
   onUpdateField,
   onDocumentoBlur,
+  edicion = false,
 }: {
   formData: ISolicitanteCreateData
   errors: Record<string, string>
   onUpdateField: (field: string, value: unknown) => void
   /** Solo al crear: al salir del documento se busca la ficha y el estudio vigente (§5.2). */
   onDocumentoBlur?: () => void
+  /** Editando una ficha: borrar el municipio manda null (el PATCH omite lo undefined; al crear, null no vale). */
+  edicion?: boolean
 }) {
   // Flujo de Gerencia, modulo de estudios, §5.1: los campos de este paso son
   // los MÍNIMOS para identificar y contactar al prospecto. Lo laboral y los
@@ -1018,8 +1022,9 @@ function SolicitanteForm({
                 setMunicipio(v)
                 // Si el campo reconoció solo la ciudad guardada, no se toca: no es un cambio.
                 if (opciones?.automatico) return
-                onUpdateField('ciudad', m?.name)
-                onUpdateField('departamento', m?.department.name)
+                const vacio = edicion ? null : undefined
+                onUpdateField('ciudad', m?.name ?? vacio)
+                onUpdateField('departamento', m?.department.name ?? vacio)
               }}
               guardado={formData.ciudad ? { ciudad: formData.ciudad, departamento: formData.departamento } : null}
               authToken={accessToken ?? undefined}
