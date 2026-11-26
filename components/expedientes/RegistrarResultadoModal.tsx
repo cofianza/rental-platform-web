@@ -30,7 +30,7 @@ type ResultadoValue = 'aprobado' | 'rechazado' | 'condicionado'
 
 const RESULTADOS: { value: ResultadoValue; label: string; ayuda: string; color: string; bg: string; border: string }[] = [
   { value: 'aprobado', label: 'Aprobado', ayuda: 'Cumple la política.', color: 'text-green-800', bg: 'bg-green-50', border: 'border-green-600' },
-  { value: 'rechazado', label: 'No aprobable', ayuda: 'Pide los motivos.', color: 'text-red-800', bg: 'bg-red-50', border: 'border-red-600' },
+  { value: 'rechazado', label: 'No aprobado', ayuda: 'Pide los motivos.', color: 'text-red-800', bg: 'bg-red-50', border: 'border-red-600' },
   { value: 'condicionado', label: 'Condicionado', ayuda: 'Pide las condiciones.', color: 'text-amber-800', bg: 'bg-amber-50', border: 'border-amber-600' },
 ]
 
@@ -374,7 +374,7 @@ export function RegistrarResultadoModal({
                   onChange={(e) => setFundamento(e.target.value)}
                   rows={3}
                   maxLength={2000}
-                  placeholder="Por qué no es aprobable..."
+                  placeholder="Por qué no se aprueba..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">Solo lo ve Cofianza: queda en el historial del estudio.</p>

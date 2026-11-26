@@ -20,7 +20,7 @@ import {
   type VistaTurno,
 } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
-import { etapaDeFila, accionDeFila, esperaCargaNotaria, revisionDemorada, segundoEnVerificacion, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
+import { etapaDeFila, accionDeFila, esperaCargaNotaria, fraseCanonGestor, revisionDemorada, segundoEnVerificacion, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
 import { IconClock } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { InfoTip } from '@/components/ui/InfoTip'
@@ -262,6 +262,8 @@ export function datosEstadoFila(
             verificacionDe: etapa === 'solicitante_en_verificacion' ? ('solicitante' as const) : ('segundo' as const),
             tomadoPor: deCofianza && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
+            // Oficina Virtual (punto 13): a quien gestiona, «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon».
+            fraseGestor: turno === 'gestor' && etapa === 'canon_excede' ? fraseCanonGestor(expediente.traba_contrato) : undefined,
           }
         : null,
     // Solo con el turno de quien gestiona: con el segundo firmante en curso (se le espera) o en verificación,

@@ -50,11 +50,11 @@ test('punto 13: en los bordes no se redondea a algo que no es', () => {
 test('punto 13: el detalle al pasar el cursor o tocar', () => {
   assert.equal(
     detalleAprobacion(a({})),
-    'Últimos 30 días: 12 de 20 estudios decididos quedaron aprobados (60 %); 1 con segundo firmante y 7 no aprobables. Lo que todavía revisa Cofianza no cuenta hasta que se decide.',
+    'Últimos 30 días: 12 de 20 estudios decididos quedaron aprobados (60 %); 1 con segundo firmante y 7 no aprobados. Lo que todavía revisa Cofianza no cuenta hasta que se decide.',
   )
   // Sin el desglose del segundo firmante (la API no pudo clasificar), sin él.
-  assert.match(detalleAprobacion(a({ con_segundo_firmante: undefined, bloqueados: undefined }))!, /\(60 %\); 7 no aprobables\./)
-  assert.match(detalleAprobacion(a({ bloqueados: 2, decididos: 22 }))!, /1 con segundo firmante, 7 no aprobables y 2 bloqueados por listas\./)
+  assert.match(detalleAprobacion(a({ con_segundo_firmante: undefined, bloqueados: undefined }))!, /\(60 %\); 7 no aprobados\./)
+  assert.match(detalleAprobacion(a({ bloqueados: 2, decididos: 22 }))!, /1 con segundo firmante, 7 no aprobados y 2 bloqueados por listas\./)
   assert.match(detalleAprobacion(a({ aprobados: 1, rechazados: 0, con_segundo_firmante: 0, decididos: 1, tasa: 100 }))!, /^Últimos 30 días: 1 de 1 estudio decidido quedó aprobado/)
   assert.equal(detalleAprobacion(a({ decididos: 0 })), null)
 })

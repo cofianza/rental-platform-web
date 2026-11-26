@@ -246,7 +246,7 @@ export function CarteraAnaliticaSection() {
               />
             )}
             <DecisionCard
-              label="No aprobables"
+              label="No aprobados"
               value={cargando ? null : (decisiones.rechazados ?? '—')}
               variant="border-red-300 bg-red-50 text-red-500"
             />

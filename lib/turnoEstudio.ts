@@ -44,6 +44,11 @@ export interface OpcionesTurno {
    * plataforma: el turno es de quien gestiona (turnoDeEtapa ya lo da; aquí, por si llega como 'firmas').
    */
   firmaNotaria?: boolean
+  /**
+   * La frase completa para quien gestiona, en lugar de «Su turno: <acción>» (reporte de la Oficina Virtual, punto 13:
+   * «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon»). Las demás vistas siguen con `accion`.
+   */
+  fraseGestor?: string
 }
 
 /** Adenda 6 §2: lo que le toca a quien gestiona con el contrato en firma en notaría (tras «Su turno:»). */
@@ -81,6 +86,7 @@ export function textoTurno(turno: Turno, vista: VistaTurno, o: OpcionesTurno = {
       if (vista === 'cofianza' && o.analista && o.sinEjecutar) return 'Arranque fallido: ejecute la consulta'
       // Aprobado con el segundo firmante en verificación: quien gestiona decide si lo espera; al analista le toca verificarlo.
       if (vista === 'cofianza' && o.analista && o.verificacion) return textoVerificacion(vista, o)
+      if (vista === 'gestor' && o.fraseGestor) return o.fraseGestor
       // A Cofianza «Su turno» le decía que actuara ella.
       const base = vista === 'gestor' ? 'Su turno' : vista === 'cofianza' ? 'Turno del gestor' : 'Turno de su equipo'
       return o.accion ? `${base}: ${o.accion}` : base

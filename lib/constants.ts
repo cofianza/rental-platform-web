@@ -375,7 +375,7 @@ export const ESTADOS_EXPEDIENTE: Record<EstadoExpediente, EstadoConfig> = {
     borderColor: 'border-green-300',
   },
   rechazado: {
-    label: 'No aprobable',
+    label: 'No aprobado',
     color: 'red',
     bgColor: 'bg-red-100',
     textColor: 'text-red-700',
@@ -678,7 +678,7 @@ export const ESTADOS_RESULTADO_ESTUDIO: Record<ResultadoEstudioType, EstadoConfi
     borderColor: 'border-green-300',
   },
   rechazado: {
-    label: 'No aprobable',
+    label: 'No aprobado',
     color: 'red',
     bgColor: 'bg-red-100',
     textColor: 'text-red-700',

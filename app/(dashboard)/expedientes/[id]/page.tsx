@@ -68,7 +68,7 @@ import { ID_VERIFICACION_SEGUNDO } from '@/components/estudios/VerificacionSegun
 import { TarjetaSiguientePaso } from '@/components/expedientes/TarjetaSiguientePaso'
 import { analistaAjeno, textoTurno, turnoPropio } from '@/components/expedientes/PastillaTurno'
 import { ACCION_CARGA_NOTARIA } from '@/lib/turnoEstudio'
-import { ACCION_GESTOR, accionSegundoFirmante, revisionDemorada } from '@/lib/etapaFila'
+import { ACCION_GESTOR, accionCanon, accionSegundoFirmante, fraseCanonGestor, revisionDemorada } from '@/lib/etapaFila'
 import { sinAccionSegundoFirmante } from '@/lib/etapaEstudio'
 import { cierreDelEstudio, coarrendatarioEnCurso, coarrendatarioEnVerificacion, ofreceReemplazo, personaA5dUsable } from '@/lib/personaEstudio'
 import { PagosSection, PagoEstudioSection, LineaPagoEstudio } from '@/components/pagos'
@@ -960,19 +960,23 @@ function ExpedienteDetalleContenido() {
             // Ya hay un segundo firmante invitado sin responder: «reenvíele la invitación o invite a otra persona».
             invitado: puedeEditar && !!coaEsperaLeida?.invitado,
             // Con traba o sin segundo firmante en curso, la misma acción que la pastilla de la lista
-            // («Su turno: ajustar el canon…», «Su turno: invitar al segundo firmante»). En el canal del
+            // («Aprobado hasta $X…», «Su turno: invitar al segundo firmante»). En el canal del
             // propietario directo la API no admite segundo firmante: sin acción propia, su texto dice por qué.
             accion:
               turno !== 'gestor'
                 ? undefined
                 : etapaTurno === 'segundo_firmante'
                   ? accionSegundoFirmante(titularCondicionado)
-                  : esEtapaDeTraba(etapaTurno)
-                    ? ACCION_GESTOR[etapaTurno]
-                    : etapaTurno === 'firma' && firmaNotaria
-                      ? // Adenda 6 §2: «Su turno: cargar el contrato firmado en notaría» (como la lista).
-                        ACCION_CARGA_NOTARIA
-                      : undefined,
+                  : etapaTurno === 'canon_excede'
+                    ? accionCanon(expediente.traba_contrato)
+                    : esEtapaDeTraba(etapaTurno)
+                      ? ACCION_GESTOR[etapaTurno]
+                      : etapaTurno === 'firma' && firmaNotaria
+                        ? // Adenda 6 §2: «Su turno: cargar el contrato firmado en notaría» (como la lista).
+                          ACCION_CARGA_NOTARIA
+                        : undefined,
+            // Oficina Virtual (punto 13), como la lista: «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon».
+            fraseGestor: turno === 'gestor' && etapaTurno === 'canon_excede' ? fraseCanonGestor(expediente.traba_contrato) : undefined,
             // Como en la lista: si otro analista ya la tomó, «En revisión de X» (o «Lo verifica X») y sin coral.
             tomadoPor: (revisionAnalista || verificacion) && puedeAsignar ? analistaAjeno(expediente.analista, user?.id) : null,
           }
@@ -1143,7 +1147,7 @@ function ExpedienteDetalleContenido() {
                 titulo="Estudio cerrado"
                 descripcion={
                   <>
-                    <p>El estudio no fue aprobable y el caso quedó cerrado.</p>
+                    <p>El estudio no quedó aprobado y el caso quedó cerrado.</p>
                     {textoVisible(expediente.motivo_rechazo, { externo: !esRolInterno(user?.rol) }) && (
                       <p className="mt-1">
                         <span className="font-semibold">Motivo:</span>{' '}

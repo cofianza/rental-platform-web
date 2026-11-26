@@ -81,7 +81,8 @@ export function ResponsableMiembroCard({ miembroResponsableId, onAssign, titulo,
   if (loading) return null
   if (miembros.length === 0 && !soyOwner) return null
 
-  const nombreActual = value && nombrePorPerfil.get(value) ? nombrePorPerfil.get(value) : 'Sin responsable'
+  // Reporte de la Oficina Virtual (25-nov), punto 13: antes «Sin responsable».
+  const nombreActual = value && nombrePorPerfil.get(value) ? nombrePorPerfil.get(value) : 'Sin asignar'
   const selector = (
     <select
       id={idSelector}
@@ -95,7 +96,7 @@ export function ResponsableMiembroCard({ miembroResponsableId, onAssign, titulo,
           : 'w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:opacity-50'
       }
     >
-      <option value="">Sin responsable</option>
+      <option value="">Sin asignar</option>
       {miembros.map((m) => (
         <option key={m.perfil_id ?? m.id} value={m.perfil_id ?? ''}>
           {m.nombre ? `${m.nombre} ${m.apellido ?? ''}`.trim() : m.email}

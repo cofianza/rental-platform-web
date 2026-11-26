@@ -174,14 +174,14 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
     if (!esCoarrendatario && e.desenlace && e.desenlace_texto) return e.desenlace_texto
     if (e.resultado === 'condicionado') {
       if (e.decision_cofianza === 'aprobado') return 'Aprobado'
-      if (e.decision_cofianza === 'negado') return 'No aprobable'
+      if (e.decision_cofianza === 'negado') return 'No aprobado'
       // Adenda 4 V3 §8: con la condición obligatoria, sin coarrendatario válido no se aprueba.
       if (e.condicion_coarrendatario) return e.condicion_coarrendatario.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
       // U8: un nombre por situación, como la lista, la barra y las notificaciones.
       return 'En revisión de Cofianza'
     }
     if (e.resultado === 'aprobado') return 'Aprobado'
-    if (e.resultado === 'rechazado') return 'No aprobable'
+    if (e.resultado === 'rechazado') return 'No aprobado'
   }
   // Adenda 4 V3 §12: ya consultado, la decisión espera a que autorice el coarrendatario (el nombre de la etapa).
   if (e.estado === 'en_proceso' && e.espera_autorizacion) return 'Esperando al segundo firmante'
@@ -365,7 +365,7 @@ function getSiguientePaso(
         ? 'Revise el motivo y decida si lo aprueba.'
         : 'En revisión: la decide un analista de Cofianza.'
     }
-    if (estudio.resultado === 'rechazado') return 'Evaluación no aprobable. El estudio no avanza al contrato.'
+    if (estudio.resultado === 'rechazado') return 'Evaluación no aprobada. El estudio no avanza al contrato.'
     return 'Evaluación completada, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {

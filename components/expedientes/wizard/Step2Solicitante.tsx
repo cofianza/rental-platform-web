@@ -56,7 +56,7 @@ interface Step2SolicitanteProps {
 // §5.2: el aviso de estudio vigente dice qué tan viejo es y qué salió, para decidir sin abrirlo.
 const ROTULO_RESULTADO: Record<string, string> = {
   aprobado: 'aprobado',
-  rechazado: 'no aprobable',
+  rechazado: 'no aprobado',
   condicionado: 'en revisión o con condición',
 }
 

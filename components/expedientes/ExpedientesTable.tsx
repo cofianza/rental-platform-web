@@ -228,6 +228,9 @@ interface Fila {
 /** Sin nada por hacer de nadie: «Qué sigue» lo dice en vez de dejar un guion. */
 const SIN_PENDIENTES: EtapaEstudio[] = ['vigente', 'finalizado', 'cancelado', 'no_aprobado', 'no_habilitada']
 
+/** El estudio no tiene un miembro del equipo asignado (columna Responsable). */
+const SIN_ASESOR = 'Asesor de su equipo: sin asignar'
+
 /** Identidad rechazada: el RPC la cuenta como turno del gestor, pero datosEstadoFila le quita la pastilla de turno. */
 const identidadRechazada = (e: IExpediente) => e.estudio_vigente?.estado_bloqueo === 'identidad_rechazada'
 
@@ -374,7 +377,7 @@ export function ExpedientesTable({
   const conPuntaje = filas.some((f) => f.datos.score > 0)
 
   // Solo el miembro asignado: caer al analista le mostraba a alguien de Cofianza.
-  // `apilada`: la vista móvil no tiene el encabezado con la burbuja; la lleva junto a «Sin responsable».
+  // `apilada`: la vista móvil no tiene el encabezado con la burbuja; la lleva junto a «Asesor de su equipo: sin asignar».
   const responsable = (e: IExpediente, apilada = false) => {
     const nombre = e.miembro_responsable_id ? (miembrosResponsablesById?.[e.miembro_responsable_id] ?? null) : null
     if (nombre) {
@@ -385,12 +388,13 @@ export function ExpedientesTable({
         </span>
       )
     }
-    // «Sin responsable» se entiende sin el encabezado de la columna (la vista apilada no lo tiene).
-    if (!apilada) return <span className="text-sm text-gray-500">Sin responsable</span>
+    // Reporte de la Oficina Virtual (25-nov), punto 13: antes «Sin responsable»; se entiende también sin el encabezado de
+    // la columna (la vista apilada no lo tiene). Baja a dos líneas en la columna angosta y a 390 px.
+    if (!apilada) return <span className="text-sm text-gray-500">{SIN_ASESOR}</span>
     // Anclada al inicio del texto y abierta a la derecha: va al inicio de su columna.
     return (
-      <span className="relative inline-flex items-center gap-0.5 text-sm text-gray-500">
-        Sin responsable
+      <span className="relative inline-flex min-w-0 flex-wrap items-center gap-0.5 text-sm text-gray-500">
+        {SIN_ASESOR}
         <InfoTip texto={AYUDA.responsable} etiqueta="Qué es el responsable" lado="derecha" anclada />
       </span>
     )

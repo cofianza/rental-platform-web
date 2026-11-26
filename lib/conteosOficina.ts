@@ -62,7 +62,7 @@ export function detalleAprobacion(a: IAprobacionOficina | null | undefined): str
   const tasa = a.tasa !== null ? ` (${tasaLegible(a.tasa)})` : ''
   const resto = [
     ...(conDesglose ? [`${miles(a.con_segundo_firmante!)} con segundo firmante`] : []),
-    cuenta(a.rechazados, 'no aprobable', 'no aprobables'),
+    cuenta(a.rechazados, 'no aprobado', 'no aprobados'),
     ...(conDesglose && (a.bloqueados ?? 0) > 0 ? [cuenta(a.bloqueados!, 'bloqueado por listas', 'bloqueados por listas')] : []),
   ]
   const aprobados = `${miles(a.aprobados)} de ${cuenta(a.decididos, 'estudio decidido', 'estudios decididos')} ${a.aprobados === 1 ? 'quedó aprobado' : 'quedaron aprobados'}`

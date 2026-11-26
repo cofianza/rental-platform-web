@@ -214,7 +214,7 @@ test('punto 7: vencimiento del resultado en días de Colombia', async () => {
   assert.equal(v('2026-11-30T15:00:00Z')?.titulo, 'El resultado sirve hasta el 30 de noviembre de 2026')
 })
 
-test('estudio reabierto por un reemplazo: espera a la persona nueva, nunca «No aprobable» ni «En evaluación»', async () => {
+test('estudio reabierto por un reemplazo: espera a la persona nueva, nunca «No aprobado» ni «En evaluación»', async () => {
   const { ETAPA_LABEL } = await import('./etapaEstudio')
   const reabierto = { ...base, estado: 'en_revision' as DatosEtapa['estado'], titularEstado: 'completado', reaperturaAbierta: true }
   assert.equal(calcularEtapa(reabierto), 'reapertura')
@@ -254,7 +254,7 @@ test('punto 11: cuatro pasos fijos, el mismo nombre en todos los casos', async (
   // Todas las etapas tienen paso.
   for (const e of Object.keys(ETAPA_LABEL) as Etapa[]) assert.equal(typeof PASO_DE_ETAPA[e], 'number', e)
 
-  // El nombre no cambia con la etapa: ni «Aprobado» en el contrato ni «No aprobable» en el resultado.
+  // El nombre no cambia con la etapa: ni «Aprobado» en el contrato ni «No aprobado» en el resultado.
   assert.equal(rotuloPaso(2, 'contrato'), 'Contrato')
   assert.equal(rotuloPaso(2, 'no_aprobado'), 'Contrato')
   assert.equal(rotuloPaso(PASO_RESULTADO, 'no_aprobado'), 'Resultado')
@@ -268,7 +268,7 @@ test('punto 11: cuatro pasos fijos, el mismo nombre en todos los casos', async (
   assert.equal(rotuloPaso(PASO_RESULTADO, null), 'Resultado')
   assert.equal(rotuloPaso(PASO_RESULTADO, 'no_aprobado', true), 'Resultado')
 
-  // El no aprobable marca el resultado en rojo; el vencido en gris; lo demás, como siempre.
+  // El no aprobado marca el resultado en rojo; el vencido en gris; lo demás, como siempre.
   assert.equal(tonoDelPaso('no_aprobado'), 'rojo')
   assert.equal(tonoDelPaso('vencido'), 'gris')
   assert.equal(tonoDelPaso('decision'), 'normal')
@@ -455,11 +455,11 @@ test('bloque 4: aviso al aprobar: si algo impide el contrato, se dice eso', asyn
   assert.equal(avisoEstudioAprobado(null, { sinInmueble: true }), 'Estudio aprobado. Para crear el contrato, primero vincule el inmueble.')
 })
 
-test('bloque 4: no aprobable con una persona reemplazable: la salida va antes que la apelación', () => {
+test('bloque 4: no aprobado con una persona reemplazable: la salida va antes que la apelación', () => {
   const o = { vista: 'gestor' as const, analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false }
   assert.equal(
     queSigue('no_aprobado', { ...o, reemplazoPosible: true }),
-    'El estudio no quedó aprobable. Puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
+    'El estudio no quedó aprobado. Puede reemplazar a una persona en «Personas del estudio», aquí abajo, o, si todavía aplica, el solicitante puede apelar (vea abajo).',
   )
   assert.match(queSigue('no_aprobado', { ...o, vista: 'equipo', reemplazoPosible: true }), /Alguien de su equipo con permiso de edición puede reemplazar/)
   assert.match(queSigue('no_aprobado', { ...o, vista: 'cofianza', reemplazoPosible: true }), /La inmobiliaria o el propietario pueden reemplazar/)
@@ -469,8 +469,8 @@ test('bloque 4: no aprobable con una persona reemplazable: la salida va antes qu
   }
   assert.doesNotMatch(queSigue('no_aprobado', { ...o, reemplazoPosible: true, enLista: true }), /aquí abajo|vea abajo/)
   // Sin reemplazo posible, como antes.
-  assert.equal(queSigue('no_aprobado', o), 'El estudio no quedó aprobable. Abajo están el motivo y, si aplica, cómo apelar.')
-  // Solo en el no aprobable.
+  assert.equal(queSigue('no_aprobado', o), 'El estudio no quedó aprobado. Abajo están el motivo y, si aplica, cómo apelar.')
+  // Solo en el no aprobado.
   assert.doesNotMatch(queSigue('contrato', { ...o, reemplazoPosible: true }), /reemplazar/)
 })
 

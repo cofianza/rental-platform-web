@@ -86,7 +86,8 @@ function AccionesPendientes() {
           href="/citas"
           className="min-h-10 text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
         >
-          Ver todas las citas
+          {/* Reporte de la Oficina Virtual (25-nov), punto 13: «Ver todas las citas» → «Ver mis visitas». */}
+          Ver mis visitas
           <IconChevronRight size={14} />
         </Link>
       </div>
@@ -108,7 +109,7 @@ function AccionesPendientes() {
 
       {data.totales.porConfirmar > 0 && (
         <CitaSection
-          title="Citas por confirmar"
+          title="Visitas por confirmar"
           icon={<IconCalendar size={16} className="text-blue-600" />}
           items={data.porConfirmar}
           total={data.totales.porConfirmar}
@@ -120,7 +121,7 @@ function AccionesPendientes() {
 
       {data.totales.porRealizar > 0 && (
         <CitaSection
-          title="Citas por realizar"
+          title="Visitas por realizar"
           icon={<IconClock size={16} className="text-amber-600" />}
           items={data.porRealizar}
           total={data.totales.porRealizar}

@@ -71,7 +71,7 @@ export const ETAPA_LABEL: Record<EtapaEstudio, string> = {
   firma_incompleta: 'Firma incompleta',
   vigente: 'Contrato vigente',
   finalizado: 'Finalizado',
-  no_aprobado: 'No aprobable',
+  no_aprobado: 'No aprobado',
   cancelado: 'Cancelado',
   // Un solo nombre para el estudio reabierto (la persona nueva puede ser el solicitante o el segundo firmante).
   reapertura: 'Reabierto: esperando a la persona nueva',
@@ -208,7 +208,7 @@ export const ETAPAS_SEGUNDO_FIRMANTE_EN_CURSO: EtapaEstudio[] = [
 ]
 
 /** Pesos sin decimales y sin el espacio duro de Intl (como formatCurrency, sin importar constants: es pura). */
-const pesos = (cop: number) =>
+export const pesos = (cop: number) =>
   new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 })
     .format(cop)
     .replace(/\u00a0/g, '')

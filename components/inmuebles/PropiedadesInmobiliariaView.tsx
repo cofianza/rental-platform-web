@@ -53,6 +53,7 @@ import {
   IconCar,
   IconAlertTriangle,
   IconRefresh,
+  IconCalendar,
 } from '@/components/icons'
 
 // ── Helpers de presentación (estilo mockup) ──────────────────
@@ -233,6 +234,14 @@ export function PropiedadesInmobiliariaView() {
             <IconBuilding2 size={14} />
             {meta ? meta.total : error ? '—' : '…'} propiedades
           </span>
+          {/* Reporte de la Oficina Virtual (25-nov), punto 13: el acceso a las visitas vive en Inmuebles. */}
+          <Link
+            href="/citas"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-primary-700 hover:text-primary-800 hover:underline"
+          >
+            <IconCalendar size={14} aria-hidden="true" />
+            Ver mis visitas
+          </Link>
           {puedeEditar && (
             <Button variante="accent" onClick={handleCreateClick}>
               <IconPlus size={16} />

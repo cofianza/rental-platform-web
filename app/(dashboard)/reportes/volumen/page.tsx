@@ -25,7 +25,7 @@ const ESTADOS_EXPEDIENTE = [
   { value: 'borrador', label: 'Borrador' },
   { value: 'en_revision', label: 'En revisión' },
   { value: 'aprobado', label: 'Aprobado' },
-  { value: 'rechazado', label: 'No aprobable' },
+  { value: 'rechazado', label: 'No aprobado' },
   { value: 'cancelado', label: 'Cancelado' },
   { value: 'finalizado', label: 'Finalizado' },
 ]
