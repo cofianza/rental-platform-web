@@ -139,7 +139,15 @@ export function useSustituciones(estudioId: string, activo: boolean, version?: u
     (sustitucionId: string) =>
       ejecutar(
         () => sustitucionesService.cancelar(estudioId, sustitucionId),
-        (r) => (r.estado === 'devuelta' ? 'Cancelado. Cofianza le devolverá el pago a quien pagó.' : 'Cancelado. No se le cobró nada.'),
+        // La API dice qué pasó con lo pagado: saldo a favor (Adenda 6 §6) o devolución. Sin el dato (API anterior), neutro.
+        (r) =>
+          r.estado !== 'devuelta'
+            ? 'Cancelado. No se le cobró nada.'
+            : r.destino_pago === 'saldo'
+              ? 'Cancelado. Como la consulta no se hizo, su valor quedó como saldo a favor de quien la pagó.'
+              : r.destino_pago === 'devolucion'
+                ? 'Cancelado. Cofianza le devolverá el pago a quien pagó.'
+                : 'Cancelado. Como la consulta no se hizo, el valor pagado no se pierde.',
         'No se pudo cancelar. Inténtelo de nuevo.',
       ),
     [ejecutar, estudioId],

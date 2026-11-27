@@ -57,7 +57,7 @@ export function SaldosAFavorSection() {
       <div className="bg-white rounded-lg border border-red-200 p-6 text-center">
         <p className="text-sm text-red-700">{error}</p>
         <button onClick={() => void recargar()} className="mt-3 inline-flex min-h-10 items-center gap-1.5 text-xs font-medium text-primary-700 hover:text-primary-800">
-          <IconRefresh size={14} />
+          <IconRefresh size={14} aria-hidden="true" />
           Reintentar
         </button>
       </div>
@@ -89,14 +89,14 @@ export function SaldosAFavorSection() {
           disabled={isLoading}
           className="inline-flex min-h-10 items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 shrink-0"
         >
-          <IconRefresh size={14} className={isLoading ? 'animate-spin' : ''} />
+          <IconRefresh size={14} className={isLoading ? 'animate-spin' : ''} aria-hidden="true" />
           Refrescar
         </button>
       </div>
 
       {saldos.length === 0 ? (
         <div className="p-8 text-center">
-          <IconWallet size={32} className="mx-auto text-gray-400 mb-3" />
+          <IconWallet size={32} className="mx-auto text-gray-400 mb-3" aria-hidden="true" />
           <p className="text-sm text-gray-500">No hay saldos a favor.</p>
         </div>
       ) : (
@@ -184,10 +184,18 @@ export function SaldosAFavorSection() {
           saldo={devolver}
           enviando={registrando === devolver.id}
           onClose={() => setDevolver(null)}
-          onConfirm={async (canal, nota) => {
+          onConfirm={async (canal, fechaSolicitud, nota) => {
             try {
-              const r = await registrarDevolucion(devolver.id, { canal, nota })
-              toast.success(`Quedó en la cola de reembolsos: devolver a más tardar el ${formatDate(r.fecha_limite)}.`, { duration: 10000 })
+              const r = await registrarDevolucion(devolver.id, { canal, fecha_solicitud: fechaSolicitud, nota })
+              if (r.filas.some((f) => !f.id)) {
+                // La API registró la devolución pero alguna fila no quedó en la cola (ya avisó a los administradores).
+                toast.warning(`La devolución quedó registrada (a más tardar el ${formatDate(r.fecha_limite)}), pero una parte no quedó en Reembolsos: hágala a mano.`, { duration: 12000 })
+              } else {
+                toast.success(`Quedó en la cola de reembolsos: devolver a más tardar el ${formatDate(r.fecha_limite)}.`, { duration: 10000 })
+              }
+              if (r.saldo_restante_cop > 0) {
+                toast.info(`Quedan ${formatCurrency(r.saldo_restante_cop)} de saldo a favor.`, { duration: 10000 })
+              }
               if (r.filas.some((f) => f.modo === 'manual')) {
                 toast.info('Una parte se devuelve a mano (transferencia): márquela resuelta en Reembolsos cuando la haga.', { duration: 12000 })
               }
@@ -202,6 +210,9 @@ export function SaldosAFavorSection() {
   )
 }
 
+/** El día de hoy en Colombia, 'AAAA-MM-DD' (el máximo de la fecha de la solicitud). */
+const hoyColombia = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota' }).format(new Date())
+
 function SolicitudDevolucionModal({
   saldo,
   enviando,
@@ -211,21 +222,24 @@ function SolicitudDevolucionModal({
   saldo: ISaldoAFavorAdmin
   enviando: boolean
   onClose: () => void
-  onConfirm: (canal: CanalSolicitudDevolucion, nota: string) => Promise<void>
+  onConfirm: (canal: CanalSolicitudDevolucion, fechaSolicitud: string, nota: string) => Promise<void>
 }) {
+  const hoy = hoyColombia()
   const [canal, setCanal] = useState<CanalSolicitudDevolucion>('correo')
+  const [fecha, setFecha] = useState(hoy)
   const [nota, setNota] = useState('')
   const canalId = useId()
+  const fechaId = useId()
   const notaId = useId()
   const ayudaId = useId()
-  const valido = nota.trim().length >= NOTA_MIN && nota.trim().length <= NOTA_MAX
+  const valido = nota.trim().length >= NOTA_MIN && nota.trim().length <= NOTA_MAX && /^\d{4}-\d{2}-\d{2}$/.test(fecha) && fecha <= hoy
 
   return (
     <Modal
       isOpen
       onClose={onClose}
       title="Registrar solicitud de devolución"
-      description={`${saldo.dueno.nombre} pidió que le devolvamos su saldo a favor (${formatCurrency(saldo.saldo_cop)}). Queda en Reembolsos con la fecha límite de 15 días hábiles desde hoy.`}
+      description={`${saldo.dueno.nombre} pidió que le devolvamos su saldo a favor (${formatCurrency(saldo.saldo_cop)}). Queda en Reembolsos con la fecha límite de 15 días hábiles desde el día en que lo pidió.`}
       footer={
         <ModalAcciones>
           <button type="button" onClick={onClose} disabled={enviando} className={botonModal('secondary')}>
@@ -233,7 +247,7 @@ function SolicitudDevolucionModal({
           </button>
           <button
             type="button"
-            onClick={() => void onConfirm(canal, nota.trim())}
+            onClick={() => void onConfirm(canal, fecha, nota.trim())}
             disabled={!valido || enviando}
             aria-busy={enviando || undefined}
             className={botonModal('primary')}
@@ -261,6 +275,20 @@ function SolicitudDevolucionModal({
               </option>
             ))}
           </select>
+        </div>
+        <div>
+          <label htmlFor={fechaId} className="block text-sm font-medium text-gray-800 mb-1">
+            Día en que la pidió <span className="text-coral-700">*</span>
+          </label>
+          <input
+            id={fechaId}
+            type="date"
+            value={fecha}
+            max={hoy}
+            required
+            onChange={(e) => setFecha(e.target.value)}
+            className="w-full min-h-10 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
         </div>
         <div>
           <label htmlFor={notaId} className="block text-sm font-medium text-gray-800 mb-1">

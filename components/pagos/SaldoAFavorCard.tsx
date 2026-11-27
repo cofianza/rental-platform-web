@@ -40,9 +40,11 @@ export function SaldoAFavorCard({ className }: { className?: string }) {
           </h3>
           <p className="mt-0.5 text-2xl font-bold tabular-nums text-gray-900">{formatCurrency(saldo.saldo_cop)}</p>
           <p className="mt-1 text-xs text-gray-600">
-            {saldo.puede_pedir_devolucion ? (
+            {saldo.puede_pedir_devolucion && saldo.saldo_cop <= 0 ? (
+              'Se descuenta automáticamente cuando usted mismo paga un estudio o una consulta adicional (no cuando el cobro se le envía al prospecto).'
+            ) : saldo.puede_pedir_devolucion ? (
               <>
-                Se descuenta automáticamente de su siguiente pago de un estudio o una consulta adicional. Si prefiere que se lo
+                Se descuenta automáticamente cuando usted mismo paga un estudio o una consulta adicional (no cuando el cobro se le envía al prospecto). Si prefiere que se lo
                 devolvamos, escríbanos a{' '}
                 <a href={`mailto:${CONTACTO_COFIANZA.email}`} className="font-medium text-primary-700 hover:underline">
                   {CONTACTO_COFIANZA.email}

@@ -390,6 +390,9 @@ const VALOR_LABELS: Record<string, string> = {
   reemplazado_por_nuevo_cobro: 'Reemplazado por un cobro nuevo',
   gestor_paga_por_pasarela: 'El gestor paga por la pasarela',
   inmobiliaria_libera_credito: 'La inmobiliaria liberó el cupo',
+  // Adenda 6 §6 / 6.1 §6
+  saldo_a_favor: 'Saldo a favor',
+  cobro_sin_enlace: 'El cobro no llegó a tener enlace de pago',
 }
 
 const PARECE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

@@ -76,6 +76,8 @@ export function textoSaldoAplicado(e: Pick<IPagoEstudioEstado, 'saldo_a_favor' |
   const aplicado = e.saldo_a_favor?.aplicado_cop ?? e.pago?.saldo_aplicado_cop ?? 0
   if (aplicado <= 0) return null
   if (cubiertoConSaldo(e)) return `Pagado con saldo a favor (${fmtCOP(e.saldo_a_favor?.total_cop ?? aplicado)}).`
+  // Ya pagado: la parte en dinero se pagó en Mercado Pago (no queda nada «por pagar»).
+  if (e.pago?.estado === 'completado') return `Saldo a favor aplicado: ${fmtCOP(aplicado)} · Pagado con Mercado Pago: ${fmtCOP(e.monto)}.`
   return `Saldo a favor aplicado: ${fmtCOP(aplicado)} · Por pagar: ${fmtCOP(e.monto)}.`
 }
 
@@ -239,6 +241,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
   const pagaGestor = estado?.paga === 'gestor'
   // B fallida → C: confirmación antes de pasarle el cobro al arrendatario.
   const [confirmPasarArrendatario, setConfirmPasarArrendatario] = useState(false)
+  // Adenda 6 §6: pagar con el saldo a favor (lo cubre todo) no pasa por Mercado Pago: se confirma antes.
+  const [confirmPagarConSaldo, setConfirmPagarConSaldo] = useState(false)
 
   // Estudio del titular: solo para la tarjeta «cubierto» (reservado → consumido o devuelto).
   const [estudioTitular, setEstudioTitular] = useState<IEstudio | null>(null)
@@ -491,6 +495,8 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       : null
   const saldoAplicado = textoSaldoAplicado(estado)
   const saldoDisponible = puedePagarSuelto ? textoSaldoDisponible(estado) : null
+  const cubreConSaldo =
+    puedePagarSuelto && !!estado.saldo_a_favor?.disponible_cop && estado.saldo_a_favor.disponible_cop >= estado.saldo_a_favor.total_cop
   const emailEnlace = estado.pago?.email_pagador || null
   const confirmLiberarDialog = (
     <ConfirmDialog
@@ -512,6 +518,18 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
       {error && (
         <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>
       )}
+      <ConfirmDialog
+        isOpen={confirmPagarConSaldo}
+        onClose={() => setConfirmPagarConSaldo(false)}
+        onConfirm={() => {
+          setConfirmPagarConSaldo(false)
+          return handlePagar()
+        }}
+        isLoading={isSubmitting}
+        title="Pagar con su saldo a favor"
+        message={`Se descuentan ${fmtCOP(estado.saldo_a_favor?.total_cop ?? 0)} de su saldo a favor y el estudio queda pagado, sin pasar por Mercado Pago.`}
+        confirmLabel="Pagar con mi saldo"
+      />
 
       {/* Sin definir — mostrar selector (acción requerida) */}
       {estado.estado === 'sin_definir' && (
@@ -569,14 +587,28 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
               )
             )}
             {puedePagarSuelto && (
-              <button type="button" onClick={() => { void handlePagar() }} disabled={isSubmitting} className={cn(OPCION, 'hover:border-primary-500 hover:bg-primary-50/50')}>
+              <button
+                type="button"
+                onClick={() => (cubreConSaldo ? setConfirmPagarConSaldo(true) : void handlePagar())}
+                disabled={isSubmitting}
+                className={cn(OPCION, 'hover:border-primary-500 hover:bg-primary-50/50')}
+              >
                 <IconCreditCard size={22} className="shrink-0 text-primary-700" aria-hidden="true" />
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-gray-900">Pagar ahora con Mercado Pago</span>
-                  <span className="mt-0.5 block text-xs text-gray-600">Tarjeta o PSE</span>
-                  <span className="mt-1 block text-xs leading-snug text-gray-600">El estudio sigue cuando se confirma el pago.</span>
-                  {saldoDisponible && <span className="mt-1 block text-xs font-medium leading-snug text-primary-800">{saldoDisponible}</span>}
-                </span>
+                {cubreConSaldo ? (
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-gray-900">Pagar con su saldo a favor</span>
+                    <span className="mt-0.5 block text-xs text-gray-600">Se descuenta de su saldo, sin Mercado Pago</span>
+                    <span className="mt-1 block text-xs leading-snug text-gray-600">El estudio sigue de inmediato.</span>
+                    {saldoDisponible && <span className="mt-1 block text-xs font-medium leading-snug text-primary-800">{saldoDisponible}</span>}
+                  </span>
+                ) : (
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold text-gray-900">Pagar ahora con Mercado Pago</span>
+                    <span className="mt-0.5 block text-xs text-gray-600">Tarjeta o PSE</span>
+                    <span className="mt-1 block text-xs leading-snug text-gray-600">El estudio sigue cuando se confirma el pago.</span>
+                    {saldoDisponible && <span className="mt-1 block text-xs font-medium leading-snug text-primary-800">{saldoDisponible}</span>}
+                  </span>
+                )}
               </button>
             )}
             <button type="button" onClick={() => setShowLinkModal(true)} disabled={isSubmitting} className={cn(OPCION, 'hover:border-primary-500 hover:bg-primary-50/50')}>

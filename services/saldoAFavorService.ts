@@ -56,6 +56,8 @@ export type CanalSolicitudDevolucion = 'correo' | 'whatsapp' | 'otro'
 
 export interface IDevolucionSaldoInput {
   canal: CanalSolicitudDevolucion
+  /** El día en que la persona la pidió (AAAA-MM-DD): los 15 días hábiles corren desde ahí. */
+  fecha_solicitud: string
   nota: string
 }
 

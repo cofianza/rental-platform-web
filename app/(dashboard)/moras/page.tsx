@@ -391,7 +391,7 @@ function ReportarMora() {
           puedeCargarDocumento
             ? 'Reporte incompleto: cargue el contrato autenticado desde el detalle de la mora para que empiece a correr el plazo de pago.'
             : cargaLaInmobiliaria
-              ? 'Reporte incompleto: el contrato autenticado de este contrato lo carga la inmobiliaria. El plazo de pago empieza cuando lo cargue.'
+              ? 'Reporte incompleto: el contrato autenticado (notaría) lo carga la inmobiliaria. Pídale que lo cargue desde el detalle de la mora; el plazo de pago empieza cuando Cofianza lo verifique.'
               : 'Reporte incompleto: le avisamos a la inmobiliaria o al propietario para que cargue el contrato autenticado.',
           { duration: 12000 },
         )
@@ -564,8 +564,8 @@ function ReportarMora() {
                   </div>
                 ) : cargaLaInmobiliaria ? (
                   <p className="text-xs">
-                    El contrato autenticado de este contrato lo carga la inmobiliaria. Hasta que lo cargue, el reporte queda incompleto y no
-                    empieza a correr el plazo de pago.
+                    El contrato autenticado (notaría) lo carga la inmobiliaria: pídale que lo cargue desde el detalle de la mora. Hasta
+                    entonces el reporte queda incompleto y no empieza a correr el plazo de pago.
                   </p>
                 ) : (
                   <p className="text-xs">Al registrar la mora le avisamos a la inmobiliaria o al propietario para que cargue el contrato autenticado desde el detalle de la mora.</p>
@@ -1322,7 +1322,7 @@ function MoraDetalleModal({
 
                   {/* Contrato V3: el contrato autenticado lo carga la inmobiliaria; la API no se lo deja al propietario. */}
                   {reporte === 'incompleto' && !esTerminal && rol === 'propietario' && mora.notaria_carga_inmobiliaria === true && (
-                    <p className="text-xs">El contrato autenticado de este contrato lo carga la inmobiliaria.</p>
+                    <p className="text-xs">El contrato autenticado (notaría) lo carga la inmobiliaria: pídale que lo cargue desde el detalle de esta mora.</p>
                   )}
 
                   {/* Cargar el contrato autenticado (quien custodia: inmobiliaria o propietario; o el administrador). */}

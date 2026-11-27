@@ -633,6 +633,9 @@ function PagoFila({
                 <IconFileText size={16} />
                 {pago.factura.numero ? `Factura ${pago.factura.numero}` : 'Ver factura'}
               </Link>
+            ) : pago.estado === 'completado' && pago.metodo === 'saldo_a_favor' ? (
+              // Adenda 6 §6 / 6.1 §6: cubierto entero con saldo a favor: no movió dinero, no se factura de nuevo.
+              <span className="text-xs text-gray-600">No se factura: se pagó con saldo a favor.</span>
             ) : (
               pago.estado === 'completado' && onFacturar && (
                 <button

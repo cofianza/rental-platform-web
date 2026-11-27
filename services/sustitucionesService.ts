@@ -38,8 +38,9 @@ export const sustitucionesService = {
     return (await apiClient.post<ISolicitanteCargado>(`/estudios/${estudioId}/sustituciones/${sustitucionId}/solicitante`, input)).data
   },
 
-  async cancelar(estudioId: string, sustitucionId: string): Promise<{ estado: string }> {
-    return (await apiClient.delete<{ estado: string }>(`/estudios/${estudioId}/sustituciones/${sustitucionId}`)).data
+  /** `destino_pago` (con el pago devuelto): 'saldo' = quedó como saldo a favor de quien pagó; 'devolucion' = se devuelve. */
+  async cancelar(estudioId: string, sustitucionId: string): Promise<{ estado: string; destino_pago?: 'saldo' | 'devolucion' }> {
+    return (await apiClient.delete<{ estado: string; destino_pago?: 'saldo' | 'devolucion' }>(`/estudios/${estudioId}/sustituciones/${sustitucionId}`)).data
   },
 
   /** Consulta adicional para evaluar el estudio con un canon mayor. */

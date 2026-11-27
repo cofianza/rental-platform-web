@@ -28,6 +28,8 @@ import { formatCurrency } from '@/lib/constants'
 import { estudioService, type ITopeCanon } from '@/services/estudioService'
 import type { WizardData, CoarrendatarioWizard } from '@/hooks/useExpedienteWizard'
 import { WIZARD_MESSAGES } from './constants'
+import { useAuthStore } from '@/stores/auth.store'
+import { useSaldoAFavorPropio } from '@/hooks/useSaldoAFavor'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { TIPO_LABELS } from '@/components/inmuebles/constants'
 import { etiquetaMunicipio } from '@/lib/municipios'
@@ -68,6 +70,10 @@ export function Step4Confirmation({
   }
   // Paga la inmobiliaria en línea: el botón no envía nada todavía, lleva al pago.
   const pagaAhora = forma_pago === 'inmobiliaria'
+  // Adenda 6 §6 / 6.1 §6: con el saldo a favor activo, lo pagado que no se consulta queda como saldo (no se devuelve
+  // solo). Solo lo pregunta quien puede pagar ahora (el propietario); sin respuesta, el texto de siempre.
+  const rol = useAuthStore((s) => s.user?.rol)
+  const { saldo: saldoAFavor } = useSaldoAFavorPropio(pagaAhora && rol === 'propietario')
 
   // CORR §5.2: el precio (con IVA incluido) y los plazos vivos del panel, para
   // explicar qué pasa al enviar. Sin ellos la lista sale sin las cifras.
@@ -134,7 +140,9 @@ export function Step4Confirmation({
   const FIN_CADUCIDAD: Record<string, string> = {
     // Si el paquete ya venció, el cupo se extingue (destinoCupoNoConsumido en la API).
     credito: 'el cupo vuelve a su paquete, salvo que el paquete ya haya vencido.',
-    inmobiliaria: 'le devolvemos el pago.',
+    inmobiliaria: saldoAFavor?.habilitado
+      ? 'lo pagado queda como saldo a favor para su siguiente pago; si prefiere, se lo devolvemos cuando lo pida.'
+      : 'le devolvemos el pago.',
     prospecto: 'no se cobra nada.',
   }
   const pieCaducidad =
