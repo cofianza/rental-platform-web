@@ -17,6 +17,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { autorizacionService } from '@/services/autorizacionService'
 import type { FuenteVerificacion } from '@/types/autorizacion'
 import { TIPO_DOCUMENTO_OPTIONS as TIPOS } from './wizard/constants'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 
 const FUENTES: { value: FuenteVerificacion; label: string }[] = [
   { value: 'documento_fisico', label: 'Documento físico' },
@@ -140,7 +141,7 @@ export function OtraPersonaModal({ isOpen, onClose, expedienteId }: { isOpen: bo
                 Tipo de documento
                 <Obligatorio />
               </label>
-              <select id="otra-persona-tipo" value={f.tipo_documento} onChange={set('tipo_documento')} disabled={guardando} className={`mt-1 ${campo}`}>
+              <select id="otra-persona-tipo" value={f.tipo_documento} onChange={(e) => setF({ ...f, tipo_documento: e.target.value, numero_documento: documentoAlCambiarTipo(f.tipo_documento, e.target.value, f.numero_documento) })} disabled={guardando} className={`mt-1 ${campo}`}>
                 {TIPOS.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
@@ -156,9 +157,9 @@ export function OtraPersonaModal({ isOpen, onClose, expedienteId }: { isOpen: bo
               <input
                 id="otra-persona-numero"
                 value={f.numero_documento}
-                onChange={set('numero_documento')}
-                maxLength={20}
-                inputMode="numeric"
+                onChange={(e) => setF({ ...f, numero_documento: documentoAlEscribir(f.tipo_documento, e.target.value) })}
+                maxLength={30}
+                inputMode={tecladoDocumento(f.tipo_documento)}
                 autoComplete="off"
                 required
                 disabled={guardando}

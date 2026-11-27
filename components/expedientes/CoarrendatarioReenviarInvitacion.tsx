@@ -18,6 +18,7 @@ import { toast } from 'sonner'
 import { IconLoader, IconRefresh, IconUserX } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 import {
   coarrendatarioService,
   type ICoarrendatario,
@@ -166,7 +167,10 @@ export function CoarrendatarioReenviarInvitacion({
           <select
             id="coarrendatario-reenviar-tipo-doc"
             value={tipoDoc}
-            onChange={(e) => setTipoDoc(e.target.value as IInvitarCoarrendatarioInput['tipo_documento'])}
+            onChange={(e) => {
+              setTipoDoc(e.target.value as IInvitarCoarrendatarioInput['tipo_documento'])
+              setNumDoc(documentoAlCambiarTipo(tipoDoc, e.target.value, numDoc))
+            }}
             disabled={sending}
             className={`${INPUT} border-gray-300`}
           >
@@ -179,9 +183,9 @@ export function CoarrendatarioReenviarInvitacion({
           <label htmlFor="coarrendatario-reenviar-num-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Número de documento</label>
           <input
             {...conError('num-doc', errores['num-doc'])}
-            inputMode="numeric"
+            inputMode={tecladoDocumento(tipoDoc)}
             value={numDoc}
-            onChange={(e) => { setNumDoc(e.target.value); limpiar('num-doc') }}
+            onChange={(e) => { setNumDoc(documentoAlEscribir(tipoDoc, e.target.value)); limpiar('num-doc') }}
             disabled={sending}
           />
           <MensajeError campo="num-doc" error={errores['num-doc']} />

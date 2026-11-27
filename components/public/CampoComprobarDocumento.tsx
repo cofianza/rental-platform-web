@@ -3,6 +3,7 @@
 import { useId, useState, type RefObject } from 'react'
 import { IconShieldCheck } from '@/components/icons'
 import { useComprobarDocumento } from '@/hooks/useComprobarDocumento'
+import { documentoAlEscribir } from '@/lib/documentoIdentidad'
 
 /**
  * «Número de documento» del invitado. Solo se muestra cuando la API lo pide
@@ -61,7 +62,8 @@ export function CampoComprobarDocumento({
           value={numero}
           disabled={disabled || comprobando}
           onChange={(e) => {
-            setNumero(e.target.value)
+            // Sin espacios, puntos ni guiones, como se guarda (aquí no se conoce el tipo: regla general).
+            setNumero(documentoAlEscribir(null, e.target.value))
             if (faltaNumero) setFaltaNumero(false)
             if (error) limpiarError()
           }}

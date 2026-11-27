@@ -74,6 +74,7 @@ import { AYUDA_CASILLA_4A, CASILLAS_5_2_V3, COTEJO_AL_FIRMAR, versionVisible } f
 import { canalDeEstaPagina } from '@/lib/canalEnlace'
 import { CampoDatosFactura, datosFacturaCompletos, type MunicipioFactura } from '@/components/public/CampoDatosFactura'
 import type { EstadoBusquedaMunicipio } from '@/components/registro/MunicipioCombobox'
+import { documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 
 // 'inactivo': el estudio se cerró o se rechazó (la API responde ESTUDIO_NO_ACTIVO).
 // 'no_coincide': el documento escrito no es el registrado; el enlace se detuvo.
@@ -1107,12 +1108,12 @@ export default function AutorizarPage() {
                   <input
                     id="numero-documento"
                     type="text"
-                    inputMode={data.solicitante.tipo_documento === 'pasaporte' ? 'text' : 'numeric'}
+                    inputMode={tecladoDocumento(data.solicitante.tipo_documento)}
                     autoComplete="off"
                     value={documento}
                     maxLength={30}
                     onChange={(e) => {
-                      setDocumento(e.target.value)
+                      setDocumento(documentoAlEscribir(data.solicitante.tipo_documento, e.target.value))
                       if (documentoError) setDocumentoError('')
                     }}
                     aria-describedby="numero-documento-ayuda"

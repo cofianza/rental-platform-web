@@ -40,6 +40,7 @@ import {
   esPersonaJuridica,
 } from './constants'
 import { cn, formatNumeroEstudio } from '@/lib/utils'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 
 interface Step2SolicitanteProps {
   data: WizardStep2Data
@@ -618,7 +619,10 @@ export function Step2Solicitante({
           <select
             aria-label="Tipo de documento"
             value={searchTipoDoc}
-            onChange={(e) => setSearchTipoDoc(e.target.value as TipoDocumento | '')}
+            onChange={(e) => {
+              setSearchTipoDoc(e.target.value as TipoDocumento | '')
+              setSearchNumDoc(documentoAlCambiarTipo(searchTipoDoc, e.target.value, searchNumDoc))
+            }}
             className="sm:w-auto sm:shrink-0 rounded-lg sm:rounded-r-none sm:border-r-0 border border-gray-300 bg-gray-50 px-3 py-3 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:z-10"
           >
             {TIPO_DOCUMENTO_OPTIONS.map((opt) => (
@@ -631,9 +635,9 @@ export function Step2Solicitante({
           <input
             type="text"
             autoFocus
-            inputMode={searchTipoDoc === 'pasaporte' ? 'text' : 'numeric'}
+            inputMode={tecladoDocumento(searchTipoDoc)}
             value={searchNumDoc}
-            onChange={(e) => setSearchNumDoc(e.target.value)}
+            onChange={(e) => setSearchNumDoc(documentoAlEscribir(searchTipoDoc, e.target.value))}
             placeholder="Número de documento"
             aria-label="Número de documento"
             onKeyDown={(e) => {
@@ -900,7 +904,12 @@ function SolicitanteForm({
             </label>
             <select id="solicitante-formData-tipo_documento"
               value={formData.tipo_documento || ''}
-              onChange={(e) => onUpdateField('tipo_documento', e.target.value)}
+              onChange={(e) => {
+                onUpdateField('tipo_documento', e.target.value)
+                if (formData.numero_documento) {
+                  onUpdateField('numero_documento', documentoAlCambiarTipo(formData.tipo_documento, e.target.value, formData.numero_documento))
+                }
+              }}
               onBlur={onDocumentoBlur}
               className={selectClasses(!!errors.tipo_documento)}
             >
@@ -923,8 +932,9 @@ function SolicitanteForm({
             </label>
             <input id="solicitante-formData-numero_documento"
               type="text"
+              inputMode={tecladoDocumento(formData.tipo_documento)}
               value={formData.numero_documento || ''}
-              onChange={(e) => onUpdateField('numero_documento', e.target.value)}
+              onChange={(e) => onUpdateField('numero_documento', documentoAlEscribir(formData.tipo_documento, e.target.value))}
               onBlur={onDocumentoBlur}
               placeholder={WIZARD_MESSAGES.PLACEHOLDER_DOCUMENTO}
               className={inputClasses(!!errors.numero_documento)}

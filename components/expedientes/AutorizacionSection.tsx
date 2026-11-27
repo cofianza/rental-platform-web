@@ -28,6 +28,7 @@ import { fechaCompleta } from '@/lib/constants'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
 import { VerBiometria } from '@/components/expedientes/VerBiometria'
 import { esTextoV3 } from '@/lib/autorizacionV3'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 
 interface AutorizacionSectionProps {
   expedienteId: string
@@ -243,7 +244,10 @@ export function AutorizacionSection({
           <label htmlFor="autorizacion-section-tipo-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Tipo de documento</label>
           <select id="autorizacion-section-tipo-doc"
             value={tipoDocEdit}
-            onChange={(e) => setTipoDocEdit(e.target.value)}
+            onChange={(e) => {
+              setTipoDocEdit(e.target.value)
+              setNumDocEdit(documentoAlCambiarTipo(tipoDocEdit, e.target.value, numDocEdit))
+            }}
             disabled={sending}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
           >
@@ -257,9 +261,9 @@ export function AutorizacionSection({
         <div className="sm:col-span-3">
           <label htmlFor="autorizacion-section-num-doc" className="block text-[11px] font-medium text-gray-500 mb-1">Número de documento</label>
           <input id="autorizacion-section-num-doc"
-            inputMode="numeric"
+            inputMode={tecladoDocumento(tipoDocEdit)}
             value={numDocEdit}
-            onChange={(e) => { setNumDocEdit(e.target.value); setErrDoc('') }}
+            onChange={(e) => { setNumDocEdit(documentoAlEscribir(tipoDocEdit, e.target.value)); setErrDoc('') }}
             disabled={sending}
             aria-invalid={!!errDoc}
             aria-describedby={errDoc ? 'autorizacion-section-num-doc-error' : undefined}

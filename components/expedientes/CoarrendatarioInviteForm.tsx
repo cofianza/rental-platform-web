@@ -20,6 +20,7 @@ import { useUsuarioVista } from '@/components/expedientes/VerComo'
 import { useId, useState } from 'react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 import { formatCurrency } from '@/lib/constants'
 import { IconUsers, IconArrowRight, IconCalendar, IconDollarSign, IconAlertTriangle } from '@/components/icons'
 import type { IInvitarCoarrendatarioInput } from '@/services/coarrendatarioService'
@@ -341,7 +342,10 @@ export function CoarrendatarioInviteForm({
               <label htmlFor="coarrendatario-invite-form-tipo-doc" className="block text-xs font-medium text-gray-700 mb-1">Tipo de documento</label>
               <select id="coarrendatario-invite-form-tipo-doc"
                 value={tipoDoc}
-                onChange={(e) => setTipoDoc(e.target.value as IInvitarCoarrendatarioInput['tipo_documento'])}
+                onChange={(e) => {
+              setTipoDoc(e.target.value as IInvitarCoarrendatarioInput['tipo_documento'])
+              setNumDoc(documentoAlCambiarTipo(tipoDoc, e.target.value, numDoc))
+            }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {TIPO_DOC_OPTIONS.map((o) => (
@@ -350,7 +354,7 @@ export function CoarrendatarioInviteForm({
               </select>
             </div>
             <div className="sm:col-span-3">
-              <FormField id={idDe('numDoc')} label="Número de documento" value={numDoc} error={errores.numDoc} onChange={(v) => { setNumDoc(v); limpiar('numDoc') }} inputMode="numeric" />
+              <FormField id={idDe('numDoc')} label="Número de documento" value={numDoc} error={errores.numDoc} onChange={(v) => { setNumDoc(documentoAlEscribir(tipoDoc, v)); limpiar('numDoc') }} inputMode={tecladoDocumento(tipoDoc)} />
             </div>
           </div>
 
