@@ -46,8 +46,8 @@ export default function AuthLayout({
         {/* Logo */}
         <Link href="/" className="relative z-10 flex items-center gap-2.5 hover:opacity-90 transition-opacity">
           <CofianzaLogo />
-          <span className="text-[22px] font-black tracking-tight">
-            <span className="text-primary-400">co</span>fianza
+          <span className="font-display text-[22px] font-black tracking-tight">
+            Cofi<span className="text-primary-400">anza</span>
           </span>
         </Link>
 

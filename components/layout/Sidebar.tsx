@@ -144,7 +144,7 @@ export function Sidebar() {
             <CofianzaLogo size={28} />
             <span
               className={cn(
-                'font-bold text-gray-900 truncate text-lg tracking-tight',
+                'font-display font-black text-ink-900 truncate text-lg tracking-tight',
                 // Mobile: siempre visible
                 // Tablet (md:): oculto
                 // Desktop (lg:): visible solo si expandido
@@ -152,7 +152,7 @@ export function Sidebar() {
                 sidebarExpanded && 'lg:block'
               )}
             >
-              cofianza
+              Cofi<span className="text-primary-500">anza</span>
             </span>
           </div>
 
