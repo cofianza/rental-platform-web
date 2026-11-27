@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { authService } from '@/services/authService'
 import { ApiClientError } from '@/lib/api'
 import { rutaInterna } from '@/lib/utils'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 import type { IMyProfile, IUpdateMyProfilePayload } from '@/types/auth'
 import { IconLoader, IconCheck, IconLock } from '@/components/icons'
 import { SkeletonDetail } from '@/components/ui/Skeleton'
@@ -267,9 +268,11 @@ export default function MiCuentaPage() {
             </label>
             <select id="cuenta-tipo"
               value={form.tipo_documento}
-              onChange={(e) =>
-                onChange('tipo_documento', e.target.value as FormState['tipo_documento'])
-              }
+              onChange={(e) => {
+                const nuevo = e.target.value as FormState['tipo_documento']
+                onChange('tipo_documento', nuevo)
+                onChange('numero_documento', documentoAlCambiarTipo(form.tipo_documento, nuevo, form.numero_documento))
+              }}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
             >
               <option value="">Seleccionar…</option>
@@ -288,7 +291,8 @@ export default function MiCuentaPage() {
             <Field
               label="Número"
               value={form.numero_documento}
-              onChange={(v) => onChange('numero_documento', v)}
+              onChange={(v) => onChange('numero_documento', documentoAlEscribir(form.tipo_documento, v))}
+              inputMode={tecladoDocumento(form.tipo_documento)}
               placeholder="Ej. 1234567890"
               required
             />
@@ -351,9 +355,10 @@ interface FieldProps {
   placeholder?: string
   help?: string
   required?: boolean
+  inputMode?: 'numeric' | 'text'
 }
 
-function Field({ label, value, onChange, placeholder, help, required }: FieldProps) {
+function Field({ label, value, onChange, placeholder, help, required, inputMode }: FieldProps) {
   // Un id por instancia: con uno fijo, Apellido y Número apuntaban a Nombre.
   const id = useId()
   return (
@@ -364,6 +369,7 @@ function Field({ label, value, onChange, placeholder, help, required }: FieldPro
       </label>
       <input id={id}
         type="text"
+        inputMode={inputMode}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

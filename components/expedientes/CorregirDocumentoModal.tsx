@@ -23,6 +23,7 @@ import { EVENTO_BLOQUEOS } from './BloqueosPendientesBanner'
 // Los mismos tipos con los que se registra al prospecto (sin NIT: Adenda de precios §6.1).
 import { TIPO_DOCUMENTO_OPTIONS as TIPOS } from './wizard/constants'
 import { documento } from '@/components/contratos/v3/campos'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 
 const FUENTES: { value: FuenteVerificacion; label: string }[] = [
   { value: 'documento_fisico', label: 'Documento físico' },
@@ -238,7 +239,10 @@ export function CorregirDocumentoModal({
                 <select
                   id="corregir-doc-tipo"
                   value={tipo}
-                  onChange={(e) => setTipo(e.target.value)}
+                  onChange={(e) => {
+                    setTipo(e.target.value)
+                    setNumero(documentoAlCambiarTipo(tipo, e.target.value, numero))
+                  }}
                   disabled={guardando || sinCorreccionesDoc}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"
                 >
@@ -255,11 +259,11 @@ export function CorregirDocumentoModal({
                 </label>
                 <input
                   id="corregir-doc-numero"
-                  inputMode={tipo === 'pasaporte' ? 'text' : 'numeric'}
+                  inputMode={tecladoDocumento(tipo)}
                   autoComplete="off"
                   value={numero}
-                  maxLength={20}
-                  onChange={(e) => setNumero(e.target.value.replace(/[^\w]/g, ''))}
+                  maxLength={30}
+                  onChange={(e) => setNumero(documentoAlEscribir(tipo, e.target.value))}
                   disabled={guardando || sinCorreccionesDoc}
                   aria-describedby="corregir-doc-ayuda"
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-50"

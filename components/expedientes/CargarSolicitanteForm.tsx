@@ -12,6 +12,7 @@ import { IconArrowRight, IconLoader } from '@/components/icons'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { botonModal } from '@/components/ui/Modal'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 import type { ICargarSolicitanteInput } from '@/types/sustitucion'
 import { FormField, TIPO_DOC_OPTIONS, esNombreValido } from './CoarrendatarioInviteForm'
 
@@ -102,7 +103,10 @@ export function CargarSolicitanteForm({ nombreQueSale, cargar }: CargarSolicitan
           <select
             id={`${uid}-tipo`}
             value={tipoDoc}
-            onChange={(e) => setTipoDoc(e.target.value as ICargarSolicitanteInput['tipo_documento'])}
+            onChange={(e) => {
+              setTipoDoc(e.target.value as ICargarSolicitanteInput['tipo_documento'])
+              setNumDoc(documentoAlCambiarTipo(tipoDoc, e.target.value, numDoc))
+            }}
             className="min-h-10 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
             {TIPO_DOC_OPTIONS.map((o) => (
@@ -113,7 +117,7 @@ export function CargarSolicitanteForm({ nombreQueSale, cargar }: CargarSolicitan
           </select>
         </div>
         <div className="sm:col-span-3">
-          <FormField id={idDe('numDoc')} label="Número de documento" value={numDoc} error={errores.numDoc} onChange={(v) => { setNumDoc(v); limpiar('numDoc') }} inputMode="numeric" />
+          <FormField id={idDe('numDoc')} label="Número de documento" value={numDoc} error={errores.numDoc} onChange={(v) => { setNumDoc(documentoAlEscribir(tipoDoc, v)); limpiar('numDoc') }} inputMode={tecladoDocumento(tipoDoc)} />
         </div>
       </div>
       <FormField id={idDe('email')} label="Correo electrónico" type="email" value={email} error={errores.email} onChange={(v) => { setEmail(v); limpiar('email') }} />

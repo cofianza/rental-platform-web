@@ -12,6 +12,7 @@ import { PhoneInput } from '@/components/ui/PhoneInput'
 import { IconUsers } from '@/components/icons'
 import { FormField, TIPO_DOC_OPTIONS } from '@/components/expedientes/CoarrendatarioInviteForm'
 import type { CoarrendatarioWizard } from '@/hooks/useExpedienteWizard'
+import { documentoAlCambiarTipo, documentoAlEscribir, tecladoDocumento } from '@/lib/documentoIdentidad'
 
 const VACIO: CoarrendatarioWizard = { nombre: '', apellido: '', tipo_documento: 'cc', numero_documento: '', email: '', telefono: '' }
 
@@ -65,7 +66,11 @@ export function CoarrendatarioInicio({ value, errors, onChange, onClearError }: 
               <select
                 id={`${uid}-tipo`}
                 value={value.tipo_documento}
-                onChange={(e) => set('tipo_documento')(e.target.value)}
+                onChange={(e) => {
+                  const actual = value ?? VACIO
+                  onChange({ ...actual, tipo_documento: e.target.value as CoarrendatarioWizard['tipo_documento'], numero_documento: documentoAlCambiarTipo(actual.tipo_documento, e.target.value, actual.numero_documento) })
+                  onClearError('tipo_documento')
+                }}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 {TIPO_DOC_OPTIONS.map((o) => (
@@ -74,7 +79,14 @@ export function CoarrendatarioInicio({ value, errors, onChange, onClearError }: 
               </select>
             </div>
             <div className="sm:col-span-3">
-              <FormField id={`${uid}-doc`} label="Número de documento" value={value.numero_documento} error={errors.numero_documento} onChange={set('numero_documento')} inputMode="numeric" />
+              <FormField
+                id={`${uid}-doc`}
+                label="Número de documento"
+                value={value.numero_documento}
+                error={errors.numero_documento}
+                onChange={(v) => set('numero_documento')(documentoAlEscribir(value.tipo_documento, v))}
+                inputMode={tecladoDocumento(value.tipo_documento)}
+              />
             </div>
           </div>
           <FormField id={`${uid}-email`} label="Correo electrónico" type="email" value={value.email} error={errors.email} onChange={set('email')} />
