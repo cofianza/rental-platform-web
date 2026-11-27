@@ -276,17 +276,17 @@ test('plazo de la reapertura después de cargar a la persona: la fecha de la API
 test('textos de la reapertura', () => {
   assert.equal(
     TEXTO_CANCELAR_REAPERTURA,
-    'El estudio vuelve a quedar no aprobado y Cofianza devuelve el pago si la consulta no se hizo. La persona anterior no vuelve al estudio.',
+    'El estudio vuelve a quedar no aprobado y, si la consulta no se hizo, el valor pagado no se pierde. La persona anterior no vuelve al estudio.',
   )
   // Bloque 4: la devolución, condicionada (no todo cambio cobra una consulta adicional); el enlace vencido no la promete.
   assert.equal(
     TEXTO_CANCELAR_INVITACION_REAPERTURA,
-    'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobado y, si pagó la consulta adicional, Cofianza devuelve el pago.',
+    'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobado y, si pagó la consulta adicional, el valor pagado no se pierde.',
   )
   assert.equal(TOAST_INVITACION_CANCELADA_REAPERTURA, 'Invitación cancelada. El estudio volvió a quedar no aprobado.')
   assert.equal(
     TEXTO_ENLACE_VENCIDO_REAPERTURA,
-    'Venció el enlace: el cambio se cierra y el estudio vuelve a quedar no aprobado; si pagó la consulta adicional, Cofianza devuelve el pago.',
+    'Venció el enlace: el cambio se cierra y el estudio vuelve a quedar no aprobado; si pagó la consulta adicional, el valor pagado no se pierde.',
   )
   // La devolución nunca sin condición.
   assert.doesNotMatch(TEXTO_ENLACE_VENCIDO_REAPERTURA, /devolverá el pago\.$|y Cofianza devuelve/)

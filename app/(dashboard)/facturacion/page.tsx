@@ -18,6 +18,8 @@ import { TarifasIvaSection } from '@/components/facturacion/TarifasIvaSection'
 import { ReembolsosSection } from '@/components/facturacion/ReembolsosSection'
 import { PrimasPorRemitirSection } from '@/components/facturacion/PrimasPorRemitirSection'
 import { TarifaMensualSection } from '@/components/facturacion/TarifaMensualSection'
+import { SaldosAFavorSection } from '@/components/facturacion/SaldosAFavorSection'
+import { SaldoAFavorCard } from '@/components/pagos/SaldoAFavorCard'
 import { useAuthStore } from '@/stores/auth.store'
 
 // useSearchParams necesita un Suspense por encima (si no, la build falla al
@@ -46,6 +48,8 @@ function Facturacion() {
   // Plan cobro-tarifa-mensual B8: de la inmobiliaria, solo los titulares ven las
   // cuentas de cobro de Cofianza (la API responde 403 SOLO_TITULARES al resto).
   const esTitular = user?.rol === 'inmobiliaria' && user.rol_miembro === 'owner'
+  // Adenda 6 §6 y 6.1 §6: el saldo a favor es de la inmobiliaria (organización) o del propietario directo.
+  const veSaldoAFavor = user?.rol === 'inmobiliaria' || user?.rol === 'propietario'
   // Mismo criterio una linea arriba: 'Datos Fiscales' pega a
   // /perfil-arrendador/me, cuyo router es roleGuard(admin, inmobiliaria,
   // propietario). Para operador_analista y gerencia_consulta la pestaña —que
@@ -75,6 +79,8 @@ function Facturacion() {
         { id: 'pendientes', label: 'Pendientes de facturación' },
         { id: 'facturas', label: 'Facturas' },
         ...(canReembolsar ? [{ id: 'reembolsos', label: 'Reembolsos' }] : []),
+        // Adenda 6.1 §6: los saldos a favor y la solicitud de devolución de una persona natural.
+        ...(canReembolsar ? [{ id: 'saldos', label: 'Saldos a favor' }] : []),
         // Adenda de precios §5.1: lo que las inmobiliarias remiten a Cofianza.
         ...(canSeeTarifasIva ? [{ id: 'primas', label: 'Primas por cobrar' }] : []),
         // Plan cobro-tarifa-mensual §4: las cuentas de cobro de la tarifa a cada inmobiliaria.
@@ -109,6 +115,8 @@ function Facturacion() {
               : 'Gestione sus datos fiscales, facture pagos pendientes y consulte su historial.'
         }
       />
+
+      {veSaldoAFavor && <SaldoAFavorCard />}
 
       <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
 
@@ -151,6 +159,7 @@ function Facturacion() {
           />
         )}
         {activeTab === 'reembolsos' && canReembolsar && <ReembolsosSection />}
+        {activeTab === 'saldos' && canReembolsar && <SaldosAFavorSection />}
         {activeTab === 'primas' && canSeeTarifasIva && <PrimasPorRemitirSection />}
         {activeTab === 'tarifa' && (canSeeTarifasIva || esTitular) && <TarifaMensualSection />}
       </div>

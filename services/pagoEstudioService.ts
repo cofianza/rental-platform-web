@@ -41,6 +41,12 @@ export interface IPagoEstudioEstado {
   paga: 'gestor' | 'arrendatario' | null
   /** Estado real del cupo (también lo consume la consulta del coarrendatario). null por pasarela; ausente con una API anterior. */
   cupo?: 'reservado' | 'consumido' | 'liberado' | null
+  /** Adenda 6 §6 (solo con el saldo a favor activo en la API). `aplicado_cop`: lo
+   *  cubierto con saldo en el cobro actual (0 si no hay); `disponible_cop`: el saldo
+   *  propio de quien mira que se aplicaría si paga él ahora (null si no aplica);
+   *  `total_cop`: el precio del estudio (dinero + saldo aplicado). Con el cobro
+   *  cubierto entero: `pago.metodo === 'saldo_a_favor'` y `monto` = 0. */
+  saldo_a_favor?: { aplicado_cop: number; disponible_cop: number | null; total_cop: number }
   pago: IPago | null
 }
 

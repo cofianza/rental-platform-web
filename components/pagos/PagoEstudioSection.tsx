@@ -55,6 +55,30 @@ function montoProspecto(e: IPagoEstudioEstado): string {
   return `${e.monto_formateado} COP${e.iva > 0 ? ' (IVA incluido)' : ''}`
 }
 
+/** Adenda 6 §6: el cobro quedó cubierto entero con el saldo a favor (su `monto` en dinero es 0). */
+const cubiertoConSaldo = (e: Pick<IPagoEstudioEstado, 'pago'>) => e.pago?.metodo === 'saldo_a_favor'
+
+/**
+ * Adenda 6 §6: lo que el saldo a favor de quien mira pagaría si paga él ahora
+ * (opción «Pagar ahora con Mercado Pago»). null sin saldo o si no aplica.
+ */
+export function textoSaldoDisponible(e: Pick<IPagoEstudioEstado, 'saldo_a_favor'>): string | null {
+  const s = e.saldo_a_favor
+  if (!s || !s.disponible_cop || s.disponible_cop <= 0) return null
+  const porPagar = Math.max(0, s.total_cop - s.disponible_cop)
+  return porPagar === 0
+    ? 'Su saldo a favor cubre el estudio completo.'
+    : `Tiene ${fmtCOP(s.disponible_cop)} de saldo a favor: se aplica al pagar. Por pagar: ${fmtCOP(porPagar)}.`
+}
+
+/** Adenda 6 §6: el saldo a favor aplicado al cobro actual, en una frase. null si no hay. */
+export function textoSaldoAplicado(e: Pick<IPagoEstudioEstado, 'saldo_a_favor' | 'pago' | 'monto'>): string | null {
+  const aplicado = e.saldo_a_favor?.aplicado_cop ?? e.pago?.saldo_aplicado_cop ?? 0
+  if (aplicado <= 0) return null
+  if (cubiertoConSaldo(e)) return `Pagado con saldo a favor (${fmtCOP(e.saldo_a_favor?.total_cop ?? aplicado)}).`
+  return `Saldo a favor aplicado: ${fmtCOP(aplicado)} · Por pagar: ${fmtCOP(e.monto)}.`
+}
+
 /**
  * Tarjeta del estudio ya cubierto por la inmobiliaria. Con crédito del paquete
  * (Adenda de precios §2) el cupo se RESERVA al crear, se consume solo cuando la
@@ -150,7 +174,9 @@ export function LineaPagoEstudio({
     : estado.estado === 'asumido_inmobiliaria'
       ? textoCubierto(estado, estudioTitular, deLaInmobiliaria).titulo.toLowerCase()
       : estado.estado === 'completado'
-        ? estado.paga === 'arrendatario' ? 'lo pagó el prospecto' : estado.paga === 'gestor' ? `lo pagó ${gestor}` : 'confirmado'
+        ? cubiertoConSaldo(estado)
+          ? 'pagado con saldo a favor'
+          : estado.paga === 'arrendatario' ? 'lo pagó el prospecto' : estado.paga === 'gestor' ? `lo pagó ${gestor}` : 'confirmado'
         : estado.estado === 'reembolsado'
           ? 'devuelto'
           : null
@@ -320,6 +346,14 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     setError(null)
     try {
       const pago = await pagoEstudioService.pagar(expedienteId, reemplazarPendiente)
+      // Adenda 6 §6: el saldo a favor cubrió el estudio entero; no hay checkout.
+      if (pago.cubierto_con_saldo) {
+        toast.success('Pagado con su saldo a favor.')
+        await fetchEstado()
+        onPagoCompletado?.()
+        setIsSubmitting(false)
+        return
+      }
       if (!pago.payment_link_url) throw new Error('La pasarela no devolvió el enlace de pago. Intente de nuevo.')
       window.location.assign(pago.payment_link_url)
     } catch (err) {
@@ -446,8 +480,17 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
     return <PagoEstudioSolicitanteView estado={estado} />
   }
 
-  // Monto como frase suelta: sin monto no queda un «COP —» colgando.
-  const montoCOP = estado.monto_formateado ? `${estado.monto_formateado} COP` : null
+  // Monto como frase suelta: sin monto no queda un «COP —» colgando. Cubierto con
+  // saldo a favor (Adenda 6 §6) el monto en dinero es 0: se muestra el total.
+  const montoCOP = cubiertoConSaldo(estado)
+    ? estado.saldo_a_favor
+      ? `${fmtCOP(estado.saldo_a_favor.total_cop)} COP`
+      : null
+    : estado.monto_formateado
+      ? `${estado.monto_formateado} COP`
+      : null
+  const saldoAplicado = textoSaldoAplicado(estado)
+  const saldoDisponible = puedePagarSuelto ? textoSaldoDisponible(estado) : null
   const emailEnlace = estado.pago?.email_pagador || null
   const confirmLiberarDialog = (
     <ConfirmDialog
@@ -532,6 +575,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   <span className="block text-sm font-semibold text-gray-900">Pagar ahora con Mercado Pago</span>
                   <span className="mt-0.5 block text-xs text-gray-600">Tarjeta o PSE</span>
                   <span className="mt-1 block text-xs leading-snug text-gray-600">El estudio sigue cuando se confirma el pago.</span>
+                  {saldoDisponible && <span className="mt-1 block text-xs font-medium leading-snug text-primary-800">{saldoDisponible}</span>}
                 </span>
               </button>
             )}
@@ -579,6 +623,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
                   Pagar yo con Mercado Pago
                 </button>
               )}
+              {saldoDisponible && <p className="w-full text-xs font-medium text-primary-800">{saldoDisponible}</p>}
             </div>
           )}
         </TarjetaSiguientePaso>
@@ -622,7 +667,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           tono="accion"
           icono={<IconCheckCircle size={18} />}
           titulo="Pago confirmado"
-          descripcion={`${montoCOP ? `${montoCOP}. ` : ''}La evaluación crediticia ya puede ejecutarse.`}
+          descripcion={`${saldoAplicado ? `${saldoAplicado} ` : montoCOP ? `${montoCOP}. ` : ''}La evaluación crediticia ya puede ejecutarse.`}
         />
       )}
 
@@ -632,7 +677,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           tono="revision"
           icono={<IconClock size={18} />}
           titulo="Su pago está pendiente en Mercado Pago"
-          descripcion={`${montoCOP ? `${montoCOP}. ` : ''}El estudio sigue cuando se confirme.`}
+          descripcion={`${saldoAplicado ? `${saldoAplicado} ` : montoCOP ? `${montoCOP}. ` : ''}El estudio sigue cuando se confirme.`}
         >
           {estado.pago?.payment_link_url && (
             <div className="px-4 py-4 sm:px-5">
@@ -654,8 +699,12 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           descripcion={
             montoCOP || emailEnlace ? (
               <>
-                {montoCOP && <span className="font-semibold text-gray-900">{montoCOP}</span>}
-                {montoCOP && emailEnlace && '. '}
+                {saldoAplicado ? (
+                  <span className="font-semibold text-gray-900">{saldoAplicado.replace(/\.$/, '')}</span>
+                ) : (
+                  montoCOP && <span className="font-semibold text-gray-900">{montoCOP}</span>
+                )}
+                {(saldoAplicado || montoCOP) && emailEnlace && '. '}
                 {emailEnlace && (
                   <>
                     Enlace enviado a <span className="break-words font-medium text-gray-900">{emailEnlace}</span>
@@ -733,7 +782,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           titulo="Pago en proceso"
           descripcion={
             <>
-              {montoCOP && `${montoCOP}. `}El pago se inició (PSE o efectivo) y se confirma automáticamente.{' '}
+              {saldoAplicado ? `${saldoAplicado} ` : montoCOP && `${montoCOP}. `}El pago se inició (PSE o efectivo) y se confirma automáticamente.{' '}
               {/* Sin "cancelar": el PSE o el recibo de efectivo ya salió y
                   cancelarlo cobraría el estudio dos veces (el API responde 409). */}
               Si el pago vence, podrá {cancelarConCredito ? 'pagarlo con un cupo del paquete' : 'pagarlo usted'}.
@@ -748,7 +797,7 @@ export function PagoEstudioSection({ expedienteId, onPagoCompletado, userRole, h
           tono="alerta"
           icono={<IconAlertTriangle size={18} />}
           titulo={pagaGestor ? 'Su pago en Mercado Pago falló' : 'Pago fallido'}
-          descripcion={montoCOP ?? undefined}
+          descripcion={saldoAplicado ?? montoCOP ?? undefined}
         >
           <div className="flex flex-wrap gap-2 px-4 py-4 sm:px-5">
             {pagaGestor ? (
@@ -1187,7 +1236,8 @@ function PagoEstudioSolicitanteView({ estado }: { estado: IPagoEstudioEstado }) 
                     : 'Costo del estudio de arrendamiento cubierto'}
               </p>
               <p className="text-xs text-green-600">
-                {estado.monto_formateado} COP — {pagoPropio ? 'Recibimos su pago correctamente.' : 'El costo del estudio de arrendamiento ya está cubierto.'}
+                {cubiertoConSaldo(estado) ? '' : `${estado.monto_formateado} COP — `}
+                {pagoPropio ? 'Recibimos su pago correctamente.' : 'El costo del estudio de arrendamiento ya está cubierto.'}
               </p>
             </div>
           </div>

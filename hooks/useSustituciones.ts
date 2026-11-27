@@ -118,7 +118,13 @@ export function useSustituciones(estudioId: string, activo: boolean, version?: u
             cotizacion.sale.persona === 'solicitante' ? { persona: 'solicitante' } : { persona: 'coarrendatario', coarrendatario_id: cotizacion.sale.coarrendatario_id },
             cotizacion.total_a_pagar_cop,
           ),
-        (r) => (r.pago ? 'Cambio abierto. Pague la consulta adicional para cargar a la persona nueva.' : 'Cambio abierto. Ya puede cargar a la persona nueva.'),
+        (r) =>
+          // Adenda 6 §6: sin enlace y con saldo aplicado, el saldo a favor cubrió la consulta.
+          r.pago && !r.pago.url_pago && (r.pago.saldo_aplicado_cop ?? 0) > 0
+            ? 'Cambio abierto. La consulta adicional se pagó con saldo a favor: ya puede cargar a la persona nueva.'
+            : r.pago
+              ? 'Cambio abierto. Pague la consulta adicional para cargar a la persona nueva.'
+              : 'Cambio abierto. Ya puede cargar a la persona nueva.',
         'No se pudo abrir el cambio. Inténtelo de nuevo.',
       ),
     [ejecutar, estudioId],

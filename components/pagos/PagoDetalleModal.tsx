@@ -54,7 +54,15 @@ const METODOS_LABELS: Record<string, string> = {
   transferencia: 'Transferencia bancaria',
   efectivo: 'Efectivo',
   cheque: 'Cheque',
+  // Adenda 6 §6: el cobro lo cubrió entero el saldo a favor (su monto en dinero es 0).
+  saldo_a_favor: 'Saldo a favor',
 }
+
+/** Monto en dinero; el cubierto entero con saldo a favor se dice así (no «$0»). */
+const montoDelPago = (p: { monto: number; metodo: string; saldo_aplicado_cop?: number }) =>
+  p.metodo === 'saldo_a_favor' && p.monto === 0
+    ? p.saldo_aplicado_cop ? `Saldo a favor (${formatCOP(p.saldo_aplicado_cop)})` : 'Saldo a favor'
+    : formatCOP(p.monto)
 
 const ESTADOS_CONFIG: Record<string, { label: string; color: string; bg: string; icon: typeof IconCheck }> = {
   pendiente: { label: 'Pendiente', color: 'text-amber-700', bg: 'bg-amber-100', icon: IconClock },
@@ -174,7 +182,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
       isOpen={isOpen}
       onClose={handleClose}
       title="Detalle del pago"
-      description={pago && pageState === 'ready' ? `${CONCEPTOS_LABELS[pago.concepto] || pago.concepto} · ${formatCOP(pago.monto)}` : undefined}
+      description={pago && pageState === 'ready' ? `${CONCEPTOS_LABELS[pago.concepto] || pago.concepto} · ${montoDelPago(pago)}` : undefined}
       size="lg"
       closeOnBackdrop
       footer={
@@ -226,7 +234,7 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
           <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <dt className="mb-1 text-sm text-gray-600">Monto</dt>
-              <dd className="text-xl font-bold tabular-nums text-gray-900">{formatCOP(pago.monto)}</dd>
+              <dd className="text-xl font-bold tabular-nums text-gray-900">{montoDelPago(pago)}</dd>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <dt className="mb-1 text-sm text-gray-600">Método</dt>

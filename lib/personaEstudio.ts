@@ -311,17 +311,17 @@ export function avisoReemplazoEnRechazado(c: { aviso: string; vuelve_a_revision?
 
 /** Cancelar el cambio que reabrió un estudio rechazado. */
 export const TEXTO_CANCELAR_REAPERTURA =
-  'El estudio vuelve a quedar no aprobado y Cofianza devuelve el pago si la consulta no se hizo. La persona anterior no vuelve al estudio.'
+  'El estudio vuelve a quedar no aprobado y, si la consulta no se hizo, el valor pagado no se pierde. La persona anterior no vuelve al estudio.'
 
 /**
  * Cancelar la invitación de la persona nueva de un estudio reabierto: el diálogo, el aviso y el enlace vencido.
  * La devolución, siempre condicionada: no todo cambio de persona cobra una consulta adicional.
  */
 export const TEXTO_CANCELAR_INVITACION_REAPERTURA =
-  'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobado y, si pagó la consulta adicional, Cofianza devuelve el pago.'
+  'Si la cancela, el cambio de persona se cierra, el estudio vuelve a quedar no aprobado y, si pagó la consulta adicional, el valor pagado no se pierde.'
 export const TOAST_INVITACION_CANCELADA_REAPERTURA = 'Invitación cancelada. El estudio volvió a quedar no aprobado.'
 export const TEXTO_ENLACE_VENCIDO_REAPERTURA =
-  'Venció el enlace: el cambio se cierra y el estudio vuelve a quedar no aprobado; si pagó la consulta adicional, Cofianza devuelve el pago.'
+  'Venció el enlace: el cambio se cierra y el estudio vuelve a quedar no aprobado; si pagó la consulta adicional, el valor pagado no se pierde.'
 
 /** Etiquetas de la API de un coarrendatario que todavía no terminó: lo verifica Cofianza, espera o debe salir. */
 const ETIQUETAS_VIVAS = ['en verificación', 'en revisión', 'en espera', 'bloquea la operación']
