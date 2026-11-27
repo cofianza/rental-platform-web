@@ -10,6 +10,7 @@ import type {
   IExpedientesMeta,
   IExpedientesStats,
   IAnalistaOption,
+  IInmobiliariaFiltro,
   EstadoExpediente,
 } from '@/types/expediente'
 
@@ -21,6 +22,7 @@ export const DEFAULT_EXPEDIENTE_FILTERS: IExpedienteFilters = {
   estado: [], // Multi-select vacío = todos
   analista_id: '',
   miembro_responsable_id: '',
+  inmobiliaria_id: '', // Solo Cofianza: '' = todas
   inmueble_id: '',
   fecha_desde: '',
   fecha_hasta: '',
@@ -38,8 +40,16 @@ interface IExpedientesState {
   expedientes: IExpediente[]
   meta: IExpedientesMeta | null
   stats: IExpedientesStats | null
+  /** El filtro de inmobiliaria con que se contaron `stats` ('' = todas; null = sin contar todavía). */
+  statsDe: string | null
   filters: IExpedienteFilters
   analistas: IAnalistaOption[]
+  /** Organizaciones del filtro «Inmobiliaria» (solo Cofianza). null = todavía no se cargan. */
+  inmobiliarias: IInmobiliariaFiltro[] | null
+  /** No se pudieron cargar (se reintenta al abrir el filtro o al volver a la lista). */
+  errorInmobiliarias: boolean
+  /** La API no tiene el filtro (anterior a esta función): no se muestra ni se envía. */
+  sinFiltroInmobiliaria: boolean
   isLoading: boolean
   isLoadingStats: boolean
   error: string | null
@@ -62,9 +72,11 @@ interface ExpedientesActions {
   // Setters
   setExpedientes: (expedientes: IExpediente[]) => void
   setMeta: (meta: IExpedientesMeta | null) => void
-  setStats: (stats: IExpedientesStats | null) => void
+  setStats: (stats: IExpedientesStats | null, de?: string) => void
   setFilters: (filters: Partial<IExpedienteFilters>) => void
   setAnalistas: (analistas: IAnalistaOption[]) => void
+  setInmobiliarias: (inmobiliarias: IInmobiliariaFiltro[] | null, error?: boolean) => void
+  setSinFiltroInmobiliaria: (value: boolean) => void
   setLoading: (loading: boolean) => void
   setLoadingStats: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -87,12 +99,17 @@ const initialState: IExpedientesState = {
   expedientes: [],
   meta: null,
   stats: null,
+  statsDe: null,
   filters: DEFAULT_EXPEDIENTE_FILTERS,
   analistas: [],
+  inmobiliarias: null,
+  errorInmobiliarias: false,
+  sinFiltroInmobiliaria: false,
   // true hasta la primera carga: sin esto la lista vacía ("no hay estudios")
   // asomaba antes del primer fetch.
   isLoading: true,
-  isLoadingStats: false,
+  // true hasta la primera carga, como isLoading: las pestañas no dicen «sin conteo» antes de pedirlos.
+  isLoadingStats: true,
   error: null,
   selectedExpediente: null,
   pestanaCargada: null,
@@ -106,12 +123,14 @@ export const useExpedientesStore = create<ExpedientesStore>((set) => ({
   // Setters
   setExpedientes: (expedientes) => set({ expedientes }),
   setMeta: (meta) => set({ meta }),
-  setStats: (stats) => set({ stats }),
+  setStats: (stats, de = '') => set({ stats, statsDe: stats ? de : null }),
   setFilters: (filters) =>
     set((state) => ({
       filters: { ...state.filters, ...filters },
     })),
   setAnalistas: (analistas) => set({ analistas }),
+  setInmobiliarias: (inmobiliarias, error = false) => set({ inmobiliarias, errorInmobiliarias: error }),
+  setSinFiltroInmobiliaria: (sinFiltroInmobiliaria) => set({ sinFiltroInmobiliaria }),
   setLoading: (isLoading) => set({ isLoading }),
   setLoadingStats: (isLoadingStats) => set({ isLoadingStats }),
   setError: (error) => set({ error }),

@@ -14,12 +14,14 @@ import { expedienteService } from '@/services/expedienteService'
 import { ApiClientError } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth.store'
 import type { IExpedienteFilters, EstadoExpediente, EstudioFiltro } from '@/types/expediente'
-import { clavePestana, soloCambioLaBusqueda } from '@/lib/filtrosExpedientes'
-
-const ESTUDIO_FILTROS: EstudioFiltro[] = [
-  'todos', 'aprobado', 'rechazado', 'condicionado', 'segundo_firmante', 'bloqueado', 'revision_cofianza',
-  'en_proceso', 'sin_estudio', 'sin_autorizar', 'requiere_accion', 'cerrado', 'espera_autorizacion',
-]
+import {
+  clavePestana,
+  esRolCofianza,
+  ESTUDIO_FILTROS,
+  filtrosDesdeUrl,
+  soloCambioLaBusqueda,
+  urlDeFiltros,
+} from '@/lib/filtrosExpedientes'
 
 /** Los chips que solo acepta la API nueva (reporte de Gerencia, punto 6); `condicionado` es su unión. */
 const FILTROS_ADENDA5: EstudioFiltro[] = ['segundo_firmante', 'bloqueado', 'revision_cofianza']
@@ -52,8 +54,12 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   const expedientes = useExpedientesStore((state) => state.expedientes)
   const meta = useExpedientesStore((state) => state.meta)
   const stats = useExpedientesStore((state) => state.stats)
+  const statsDe = useExpedientesStore((state) => state.statsDe)
   const filters = useExpedientesStore((state) => state.filters)
   const analistas = useExpedientesStore((state) => state.analistas)
+  const inmobiliarias = useExpedientesStore((state) => state.inmobiliarias)
+  const errorInmobiliarias = useExpedientesStore((state) => state.errorInmobiliarias)
+  const sinFiltroInmobiliaria = useExpedientesStore((state) => state.sinFiltroInmobiliaria)
   const isLoading = useExpedientesStore((state) => state.isLoading)
   const isLoadingStats = useExpedientesStore((state) => state.isLoadingStats)
   const error = useExpedientesStore((state) => state.error)
@@ -68,6 +74,8 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   const setStats = useExpedientesStore((state) => state.setStats)
   const setFilters = useExpedientesStore((state) => state.setFilters)
   const setAnalistas = useExpedientesStore((state) => state.setAnalistas)
+  const setInmobiliarias = useExpedientesStore((state) => state.setInmobiliarias)
+  const setSinFiltroInmobiliaria = useExpedientesStore((state) => state.setSinFiltroInmobiliaria)
   const setLoading = useExpedientesStore((state) => state.setLoading)
   const setLoadingStats = useExpedientesStore((state) => state.setLoadingStats)
   const setError = useExpedientesStore((state) => state.setError)
@@ -85,41 +93,19 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
     if (initializedRef.current) return
     initializedRef.current = true
 
-    const urlFilters: Partial<IExpedienteFilters> = {}
-
-    const search = searchParams.get('search')
-    const estado = searchParams.get('estado') // comma-separated
-    const analista_id = searchParams.get('analista_id')
-    const fecha_desde = searchParams.get('fecha_desde')
-    const fecha_hasta = searchParams.get('fecha_hasta')
-    const page = searchParams.get('page')
-    const limit = searchParams.get('limit')
-    const sortBy = searchParams.get('sortBy') as IExpedienteFilters['sortBy'] | null
-    const sortOrder = searchParams.get('sortOrder') as 'asc' | 'desc' | null
-
-    if (search) urlFilters.search = search
-    if (estado) {
-      const estados = estado.split(',') as EstadoExpediente[]
-      urlFilters.estado = estados
-      // Sincronizar bandeja si es un solo estado
-      if (estados.length === 1) {
-        storeSetActiveBandeja(estados[0])
-      }
-    }
-    if (analista_id) urlFilters.analista_id = analista_id
-    if (fecha_desde) urlFilters.fecha_desde = fecha_desde
-    if (fecha_hasta) urlFilters.fecha_hasta = fecha_hasta
-    if (page) urlFilters.page = parseInt(page, 10)
-    if (limit) urlFilters.limit = parseInt(limit, 10)
-    if (sortBy) urlFilters.sortBy = sortBy
-    if (sortOrder) urlFilters.sortOrder = sortOrder
-    const estudioFiltro = searchParams.get('estudio_filtro') as EstudioFiltro | null
-    if (estudioFiltro && ESTUDIO_FILTROS.includes(estudioFiltro)) urlFilters.estudio_filtro = estudioFiltro
+    // Filtros de la URL (al volver a la lista o al abrir un enlace compartido): solo lo válido
+    // (filtrosDesdeUrl). El de inmobiliaria, solo para Cofianza.
+    const yo = useAuthStore.getState().user
+    const urlFilters = filtrosDesdeUrl(searchParams, { conInmobiliaria: esRolCofianza(yo?.rol) })
+    // Sincronizar bandeja si es un solo estado
+    if (urlFilters.estado?.length === 1) storeSetActiveBandeja(urlFilters.estado[0])
+    // «Asignados a mí» es el analista = quien mira: al volver, el interruptor sigue encendido.
+    if (urlFilters.analista_id && urlFilters.analista_id === yo?.id) storeSetMisExpedientes(true)
 
     if (Object.keys(urlFilters).length > 0) {
       setFilters(urlFilters)
     }
-  }, [searchParams, setFilters, storeSetActiveBandeja])
+  }, [searchParams, setFilters, storeSetActiveBandeja, storeSetMisExpedientes])
 
   // El banner de bloqueos enlaza a ?estudio_filtro=requiere_accion. El efecto
   // de arriba corre una sola vez: con la lista ya montada, el filtro se aplica aquí.
@@ -136,30 +122,8 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
    */
   const updateUrl = useCallback(
     (newFilters: IExpedienteFilters) => {
-      const params = new URLSearchParams()
-
-      if (newFilters.search) params.set('search', newFilters.search)
-      if (newFilters.estado.length > 0) {
-        params.set('estado', newFilters.estado.join(','))
-      }
-      if (newFilters.analista_id) params.set('analista_id', newFilters.analista_id)
-      if (newFilters.fecha_desde) params.set('fecha_desde', newFilters.fecha_desde)
-      if (newFilters.fecha_hasta) params.set('fecha_hasta', newFilters.fecha_hasta)
-      if (newFilters.estudio_filtro && newFilters.estudio_filtro !== 'todos') {
-        params.set('estudio_filtro', newFilters.estudio_filtro)
-      }
-      if (newFilters.page > 1) params.set('page', newFilters.page.toString())
-      if (newFilters.limit !== DEFAULT_EXPEDIENTE_FILTERS.limit) {
-        params.set('limit', newFilters.limit.toString())
-      }
-      if (newFilters.sortBy !== DEFAULT_EXPEDIENTE_FILTERS.sortBy) {
-        params.set('sortBy', newFilters.sortBy)
-      }
-      if (newFilters.sortOrder !== DEFAULT_EXPEDIENTE_FILTERS.sortOrder) {
-        params.set('sortOrder', newFilters.sortOrder)
-      }
-
-      const queryString = params.toString()
+      // Los filtros en la URL: volver atrás o compartir el enlace conserva la vista (urlDeFiltros).
+      const queryString = urlDeFiltros(newFilters, DEFAULT_EXPEDIENTE_FILTERS)
       const newUrl = queryString ? `${pathname}?${queryString}` : pathname
 
       router.replace(newUrl, { scroll: false })
@@ -180,7 +144,9 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
     setError(null)
 
     try {
-      const response = await expedienteService.getExpedientes(filters)
+      // El filtro de inmobiliaria es solo de Cofianza: nunca viaja con otro rol (la API lo rechazaría).
+      const consulta = esRolCofianza(useAuthStore.getState().user?.rol) ? filters : { ...filters, inmobiliaria_id: '' }
+      const response = await expedienteService.getExpedientes(consulta)
       if (!vigente()) return
       setExpedientes(response.data)
       setMeta(response.meta)
@@ -213,18 +179,47 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
   /**
    * Carga estadísticas de expedientes
    */
+  // Con el filtro «Inmobiliaria» (solo Cofianza) los conteos de las pestañas son de esa organización: se piden de nuevo
+  // al cambiarlo y, mientras llegan, la lista sabe que los que tiene son de otro filtro (statsVigentes).
+  const inmobiliariaFiltro = esRolCofianza(user?.rol) && !sinFiltroInmobiliaria ? (filters.inmobiliaria_id ?? '') : ''
+  const iniciarPeticionStats = useUltimaPeticion()
   const fetchStats = useCallback(async () => {
+    const vigente = iniciarPeticionStats()
     setLoadingStats(true)
 
     try {
-      const statsData = await expedienteService.getStats()
-      setStats(statsData)
+      const statsData = await expedienteService.getStats(inmobiliariaFiltro ? { inmobiliaria_id: inmobiliariaFiltro } : undefined)
+      if (!vigente()) return
+      setStats(statsData, inmobiliariaFiltro)
     } catch (err) {
       console.error('Error loading stats:', err)
     } finally {
-      setLoadingStats(false)
+      if (vigente()) setLoadingStats(false)
     }
-  }, [setLoadingStats, setStats])
+  }, [iniciarPeticionStats, inmobiliariaFiltro, setLoadingStats, setStats])
+
+  /**
+   * Organizaciones del filtro «Inmobiliaria» (solo Cofianza; una vez: quedan en el store).
+   */
+  const fetchInmobiliarias = useCallback(async () => {
+    const st = useExpedientesStore.getState()
+    if (!esRolCofianza(useAuthStore.getState().user?.rol) || st.inmobiliarias || st.sinFiltroInmobiliaria) return
+    // Reintento tras un error: «Cargando…» mientras tanto.
+    if (st.errorInmobiliarias) setInmobiliarias(null, false)
+    try {
+      setInmobiliarias(await expedienteService.getInmobiliariasFiltro())
+    } catch (err) {
+      // Una API anterior a esta función no tiene la ruta (cae en GET /:id y su validación del uuid: 400) ni el filtro
+      // (lo descartaría en silencio): no se muestra ni se envía, para no decir «Inmobiliaria: X» con la lista de todas.
+      if (err instanceof ApiClientError && (err.statusCode === 404 || (err.statusCode === 400 && err.code === 'VALIDATION_ERROR'))) {
+        setSinFiltroInmobiliaria(true)
+        if (useExpedientesStore.getState().filters.inmobiliaria_id) setFilters({ inmobiliaria_id: '', page: 1 })
+        return
+      }
+      console.error('Error loading inmobiliarias:', err)
+      setInmobiliarias(null, true)
+    }
+  }, [setInmobiliarias, setSinFiltroInmobiliaria, setFilters])
 
   /**
    * Carga lista de analistas para filtro
@@ -269,8 +264,18 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
    */
   useEffect(() => {
     fetchAnalistas()
-    if (conStats) fetchStats()
-  }, [fetchStats, fetchAnalistas, conStats])
+    fetchInmobiliarias()
+  }, [fetchAnalistas, fetchInmobiliarias])
+
+  // Las estadísticas, al montar y al cambiar el filtro de inmobiliaria. En un temporizador, como la lista: si el filtro
+  // cambia en el mismo instante (la URL al montar), sale una sola petición.
+  useEffect(() => {
+    if (!conStats) return
+    // Ya cuenta como «cargando»: las pestañas no muestran por un instante «sin conteo» antes de pedirlos.
+    setLoadingStats(true)
+    const t = setTimeout(() => void fetchStats(), 0)
+    return () => clearTimeout(t)
+  }, [fetchStats, conStats, setLoadingStats])
 
   /**
    * Actualiza filtros (con reset de página si no es cambio de página)
@@ -316,7 +321,8 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
       filters.fecha_desde !== '' ||
       filters.fecha_hasta !== '' ||
       filters.analista_id !== '' ||
-      !!filters.miembro_responsable_id
+      !!filters.miembro_responsable_id ||
+      !!filters.inmobiliaria_id
     )
   }, [filters])
 
@@ -355,6 +361,14 @@ export function useExpedientes({ conStats = true }: { conStats?: boolean } = {})
     stats,
     filters,
     analistas,
+    /** Filtro «Inmobiliaria» (solo Cofianza): null = cargando. */
+    inmobiliarias,
+    errorInmobiliarias,
+    /** La API no tiene el filtro: no se muestra. */
+    sinFiltroInmobiliaria,
+    reintentarInmobiliarias: fetchInmobiliarias,
+    /** Los conteos de las pestañas son del filtro de inmobiliaria vigente (si no, todavía llegan los nuevos). */
+    statsVigentes: statsDe === inmobiliariaFiltro,
     isLoading,
     isLoadingStats,
     error,

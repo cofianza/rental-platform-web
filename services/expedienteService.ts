@@ -12,6 +12,7 @@ import type {
   IExpedientesMeta,
   IExpedientesStats,
   IAnalistaOption,
+  IInmobiliariaFiltro,
   EstadoExpediente,
   IExpedienteDetalle,
   ITransicionDisponible,
@@ -63,6 +64,8 @@ function buildQueryString(filters: Partial<IExpedienteFilters>): string {
   if (filters.analista_id) params.append('analista_id', filters.analista_id)
   if (filters.miembro_responsable_id)
     params.append('miembro_responsable_id', filters.miembro_responsable_id)
+  // Filtro «Inmobiliaria» de la cola de Cofianza ('ninguna' = sin inmobiliaria). La API lo rechaza a los demás roles.
+  if (filters.inmobiliaria_id) params.append('inmobiliaria_id', filters.inmobiliaria_id)
   if (filters.sin_analista) params.append('sin_analista', 'true')
   if (filters.con_contrato_vivo) params.append('con_contrato_vivo', 'true')
   if (filters.inmueble_id) params.append('inmueble_id', filters.inmueble_id)
@@ -166,9 +169,11 @@ class ExpedienteService {
   /**
    * Obtiene estadísticas/contadores por estado
    */
-  async getStats(): Promise<IExpedientesStats> {
+  async getStats(filtro?: { inmobiliaria_id?: string }): Promise<IExpedientesStats> {
+    // Con el filtro «Inmobiliaria» (solo Cofianza) las pestañas cuentan solo esa organización, como la lista.
+    const qs = filtro?.inmobiliaria_id ? `?inmobiliaria_id=${encodeURIComponent(filtro.inmobiliaria_id)}` : ''
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = (await apiClient.get('/expedientes/stats')) as any
+    const response = (await apiClient.get(`/expedientes/stats${qs}`)) as any
 
     const por_estado: Record<EstadoExpediente, number> = {
       borrador: 0,
@@ -222,6 +227,15 @@ class ExpedienteService {
     } catch {
       return []
     }
+  }
+
+  /**
+   * Las organizaciones para el filtro «Inmobiliaria» de la cola de Cofianza (id, nombre, si está cerrada), por
+   * nombre. Solo roles internos (la API responde 403 a los demás).
+   */
+  async getInmobiliariasFiltro(): Promise<IInmobiliariaFiltro[]> {
+    const response = (await apiClient.get('/expedientes/inmobiliarias')) as { data?: IInmobiliariaFiltro[] }
+    return response.data ?? []
   }
 
   // ============================================
