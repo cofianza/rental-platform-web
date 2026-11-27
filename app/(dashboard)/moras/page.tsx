@@ -329,7 +329,9 @@ function ReportarMora() {
   // inmobiliaria o el propietario; el administrador sí puede).
   const notariaSinDocumento =
     !!datosContrato?.notaria && !datosContrato.notaria.documento_cargado && datosContrato.notaria.fecha_en_rango !== false
-  const puedeCargarDocumento = rol !== 'operador_analista'
+  // Contrato V3: el contrato autenticado lo carga la inmobiliaria (la API se lo niega al propietario).
+  const cargaLaInmobiliaria = rol === 'propietario' && datosContrato?.notaria?.carga_inmobiliaria === true
+  const puedeCargarDocumento = rol !== 'operador_analista' && !cargaLaInmobiliaria
 
   async function handleReportar(e: React.FormEvent) {
     e.preventDefault()
@@ -388,7 +390,9 @@ function ReportarMora() {
         toast.warning(
           puedeCargarDocumento
             ? 'Reporte incompleto: cargue el contrato autenticado desde el detalle de la mora para que empiece a correr el plazo de pago.'
-            : 'Reporte incompleto: le avisamos a la inmobiliaria o al propietario para que cargue el contrato autenticado.',
+            : cargaLaInmobiliaria
+              ? 'Reporte incompleto: el contrato autenticado de este contrato lo carga la inmobiliaria. El plazo de pago empieza cuando lo cargue.'
+              : 'Reporte incompleto: le avisamos a la inmobiliaria o al propietario para que cargue el contrato autenticado.',
           { duration: 12000 },
         )
       } else if (reporte === 'no_paga') {
@@ -522,7 +526,16 @@ function ReportarMora() {
 
         {/* Adenda 6.1 §4: contrato con firma en notaría. */}
         {datosContrato?.notaria && (() => {
-          const aviso = avisoNotariaFormulario(datosContrato.notaria)
+          const avisoBase = avisoNotariaFormulario(datosContrato.notaria)
+          // Contrato V3 visto por el propietario: no se le pide cargarlo (lo carga la inmobiliaria; lo dice el párrafo de abajo).
+          const aviso =
+            cargaLaInmobiliaria && notariaSinDocumento
+              ? {
+                  ...avisoBase,
+                  texto:
+                    'Contrato con firma en notaría: sin el contrato autenticado (PDF) el reporte queda incompleto, no empieza a correr el plazo de pago y el caso no pasa a Fase 3. Si no se presenta, Cofianza no paga.',
+                }
+              : avisoBase
           return (
             <div className={cn('rounded-lg border p-3 text-sm space-y-2', TONO_CHIP[aviso.tono])}>
               <p role="status" aria-live="polite">{aviso.texto}</p>
@@ -549,6 +562,11 @@ function ReportarMora() {
                       className="block w-full text-sm text-gray-700 file:mr-3 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-gray-800 hover:file:bg-gray-50"
                     />
                   </div>
+                ) : cargaLaInmobiliaria ? (
+                  <p className="text-xs">
+                    El contrato autenticado de este contrato lo carga la inmobiliaria. Hasta que lo cargue, el reporte queda incompleto y no
+                    empieza a correr el plazo de pago.
+                  </p>
                 ) : (
                   <p className="text-xs">Al registrar la mora le avisamos a la inmobiliaria o al propietario para que cargue el contrato autenticado desde el detalle de la mora.</p>
                 )
@@ -1302,8 +1320,14 @@ function MoraDetalleModal({
                     <p>Cofianza verificó el contrato autenticado el {fechaDiaColombia(mora.reporte_notaria.verificacion.en)}.</p>
                   )}
 
+                  {/* Contrato V3: el contrato autenticado lo carga la inmobiliaria; la API no se lo deja al propietario. */}
+                  {reporte === 'incompleto' && !esTerminal && rol === 'propietario' && mora.notaria_carga_inmobiliaria === true && (
+                    <p className="text-xs">El contrato autenticado de este contrato lo carga la inmobiliaria.</p>
+                  )}
+
                   {/* Cargar el contrato autenticado (quien custodia: inmobiliaria o propietario; o el administrador). */}
-                  {reporte === 'incompleto' && !esTerminal && puedeEditar && rol !== 'operador_analista' && (
+                  {reporte === 'incompleto' && !esTerminal && puedeEditar && rol !== 'operador_analista' &&
+                    !(rol === 'propietario' && mora.notaria_carga_inmobiliaria === true) && (
                     <div className="flex flex-col sm:flex-row sm:items-end gap-2">
                       <div className="min-w-0 flex-1">
                         <label htmlFor="mora-detalle-notaria" className="block text-xs font-medium mb-1">

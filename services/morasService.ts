@@ -41,7 +41,9 @@ export interface IDatosReporteMora {
   dia_pago: number
   fuente_fecha: 'v3' | 'anterior' | 'sin_dato'
   explicacion_fecha: string
-  notaria: { documento_cargado: boolean; fecha_en_rango: boolean | null } | null
+  /** `carga_inmobiliaria`: contrato V3 (contratos.destinacion), cuyo contrato autenticado solo lo carga la
+   *  inmobiliaria (o Cofianza): el propietario no. Ausente con una API anterior. */
+  notaria: { documento_cargado: boolean; fecha_en_rango: boolean | null; carga_inmobiliaria?: boolean } | null
   plazo_pago_dias: number
 }
 
@@ -108,6 +110,9 @@ export interface IMoraDetalle extends IMoraTicket {
   reportable_centrales?: { reportable: boolean | null; motivo: string | null } | null
   /** Migración, Adenda 1 §3: datos que la inmobiliaria debe entregar por la mora. null = no aplica. */
   diferidos?: (EstadoDiferidos & { fila_id: string; lote_id: string }) | null
+  /** Contrato V3 en notaría: el contrato autenticado solo lo carga la inmobiliaria (o Cofianza), no el propietario.
+   *  Ausente con una API anterior. */
+  notaria_carga_inmobiliaria?: boolean
 }
 
 /** Qué pasó con el WhatsApp al inquilino al reportar o escalar. 'programado' =
