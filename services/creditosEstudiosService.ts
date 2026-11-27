@@ -87,6 +87,8 @@ export interface IMovimientoCredito {
   compra_id?: string | null
   /** Si la compra ya esta facturada, viene la referencia. */
   factura?: { id: string; factus_number: string | null; estado: string } | null
+  /** Adenda 6.1 §6: la compra se pagó entera con saldo a favor: no tiene factura (no se factura de nuevo). */
+  cubierta_con_saldo?: boolean
 }
 
 export interface ICompraCredito {
@@ -94,8 +96,10 @@ export interface ICompraCredito {
   paquete_id: string
   cantidad_estudios: number
   precio_cop: number
-  /** Lo cobrado con IVA; null en compras anteriores a la Adenda de precios. */
+  /** Lo cobrado con IVA; null en compras anteriores a la Adenda de precios. Con saldo a favor, solo lo que se paga en dinero. */
   total_cop?: number | null
+  /** Adenda 6.1 §6: lo que cubrió el saldo a favor de la inmobiliaria (solo con el saldo a favor activo). */
+  saldo_aplicado_cop?: number | null
   vence_en_dias: number | null
   estado: 'pendiente' | 'completado' | 'fallido' | 'cancelado'
   stripe_session_id: string | null
@@ -105,8 +109,15 @@ export interface ICompraCredito {
 }
 
 export interface IComprarPaqueteResponse {
-  checkout_url: string
+  /** null = el saldo a favor de la inmobiliaria cubrió el paquete completo: no hay pago en Mercado Pago. */
+  checkout_url: string | null
   compra_id: string
+  /** Adenda 6.1 §6 (solo con saldo aplicado): lo que cubrió el saldo a favor y lo que se paga en Mercado Pago. */
+  saldo_aplicado_cop?: number
+  por_pagar_cop?: number
+  cubierto_con_saldo?: boolean
+  /** Cubierto entero: false = los cupos se suman en unos minutos. */
+  acreditado?: boolean
 }
 
 export interface ILiberarEstudioResponse {

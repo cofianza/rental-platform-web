@@ -1,9 +1,10 @@
 /**
  * Saldo a favor (Adenda 6 §6 y Adenda 6.1 §6): lo que se pagó por anticipado
  * (un estudio o una consulta adicional) y no se llegó a consultar queda a
- * favor de quien pagó y se descuenta solo de su siguiente pago. La API calcula
- * todo; aquí solo se lee y, para Cofianza, se registra la solicitud de
- * devolución de una persona natural (las inmobiliarias no reciben dinero).
+ * favor de quien pagó y se descuenta solo de su siguiente pago (la inmobiliaria:
+ * también la compra de un paquete de cupos). La API calcula todo; aquí solo se
+ * lee y, para Cofianza, se registra la solicitud de devolución de una persona
+ * natural (las inmobiliarias y los propietarios que son empresa no reciben dinero).
  * Con el interruptor de la API apagado, `habilitado` llega en false.
  */
 
@@ -28,7 +29,7 @@ export interface ISaldoAFavorPropio {
   habilitado: boolean
   tipo_dueno: 'inmobiliaria' | 'propietario' | null
   saldo_cop: number
-  /** Persona natural (propietario directo): puede pedir que se le devuelva. */
+  /** Persona natural (propietario directo que no es empresa): puede pedir que se le devuelva. */
   puede_pedir_devolucion: boolean
   /** Los más nuevos primero (máx. 50). */
   movimientos: IMovimientoSaldo[]
@@ -42,6 +43,11 @@ export interface ISaldoAFavorAdmin {
   dueno: { nombre: string; detalle: string | null }
   saldo_cop: number
   puede_devolver: boolean
+  /**
+   * Por qué no se devuelve en dinero (Adenda 6.1 §6: solo a la persona natural): una inmobiliaria o un propietario que
+   * es empresa (NIT o razón social). null = se puede devolver. Ausente con una API anterior.
+   */
+  sin_devolucion?: 'inmobiliaria' | 'empresa' | null
   updated_at: string
   /** Los últimos 20. */
   movimientos: IMovimientoSaldo[]

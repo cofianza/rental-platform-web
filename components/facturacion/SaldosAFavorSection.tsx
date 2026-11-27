@@ -5,8 +5,9 @@
  * pago de quien pagó; si quien pagó es una persona natural (propietario directo
  * o la persona que pagó el estudio) y pide la devolución (por correo o
  * WhatsApp), aquí se registra la solicitud: la API la deja en la cola de
- * Reembolsos con la fecha límite de 15 días hábiles. A las inmobiliarias nunca
- * se les devuelve en dinero.
+ * Reembolsos con la fecha límite de 15 días hábiles. A las inmobiliarias y a
+ * los propietarios que son empresa (NIT o razón social) nunca se les devuelve en
+ * dinero (Adenda 6.1 §6): la API no ofrece la devolución (`puede_devolver`).
  */
 
 'use client'
@@ -80,8 +81,8 @@ export function SaldosAFavorSection() {
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-gray-900">Saldos a favor</h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            Lo pagado por anticipado que no se llegó a consultar. El de una inmobiliaria o un propietario se descuenta solo de su siguiente pago; el de una persona que pagó por el enlace se le devuelve cuando lo pide.
-            Si una persona natural pide que se le devuelva, registre aquí su solicitud: queda en Reembolsos con la fecha límite.
+            Lo pagado por anticipado que no se llegó a consultar. El de una inmobiliaria o un propietario se descuenta solo de su siguiente pago (el de la inmobiliaria, también de la compra de un paquete de cupos); el de una persona que pagó por el enlace se le devuelve cuando lo pide.
+            Si una persona natural pide que se le devuelva, registre aquí su solicitud: queda en Reembolsos con la fecha límite. A una inmobiliaria o a un propietario que es empresa no se le devuelve en dinero.
           </p>
         </div>
         <button
@@ -116,9 +117,14 @@ export function SaldosAFavorSection() {
                     </div>
                     {s.dueno.detalle && <p className="mt-0.5 text-xs text-gray-500 break-words">{s.dueno.detalle}</p>}
                     <p className="mt-1 text-lg font-bold tabular-nums text-gray-900">{formatCurrency(s.saldo_cop)}</p>
-                    {s.tipo_dueno === 'inmobiliaria' && (
+                    {(s.sin_devolucion === 'inmobiliaria' || (s.sin_devolucion === undefined && s.tipo_dueno === 'inmobiliaria')) && (
                       <p className="mt-0.5 text-xs text-gray-500">
                         Las inmobiliarias no reciben devoluciones en dinero: el saldo se aplica a sus pagos siguientes.
+                      </p>
+                    )}
+                    {s.sin_devolucion === 'empresa' && (
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        Este propietario es una empresa (tiene NIT o razón social): no recibe devoluciones en dinero. El saldo se aplica a sus pagos siguientes.
                       </p>
                     )}
                   </div>

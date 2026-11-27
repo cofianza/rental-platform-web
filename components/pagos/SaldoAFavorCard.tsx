@@ -1,9 +1,10 @@
 /**
  * SaldoAFavorCard — el saldo a favor de la inmobiliaria o del propietario
  * (Adenda 6 §6 y 6.1 §6): lo pagado por anticipado que no se llegó a consultar.
- * Se descuenta solo del siguiente pago; al propietario (persona natural) se le
- * devuelve si lo pide; a la inmobiliaria nunca en dinero. Sin el interruptor de
- * la API, o sin saldo ni movimientos, no se muestra nada.
+ * Se descuenta solo del siguiente pago (la inmobiliaria: también la compra de un
+ * paquete de cupos); al propietario persona natural se le devuelve si lo pide; a
+ * la inmobiliaria y al propietario que es empresa nunca en dinero. Sin el
+ * interruptor de la API, o sin saldo ni movimientos, no se muestra nada.
  */
 
 'use client'
@@ -56,8 +57,11 @@ export function SaldoAFavorCard({ className }: { className?: string }) {
                 </a>
                 : se lo devolvemos dentro de los 15 días hábiles siguientes a su solicitud.
               </>
+            ) : saldo.tipo_dueno === 'propietario' ? (
+              // Adenda 6.1 §6: la devolución en dinero es solo para la persona natural; la cuenta de una empresa no la tiene.
+              'Se descuenta automáticamente cuando usted mismo paga un estudio o una consulta adicional (no cuando el cobro se le envía al prospecto). Como su cuenta es de una empresa, no se devuelve en dinero: se aplica a sus pagos siguientes.'
             ) : (
-              'Se descuenta automáticamente del siguiente cobro a nombre de su inmobiliaria, como una consulta adicional. No se devuelve en dinero.'
+              'Se descuenta automáticamente del siguiente cobro a nombre de su inmobiliaria: una consulta adicional o la compra de un paquete de cupos. No se devuelve en dinero.'
             )}
           </p>
         </div>
