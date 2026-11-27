@@ -4,7 +4,9 @@
  * H2, 2026-09-28): no usa créditos y el API le responde 403.
  *
  * Muestra saldo, paquetes disponibles para comprar (checkout de la pasarela de
- * pagos: Mercado Pago en producción) y el historial de movimientos.
+ * pagos: Mercado Pago en producción) y el historial de movimientos. Con el
+ * saldo a favor activo (Adenda 6.1 §6), el de la inmobiliaria se descuenta solo
+ * de la compra: si cubre el paquete completo se paga sin Mercado Pago.
  */
 
 'use client'
@@ -17,8 +19,10 @@ import { apiClient } from '@/lib/api'
 import { sinReferenciasInternas } from '@/lib/utils'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useAuth } from '@/hooks/useAuth'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { useSaldoAFavorPropio } from '@/hooks/useSaldoAFavor'
 import { perfilArrendadorService } from '@/services/perfilArrendadorService'
 import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 import { problemaNit } from '@/lib/nit'
@@ -40,10 +44,12 @@ import {
   IconClock,
   IconDollarSign,
   IconFileText,
+  IconWallet,
 } from '@/components/icons'
 import { SkeletonPage } from '@/components/ui/Skeleton'
 import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
 import { ahorroPaquete, condicionesCompraPaquete, textoAhorro } from '@/lib/ahorroPaquete'
+import { saldoEnPaquete } from '@/lib/saldoPaquete'
 
 const TIPO_LABELS: Record<string, string> = {
   compra: 'Compra',
@@ -80,6 +86,18 @@ export default function CreditosEstudiosPage() {
   const [detallePaquetes, setDetallePaquetes] = useState<IDetallePaquete[]>([])
   const [loading, setLoading] = useState(true)
   const [comprando, setComprando] = useState<string | null>(null)
+  // Adenda 6.1 §6: el saldo a favor de la inmobiliaria se descuenta solo de la compra (la API decide la cifra; aquí
+  // solo se anticipa). Sin el interruptor de la API llega `habilitado: false` y no se muestra nada.
+  const {
+    saldo: saldoAFavor,
+    isLoading: cargandoSaldoAFavor,
+    recargar: recargarSaldoAFavor,
+  } = useSaldoAFavorPropio(user?.rol === 'inmobiliaria')
+  const saldoDisponible = saldoAFavor?.habilitado && saldoAFavor.tipo_dueno === 'inmobiliaria' ? saldoAFavor.saldo_cop : 0
+  const [pagarConSaldo, setPagarConSaldo] = useState<IPaqueteCreditos | null>(null)
+  // Se esperaba pagar todo con el saldo, pero ya no alcanzaba (lo usó otro pago entre tanto): se avisa antes de ir a
+  // Mercado Pago por lo que falta.
+  const [faltaPorPagar, setFaltaPorPagar] = useState<{ url: string; aplicado: number; porPagar: number } | null>(null)
 
   // Facturación de compras. Reunión con Gerencia 23-oct: la factura DIAN del
   // paquete sale sola tras el pago; los datos que falten se piden antes de
@@ -221,6 +239,13 @@ export default function CreditosEstudiosPage() {
   }
 
   const handleComprar = async (paqueteId: string) => {
+    // El saldo a favor cubre el paquete completo: se confirma y se paga sin Mercado Pago (y sin factura nueva, así que
+    // no hacen falta los datos de facturación).
+    const paquete = paquetes.find((x) => x.id === paqueteId)
+    if (paquete && saldoEnPaquete(paquete.total_cop, saldoDisponible)?.cubre) {
+      setPagarConSaldo(paquete)
+      return
+    }
     if (datosFact && datosFact.faltantes.length > 0) {
       if (esTitular) {
         setFacturaModal({ compraId: null, faltantes: datosFact.faltantes, datos: {}, paqueteId })
@@ -231,11 +256,30 @@ export default function CreditosEstudiosPage() {
     await iniciarCompra(paqueteId)
   }
 
-  const iniciarCompra = async (paqueteId: string) => {
+  const iniciarCompra = async (paqueteId: string, esperabaCubrirConSaldo = false) => {
     setComprando(paqueteId)
     try {
-      const { checkout_url } = await creditosEstudiosService.comprarPaquete(paqueteId)
-      window.location.href = checkout_url
+      const r = await creditosEstudiosService.comprarPaquete(paqueteId)
+      if (r.checkout_url) {
+        if (esperabaCubrirConSaldo) {
+          setFaltaPorPagar({ url: r.checkout_url, aplicado: r.saldo_aplicado_cop ?? 0, porPagar: r.por_pagar_cop ?? 0 })
+          setComprando(null)
+          void recargarSaldoAFavor()
+          await fetchAll()
+          return
+        }
+        window.location.href = r.checkout_url
+        return
+      }
+      // Adenda 6.1 §6: el saldo a favor cubrió el paquete completo (sin Mercado Pago).
+      toast.success(
+        r.acreditado === false
+          ? 'El paquete quedó pagado con su saldo a favor. Los cupos quedan disponibles en menos de media hora.'
+          : 'El paquete quedó pagado con su saldo a favor y los cupos ya están disponibles.',
+      )
+      setComprando(null)
+      void recargarSaldoAFavor()
+      await fetchAll()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error iniciando pago')
       setComprando(null)
@@ -402,6 +446,16 @@ export default function CreditosEstudiosPage() {
             Pague con tarjeta o PSE por la pasarela de pago segura. Los cupos se suman a su saldo
             automáticamente al confirmarse el pago.
           </p>
+          {saldoDisponible > 0 && (
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-primary-200 bg-primary-50 p-3 text-sm text-primary-900">
+              <IconWallet size={18} className="mt-0.5 shrink-0 text-primary-700" aria-hidden="true" />
+              <p>
+                Su inmobiliaria tiene <span className="font-semibold">{formatCOP(saldoDisponible)}</span> de saldo a favor: se
+                descuenta automáticamente de la compra y lo que falte se paga con tarjeta o PSE. Lo pagado con saldo a favor
+                no genera una factura nueva.
+              </p>
+            </div>
+          )}
 
           {paquetes.length === 0 ? (
             <div className="text-center py-8 text-gray-500 text-sm">
@@ -455,6 +509,7 @@ export default function CreditosEstudiosPage() {
                   const precioPorEstudio = Math.round(p.precio_cop / p.cantidad_estudios)
                   const ahorroPct = ahorroPaquete(p, p.precio_individual_cop ?? precioIndividual)
                   const esPopular = p.id === popularId
+                  const conSaldo = saldoEnPaquete(p.total_cop, saldoDisponible)
                   return (
                     <div
                       key={p.id}
@@ -501,10 +556,21 @@ export default function CreditosEstudiosPage() {
                       {p.descripcion && (
                         <p className="text-xs text-gray-500 mt-2">{p.descripcion}</p>
                       )}
+                      {conSaldo && (
+                        <p className="text-xs text-primary-800 mt-2 flex items-start gap-1">
+                          <IconWallet size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                          <span>
+                            {conSaldo.cubre
+                              ? 'Su saldo a favor cubre el paquete completo.'
+                              : `Con su saldo a favor: −${formatCOP(conSaldo.aplicaria)} · Pagaría ${formatCOP(conSaldo.porPagar)} con tarjeta o PSE`}
+                          </span>
+                        </p>
+                      )}
                       <button
                         onClick={() => handleComprar(p.id)}
-                        disabled={comprando !== null}
-                        className={`w-full mt-4 px-4 py-2 disabled:bg-gray-400 rounded-md text-sm font-medium transition flex items-center justify-center gap-2 ${
+                        // Mientras se lee el saldo a favor no se sabe si cubre el paquete (y si hay que confirmarlo).
+                        disabled={comprando !== null || cargandoSaldoAFavor}
+                        className={`w-full min-h-10 mt-4 px-4 py-2 disabled:bg-gray-400 rounded-md text-sm font-medium transition flex items-center justify-center gap-2 ${
                           esPopular
                             ? 'bg-coral-500 text-ink-900 hover:bg-coral-400'
                             : 'bg-primary-700 text-white hover:bg-primary-800'
@@ -513,7 +579,12 @@ export default function CreditosEstudiosPage() {
                         {comprando === p.id ? (
                           <>
                             <IconLoader className="animate-spin" size={16} />
-                            Redirigiendo…
+                            {conSaldo?.cubre ? 'Procesando…' : 'Redirigiendo…'}
+                          </>
+                        ) : conSaldo?.cubre ? (
+                          <>
+                            <IconWallet size={16} aria-hidden="true" />
+                            Pagar con su saldo a favor
                           </>
                         ) : (
                           <>
@@ -586,7 +657,12 @@ export default function CreditosEstudiosPage() {
               {comprasPendientes.map((c) => (
                 <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 text-xs text-amber-900">
                   <span>
-                    {c.cantidad_estudios} estudios · {formatCOP(Number(c.total_cop ?? c.precio_cop))}
+                    {c.cantidad_estudios} estudios ·{' '}
+                    {!!c.saldo_aplicado_cop && Number(c.saldo_aplicado_cop) > 0
+                      ? Number(c.total_cop) <= 0
+                        ? 'pagada con su saldo a favor: los cupos quedan disponibles en menos de media hora'
+                        : `${formatCOP(Number(c.total_cop))} por pagar (se reservaron ${formatCOP(Number(c.saldo_aplicado_cop))} de su saldo a favor; si no la paga, ese saldo vuelve en un día)`
+                      : formatCOP(Number(c.total_cop ?? c.precio_cop))}
                   </span>
                   {c.payment_link_url && (
                     <a
@@ -675,7 +751,10 @@ export default function CreditosEstudiosPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-right whitespace-nowrap">
                       {m.tipo === 'compra' && m.compra_id ? (
-                        m.factura ? (
+                        m.cubierta_con_saldo && !m.factura ? (
+                          // Adenda 6.1 §6: pagada entera con saldo a favor: no se factura de nuevo.
+                          <span className="text-xs text-gray-600">Pagada con saldo a favor</span>
+                        ) : m.factura ? (
                           <Link
                             href={`/facturacion/${m.factura.id}`}
                             className="inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 text-xs font-medium"
@@ -712,6 +791,38 @@ export default function CreditosEstudiosPage() {
           </div>
         )}
       </div>
+
+      {/* Adenda 6.1 §6: el saldo a favor cubre el paquete completo */}
+      <ConfirmDialog
+        isOpen={!!pagarConSaldo}
+        onClose={() => setPagarConSaldo(null)}
+        onConfirm={async () => {
+          if (pagarConSaldo) await iniciarCompra(pagarConSaldo.id, true)
+        }}
+        isLoading={!!pagarConSaldo && comprando === pagarConSaldo.id}
+        title="Pagar con su saldo a favor"
+        message={
+          pagarConSaldo
+            ? `Se descuentan ${formatCOP(pagarConSaldo.total_cop ?? 0)} del saldo a favor de su inmobiliaria y los ${pagarConSaldo.cantidad_estudios} cupos se suman a su saldo de cupos, sin pasar por Mercado Pago. Lo pagado con saldo a favor no genera una factura nueva.`
+            : ''
+        }
+        confirmLabel="Pagar con su saldo a favor"
+      />
+      <ConfirmDialog
+        isOpen={!!faltaPorPagar}
+        onClose={() => setFaltaPorPagar(null)}
+        onConfirm={() => {
+          if (faltaPorPagar) window.location.href = faltaPorPagar.url
+        }}
+        title="Falta una parte por pagar"
+        message={
+          faltaPorPagar
+            ? `Su saldo a favor ya no cubría todo el paquete: se aplicaron ${formatCOP(faltaPorPagar.aplicado)}. Falta pagar ${formatCOP(faltaPorPagar.porPagar)} con tarjeta o PSE. La compra queda en proceso hasta que la pague.`
+            : ''
+        }
+        confirmLabel="Ir a pagar"
+        cancelLabel="Pagar después"
+      />
 
       {/* Modal datos fiscales para facturar compra */}
       <Modal

@@ -140,8 +140,11 @@ export function Step4Confirmation({
   const FIN_CADUCIDAD: Record<string, string> = {
     // Si el paquete ya venció, el cupo se extingue (destinoCupoNoConsumido en la API).
     credito: 'el cupo vuelve a su paquete, salvo que el paquete ya haya vencido.',
+    // Adenda 6.1 §6: la devolución en dinero es solo para la persona natural (no a un propietario que es empresa).
     inmobiliaria: saldoAFavor?.habilitado
-      ? 'lo pagado queda como saldo a favor para su siguiente pago; si prefiere, se lo devolvemos cuando lo pida.'
+      ? saldoAFavor.puede_pedir_devolucion
+        ? 'lo pagado queda como saldo a favor para su siguiente pago; si prefiere, se lo devolvemos cuando lo pida.'
+        : 'lo pagado queda como saldo a favor y se descuenta de su siguiente pago.'
       : 'le devolvemos el pago.',
     prospecto: 'no se cobra nada.',
   }

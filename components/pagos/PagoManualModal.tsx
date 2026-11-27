@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { IconFileText, IconLoader, IconUpload, IconX } from '@/components/icons'
-import { pagoService } from '@/services/pagoService'
+import { pagoService, type IPagadoresManual } from '@/services/pagoService'
+import { CONCEPTOS_CON_PAGADOR, correoValido, type TipoPagadorManual } from '@/lib/pagadorManual'
 import { hoyBogota } from '@/hooks/useContratoV3'
 import { GarantiaIvaAyuda, usePrimaSugerida } from './GarantiaIva'
 import { fechaCompleta } from '@/lib/constants'
@@ -54,6 +55,32 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  // Adenda 6 §6: quién hizo el pago (según el comprobante). La inmobiliaria y el propietario son los del estudio: la
+  // API los resuelve; aquí solo se muestran sus nombres. null = no se pudieron leer: se ofrecen todas las opciones.
+  const [pagadoPor, setPagadoPor] = useState<TipoPagadorManual | ''>('')
+  const [personaNombre, setPersonaNombre] = useState('')
+  const [personaEmail, setPersonaEmail] = useState('')
+  const [opciones, setOpciones] = useState<IPagadoresManual | null>(null)
+  const pideQuienPago = CONCEPTOS_CON_PAGADOR.has(concepto)
+
+  useEffect(() => {
+    if (!isOpen || !pideQuienPago || opciones) return
+    let vigente = true
+    pagoService.getPagadoresManual(expedienteId).then(
+      (r) => {
+        if (!vigente) return
+        setOpciones(r)
+        // Si se eligió una opción que este estudio no tiene (se mostraban todas mientras cargaba), se limpia.
+        setPagadoPor((actual) => ((actual === 'inmobiliaria' && !r.inmobiliaria) || (actual === 'propietario' && !r.propietario) ? '' : actual))
+      },
+      () => {
+        /* sin opciones: se muestran todas y la API valida */
+      },
+    )
+    return () => {
+      vigente = false
+    }
+  }, [isOpen, pideQuienPago, opciones, expedienteId])
 
   // Aquí se registra plata ya recibida: la prima sugerida (con IVA) no se
   // precarga, se ofrece con «Usar este valor».
@@ -71,6 +98,9 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
     setFile(null)
     setFilePreview(null)
     setError(null)
+    setPagadoPor('')
+    setPersonaNombre('')
+    setPersonaEmail('')
   }, [])
 
   const handleClose = useCallback(() => {
@@ -127,6 +157,11 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
 
     const today = hoyBogota()
     if (fechaPago > today) { setError('La fecha de pago no puede ser posterior a hoy.'); return }
+    if (pideQuienPago && !pagadoPor) { setError('Indique quién hizo el pago.'); return }
+    if (pideQuienPago && pagadoPor === 'persona') {
+      if (!personaNombre.trim()) { setError('Escriba el nombre de la persona que hizo el pago.'); return }
+      if (!correoValido(personaEmail)) { setError('Escriba un correo válido de la persona que hizo el pago.'); return }
+    }
 
     setIsSubmitting(true)
 
@@ -141,6 +176,14 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
           referencia_bancaria: referenciaBancaria || undefined,
           notas: notas || undefined,
           fecha_pago: fechaPago,
+          ...(pideQuienPago && pagadoPor
+            ? {
+                pagado_por:
+                  pagadoPor === 'persona'
+                    ? { tipo: pagadoPor, nombre: personaNombre.trim(), email: personaEmail.trim() }
+                    : { tipo: pagadoPor },
+              }
+            : {}),
         },
         file,
       )
@@ -257,6 +300,94 @@ export function PagoManualModal({ isOpen, onClose, expedienteId, onSuccess }: Pa
         </div>
         {esGarantia && (
           <GarantiaIvaAyuda monto={parseInt(monto, 10) || 0} prima={primaSugerida} onUsar={(total) => setMonto(String(total))} />
+        )}
+
+        {/* Quién hizo el pago (Adenda 6 §6) */}
+        {pideQuienPago && (
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="pago-manual-modal-quien-pago" className="block text-sm font-medium text-gray-700 mb-1">
+                ¿Quién hizo el pago? <span className="text-red-600" aria-hidden="true">*</span>
+              </label>
+              <select id="pago-manual-modal-quien-pago"
+                value={pagadoPor}
+                onChange={(e) => {
+                  const tipo = e.target.value as TipoPagadorManual | ''
+                  setPagadoPor(tipo)
+                  // La persona se precarga con el solicitante (se puede cambiar: pudo pagar otra persona).
+                  if (tipo === 'persona' && opciones?.persona) {
+                    if (!personaNombre) setPersonaNombre(opciones.persona.nombre)
+                    if (!personaEmail && opciones.persona.email) setPersonaEmail(opciones.persona.email)
+                  }
+                }}
+                aria-describedby="pago-manual-quien-pago-ayuda"
+                aria-required="true"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                disabled={isSubmitting}
+              >
+                <option value="">Seleccione…</option>
+                {(!opciones || opciones.inmobiliaria) && (
+                  <option value="inmobiliaria">
+                    La inmobiliaria del estudio{opciones?.inmobiliaria?.nombre ? ` (${opciones.inmobiliaria.nombre})` : ''}
+                  </option>
+                )}
+                {(!opciones || opciones.propietario) && (
+                  <option value="propietario">
+                    El propietario directo{opciones?.propietario?.nombre ? ` (${opciones.propietario.nombre})` : ''}
+                  </option>
+                )}
+                <option value="persona">El prospecto u otra persona (nombre y correo)</option>
+                <option value="no_se_sabe">No se sabe</option>
+              </select>
+              <p id="pago-manual-quien-pago-ayuda" className="mt-1 text-xs text-gray-600">
+                Indíquelo según el comprobante. Queda en el detalle del pago, que también ven la inmobiliaria o el
+                propietario del estudio, y sirve de soporte para saber de quién es lo pagado si la evaluación no llega a
+                consultar las centrales de riesgo. Si pagó la inmobiliaria o el propietario, elija esa opción: no lo
+                escriba como persona.
+              </p>
+            </div>
+            {pagadoPor === 'persona' && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="pago-manual-modal-persona-nombre" className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre de quien pagó <span className="text-red-600" aria-hidden="true">*</span>
+                  </label>
+                  <input id="pago-manual-modal-persona-nombre"
+                    aria-describedby="pago-manual-persona-ayuda"
+                    type="text"
+                    value={personaNombre}
+                    onChange={(e) => setPersonaNombre(e.target.value)}
+                    maxLength={200}
+                    autoComplete="off"
+                    aria-required="true"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="pago-manual-modal-persona-correo" className="block text-sm font-medium text-gray-700 mb-1">
+                    Correo de quien pagó <span className="text-red-600" aria-hidden="true">*</span>
+                  </label>
+                  <input id="pago-manual-modal-persona-correo"
+                    aria-describedby="pago-manual-persona-ayuda"
+                    type="email"
+                    inputMode="email"
+                    value={personaEmail}
+                    onChange={(e) => setPersonaEmail(e.target.value)}
+                    maxLength={255}
+                    autoComplete="off"
+                    aria-required="true"
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <p id="pago-manual-persona-ayuda" className="text-xs text-gray-600 sm:col-span-2">
+                  Viene con los datos del prospecto: cámbielos si pagó otra persona. Use un correo real de quien pagó: si lo
+                  pagado queda como saldo a favor, se le avisa a ese correo.
+                </p>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Referencia bancaria */}
