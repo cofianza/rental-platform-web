@@ -4,6 +4,7 @@
  */
 
 import { apiClient } from '@/lib/api'
+import type { IPagadorManualVista, TipoPagadorManual } from '@/lib/pagadorManual'
 
 // ============================================
 // Types
@@ -40,6 +41,8 @@ export interface IPago {
   saldo_aplicado_cop?: number
   /** El saldo a favor cubrió el cobro entero: ya está completado y no hay enlace de pago. */
   cubierto_con_saldo?: boolean
+  /** Pago registrado a mano: quién lo hizo, según quien lo registró (solo en el detalle; null = no se registró). */
+  pagado_por?: IPagadorManualVista | null
 }
 
 export interface IPagoEvento {
@@ -63,6 +66,15 @@ export interface IRegistrarPagoManualInput {
   comprobante_nombre_original?: string
   comprobante_tipo_mime?: string
   comprobante_tamano_bytes?: number
+  /** Quién hizo el pago (obligatorio en el estudio). Nunca ids: la inmobiliaria o el propietario los resuelve la API. */
+  pagado_por?: { tipo: TipoPagadorManual; nombre?: string; email?: string }
+}
+
+/** Las opciones de «¿Quién hizo el pago?» de un estudio (solo nombres) y el solicitante para precargar a la persona. */
+export interface IPagadoresManual {
+  inmobiliaria: { nombre: string | null } | null
+  propietario: { nombre: string | null } | null
+  persona: { nombre: string; email: string | null } | null
 }
 
 // HP-351: Input para crear link de pago via pasarela
@@ -192,6 +204,12 @@ class PagoService {
     if (!response.ok) {
       throw new Error('Error al subir el comprobante')
     }
+  }
+
+  /** Las opciones de «¿Quién hizo el pago?» del registro manual (solo Cofianza). */
+  async getPagadoresManual(expedienteId: string): Promise<IPagadoresManual> {
+    const response = await apiClient.get<IPagadoresManual>(`/expedientes/${expedienteId}/pagos/manual/pagadores`)
+    return response.data
   }
 
   /**

@@ -24,6 +24,7 @@ import {
   IconFileText,
 } from '@/components/icons'
 import { abrirEnPestana } from '@/lib/utils'
+import { textoPagadorManual } from '@/lib/pagadorManual'
 
 // ============================================
 // Types
@@ -264,6 +265,12 @@ export function PagoDetalleModal({ isOpen, onClose, pagoId }: PagoDetalleModalPr
               <div>
                 <dt className="text-gray-600">Correo de quien pagó</dt>
                 <dd className="break-all font-medium text-gray-900">{pago.email_pagador}</dd>
+              </div>
+            )}
+            {pago.pagado_por && (
+              <div className="sm:col-span-2">
+                <dt className="text-gray-600">Quién hizo el pago (lo indicó Cofianza al registrarlo)</dt>
+                <dd className="break-words font-medium text-gray-900">{textoPagadorManual(pago.pagado_por)}</dd>
               </div>
             )}
             {pago.transaction_ref && (
