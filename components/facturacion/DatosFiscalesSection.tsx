@@ -6,7 +6,7 @@
  * 2019) y que además no se guardaba en ningún lado: `saveDatosFiscales` era un
  * placeholder no-op. Ahora es una tarjeta de solo lectura que muestra los
  * MISMOS datos que la API usa al facturar (perfil del arrendador), con el
- * mismo orden de resolución, y remite a "Datos para contrato" para editarlos.
+ * mismo orden de resolución, y remite a «Datos de mi inmobiliaria» (punto 13 del reporte) para editarlos.
  */
 
 'use client'
@@ -17,6 +17,7 @@ import { perfilArrendadorService, type IPerfilArrendador } from '@/services/perf
 import { useAuth } from '@/hooks/useAuth'
 import { IconAlertTriangle } from '@/components/icons'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
+import { RUTA_DATOS_INMOBILIARIA, tituloDatosArrendador } from '@/lib/datosArrendador'
 
 function Dato({ label, value }: { label: string; value: string | null }) {
   return (
@@ -52,7 +53,7 @@ export function DatosFiscalesSection() {
   }, [fetchPerfil])
 
   // Los datos para contrato son de la ORGANIZACIÓN: solo el titular los edita
-  // (mismo criterio que /configuracion/datos-contrato, donde el backend manda).
+  // (mismo criterio que /configuracion/datos-inmobiliaria, donde el backend manda).
   const puedeEditar = !(user?.rol === 'inmobiliaria' && user?.rol_miembro !== 'owner')
 
   if (loading) {
@@ -105,10 +106,10 @@ export function DatosFiscalesSection() {
 
       {puedeEditar && (
         <Link
-          href="/configuracion/datos-contrato"
+          href={RUTA_DATOS_INMOBILIARIA}
           className="mt-6 inline-block text-sm font-medium text-primary-700 hover:underline"
         >
-          Editar en Datos para contrato
+          Editar en {tituloDatosArrendador(user?.rol)}
         </Link>
       )}
     </div>

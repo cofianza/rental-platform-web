@@ -112,8 +112,8 @@ export function ReembolsosSection() {
         <h3 className="text-base font-semibold text-gray-900 mb-1">No hay pagos por devolver</h3>
         <p className="text-sm text-gray-500">
           Aquí aparecen los estudios de arrendamiento pagados que terminaron sin consultar las centrales de riesgo, los pagos que
-          entraron sin un cobro que les corresponda y los que hay que revisar a mano (reembolsos parciales,
-          contracargos ganados).
+          entraron sin un cobro que les corresponda, las devoluciones de saldo a favor que pidió una persona natural y los
+          que hay que revisar a mano (reembolsos parciales, contracargos ganados).
         </p>
         <button
           onClick={cargar}
@@ -187,12 +187,20 @@ export function ReembolsosSection() {
                   </Link>
                 ) : null}
                 <span className="text-xs text-gray-500">{formatDate(r.created_at)}</span>
+                {r.fecha_limite && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 border border-amber-200">
+                    <IconClock size={12} aria-hidden="true" />
+                    Devolver a más tardar el {formatDate(r.fecha_limite)}
+                  </span>
+                )}
               </div>
               <p className="mt-1 text-xs text-gray-600">
                 {r.motivo_texto.charAt(0).toUpperCase() + r.motivo_texto.slice(1)}.
               </p>
               <p className="mt-0.5 text-xs text-gray-500 break-words">
-                {ORIGEN[r.proveedor] ?? `Pago de Mercado Pago ${r.provider_payment_id}`}
+                {r.motivo === 'saldo_a_favor_devolucion' && r.proveedor === 'manual'
+                  ? 'Parte del saldo a favor que no se puede reembolsar por Mercado Pago: devuélvala a mano (transferencia) y márquela resuelta.'
+                  : (ORIGEN[r.proveedor] ?? `Pago de Mercado Pago ${r.provider_payment_id}`)}
               </p>
               {r.notas && (
                 <p className="mt-1 inline-flex items-start gap-1 text-xs text-amber-700">

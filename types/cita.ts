@@ -29,6 +29,8 @@ export interface ICita {
   expediente?: {
     id: string
     numero: string
+    /** Estado del estudio. Ausente con una API anterior. */
+    estado?: string
     estudio_habilitado: boolean
     /** TRUE cuando el propietario decidio no proceder tras la visita.
      *  Mutuamente excluyente con estudio_habilitado=true. */

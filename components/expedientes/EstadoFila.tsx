@@ -20,7 +20,7 @@ import {
   type VistaTurno,
 } from '@/lib/etapaEstudio'
 import { queSigue } from '@/lib/ayudaEstudio'
-import { etapaDeFila, accionDeFila, revisionDemorada, segundoEnVerificacion, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
+import { etapaDeFila, accionDeFila, esperaCargaNotaria, fraseCanonGestor, revisionDemorada, segundoEnVerificacion, TURNO_GESTOR_TRABA } from '@/lib/etapaFila'
 import { IconClock } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import { InfoTip } from '@/components/ui/InfoTip'
@@ -180,6 +180,7 @@ export function datosEstadoFila(
     analista = false,
     ahora,
     yo,
+    propietario = false,
   }: {
     interno: boolean
     vista: VistaTurno
@@ -187,6 +188,8 @@ export function datosEstadoFila(
     ahora: number
     /** Id de quien mira: si la revisión la tomó otro analista, «En revisión de X» en vez de «Su turno». */
     yo?: string | null
+    /** Quien gestiona es el propietario directo: él fija el canon (punto 13: «baje el canon», no «pida bajar»). */
+    propietario?: boolean
   },
 ): DatosEstadoFila {
   const etapa = etapaDeFila(expediente)
@@ -203,16 +206,19 @@ export function datosEstadoFila(
   // L4: solo Cofianza ve cuánto lleva la revisión (desde las 24 h).
   const demora = interno && etapa === 'decision' && !c ? revisionDemorada(expediente.en_revision_desde, ahora) : null
   // En firma el RPC dice 'prospecto', pero faltan todas las partes: la misma pastilla que la franja del detalle.
+  // Adenda 6.1 §4: en notaría no se esperan firmas: registrar el contrato firmado le toca a quien gestiona.
   // Con el canon que excede o el segundo firmante en curso, decide quien gestiona (como turnoDeEtapa).
   // «Aprobado con segundo firmante» con el segundo en verificación: de Cofianza, diga lo que diga depende_de.
   const turno: Turno | null | undefined =
-    etapa === 'firma' && expediente.depende_de === 'prospecto'
-      ? 'firmas'
-      : expediente.depende_de && TURNO_GESTOR_TRABA.includes(etapa)
-        ? 'gestor'
-        : verificacion && etapa === 'segundo_firmante'
-          ? 'cofianza'
-          : expediente.depende_de
+    etapa === 'firma' && esperaCargaNotaria(expediente)
+      ? 'gestor'
+      : etapa === 'firma' && expediente.depende_de === 'prospecto'
+        ? 'firmas'
+        : expediente.depende_de && TURNO_GESTOR_TRABA.includes(etapa)
+          ? 'gestor'
+          : verificacion && etapa === 'segundo_firmante'
+            ? 'cofianza'
+            : expediente.depende_de
   // Identidad rechazada: la pastilla ya dice qué hacer (comunicarse con Cofianza); «Su turno» sobra.
   // En la espera, la etapa ya dice a quién se espera: «Esperando al prospecto» la contradecía.
   // U8: fuera de Cofianza la etapa ya dice «En revisión de Cofianza»; la pastilla de turno lo repetía.
@@ -242,6 +248,7 @@ export function datosEstadoFila(
       textoApi: ev?.siguiente_accion_texto ?? null,
       textoTraba: expediente.traba_contrato?.texto ?? null,
       segundoEnVerificacion: verificacion ? 'api' : false,
+      firmaNotaria: esperaCargaNotaria(expediente),
     }),
     score,
     turno:
@@ -258,6 +265,8 @@ export function datosEstadoFila(
             verificacionDe: etapa === 'solicitante_en_verificacion' ? ('solicitante' as const) : ('segundo' as const),
             tomadoPor: deCofianza && analista ? analistaAjeno(expediente.analista, yo) : null,
             accion: turno === 'gestor' ? accionDeFila(expediente, etapa) : undefined,
+            // Oficina Virtual (punto 13): a quien gestiona, «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon».
+            fraseGestor: turno === 'gestor' && etapa === 'canon_excede' ? fraseCanonGestor(expediente.traba_contrato, { propietario }) : undefined,
           }
         : null,
     // Solo con el turno de quien gestiona: con el segundo firmante en curso (se le espera) o en verificación,
@@ -306,7 +315,7 @@ export function VigenciaFila({
       title={vigencia.titulo}
       className={cn(
         'inline-flex items-center gap-1 font-medium',
-        // rounded-xl: en una línea se ve igual que rounded-full; «Envíe a firma antes del…» puede bajar a dos
+        // rounded-xl: en una línea se ve igual que rounded-full; «Vence en N días · envíe a firma antes del…» puede bajar a dos
         // líneas a 390 px, y ahí no queda una cápsula estirada.
         pastilla ? cn('rounded-xl border px-2.5 py-1 text-xs', PASTILLA_VIGENCIA[vigencia.tono]) : cn('text-[11px]', TONO_VIGENCIA[vigencia.tono]),
         className,
@@ -372,7 +381,8 @@ export function EstadoFila({
   // Hora fijada al montar: Date.now() en render es impuro (cambia en cada render).
   const [ahora] = useState(() => Date.now())
   const yo = useAuthStore((st) => st.user?.id)
-  const d = datosEstadoFila(expediente, { interno, vista, analista, ahora, yo })
+  const propietario = useAuthStore((st) => st.user?.rol) === 'propietario'
+  const d = datosEstadoFila(expediente, { interno, vista, analista, ahora, yo, propietario })
 
   return (
     <div className={cn('flex items-start gap-1', compacto ? 'flex-row flex-wrap items-center gap-1.5' : 'flex-col')}>

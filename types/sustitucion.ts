@@ -91,6 +91,35 @@ export interface ICotizacionSustitucion {
   vuelve_a_revision?: boolean
   /** Estudio rechazado: hasta cuándo debe autorizar la persona nueva (ISO). */
   vence_reapertura?: string | null
+  /**
+   * Cambio del segundo firmante (Adenda 6 §7): hasta cuándo el resultado del estudio permite enviar el contrato a
+   * firma (ISO); el cambio no lo amplía. Ausente con una API anterior o sin fecha de evaluación.
+   */
+  firmar_hasta?: string | null
+  /**
+   * Adenda 6 §6: el saldo a favor de quien mira que se aplicaría a este cobro (solo si requiere pago, tiene saldo y
+   * el saldo a favor está activo en la API). `por_pagar_cop` es lo que quedaría por pagar en Mercado Pago.
+   */
+  saldo_a_favor?: ISaldoAFavorCotizado
+}
+
+/** Adenda 6 §6: cuánto del saldo a favor se aplicaría a un cobro y cuánto quedaría por pagar. */
+export interface ISaldoAFavorCotizado {
+  disponible_cop: number
+  aplicaria_cop: number
+  por_pagar_cop: number
+}
+
+/**
+ * El cobro de una consulta adicional. Adenda 6 §6: con saldo a favor aplicado, `saldo_aplicado_cop` es lo cubierto y
+ * `por_pagar_cop` lo que cobra el enlace; si el saldo lo cubrió entero, `url_pago` es null y ya quedó pagada.
+ */
+export interface ICobroConsultaAdicional {
+  pago_id: string
+  url_pago: string | null
+  total_cop: number
+  saldo_aplicado_cop?: number
+  por_pagar_cop?: number
 }
 
 /** La persona que entra como solicitante (persona natural). */
@@ -113,7 +142,7 @@ export interface ISolicitanteCargado {
 export interface ISustitucionCreada {
   sustitucion_id: string
   estado: EstadoSustitucion
-  pago: { pago_id: string; url_pago: string; total_cop: number } | null
+  pago: ICobroConsultaAdicional | null
   sustituciones: { usadas: number; maximo: number }
 }
 
@@ -129,4 +158,7 @@ export interface IConsultaAdicionalCanon {
   requiere_pago: boolean
   url_pago: string | null
   total_cop: number
+  /** Adenda 6 §6: lo cubierto con saldo a favor y lo que cobra el enlace (ver ICobroConsultaAdicional). */
+  saldo_aplicado_cop?: number
+  por_pagar_cop?: number
 }

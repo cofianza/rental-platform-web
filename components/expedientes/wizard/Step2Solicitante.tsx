@@ -20,6 +20,8 @@ import {
   IconAlertTriangle,
 } from '@/components/icons'
 import { PhoneInput } from '@/components/ui/PhoneInput'
+import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
+import { useAuthStore } from '@/stores/auth.store'
 import { solicitanteService } from '@/services/solicitanteService'
 import { estudioService, type IEstudioVigente } from '@/services/estudioService'
 import type { ISolicitante, ISolicitanteCreateData, TipoDocumento } from '@/types/solicitante'
@@ -34,7 +36,6 @@ import {
   TIPO_PERSONA_OPTIONS,
   TIPO_DOCUMENTO_OPTIONS,
   NIVEL_EDUCATIVO_OPTIONS,
-  DEPARTAMENTOS_COLOMBIA,
   MSG_PERSONA_JURIDICA,
   esPersonaJuridica,
 } from './constants'
@@ -56,7 +57,7 @@ interface Step2SolicitanteProps {
 // §5.2: el aviso de estudio vigente dice qué tan viejo es y qué salió, para decidir sin abrirlo.
 const ROTULO_RESULTADO: Record<string, string> = {
   aprobado: 'aprobado',
-  rechazado: 'no aprobable',
+  rechazado: 'no aprobado',
   condicionado: 'en revisión o con condición',
 }
 
@@ -160,7 +161,6 @@ export function Step2Solicitante({
       ingresos_mensuales: s.ingresos_mensuales ?? undefined,
       nivel_educativo: s.nivel_educativo ?? undefined,
       parentesco: s.parentesco ?? undefined,
-      habitara_inmueble: s.habitara_inmueble,
     }
     setEditForm(initial)
     setEditBaseline(initial)
@@ -423,6 +423,7 @@ export function Step2Solicitante({
           formData={editForm}
           errors={{}}
           onUpdateField={(field, value) => setEditForm((prev) => (prev ? { ...prev, [field]: value } : prev))}
+          edicion
         />
 
         <div className="flex flex-wrap items-center gap-2">
@@ -791,12 +792,15 @@ function SolicitanteForm({
   errors,
   onUpdateField,
   onDocumentoBlur,
+  edicion = false,
 }: {
   formData: ISolicitanteCreateData
   errors: Record<string, string>
   onUpdateField: (field: string, value: unknown) => void
   /** Solo al crear: al salir del documento se busca la ficha y el estudio vigente (§5.2). */
   onDocumentoBlur?: () => void
+  /** Editando una ficha: borrar el municipio manda null (el PATCH omite lo undefined; al crear, null no vale). */
+  edicion?: boolean
 }) {
   // Flujo de Gerencia, modulo de estudios, §5.1: los campos de este paso son
   // los MÍNIMOS para identificar y contactar al prospecto. Lo laboral y los
@@ -805,6 +809,8 @@ function SolicitanteForm({
   // qué se usa. Aquí quedan detrás de un toggle: quien ya los tiene a mano
   // puede capturarlos, pero el camino rápido es el del documento.
   const [showMore, setShowMore] = useState(false)
+  const accessToken = useAuthStore((s) => s.accessToken)
+  const [municipio, setMunicipio] = useState<{ codigo: string; nombre: string } | null>(null)
 
   const inputClasses = (hasError: boolean) =>
     cn(
@@ -1003,36 +1009,24 @@ function SolicitanteForm({
             />
           </div>
 
-          {/* Departamento */}
-          <div>
-            <label htmlFor="solicitante-formData-departamento" className="block text-sm font-medium text-gray-700 mb-1">
-              {WIZARD_MESSAGES.LABEL_DEPARTAMENTO}
-            </label>
-            <select id="solicitante-formData-departamento"
-              value={formData.departamento || ''}
-              onChange={(e) => onUpdateField('departamento', e.target.value)}
-              className={selectClasses(false)}
-            >
-              <option value="">Seleccionar...</option>
-              {DEPARTAMENTOS_COLOMBIA.map((dep) => (
-                <option key={dep.value} value={dep.value}>
-                  {dep.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Ciudad */}
-          <div>
-            <label htmlFor="solicitante-formData-ciudad" className="block text-sm font-medium text-gray-700 mb-1">
-              {WIZARD_MESSAGES.LABEL_CIUDAD}
-            </label>
-            <input id="solicitante-formData-ciudad"
-              type="text"
-              value={formData.ciudad || ''}
-              onChange={(e) => onUpdateField('ciudad', e.target.value)}
-              placeholder={WIZARD_MESSAGES.PLACEHOLDER_CIUDAD}
-              className={inputClasses(false)}
+          {/* Municipio: del listado oficial, «Municipio, Departamento» (reporte Oficina Virtual 25-nov, punto 4) */}
+          <div className="md:col-span-2">
+            <MunicipioCombobox
+              id="solicitante-formData-ciudad"
+              label={WIZARD_MESSAGES.LABEL_MUNICIPIO}
+              ayuda="Búsquelo en el listado oficial de municipios de Colombia."
+              placeholder={WIZARD_MESSAGES.PLACEHOLDER_MUNICIPIO}
+              value={municipio}
+              onChange={(v, m, opciones) => {
+                setMunicipio(v)
+                // Si el campo reconoció solo la ciudad guardada, no se toca: no es un cambio.
+                if (opciones?.automatico) return
+                const vacio = edicion ? null : undefined
+                onUpdateField('ciudad', m?.name ?? vacio)
+                onUpdateField('departamento', m?.department.name ?? vacio)
+              }}
+              guardado={formData.ciudad ? { ciudad: formData.ciudad, departamento: formData.departamento } : null}
+              authToken={accessToken ?? undefined}
             />
           </div>
         </div>
@@ -1146,20 +1140,7 @@ function SolicitanteForm({
             />
           </div>
 
-          {/* Habitara el inmueble */}
-          <div className="md:col-span-2">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.habitara_inmueble || false}
-                onChange={(e) => onUpdateField('habitara_inmueble', e.target.checked)}
-                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                {WIZARD_MESSAGES.LABEL_HABITARA_INMUEBLE}
-              </span>
-            </label>
-          </div>
+          {/* Adenda 6 §8: «Habitará el inmueble» ya no va aquí: se lo pregunta a cada persona al autorizar. */}
         </div>
       </section>
         </>

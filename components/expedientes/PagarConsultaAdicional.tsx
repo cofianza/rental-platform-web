@@ -30,16 +30,32 @@ export function PagarConsultaAdicional({ estudioId, inmuebleId, valor, onSinCobr
   // Si la API cotiza otro valor al confirmar, se muestra el nuevo antes de confirmar otra vez.
   const [vigente, setVigente] = useState(valor)
 
+  // Adenda 6 §6: parte del cobro (o todo) cubierto con saldo a favor.
+  const saldoAplicado = respuesta?.saldo_aplicado_cop ?? 0
   if (respuesta?.url_pago) {
     return (
       <div className="mt-3 space-y-2">
+        {saldoAplicado > 0 && (
+          <p className="text-xs">
+            Saldo a favor aplicado: <span className="tabular-nums">{formatCurrency(saldoAplicado)}</span> · Por pagar:{' '}
+            <span className="tabular-nums">{formatCurrency(respuesta.por_pagar_cop ?? respuesta.total_cop)}</span>.
+          </p>
+        )}
         <a href={respuesta.url_pago} target="_blank" rel="noopener noreferrer" className={botonModal('primary', 'w-full sm:w-auto')}>
           <IconExternalLink size={16} aria-hidden="true" />
-          Ir a pagar {formatCurrency(respuesta.total_cop)}
+          Ir a pagar {formatCurrency(saldoAplicado > 0 ? (respuesta.por_pagar_cop ?? respuesta.total_cop) : respuesta.total_cop)}
           <span className="sr-only"> (se abre en una pestaña nueva)</span>
         </a>
         <p className="text-xs">Cuando el pago se confirme hacemos la consulta y le avisamos. Después vuelva a intentarlo: no tendrá otro costo mientras el reporte esté vigente.</p>
       </div>
+    )
+  }
+  if (respuesta && !respuesta.url_pago && saldoAplicado > 0 && respuesta.estado !== 'consultada') {
+    return (
+      <p className="mt-3 text-xs">
+        La consulta adicional se pagó con saldo a favor (<span className="tabular-nums">{formatCurrency(saldoAplicado)}</span>). La hacemos y le
+        avisamos; después vuelva a intentarlo: no tendrá otro costo mientras el reporte esté vigente.
+      </p>
     )
   }
   if (respuesta?.estado === 'consultada') {

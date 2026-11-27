@@ -4,7 +4,18 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { ACCION_GESTOR, accionSegundoFirmante, etapaDeFila, accionDeFila, tomarDisponible, actividadConAlerta, revisionDemorada, siguienteOrdenActividad } from './etapaFila'
+import {
+  ACCION_GESTOR,
+  accionSegundoFirmante,
+  esperaCargaNotaria,
+  etapaDeFila,
+  accionDeFila,
+  tomarDisponible,
+  actividadConAlerta,
+  revisionDemorada,
+  siguienteOrdenActividad,
+} from './etapaFila'
+import { queSigue } from './ayudaEstudio'
 import type { IExpediente, IEstudioVigente } from '@/types/expediente'
 
 const fila = (o: Partial<IExpediente> = {}, ev?: Partial<IEstudioVigente> | null): IExpediente =>
@@ -154,7 +165,8 @@ test('reporte de Gerencia (21-nov): aprobado con traba_contrato nunca es «crear
   const traba = (codigo: string, extra = {}) => ({ codigo, texto: 'Texto de la API.', ...extra })
   const canon = fila({ estado: 'aprobado', depende_de: 'gestor', traba_contrato: traba('canon_excede', { canon_habilitado_cop: 1_500_000 }) })
   assert.equal(etapaDeFila(canon), 'canon_excede')
-  assert.equal(accionDeFila(canon, 'canon_excede'), 'ajustar el canon o reasignar el estudio')
+  // Oficina Virtual (25-nov), punto 13: en palabras de quien arrienda, con la cifra.
+  assert.equal(accionDeFila(canon, 'canon_excede'), 'elegir un inmueble de hasta $1.500.000 o pedir bajar el canon')
   // Con el coarrendatario sin responder el RPC puede decir «prospecto»: decide quien gestiona.
   const coa = fila({ estado: 'aprobado', depende_de: 'prospecto', traba_contrato: traba('coarrendatario_pendiente') })
   assert.equal(etapaDeFila(coa), 'coarrendatario_pendiente')
@@ -265,4 +277,89 @@ test('Adenda 6 §4: las listas del solicitante sin verificar: turno de Cofianza,
   assert.equal(etapaDeFila(listas), 'solicitante_en_verificacion')
   assert.notEqual(accionDeFila(listas, 'solicitante_en_verificacion'), 'crear el contrato')
   assert.equal(tomarDisponible(listas), true)
+})
+
+test('Adenda 6.1 §4: el contrato V3 que espera el registro en notaría es turno de quien gestiona (revisión de integración, punto 1)', () => {
+  const enNotaria = fila({ estado: 'aprobado', contrato_estado: 'pendiente_firma', depende_de: 'gestor', firma_notaria: true })
+  assert.equal(etapaDeFila(enNotaria), 'firma')
+  assert.equal(esperaCargaNotaria(enNotaria), true)
+  assert.equal(accionDeFila(enNotaria, 'firma'), 'registrar el contrato firmado en notaría')
+  // Aunque el turno llegue de una lista anterior: la marca manda (nunca «revisar la firma del contrato»).
+  assert.equal(accionDeFila({ ...enNotaria, depende_de: 'prospecto' }, 'firma'), 'registrar el contrato firmado en notaría')
+  // Firma digital o una API anterior (sin la marca): como siempre.
+  const digital = fila({ estado: 'aprobado', contrato_estado: 'pendiente_firma', depende_de: 'gestor', firma_notaria: false })
+  assert.equal(esperaCargaNotaria(digital), false)
+  assert.equal(accionDeFila(digital, 'firma'), ACCION_GESTOR.firma)
+  assert.equal(esperaCargaNotaria(fila({ contrato_estado: 'pendiente_firma' })), false)
+  // Ya registrado (el contrato salió de la firma) no se pide registrarlo otra vez.
+  assert.equal(esperaCargaNotaria(fila({ contrato_estado: 'vigente', firma_notaria: true })), false)
+})
+
+test('Adenda 6 §2: «Qué sigue» en notaría no habla de firma electrónica', () => {
+  const o = { analista: false, fechaCondicion: null, esperaHasta: null, sinInmueble: false, firmaNotaria: true }
+  assert.match(queSigue('firma', { ...o, vista: 'gestor' }), /^El contrato se firma en notaría: descárguelo, hágalo autenticar en notaría y regístrelo/)
+  assert.match(queSigue('firma', { ...o, vista: 'equipo' }), /alguien de su equipo con permiso de edición/)
+  assert.match(queSigue('firma', { ...o, vista: 'cofianza' }), /falta que quien gestiona el estudio registre el contrato autenticado/)
+  for (const vista of ['gestor', 'equipo', 'cofianza'] as const) assert.doesNotMatch(queSigue('firma', { ...o, vista }), /firma electrónica|firmen todas/)
+  // Sin la marca, el de siempre.
+  assert.equal(queSigue('firma', { ...o, vista: 'gestor', firmaNotaria: false }), 'El contrato está en firma electrónica: falta que firmen todas las partes.')
+})
+
+test('Adenda 6 §2: textos de notaría con la salida de todo el sistema (revisión de integración, puntos 5 y 6)', async () => {
+  const { readFileSync } = await import('node:fs')
+  const leer = (ruta: string) => readFileSync(new URL(ruta, import.meta.url), 'utf8')
+  for (const ruta of ['../components/contratos/CargaContratoNotaria.tsx', '../components/contratos/v3/EstadoFirma.tsx']) {
+    const fuente = leer(ruta)
+    assert.doesNotMatch(fuente, /haga una nueva evaluación/, ruta)
+    assert.match(fuente, /cancele el contrato y cree un estudio nuevo \(con su propio cobro\)/, ruta)
+  }
+  // Al solicitante no se le dice que el contrato lo registra él.
+  const solicitante = leer('../components/expedientes/ContratoSolicitanteCard.tsx')
+  assert.doesNotMatch(solicitante, /la fianza se activa cuando (cargue|registre) el contrato/)
+  assert.match(solicitante, /la fianza se activa cuando quien tramita su arriendo registre el contrato autenticado/)
+})
+
+test('Oficina Virtual (punto 13): «Aprobado hasta $X. Elija un inmueble de ese valor o pida bajar el canon»', async () => {
+  const { fraseCanonGestor, accionCanon, ACCION_GESTOR } = await import('./etapaFila')
+  const { textoTurno } = await import('./turnoEstudio')
+  const hasta = { canon_habilitado_cop: 1_050_000, hasta_canon: true }
+  // Con la leyenda «hasta canon de» (la cifra ES el resultado): la frase de Gerencia.
+  assert.equal(fraseCanonGestor(hasta), 'Aprobado hasta $1.050.000. Elija un inmueble de ese valor o pida bajar el canon')
+  // El propietario fija su canon: «baje», no «pida bajar».
+  assert.equal(fraseCanonGestor(hasta, { propietario: true }), 'Aprobado hasta $1.050.000. Elija un inmueble de ese valor o baje el canon')
+  // Sin la cifra (estudio anterior a la Adenda 5) no se inventa una.
+  for (const t of [null, undefined, {}, { canon_habilitado_cop: 0 }, { canon_habilitado_cop: null }]) {
+    assert.equal(fraseCanonGestor(t), 'El canon supera lo aprobado. Elija otro inmueble o pida bajar el canon')
+    assert.equal(accionCanon(t), ACCION_GESTOR.canon_excede)
+  }
+  // A quien gestiona, la frase entera (sin «Su turno:»); a su equipo de solo lectura y a Cofianza, la acción.
+  const o = { accion: accionCanon(hasta), fraseGestor: fraseCanonGestor(hasta) }
+  assert.equal(textoTurno('gestor', 'gestor', o), 'Aprobado hasta $1.050.000. Elija un inmueble de ese valor o pida bajar el canon')
+  assert.equal(textoTurno('gestor', 'equipo', o), 'Turno de su equipo: elegir un inmueble de hasta $1.050.000 o pedir bajar el canon')
+  assert.equal(textoTurno('gestor', 'cofianza', o), 'Turno del gestor: elegir un inmueble de hasta $1.050.000 o pedir bajar el canon')
+  // Nunca el texto viejo.
+  assert.doesNotMatch(JSON.stringify(ACCION_GESTOR), /ajustar el canon o reasignar/)
+})
+
+test('Oficina Virtual (punto 13): la frase del canon no afirma un tope que no es el resultado', async () => {
+  const { fraseCanonGestor, accionCanon } = await import('./etapaFila')
+  // Canon mayor al evaluado con reevaluación sin costo (la API lo dice con puede_reevaluar): esa salida primero.
+  const reevaluar = { canon_habilitado_cop: 1_800_000, hasta_canon: false, puede_reevaluar: true }
+  assert.equal(fraseCanonGestor(reevaluar), 'Canon mayor al evaluado: evalúe de nuevo sin costo o elija un inmueble de hasta $1.800.000')
+  assert.equal(accionCanon(reevaluar), 'evaluar de nuevo sin costo o elegir un inmueble de hasta $1.800.000')
+  // Sin reevaluación posible: un inmueble de hasta lo evaluado o bajar el canon, sin «Aprobado hasta».
+  const evaluado = { canon_habilitado_cop: 1_800_000, hasta_canon: false }
+  assert.equal(fraseCanonGestor(evaluado), 'Canon mayor al evaluado. Elija un inmueble de hasta $1.800.000 o pida bajar el canon')
+  // Sobre el tope de Cofianza: también la excepción de la Gerencia General (con la leyenda o sin ella).
+  for (const t of [{ canon_habilitado_cop: 3_000_000, sobre_tope: true }, { canon_habilitado_cop: 3_000_000, hasta_canon: true, sobre_tope: true }]) {
+    assert.equal(
+      fraseCanonGestor(t),
+      'El canon supera el tope de Cofianza. Elija un inmueble de hasta $3.000.000, pida bajar el canon o pida la excepción a la Gerencia General',
+    )
+    assert.match(accionCanon(t), /o pedir la excepción a la Gerencia General$/)
+  }
+  assert.equal(
+    fraseCanonGestor({ sobre_tope: true }, { propietario: true }),
+    'El canon supera el tope de Cofianza. Elija otro inmueble, baje el canon o pida la excepción a la Gerencia General',
+  )
 })

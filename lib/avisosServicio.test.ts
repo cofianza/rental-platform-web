@@ -7,8 +7,11 @@ import {
   SERVICIOS_AVISO,
   LIMITE_MENSAJE,
   LIMITE_TITULO,
+  CLAVE_OCULTOS_PUBLICOS,
   avisosAMostrar,
   bogotaLocalAIso,
+  claveOcultosDe,
+  siNoSeGuardoElCierre,
   isoABogotaLocal,
   podarOcultos,
   tieneCamposPorLlenar,
@@ -36,6 +39,25 @@ test('ocultar: solo la versión ocultada; si se edita vuelve a salir', () => {
 test('«fuera de servicio» no se oculta', () => {
   const a = aviso({ id: 'a', nivel: 'caido' })
   assert.deepEqual(avisosAMostrar([a], { a: a.actualizado_en }), [a])
+})
+
+test('punto 12: el respaldo del panel en el navegador es por persona y distinto del de las páginas públicas', () => {
+  const a = claveOcultosDe('00000000-0000-4000-8000-000000000001')
+  const b = claveOcultosDe('00000000-0000-4000-8000-000000000002')
+  assert.notEqual(a, b)
+  assert.notEqual(a, CLAVE_OCULTOS_PUBLICOS)
+  assert.equal(CLAVE_OCULTOS_PUBLICOS, 'hp-avisos-ocultos')
+})
+
+test('punto 12: si la API no guardó el cierre, se recuerda en el navegador salvo aviso retirado, «fuera de servicio» o «ver como»', () => {
+  assert.equal(siNoSeGuardoElCierre('NETWORK_ERROR'), 'recordar')
+  assert.equal(siNoSeGuardoElCierre('INTERNAL_ERROR'), 'recordar')
+  // Una API sin la ruta responde 404 sin ese código: se recuerda en el navegador, como antes.
+  assert.equal(siNoSeGuardoElCierre('NOT_FOUND'), 'recordar')
+  assert.equal(siNoSeGuardoElCierre(undefined), 'recordar')
+  assert.equal(siNoSeGuardoElCierre('AVISO_NO_ENCONTRADO'), 'olvidar')
+  assert.equal(siNoSeGuardoElCierre('AVISO_NO_SE_CIERRA'), 'deshacer')
+  assert.equal(siNoSeGuardoElCierre('SOLO_LECTURA'), 'deshacer')
 })
 
 test('podarOcultos deja solo los vigentes', () => {

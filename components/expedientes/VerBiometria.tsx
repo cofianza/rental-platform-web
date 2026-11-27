@@ -1,14 +1,16 @@
 'use client'
 
 /**
- * «Ver biometría» en la revisión manual.
+ * «Ver biometría».
  *
- * El analista de Cofianza ve el resultado guardado del cotejo (similitud,
- * documento, cada intento) y, si el cotejo no confirmó la identidad, las fotos
- * que Cofianza conserva para esta revisión (selfie y documento de cada intento
- * fallido). Las fotos se guardan cifradas, solo de quien autorizó con el texto
- * que lo permite, y se eliminan al decidir el estudio o a los 30 días. Se piden
- * al abrir esta ventana, una por una, y al cerrarla se olvidan.
+ * El analista de Cofianza ve el resultado guardado del cotejo del solicitante
+ * (similitud, documento, cada intento) y las fotos que Cofianza conserva,
+ * cifradas, de quien autorizó con un texto que lo permite:
+ *   - texto anterior (3.3): solo los intentos fallidos, hasta decidir el estudio o 30 días;
+ *   - autorización de datos versión 3.1 (Adenda 6 §2, casilla 4A): aprobados y fallidos de
+ *     las dos personas, con los plazos del panel; los fallidos de una persona se pueden
+ *     vincular a una denuncia o proceso (solo el administrador).
+ * Las fotos se piden al abrir esta ventana, una por una, y al cerrarla se olvidan.
  *
  * Hoy la autorización le pide a la persona UNA foto del documento (el lado con
  * su foto): no hay reverso.
@@ -30,6 +32,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { Modal, ModalAcciones, botonModal } from '@/components/ui/Modal'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { MotivoDialog } from '@/components/ui/MotivoDialog'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { useVerComo } from '@/components/expedientes/VerComo'
@@ -37,10 +40,29 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useEvidenciaBiometria, useFotoBiometria, useResumenBiometria } from '@/hooks/useBiometriaEvidencia'
 import type {
   CualFotoBiometria,
+  ICotejoFirmaAnalista,
   IIntentoConFotos,
   IIntentoGuardadoBiometria,
   IResumenBiometriaAnalista,
+  PersonaCotejo,
 } from '@/types/autorizacion'
+
+const NOMBRE_PERSONA: Record<PersonaCotejo, string> = { solicitante: 'el solicitante', coarrendatario: 'el segundo firmante' }
+const DE_PERSONA: Record<PersonaCotejo, string> = { solicitante: 'del solicitante', coarrendatario: 'del segundo firmante' }
+
+/** Una persona real del estudio con cotejos fallidos de la autorización V3 (la marca de denuncia es suya). */
+interface PersonaConFallidos {
+  persona: PersonaCotejo
+  clave: string | null
+  /** Sigue en el estudio (false = salió por un cambio de persona). */
+  actual: boolean
+  fallidos: number
+  marca: { desde: string; motivo: string } | null
+  sinMarca: boolean
+}
+
+const dePersona = (p: Pick<PersonaConFallidos, 'persona' | 'actual'>) =>
+  p.actual ? DE_PERSONA[p.persona] : p.persona === 'coarrendatario' ? 'de un segundo firmante anterior' : 'del solicitante anterior'
 
 const VERDE = 'bg-primary-50 text-primary-800 ring-primary-200'
 const ROJO = 'bg-red-50 text-red-800 ring-red-200'
@@ -50,12 +72,12 @@ const GRIS = 'bg-gray-100 text-gray-700 ring-gray-200'
 type ResultadoCotejo = Pick<IResumenBiometriaAnalista, 'estado' | 'documento_coincide'>
 
 /** El estado guardado, dicho como lo lee el analista. «Verificada» en verde solo si el documento también cuadró. */
-function estadoVisible(r: ResultadoCotejo): { texto: string; clase: string } {
+function estadoVisible(r: ResultadoCotejo, quien = 'del solicitante'): { texto: string; clase: string } {
   switch (r.estado) {
     case 'verificada':
       if (r.documento_coincide === true) return { texto: 'Verificada', clase: VERDE }
       return r.documento_coincide === false
-        ? { texto: 'Rostro verificado, el documento no es del solicitante', clase: ROJO }
+        ? { texto: `Rostro verificado, el documento no es ${quien}`, clase: ROJO }
         : { texto: 'Rostro verificado, documento sin confirmar', clase: AMBAR }
     case 'no_coincide':
       return { texto: 'No coincide', clase: ROJO }
@@ -113,15 +135,21 @@ const fecha = (iso: string | null | undefined) => {
 
 const pct = (n: number | null | undefined) => (n == null ? '—' : `${n.toLocaleString('es-CO', { maximumFractionDigits: 2 })} %`)
 
-export function VerBiometria({ expedienteId }: { expedienteId: string }) {
+/** `contenedor`: clases de un div alrededor del botón (no se pinta nada cuando no hay qué ver). */
+export function VerBiometria({ expedienteId, contenedor }: { expedienteId: string; contenedor?: string }) {
   const { hasRole } = usePermissions()
   const verComo = useVerComo()
   const habilitado = hasRole(['administrador', 'operador_analista']) && !verComo
   const { conEvidencia, resumen: resumenGuardado } = useResumenBiometria(expedienteId, habilitado)
-  const { datos, cargando, error, consultar, limpiar, eliminarFotos } = useEvidenciaBiometria(expedienteId)
+  const { datos, cargando, error, consultar, limpiar, eliminarFotos, retencionPorProceso } = useEvidenciaBiometria(expedienteId)
   const [abierto, setAbierto] = useState(false)
   const [confirmarEliminar, setConfirmarEliminar] = useState(false)
   const [eliminando, setEliminando] = useState(false)
+  // Adenda 6 §2: la marca de denuncia o proceso (solo administrador).
+  const esAdmin = hasRole(['administrador'])
+  const [pedirRetencion, setPedirRetencion] = useState<PersonaConFallidos | null>(null)
+  const [quitarRetencion, setQuitarRetencion] = useState<PersonaConFallidos | null>(null)
+  const [guardandoRetencion, setGuardandoRetencion] = useState(false)
 
   if (!conEvidencia) return null
 
@@ -144,8 +172,50 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
     : null
   const hayFotos = !!datos?.disponible && datos.intentos.length > 0
   const dias = datos?.dias_conservacion ?? 30
-  // El mínimo con que se juzgó cada intento (el del panel pudo cambiar después).
-  const umbralDe = (numero: number | null) => historial.find((h) => h.numero === numero)?.umbral ?? resumen?.umbral ?? null
+  // Adenda 6 §2: las de la autorización V3 (aprobados y fallidos, de las dos personas) se conservan con sus plazos y
+  // no se eliminan por supresión anticipada; las del texto anterior, como siempre.
+  const intentosA6 = (datos?.intentos ?? []).filter((i) => i.adenda6)
+  const intentos30 = (datos?.intentos ?? []).filter((i) => !i.adenda6)
+  const anios = datos?.anios_conservacion ?? null
+  // La marca de denuncia o proceso es de los cotejos FALLIDOS de una persona real (Adenda 6 §2): con un cambio de
+  // solicitante o de segundo firmante, cada persona va aparte.
+  const fallidosPorPersona: PersonaConFallidos[] = []
+  for (const i of intentosA6.filter((x) => !x.aprobado)) {
+    const persona: PersonaCotejo = i.persona ?? 'solicitante'
+    const clave = i.clave_persona ?? null
+    let g = fallidosPorPersona.find((x) => x.persona === persona && x.clave === clave)
+    if (!g) {
+      g = { persona, clave, actual: i.actual !== false, fallidos: 0, marca: null, sinMarca: false }
+      fallidosPorPersona.push(g)
+    }
+    g.fallidos += 1
+    if (i.retencion && !g.marca) g.marca = i.retencion
+    if (!i.retencion) g.sinMarca = true
+  }
+  const guardarRetencion = async (g: PersonaConFallidos, motivo: string | null): Promise<boolean> => {
+    setGuardandoRetencion(true)
+    try {
+      await retencionPorProceso(g.persona, g.clave, motivo)
+      toast.success(
+        motivo
+          ? `Los cotejos fallidos ${dePersona(g)} quedaron vinculados a la denuncia o el proceso.`
+          : `Se quitó la marca de denuncia o proceso ${dePersona(g)}.`,
+      )
+      setPedirRetencion(null)
+      setQuitarRetencion(null)
+      return true
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : 'No pudimos guardar la marca. Intente de nuevo.')
+      // false: el motivo escrito se conserva para reintentar.
+      return false
+    } finally {
+      setGuardandoRetencion(false)
+    }
+  }
+  // El mínimo con que se juzgó cada intento del texto anterior (el del panel pudo cambiar después). En las de la
+  // Adenda 6 el número es el de la persona, no el del historial: no se cruza.
+  const umbralDe = (i: IIntentoConFotos) =>
+    i.adenda6 ? null : (historial.find((h) => h.numero === i.numero)?.umbral ?? resumen?.umbral ?? null)
 
   const eliminar = async () => {
     setEliminando(true)
@@ -162,21 +232,26 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
 
   return (
     <>
-      <Button variante="secondary" onClick={abrir} className="min-h-10">
-        <IconUserCheck size={16} />
-        Ver biometría
-      </Button>
+      {(() => {
+        const boton = (
+          <Button variante="secondary" onClick={abrir} className="min-h-10">
+            <IconUserCheck size={16} />
+            Ver biometría
+          </Button>
+        )
+        return contenedor ? <div className={contenedor}>{boton}</div> : boton
+      })()}
 
       <Modal
         isOpen={abierto}
         onClose={cerrar}
-        title="Verificación biométrica del solicitante"
-        description="El resultado de comparar el rostro del solicitante con su documento y, si no se confirmó la identidad, las fotos que Cofianza conserva para esta revisión."
+        title="Verificación biométrica"
+        description="El resultado de comparar el rostro de la persona con su documento y las fotos que Cofianza conserva."
         size="xl"
         closeOnBackdrop
         footer={
           <ModalAcciones>
-            {hayFotos && (
+            {hayFotos && intentos30.length > 0 && (
               <button type="button" onClick={() => setConfirmarEliminar(true)} className={botonModal('secondary')}>
                 Eliminar fotos
               </button>
@@ -190,10 +265,11 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
         <div className="space-y-4">
           {resumen && <ResumenCotejo resumen={resumen} />}
           {conHistorial && <IntentosGuardados historial={historial} numeroDelResultado={numeroDelResultado} />}
+          {(datos?.cotejos_firma?.length ?? 0) > 0 && <CotejosAlFirmar cotejos={datos!.cotejos_firma!} />}
 
           <section aria-labelledby="bio-fotos" className="space-y-3">
             <h3 id="bio-fotos" className="text-sm font-semibold text-gray-900">
-              Fotos de los intentos que no confirmaron la identidad
+              {intentosA6.length > 0 ? 'Fotos de los cotejos' : 'Fotos de los intentos que no confirmaron la identidad'}
             </h3>
             {cargando ? (
               <div role="status" className="space-y-3">
@@ -224,20 +300,72 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
                 <Vacio texto={datos.motivo_no_disponible ?? 'Esta verificación no tiene fotos guardadas.'} />
               ) : (
                 <>
-                  <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-                    <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
-                    <span>
-                      Cofianza conserva estas fotos, cifradas, solo porque el cotejo no confirmó la identidad. Se eliminan
-                      al decidir el estudio o a los {dias} días, y cada consulta queda registrada.
-                    </span>
-                  </p>
+                  {intentos30.length > 0 && (
+                    <p className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                      <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
+                      <span>
+                        Cofianza conserva estas fotos, cifradas, solo porque el cotejo no confirmó la identidad. Se eliminan
+                        al decidir el estudio o a los {dias} días, y cada consulta queda registrada.
+                      </span>
+                    </p>
+                  )}
+                  {intentosA6.length > 0 && (
+                    <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                      <p className="flex items-start gap-2">
+                        <IconInfo size={16} className="mt-0.5 shrink-0 text-gray-500" />
+                        <span>
+                          Con la autorización de datos versión 3.1 (numeral 4A), Cofianza conserva cifradas las fotos de los
+                          cotejos aprobados y fallidos.{' '}
+                          {anios
+                            ? `Los fallidos, ${anios.fallido} ${anios.fallido === 1 ? 'año' : 'años'} desde el intento (o hasta que termine la denuncia o el proceso al que se vinculen); los aprobados, mientras la fianza esté vigente y ${anios.aprobado} ${anios.aprobado === 1 ? 'año' : 'años'} después de terminada, o ${anios.fallido} ${anios.fallido === 1 ? 'año' : 'años'} desde el intento si no hubo fianza.`
+                            : 'Cada cotejo dice hasta cuándo se conserva.'}{' '}
+                          Cada consulta queda registrada.
+                        </span>
+                      </p>
+                      {fallidosPorPersona.map((g) => (
+                        <div key={`${g.persona}:${g.clave ?? ''}`} className="space-y-1">
+                          {g.marca && (
+                            <p className="break-words font-medium text-gray-900">
+                              Cotejos fallidos {dePersona(g)} vinculados a una denuncia o proceso desde el{' '}
+                              {fecha(g.marca.desde)}: {g.marca.motivo}
+                            </p>
+                          )}
+                          {esAdmin && (
+                            <div className="flex flex-wrap gap-x-4">
+                              {g.sinMarca && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPedirRetencion(g)}
+                                  className="inline-flex min-h-10 items-center text-left font-semibold text-primary-700 underline"
+                                >
+                                  Vincular los cotejos fallidos {dePersona(g)} a una denuncia o proceso
+                                </button>
+                              )}
+                              {g.marca && (
+                                <button
+                                  type="button"
+                                  onClick={() => setQuitarRetencion(g)}
+                                  className="inline-flex min-h-10 items-center text-left font-semibold text-primary-700 underline"
+                                >
+                                  Quitar la marca (la denuncia o el proceso terminó)
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {!esAdmin && fallidosPorPersona.length > 0 && (
+                        <p className="text-xs text-gray-600">Solo un administrador puede vincularlos a una denuncia o proceso, o quitar la marca.</p>
+                      )}
+                    </div>
+                  )}
                   <ol className="space-y-4">
                     {datos.intentos.map((intento) => (
                       <IntentoConFotos
                         key={intento.id}
                         expedienteId={expedienteId}
                         intento={intento}
-                        umbral={umbralDe(intento.numero)}
+                        umbral={umbralDe(intento)}
                       />
                     ))}
                   </ol>
@@ -248,6 +376,37 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
         </div>
       </Modal>
 
+      <MotivoDialog
+        // Un diálogo por persona: el motivo escrito para una no aparece al abrirlo para la otra.
+        key={pedirRetencion ? `${pedirRetencion.persona}:${pedirRetencion.clave ?? ''}` : 'cerrado'}
+        isOpen={pedirRetencion !== null}
+        onClose={() => setPedirRetencion(null)}
+        onConfirm={async (motivo) => (pedirRetencion ? guardarRetencion(pedirRetencion, motivo) : false)}
+        title="Vincular a una denuncia o proceso"
+        descripcion={`Mientras esté la marca, las fotos de los cotejos fallidos ${pedirRetencion ? dePersona(pedirRetencion) : ''} de la autorización de datos versión 3.1 no se eliminan al vencer su plazo. Indique de qué denuncia o proceso se trata (entidad, número de radicado y fecha).`}
+        label="Denuncia o proceso"
+        placeholder="Por ejemplo: denuncia por suplantación ante la Fiscalía, radicado 000-0000, del 3 de diciembre"
+        confirmLabel="Vincular"
+        minLength={10}
+        isLoading={guardandoRetencion}
+      />
+      <ConfirmDialog
+        isOpen={quitarRetencion !== null}
+        onClose={() => setQuitarRetencion(null)}
+        onConfirm={() => (quitarRetencion ? guardarRetencion(quitarRetencion, null) : undefined)}
+        title="¿Quitar la marca de denuncia o proceso?"
+        message={
+          <p>
+            Las fotos de los cotejos fallidos {quitarRetencion ? dePersona(quitarRetencion) : ''} vuelven a sus plazos de
+            conservación. Las que ya cumplieron su plazo se eliminan en los próximos minutos y no se pueden recuperar. Queda
+            en la bitácora.
+          </p>
+        }
+        confirmLabel="Quitar la marca"
+        variant="danger"
+        isLoading={guardandoRetencion}
+      />
+
       <ConfirmDialog
         isOpen={confirmarEliminar}
         onClose={() => setConfirmarEliminar(false)}
@@ -255,8 +414,10 @@ export function VerBiometria({ expedienteId }: { expedienteId: string }) {
         title="¿Eliminar las fotos guardadas?"
         message={
           <p>
-            Úselo cuando la persona pida la supresión de sus fotos. Se eliminan todas las fotos guardadas de este estudio
-            y no se pueden recuperar. El resultado del cotejo se conserva, y la eliminación queda en la bitácora.
+            Úselo cuando la persona pida la supresión de sus fotos. Se eliminan las fotos guardadas por {dias} días (texto
+            de autorización anterior) y no se pueden recuperar.
+            {intentosA6.length > 0 && ' Las de la autorización de datos versión 3.1 se conservan con sus plazos.'} El
+            resultado del cotejo se conserva, y la eliminación queda en la bitácora.
           </p>
         }
         confirmLabel="Eliminar fotos"
@@ -281,7 +442,7 @@ function ResumenCotejo({ resumen }: { resumen: IResumenBiometriaAnalista }) {
     <section aria-labelledby="bio-resultado" className="rounded-lg border border-gray-200 p-3 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <h3 id="bio-resultado" className="font-semibold text-gray-900">
-          Resultado del cotejo
+          Resultado del cotejo del solicitante
         </h3>
         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${estado.clase}`}>
           {estado.texto}
@@ -351,6 +512,80 @@ function motivoIntento(h: IIntentoGuardadoBiometria): string | null {
   return base ? `${base} Además, ${documento.charAt(0).toLowerCase()}${documento.slice(1)}` : documento
 }
 
+/** Adenda 6.1 §3: cómo terminó el cotejo al firmar de una persona (sin revisión manual: o firma digital o notaría). */
+const DESENLACE: Record<NonNullable<ICotejoFirmaAnalista['desenlace']> | 'pendiente', { texto: string; clase: string }> = {
+  aprobado: { texto: 'Aprobado: firma digital', clase: VERDE },
+  sin_autorizacion_4a: { texto: 'No autorizó el cotejo (4A): notaría', clase: AMBAR },
+  intentos_agotados: { texto: 'Sin cotejo aprobado: notaría', clase: ROJO },
+  no_cotejable: { texto: 'Documento sin cotejo posible: notaría', clase: AMBAR },
+  pendiente: { texto: 'Pendiente', clase: GRIS },
+}
+
+/**
+ * Adenda 6.1 §3: el cotejo de identidad AL FIRMAR, por contrato y persona: el desenlace, de dónde salió la casilla 4A y
+ * cada intento (las cuatro condiciones: rostro, número del documento, marca del proveedor; la prueba de vida no la
+ * ofrece el proveedor). Las fotos de esos intentos van abajo, con las demás.
+ */
+function CotejosAlFirmar({ cotejos }: { cotejos: ICotejoFirmaAnalista[] }) {
+  return (
+    <section aria-labelledby="bio-cotejos-firma" className="rounded-lg border border-gray-200 p-3 text-sm">
+      <h3 id="bio-cotejos-firma" className="font-semibold text-gray-900">
+        Cotejos al firmar el contrato ({cotejos.length})
+      </h3>
+      <p className="mt-0.5 text-xs text-gray-500">
+        Aprobado = el rostro coincide, el número leído es el de la cédula estudiada y el documento no quedó marcado. Ningún
+        analista reemplaza el cotejo.
+      </p>
+      <ul className="mt-2 divide-y divide-gray-100">
+        {cotejos.map((c) => {
+          const d = DESENLACE[c.desenlace ?? 'pendiente']
+          const origen4A = !c.consentimiento_4a
+            ? 'Casilla 4A sin marcar'
+            : !c.consentimiento_4a.marcada
+              ? 'No marcó la casilla 4A al firmar'
+              : c.consentimiento_4a.origen === 'firma'
+                ? `Casilla 4A marcada al firmar${c.consentimiento_4a.en ? ` (${fechaHora(c.consentimiento_4a.en)})` : ''}`
+                : 'Casilla 4A marcada al autorizar'
+          return (
+            <li key={`${c.contrato_id}-${c.persona}-${c.rol}`} className="py-2 first:pt-0 last:pb-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="break-words font-medium text-gray-900">
+                  {c.rol === 'cotitular' ? 'Segundo firmante' : 'Titular'} · {c.nombre}
+                </span>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${d.clase}`}>
+                  {d.texto}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-gray-600">
+                {c.contrato_numero ? `Contrato ${c.contrato_numero} · ` : ''}
+                {origen4A} · {c.intentos === 1 ? '1 intento' : `${c.intentos} intentos`}
+                {c.heredado ? ' · tomado de otro contrato del estudio' : ''}
+                {c.completado_en ? ` · ${fechaHora(c.completado_en)}` : ''}
+              </p>
+              {c.historial.length > 0 && (
+                <ol className="mt-1 space-y-0.5">
+                  {c.historial.map((h) => {
+                    const e = estadoVisible(h, 'el de la cédula estudiada')
+                    return (
+                      <li key={h.numero} className="flex flex-wrap items-center gap-x-2 text-xs text-gray-600">
+                        <span>Intento {h.numero}</span>
+                        <span>{fechaHora(h.verificado_en)}</span>
+                        <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-semibold ring-1 ring-inset ${e.clase}`}>{e.texto}</span>
+                        {h.similitud != null && <span>similitud {pct(h.similitud)}</span>}
+                        {h.motivo_auco && <span className="font-mono">{h.motivo_auco}</span>}
+                      </li>
+                    )
+                  })}
+                </ol>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
 function IntentosGuardados({
   historial,
   numeroDelResultado,
@@ -366,7 +601,7 @@ function IntentosGuardados({
   return (
     <section aria-labelledby="bio-intentos" className="rounded-lg border border-gray-200 p-3 text-sm">
       <h3 id="bio-intentos" className="font-semibold text-gray-900">
-        Intentos de la persona ({historial.length})
+        Intentos del solicitante ({historial.length})
       </h3>
       <p className="mt-0.5 text-xs text-gray-500">
         Del más reciente al más antiguo.{guia}
@@ -399,10 +634,15 @@ function IntentosGuardados({
                 </p>
               )}
               {motivo && <p className="mt-0.5 break-words text-gray-700">{motivo}</p>}
-              {h.motivo_auco && (
-                <p className="mt-0.5 break-all text-xs text-gray-500">
-                  Detalle técnico de Auco: <span className="font-mono">{h.motivo_auco}</span>
-                </p>
+              {/* Adenda 6 §2: vencido su plazo, el resultado se suprime y el detalle de Auco queda en «SUPRIMIDO». */}
+              {h.motivo_auco === 'SUPRIMIDO' ? (
+                <p className="mt-0.5 text-xs text-gray-500">El resultado de este intento se suprimió al vencer su plazo de conservación.</p>
+              ) : (
+                h.motivo_auco && (
+                  <p className="mt-0.5 break-all text-xs text-gray-500">
+                    Detalle técnico de Auco: <span className="font-mono">{h.motivo_auco}</span>
+                  </p>
+                )
               )}
             </li>
           )
@@ -421,8 +661,24 @@ function IntentoConFotos({
   intento: IIntentoConFotos
   umbral: number | null
 }) {
-  const estado = estadoVisible(intento)
-  const titulo = intento.numero != null ? `Intento ${intento.numero}` : 'Intento'
+  const persona: PersonaCotejo = intento.persona ?? 'solicitante'
+  // Adenda 6: lo que cuenta es si el cotejo quedó APROBADO (rostro, documento y sin alerta de Auco), no solo el rostro.
+  const estado = intento.adenda6
+    ? intento.aprobado
+      ? { texto: 'Aprobado', clase: VERDE }
+      : { texto: 'No aprobado', clase: ROJO }
+    : estadoVisible(intento, DE_PERSONA[persona])
+  const porQue = intento.adenda6 && !intento.aprobado ? motivoNoAprobado(intento, persona) : null
+  const quien = !intento.adenda6
+    ? ''
+    : intento.actual === false
+      ? persona === 'coarrendatario'
+        ? 'Segundo firmante anterior · '
+        : 'Solicitante anterior · '
+      : persona === 'coarrendatario'
+        ? 'Segundo firmante · '
+        : 'Solicitante · '
+  const titulo = `${quien}${intento.numero != null ? `Intento ${intento.numero}` : 'Intento'}`
   const bajoMinimo = intento.similitud != null && umbral != null && intento.similitud < umbral
   return (
     <li className="rounded-lg border border-gray-200 p-3">
@@ -448,9 +704,41 @@ function IntentoConFotos({
         <Foto expedienteId={expedienteId} fotoId={intento.id} cual="selfie" titulo="Selfie" icono={<IconUser size={14} />} intento={titulo} />
         <Foto expedienteId={expedienteId} fotoId={intento.id} cual="documento" titulo="Documento" icono={<IconId size={14} />} intento={titulo} />
       </div>
-      <p className="mt-2 text-xs text-gray-500">Se conservan como máximo hasta el {fecha(intento.borrar_antes_de)}.</p>
+      {intento.adenda6 ? (
+        <div className="mt-2 space-y-1 text-sm">
+          <p className="font-medium text-gray-800">
+            {intento.aprobado ? 'Cotejo aprobado.' : `Cotejo no aprobado${porQue ? `: ${porQue}` : '.'}`}
+          </p>
+          <p className="text-xs text-gray-600">{conservacionVisible(intento)}</p>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-gray-500">Se conservan como máximo hasta el {fecha(intento.borrar_antes_de)}.</p>
+      )}
     </li>
   )
+}
+
+/** Por qué un cotejo de la Adenda 6 no quedó aprobado, en claro. */
+function motivoNoAprobado(i: IIntentoConFotos, persona: PersonaCotejo): string | null {
+  const quien = NOMBRE_PERSONA[persona]
+  if (i.estado === 'verificada') {
+    if (i.documento_coincide === false) return `el rostro coincide, pero el documento fotografiado no es el de ${quien}.`
+    if (i.motivo_auco === 'DOCUMENT_FAKE') return 'Auco no pudo validar el documento fotografiado (puede ser una foto poco nítida).'
+    if (i.motivo_auco) return `Auco marcó el documento (${i.motivo_auco}).`
+    return null
+  }
+  if (i.estado === 'no_coincide') return 'el rostro no coincide con la foto del documento.'
+  if (i.estado === 'no_verificada') return 'Auco no pudo hacer el cotejo.'
+  return null
+}
+
+/** Hasta cuándo se conserva hoy una foto de la Adenda 6. */
+function conservacionVisible(i: IIntentoConFotos): string {
+  const c = i.conservacion
+  if (!c) return 'Se conserva con los plazos de la autorización de datos versión 3.1.'
+  if (c.por_proceso) return 'Se conserva hasta que termine la denuncia o el proceso al que está vinculada.'
+  if (c.mientras_fianza) return 'Se conserva mientras la fianza esté vigente y los años del panel después de terminada.'
+  return c.hasta ? `Se conserva hasta el ${fecha(c.hasta)}.` : 'Se conserva con los plazos de la autorización de datos versión 3.1.'
 }
 
 function Foto({

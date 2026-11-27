@@ -40,7 +40,7 @@ export function useVerificacionListas(estudioId: string, alTerminar?: () => Prom
         } else if (r.listas === 'confirmada') {
           toast.info(
             r.expediente_estado === 'rechazado'
-              ? 'Verificación de listas registrada: con coincidencias. Quedó confirmada y el estudio, no aprobable.'
+              ? 'Verificación de listas registrada: con coincidencias. Quedó confirmada y el estudio, no aprobado.'
               : 'Verificación de listas registrada: con coincidencias. Quedó confirmada y la operación, bloqueada por listas.',
             { duration: DURACION },
           )

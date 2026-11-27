@@ -60,7 +60,7 @@ export function EstudiosBandejaTabs({
         <KPIMini label="En revisión de Cofianza" value={stats?.condicionados} color="bg-amber-500" />
         {/* X12: «En proceso», como la insignia del estado (incluye la espera de hasta 48 h). */}
         <KPIMini label="En proceso" value={stats?.en_proceso} color="bg-blue-500" />
-        <KPIMini label="No aprobables" value={stats?.rechazados} color="bg-red-500" />
+        <KPIMini label="No aprobados" value={stats?.rechazados} color="bg-red-500" />
       </div>
       {fallo && (
         <p role="status" className="flex flex-wrap items-center gap-2 text-sm text-gray-600">

@@ -22,8 +22,8 @@ export const TIPO_OPTIONS: { value: TipoInmueble | ''; label: string }[] = [
 // Opciones de uso
 export const USO_OPTIONS: { value: UsoInmueble; label: string }[] = [
   { value: 'vivienda', label: 'Vivienda' },
-  { value: 'comercial', label: 'Comercio' },
-  { value: 'mixto', label: 'Mixto' },
+  { value: 'comercial', label: 'Comercial' },
+  { value: 'mixto', label: 'Mixta (vivienda y comercio)' },
 ]
 
 // Opciones de estado.
@@ -121,7 +121,9 @@ export const INMUEBLE_MESSAGES = {
   DIRECCION_REQUIRED: 'La dirección es requerida',
   CIUDAD_REQUIRED: 'La ciudad es requerida',
   DEPARTAMENTO_REQUIRED: 'El departamento es requerido',
+  MUNICIPIO_REQUIRED: 'Busque el municipio y elíjalo de la lista',
   TIPO_REQUIRED: 'El tipo de inmueble es requerido',
+  USO_REQUIRED: 'Elija la destinación del inmueble: vivienda, comercial o mixta',
   ESTRATO_REQUIRED: 'El estrato es requerido',
   VALOR_ARRIENDO_REQUIRED: 'El valor de arrendamiento es requerido',
   PROPIETARIO_REQUIRED: 'Debe seleccionar un propietario',

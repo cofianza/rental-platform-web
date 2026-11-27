@@ -22,7 +22,8 @@ export type WizardStepName = (typeof WIZARD_STEPS)[number]
 // Punto 3 (2026-09-25): mientras el contrato comercial y el de persona jurídica
 // no existan en la plataforma, el estudio no nace ni se cobra (la API responde
 // 409 ESTUDIO_NO_AFIANZABLE). Por eso el asistente no ofrece persona jurídica
-// ni NIT, y el paso 1 no deja elegir inmuebles comerciales o mixtos.
+// ni NIT, y el paso 1 no deja elegir inmuebles comerciales o mixtos (la regla
+// tipo + uso vive en lib/destinacionInmueble, con el interruptor de la Gerencia).
 // Adenda de precios §6.4: el mensaje dice «en desarrollo», no «rechazado».
 export const TIPO_PERSONA_OPTIONS = [
   { value: 'natural', label: 'Persona Natural' },
@@ -37,13 +38,6 @@ export const TIPO_DOCUMENTO_OPTIONS = [
   { value: 'pasaporte', label: 'Pasaporte' },
 ] as const
 
-export const USOS_NO_AFIANZABLES: readonly string[] = ['comercial', 'local_comercial', 'mixto']
-// Comerciales por naturaleza aunque el uso diga vivienda (API: usoParaAfianzar en inmuebles/destinacion.ts).
-export const TIPOS_NO_AFIANZABLES: readonly string[] = ['local', 'oficina', 'bodega']
-
-export const MSG_USO_NO_AFIANZABLE =
-  'Locales, oficinas, bodegas e inmuebles de uso comercial o mixto: los estudios de estos inmuebles están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'
-
 export const MSG_PERSONA_JURIDICA =
   'El arrendatario es una persona jurídica o se identifica con NIT: estos estudios están en desarrollo y todavía no se pueden solicitar por la plataforma. No se generó ningún cobro.'
 
@@ -57,44 +51,6 @@ export const NIVEL_EDUCATIVO_OPTIONS = [
   { value: 'tecnico', label: 'Técnico' },
   { value: 'universitario', label: 'Universitario' },
   { value: 'posgrado', label: 'Posgrado' },
-] as const
-
-// Departamentos de Colombia. El value se queda sin tildes porque así está
-// guardado en solicitante.departamento; la etiqueta las lleva.
-export const DEPARTAMENTOS_COLOMBIA = [
-  { value: 'Amazonas', label: 'Amazonas' },
-  { value: 'Antioquia', label: 'Antioquia' },
-  { value: 'Arauca', label: 'Arauca' },
-  { value: 'Atlantico', label: 'Atlántico' },
-  { value: 'Bogota D.C.', label: 'Bogotá D.C.' },
-  { value: 'Bolivar', label: 'Bolívar' },
-  { value: 'Boyaca', label: 'Boyacá' },
-  { value: 'Caldas', label: 'Caldas' },
-  { value: 'Caqueta', label: 'Caquetá' },
-  { value: 'Casanare', label: 'Casanare' },
-  { value: 'Cauca', label: 'Cauca' },
-  { value: 'Cesar', label: 'Cesar' },
-  { value: 'Choco', label: 'Chocó' },
-  { value: 'Cordoba', label: 'Córdoba' },
-  { value: 'Cundinamarca', label: 'Cundinamarca' },
-  { value: 'Guainia', label: 'Guainía' },
-  { value: 'Guaviare', label: 'Guaviare' },
-  { value: 'Huila', label: 'Huila' },
-  { value: 'La Guajira', label: 'La Guajira' },
-  { value: 'Magdalena', label: 'Magdalena' },
-  { value: 'Meta', label: 'Meta' },
-  { value: 'Narino', label: 'Nariño' },
-  { value: 'Norte de Santander', label: 'Norte de Santander' },
-  { value: 'Putumayo', label: 'Putumayo' },
-  { value: 'Quindio', label: 'Quindío' },
-  { value: 'Risaralda', label: 'Risaralda' },
-  { value: 'San Andres y Providencia', label: 'San Andrés y Providencia' },
-  { value: 'Santander', label: 'Santander' },
-  { value: 'Sucre', label: 'Sucre' },
-  { value: 'Tolima', label: 'Tolima' },
-  { value: 'Valle del Cauca', label: 'Valle del Cauca' },
-  { value: 'Vaupes', label: 'Vaupés' },
-  { value: 'Vichada', label: 'Vichada' },
 ] as const
 
 // ============================================
@@ -162,15 +118,13 @@ export const WIZARD_MESSAGES = {
   LABEL_EMAIL: 'Correo electrónico',
   LABEL_TELEFONO: 'Celular (WhatsApp)',
   LABEL_DIRECCION: 'Dirección',
-  LABEL_DEPARTAMENTO: 'Departamento',
-  LABEL_CIUDAD: 'Ciudad',
+  LABEL_MUNICIPIO: 'Municipio',
   LABEL_OCUPACION: 'Ocupación',
   LABEL_ACTIVIDAD_ECONOMICA: 'Actividad económica',
   LABEL_EMPRESA: 'Nombre del empleador',
   LABEL_INGRESOS: 'Ingresos mensuales',
   LABEL_NIVEL_EDUCATIVO: 'Nivel educativo',
   LABEL_PARENTESCO: 'Parentesco',
-  LABEL_HABITARA_INMUEBLE: 'Habitará el inmueble',
 
   // Placeholders
   PLACEHOLDER_NOMBRE: 'Ingrese nombre(s)',
@@ -179,7 +133,7 @@ export const WIZARD_MESSAGES = {
   PLACEHOLDER_EMAIL: 'correo@ejemplo.com',
   PLACEHOLDER_TELEFONO: '+57 3001234567',
   PLACEHOLDER_DIRECCION: 'Dirección completa',
-  PLACEHOLDER_CIUDAD: 'Ciudad',
+  PLACEHOLDER_MUNICIPIO: 'Escriba el municipio (ej. Rionegro)',
   PLACEHOLDER_OCUPACION: 'Ocupación o cargo',
   PLACEHOLDER_ACTIVIDAD: 'Actividad económica',
   PLACEHOLDER_EMPRESA: 'Nombre de empresa',
@@ -208,5 +162,4 @@ export const DEFAULT_SOLICITANTE_FORM = {
   ingresos_mensuales: undefined as number | undefined,
   nivel_educativo: '' as const,
   parentesco: '',
-  habitara_inmueble: false,
 }

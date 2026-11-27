@@ -1,9 +1,9 @@
 /**
  * Avisos de servicio en las páginas públicas por enlace (autorizar, pagar,
  * verificar identidad, cargar documentos…): solo los que el administrador
- * marcó para prospectos. Se pueden ocultar igual que en el panel (salvo
- * «fuera de servicio»). Si la consulta falla no se muestra nada: el flujo
- * sigue igual.
+ * marcó para prospectos. Se pueden ocultar (salvo «fuera de servicio»); sin
+ * cuenta, se recuerda en este navegador. Si la consulta falla no se muestra
+ * nada: el flujo sigue igual.
  */
 
 'use client'
@@ -25,16 +25,18 @@ export function AvisosServicioPublicos() {
   const pathname = usePathname()
   const aplica = esPaginaDeProspecto(pathname)
   const [avisos, setAvisos] = useState<IAvisoVisible[]>([])
-  const ocultos = useAvisosServicioStore((s) => s.ocultos)
-  const ocultar = useAvisosServicioStore((s) => s.ocultar)
+  const ocultos = useAvisosServicioStore((s) => s.ocultosPublicos)
+  const ocultar = useAvisosServicioStore((s) => s.ocultarPublico)
 
   useEffect(() => {
     if (!aplica) return
     let vivo = true
-    useAvisosServicioStore.getState().leerOcultos()
+    useAvisosServicioStore.getState().leerOcultosPublicos()
     getAvisosPublicos()
       .then((a) => {
-        if (vivo) setAvisos(a)
+        if (!vivo) return
+        setAvisos(a)
+        useAvisosServicioStore.getState().podarPublicos(a)
       })
       .catch(() => {})
     return () => {

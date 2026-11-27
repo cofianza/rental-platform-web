@@ -110,9 +110,10 @@ export interface IInmuebleCreateData {
   valor_arriendo: number
   propietario_id: string
   foto_fachada_url: string
+  /** Destinación obligatoria y coherente con el tipo (reporte Oficina Virtual, punto 8; lib/destinacionInmueble). */
+  uso: UsoInmueble
   // Opcionales
   barrio?: string
-  uso?: UsoInmueble
   destinacion?: string
   valor_comercial?: number
   administracion?: number

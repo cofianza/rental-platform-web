@@ -245,18 +245,18 @@ export function SustitucionesEstudio({
             ? TEXTO_CANCELAR_REAPERTURA
             : esConsulta
             ? abierta?.estado === 'pagada'
-              ? 'La consulta adicional se cancela y Cofianza le devuelve el pago a quien pagó.'
+              ? 'La consulta adicional se cancela. Como no se hizo, el valor pagado no se pierde.'
               : 'La consulta adicional se cancela y su enlace de pago deja de servir.'
             : abiertaDelSolicitante
               ? `${
                   abierta?.estado === 'pagada' && abierta.requiere_pago
-                    ? 'El cambio del solicitante se cancela y Cofianza le devuelve el pago a quien pagó.'
+                    ? 'El cambio del solicitante se cancela. Como la consulta no se hizo, el valor pagado no se pierde.'
                     : abierta?.requiere_pago
                       ? 'El cambio del solicitante se cancela y su enlace de pago deja de servir.'
                       : 'El cambio del solicitante se cancela.'
                 } ${abierta?.motivo === 'listas' ? 'Podrá abrir otro para cargar a otra persona como solicitante.' : 'El solicitante actual sigue en el estudio.'}`
               : abierta?.estado === 'pagada' && abierta.requiere_pago
-              ? 'El cambio se cancela y Cofianza le devuelve el pago a quien pagó. Si ya cargó a la persona nueva, su invitación queda sin efecto y el estudio queda sin segundo firmante: la persona anterior no regresa.'
+              ? 'El cambio se cancela. Como la consulta no se hizo, el valor pagado no se pierde. Si ya cargó a la persona nueva, su invitación queda sin efecto y el estudio queda sin segundo firmante: la persona anterior no regresa.'
               : abierta?.requiere_pago
                 ? 'El cambio se cancela y su enlace de pago deja de servir.'
                 : 'El cambio de persona se cancela. Si ya cargó a la persona nueva, su invitación queda sin efecto.'

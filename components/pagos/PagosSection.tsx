@@ -65,6 +65,8 @@ const METODOS_LABELS: Record<string, string> = {
   transferencia: 'Transferencia',
   efectivo: 'Efectivo',
   cheque: 'Cheque',
+  // Adenda 6 §6: cubierto entero con el saldo a favor.
+  saldo_a_favor: 'Saldo a favor',
 }
 
 // Marca de cada estado: círculo + pastilla, con la paleta corta de Documentos y Contratos.
@@ -557,7 +559,9 @@ function PagoFila({
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <h4 className="text-sm font-semibold text-gray-900">{concepto}</h4>
-            <span className="text-sm font-semibold text-gray-900 tabular-nums">{formatCurrency(pago.monto)}</span>
+            <span className="text-sm font-semibold text-gray-900 tabular-nums">
+              {pago.metodo === 'saldo_a_favor' && pago.monto === 0 ? 'Pagado con saldo a favor' : formatCurrency(pago.monto)}
+            </span>
             <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', estadoConfig.chip)}>{estadoConfig.label}</span>
           </div>
           {pago.descripcion && <p className="mt-1 break-words text-sm text-gray-700">{pago.descripcion}</p>}
@@ -629,6 +633,9 @@ function PagoFila({
                 <IconFileText size={16} />
                 {pago.factura.numero ? `Factura ${pago.factura.numero}` : 'Ver factura'}
               </Link>
+            ) : pago.estado === 'completado' && pago.metodo === 'saldo_a_favor' ? (
+              // Adenda 6 §6 / 6.1 §6: cubierto entero con saldo a favor: no movió dinero, no se factura de nuevo.
+              <span className="text-xs text-gray-600">No se factura: se pagó con saldo a favor.</span>
             ) : (
               pago.estado === 'completado' && onFacturar && (
                 <button

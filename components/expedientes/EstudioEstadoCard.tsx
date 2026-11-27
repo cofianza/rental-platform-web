@@ -119,6 +119,8 @@ interface EstudioEstadoCardProps {
   reaperturaAbierta?: boolean
   /** Con la reapertura: hasta cuándo debe autorizar la persona nueva (ISO, lo manda la API). */
   venceReapertura?: string | null
+  /** Adenda 6 §7: evaluar de nuevo por un canon mayor no tiene costo hoy (`reevaluacion_sin_costo` del estudio). */
+  reevaluacionSinCosto?: boolean
   /**
    * Un cambio de persona (cargar, cancelar, retirar) mueve el estado del estudio: la página recarga el
    * expediente para que el encabezado, el banner del rechazo y esta tarjeta digan lo mismo.
@@ -172,14 +174,14 @@ export function rotuloEvaluacion(e: IEstudio, esCoarrendatario = e.tipo === 'con
     if (!esCoarrendatario && e.desenlace && e.desenlace_texto) return e.desenlace_texto
     if (e.resultado === 'condicionado') {
       if (e.decision_cofianza === 'aprobado') return 'Aprobado'
-      if (e.decision_cofianza === 'negado') return 'No aprobable'
+      if (e.decision_cofianza === 'negado') return 'No aprobado'
       // Adenda 4 V3 §8: con la condición obligatoria, sin coarrendatario válido no se aprueba.
       if (e.condicion_coarrendatario) return e.condicion_coarrendatario.obligatoria ? 'Requiere coarrendatario' : 'Aprobado con condición'
       // U8: un nombre por situación, como la lista, la barra y las notificaciones.
       return 'En revisión de Cofianza'
     }
     if (e.resultado === 'aprobado') return 'Aprobado'
-    if (e.resultado === 'rechazado') return 'No aprobable'
+    if (e.resultado === 'rechazado') return 'No aprobado'
   }
   // Adenda 4 V3 §12: ya consultado, la decisión espera a que autorice el coarrendatario (el nombre de la etapa).
   if (e.estado === 'en_proceso' && e.espera_autorizacion) return 'Esperando al segundo firmante'
@@ -363,7 +365,7 @@ function getSiguientePaso(
         ? 'Revise el motivo y decida si lo aprueba.'
         : 'En revisión: la decide un analista de Cofianza.'
     }
-    if (estudio.resultado === 'rechazado') return 'Evaluación no aprobable. El estudio no avanza al contrato.'
+    if (estudio.resultado === 'rechazado') return 'Evaluación no aprobada. El estudio no avanza al contrato.'
     return 'Evaluación completada, esperando resultado.'
   }
   if (estudio.estado === 'fallido') {
@@ -476,6 +478,7 @@ export function EstudioEstadoCard({
   cierre: cierreProp,
   reaperturaAbierta = false,
   venceReapertura = null,
+  reevaluacionSinCosto,
   onExpedienteCambio,
 }: EstudioEstadoCardProps) {
   const cierre = cierreProp !== undefined ? cierreProp : cierreDelEstudio(expedienteEstado)
@@ -595,6 +598,7 @@ export function EstudioEstadoCard({
           inmuebleActualId={inmuebleActualId}
           canonAprobado={canonAprobado}
           destinacion={destinacion}
+          reevaluacionSinCosto={reevaluacionSinCosto}
           onReasignado={reasignable ? () => {
             fetchEstudios()
             onReasignado?.()
@@ -643,6 +647,8 @@ interface EstudioPanelProps {
   inmuebleActualId?: string | null
   canonAprobado?: number | null
   destinacion?: string | null
+  /** Solo titular (Adenda 6 §7): evaluar de nuevo por un canon mayor no tiene costo hoy. */
+  reevaluacionSinCosto?: boolean
   /** Solo titular: pedir una autorización nueva si firmó con otro documento. */
   expedienteId?: string
   onReasignado?: () => void
@@ -681,6 +687,7 @@ function EstudioPanel({
   inmuebleActualId,
   canonAprobado,
   destinacion,
+  reevaluacionSinCosto,
   onReasignado,
   expedienteId,
   segundoFirmante,
@@ -1142,6 +1149,7 @@ function EstudioPanel({
           canonEvaluado={estudio.canon_evaluado}
           canonHabilitado={estudio.desenlace ? (estudio.canon_habilitado_cop ?? null) : undefined}
           sinReevaluacion={estudio.hasta_canon === true}
+          reevaluacionSinCosto={reevaluacionSinCosto}
           canonAprobado={canonAprobado}
           destinacion={destinacion}
           expedienteId={expedienteId}

@@ -35,7 +35,7 @@ const BANDEJAS: Array<{
     label: 'Reabiertos y devueltos',
     estado: 'en_revision',
     siHay: true,
-    nota: 'Estudios no aprobables que se reabrieron por un cambio de persona (esperan a la persona nueva) y estudios devueltos a revisión a mano.',
+    nota: 'Estudios no aprobados que se reabrieron por un cambio de persona (esperan a la persona nueva) y estudios devueltos a revisión a mano.',
   },
   { label: 'Incompletos', estado: 'informacion_incompleta', siHay: true },
   // Reporte de Gerencia (21-nov), punto 6: «En revisión de Cofianza», con el conteo y el filtro del chip
@@ -44,8 +44,8 @@ const BANDEJAS: Array<{
   { label: 'En revisión de Cofianza', estado: 'condicionado' },
   { label: 'Aprobados', estado: 'aprobado' },
   // U12: un no aprobable que ya se cerró pasa a «Cerrados» (el estado formal es cerrado).
-  { label: 'No aprobables', estado: 'rechazado', nota: 'Los no aprobables que ya se cerraron están en «Cerrados».' },
-  { label: 'Cerrados', estado: 'cerrado', nota: 'Incluye los cancelados, los finalizados y los no aprobables que ya se cerraron.' },
+  { label: 'No aprobados', estado: 'rechazado', nota: 'Los no aprobados que ya se cerraron están en «Cerrados».' },
+  { label: 'Cerrados', estado: 'cerrado', nota: 'Incluye los cancelados, los finalizados y los no aprobados que ya se cerraron.' },
 ]
 
 export interface BandejaTabsProps {

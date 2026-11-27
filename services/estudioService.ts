@@ -422,6 +422,12 @@ export interface ITopeCanon {
   horas_espera_coarrendatario?: number | null
   verificacion_identidad?: boolean
   tolerancia_canon_pct?: number
+  /**
+   * Interruptor de la Gerencia (Adenda de precios §6.1-6.2; ESTUDIOS_COMERCIAL_PJ_HABILITADOS).
+   * Apagado o ausente: un inmueble comercial o mixto no se puede elegir. Encendido: se elige
+   * con el aviso de que el contrato de vivienda no se podrá generar (lib/destinacionInmueble).
+   */
+  estudios_comercial_pj_habilitados?: boolean
 }
 
 /** §5.2 — estudio ya pagado y todavía dentro de su vigencia. */

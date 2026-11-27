@@ -42,6 +42,8 @@ import {
   IconFileText,
 } from '@/components/icons'
 import { SkeletonPage } from '@/components/ui/Skeleton'
+import { RUTA_DATOS_INMOBILIARIA } from '@/lib/datosArrendador'
+import { ahorroPaquete, condicionesCompraPaquete, textoAhorro } from '@/lib/ahorroPaquete'
 
 const TIPO_LABELS: Record<string, string> = {
   compra: 'Compra',
@@ -172,8 +174,8 @@ export default function CreditosEstudiosPage() {
     }
   }
 
-  // Antes de comprar (titular): se guardan en «Datos para contrato» y la
-  // factura de la compra sale sola.
+  // Antes de comprar (titular): se guardan en «Datos de mi inmobiliaria» (los mismos datos: solo se piden los que
+  // falten) y la factura de la compra sale sola.
   const guardarDatosFacturacion = async (d: IDatosFiscalesFactura) => {
     const v = (x?: string) => x?.trim() || undefined
     await perfilArrendadorService.updateMe({
@@ -267,7 +269,11 @@ export default function CreditosEstudiosPage() {
     <div className="space-y-6">
       <PageHeader
         title="Cupos de estudios"
-        subtitle="Compre paquetes de cupos y úselos para pagar los estudios de sus prospectos"
+        subtitle={
+          puedeEditar
+            ? 'Compre paquetes de cupos y úselos para pagar los estudios de sus prospectos'
+            : 'Consulte el saldo de cupos de la inmobiliaria. Para comprar cupos, pídaselo al titular.'
+        }
       />
 
       {/* P22: saldo en contra por el contracargo de una compra */}
@@ -402,6 +408,10 @@ export default function CreditosEstudiosPage() {
               No hay paquetes disponibles. Contacte al administrador.
             </div>
           ) : (() => {
+            // Reporte de la Oficina Virtual (25-nov), punto 6: el ahorro se mide contra el estudio individual que manda la
+            // API (lib/ahorroPaquete). El «Más popular» sigue eligiéndose como antes (no muestra cifras).
+            const precioIndividual = paquetes.find((x) => typeof x.precio_individual_cop === 'number')?.precio_individual_cop
+            const [condicionVigencia, condicionReembolso] = condicionesCompraPaquete(paquetes.find((x) => x.vigencia_meses != null)?.vigencia_meses)
             // Calcular el paquete "Más popular": el que ofrece el mejor descuento
             // por estudio respecto al paquete más pequeño (Gerencia 12-may-2026).
             const sortedByQty = [...paquetes].sort((a, b) => a.cantidad_estudios - b.cantidad_estudios)
@@ -426,10 +436,24 @@ export default function CreditosEstudiosPage() {
             }
 
             return (
+              <>
+              {/* Punto 6: antes de pagar, las dos condiciones de la Adenda de precios (§3.1 y §3.2). */}
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="font-semibold">Antes de comprar, tenga en cuenta:</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                  <li>{condicionVigencia}</li>
+                  <li>{condicionReembolso}</li>
+                </ul>
+                {precioIndividual != null && (
+                  <p className="mt-2 text-xs text-amber-800">
+                    El ahorro se calcula frente al estudio individual ({formatCOP(precioIndividual)} + IVA).
+                  </p>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {paquetes.map((p) => {
                   const precioPorEstudio = Math.round(p.precio_cop / p.cantidad_estudios)
-                  const ahorroPct = Math.round(((baseUnit - precioPorEstudio) / baseUnit) * 100)
+                  const ahorroPct = ahorroPaquete(p, p.precio_individual_cop ?? precioIndividual)
                   const esPopular = p.id === popularId
                   return (
                     <div
@@ -462,16 +486,16 @@ export default function CreditosEstudiosPage() {
                       )}
                       <p className="text-xs text-gray-500 mt-1">
                         {formatCOP(precioPorEstudio)} + IVA c/u
-                        {ahorroPct > 0 && (
+                        {ahorroPct !== null && (
                           <span className="ml-1 font-semibold text-primary-700">
-                            · Ahorro {ahorroPct}%
+                            · {textoAhorro(ahorroPct)}
                           </span>
                         )}
                       </p>
                       {p.vigencia_meses != null && (
                         <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                           <IconClock size={14} />
-                          Vigencia: {p.vigencia_meses} meses desde el pago
+                          Vigencia: {p.vigencia_meses} {p.vigencia_meses === 1 ? 'mes' : 'meses'} desde el pago
                         </p>
                       )}
                       {p.descripcion && (
@@ -502,6 +526,7 @@ export default function CreditosEstudiosPage() {
                   )
                 })}
               </div>
+              </>
             )
           })()}
         </div>
@@ -516,7 +541,7 @@ export default function CreditosEstudiosPage() {
               Cofianza le envía la factura electrónica de cada compra a <strong>{datosFact.email}</strong>, a nombre
               de <strong>{datosFact.razon_social}</strong> ({datosFact.juridica ? 'NIT' : 'documento'} {datosFact.nit}).{' '}
               {esTitular && (
-                <Link href="/configuracion/datos-contrato" className="font-medium text-primary-700 underline">
+                <Link href={RUTA_DATOS_INMOBILIARIA} className="font-medium text-primary-700 underline">
                   Cambiar datos
                 </Link>
               )}
@@ -531,7 +556,7 @@ export default function CreditosEstudiosPage() {
                 Falta: {datosFact.faltantes.map((f) => CAMPO_LABEL[f] ?? f).join(', ')}.{' '}
                 {esTitular
                   ? 'Complételos una vez y la factura de cada compra le llegará sola al correo.'
-                  : 'Pídale al titular de la inmobiliaria que los complete en Configuración › Datos para contrato.'}
+                  : 'Pídale al titular de la inmobiliaria que los complete en Configuración › Datos de mi inmobiliaria.'}
               </p>
             </div>
             {esTitular && (
@@ -751,13 +776,13 @@ function FacturaDatosForm({ faltantes, datos, onChange, onSubmit, onCancel, load
         {esTitular ? (
           <>
             Se guardan en{' '}
-            <Link href="/configuracion/datos-contrato" className="underline font-medium">
-              Datos para contrato
+            <Link href={RUTA_DATOS_INMOBILIARIA} className="underline font-medium">
+              Datos de mi inmobiliaria
             </Link>{' '}
             y no se le vuelven a pedir.
           </>
         ) : (
-          'Se usan para esta factura; para que no se le vuelvan a pedir, el titular debe completarlos en Datos para contrato.'
+          'Se usan para esta factura; para que no se le vuelvan a pedir, el titular debe completarlos en Configuración › Datos de mi inmobiliaria.'
         )}
       </div>
 

@@ -22,6 +22,7 @@ import {
 import { EstadoBadge, EstudiosActivosBadge, TipoBadge, EstratoBadge } from './InmuebleBadges'
 import { ITEMS_PER_PAGE_OPTIONS, INMUEBLE_MESSAGES } from './constants'
 import type { IInmueble, IInmuebleFilters, IInmueblesMeta } from '@/types/inmueble'
+import { departamentoSiDistinto, etiquetaMunicipio } from '@/lib/municipios'
 
 /**
  * Toggle de visibilidad en vitrina - HP-369
@@ -326,7 +327,7 @@ export function InmueblesTable({
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <div className="text-sm text-gray-900">{inmueble.ciudad}</div>
-                  <div className="text-xs text-gray-500">{inmueble.departamento}</div>
+                  <div className="text-xs text-gray-500">{departamentoSiDistinto(inmueble.ciudad, inmueble.departamento)}</div>
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-center">
                   <EstratoBadge estrato={inmueble.estrato} />
@@ -408,7 +409,7 @@ export function InmueblesTable({
                 </div>
                 <div className="text-sm text-gray-900 truncate">{inmueble.direccion}</div>
                 <div className="text-xs text-gray-500">
-                  {inmueble.ciudad}, {inmueble.departamento}
+                  {etiquetaMunicipio(inmueble.ciudad, inmueble.departamento)}
                 </div>
               </div>
               <div

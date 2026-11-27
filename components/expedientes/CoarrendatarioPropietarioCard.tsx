@@ -49,6 +49,7 @@ import { TarjetaSiguientePaso, SeccionPaso, type TonoPaso } from './TarjetaSigui
 import { textoVisible, esRolInterno, tipoFallo } from './textoVisible'
 import { CONTACTO_COFIANZA_TEXTO } from './ContactoCofianzaInline'
 import { sinEscribanos } from './ContratoSegundoFirmanteAviso'
+import { textoHabitara } from '@/lib/habitara'
 
 interface CoarrendatarioPropietarioCardProps {
   expedienteId: string
@@ -377,6 +378,10 @@ export function CoarrendatarioPropietarioCard({
             <DatoCoa label="Teléfono" value={coa.telefono || '—'} />
             <DatoCoa label="Invitación enviada" value={fechaInvitacion} />
             {fechaAceptacion && <DatoCoa label="Aceptó el" value={fechaAceptacion} />}
+            {/* Adenda 6 §8: lo responde al aceptar; antes no hay respuesta que mostrar. */}
+            {fechaAceptacion && coa.habitara_inmueble !== undefined && (
+              <DatoCoa label="Habitará el inmueble" value={textoHabitara(coa.habitara_inmueble)} />
+            )}
           </dl>
         </div>
 

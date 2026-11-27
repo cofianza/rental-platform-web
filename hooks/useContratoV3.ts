@@ -44,6 +44,9 @@ export type AccionContratoV3 =
   | 'firmas'
   | 'enviar'
   | 'reenviar'
+  // Adenda 6.1 §4: el registro del contrato firmado en notaría y el PDF cargado después
+  | 'registrarNotaria'
+  | 'cargarDocumentoNotaria'
   | 'reintentar'
   | 'reenviarIdentidad'
   | 'actualizar'
@@ -57,7 +60,7 @@ export type AccionContratoV3 =
 
 // Con Auco de por medio, un 5xx puede dejar el contrato en otro estado (FIRMA_ENVIADA_SIN_REGISTRO
 // sí salió; un reenvío fallido deja un proceso fallido a la vista): tras estos errores se recarga.
-const RECARGA_TRAS_5XX: AccionContratoV3[] = ['enviar', 'reenviar', 'reintentar', 'actualizar', 'cancelar', 'terminar']
+const RECARGA_TRAS_5XX: AccionContratoV3[] = ['enviar', 'reenviar', 'reintentar', 'registrarNotaria', 'cargarDocumentoNotaria', 'actualizar', 'cancelar', 'terminar']
 
 /**
  * Último 422 al guardar un paso. En el paso 4 trae los hallazgos de las reglas con
@@ -222,12 +225,15 @@ export function useContratoV3(expedienteId: string) {
     if (!estudio) throw new Error('Este estudio no tiene un CRC emitido.')
     return (await estudioService.descargarCertificado(estudio.id)).url
   }, [expedienteId])
+  /** Devuelve el estado tras el envío (lo que de verdad pasó: Auco, verificación o notaría), o null si falló. */
   const enviar = useCallback(
-    (body: EnviarBody) => {
+    async (body: EnviarBody): Promise<EstadoAsistente | null> => {
       setErrorEnvio(null)
-      return mutar('enviar', async () => {
+      let resultado: EstadoAsistente | null = null
+      const ok = await mutar('enviar', async () => {
         try {
-          return await contratoV3Service.enviar(expedienteId, body)
+          resultado = await contratoV3Service.enviar(expedienteId, body)
+          return resultado
         } catch (err) {
           if (err instanceof ApiClientError && err.code === 'FIRMANTES_INVALIDOS') {
             setErrorEnvio({ expedienteId, fallas: fallasDe(err) })
@@ -235,11 +241,22 @@ export function useContratoV3(expedienteId: string) {
           throw err
         }
       })
+      return ok ? resultado : null
     },
     [mutar, expedienteId],
   )
   const reenviar = useCallback(
     () => mutar('reenviar', () => contratoV3Service.reenviar(expedienteId)),
+    [mutar, expedienteId],
+  )
+  // Adenda 6.1 §4: el registro del contrato firmado en notaría (activa la fianza) y el PDF cargado después.
+  const registrarNotaria = useCallback(
+    (datos: { fechaAutenticacion: string; archivo: File | null }) =>
+      mutar('registrarNotaria', () => contratoV3Service.registrarNotaria(expedienteId, datos)),
+    [mutar, expedienteId],
+  )
+  const cargarDocumentoNotaria = useCallback(
+    (archivo: File) => mutar('cargarDocumentoNotaria', () => contratoV3Service.cargarDocumentoNotaria(expedienteId, archivo)),
     [mutar, expedienteId],
   )
   const reintentar = useCallback(
@@ -328,6 +345,8 @@ export function useContratoV3(expedienteId: string) {
     crcUrl,
     enviar,
     reenviar,
+    registrarNotaria,
+    cargarDocumentoNotaria,
     reintentar,
     reenviarIdentidad,
     actualizarFirma,

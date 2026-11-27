@@ -58,6 +58,7 @@ import { formatCurrency, formatDate, formatDateTime } from '@/lib/constants'
 import type { IInmueble, EstadoInmueble } from '@/types/inmueble'
 import type { EstadoContrato } from '@/types/contrato'
 import { cn } from '@/lib/utils'
+import { etiquetaMunicipio } from '@/lib/municipios'
 
 type TabId = 'info' | 'expedientes' | 'historial' | 'galeria' | 'contrato'
 
@@ -606,18 +607,18 @@ export default function InmuebleDetailPage() {
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-gray-500">Uso</dt>
+                        <dt className="text-gray-500">Destinación</dt>
                         <dd className="text-gray-900 font-medium">
                           {inmueble.uso === 'vivienda'
                             ? 'Vivienda'
                             : inmueble.uso === 'mixto'
-                              ? 'Mixto'
-                              : 'Comercio'}
+                              ? 'Mixta'
+                              : 'Comercial'}
                         </dd>
                       </div>
                       {inmueble.destinacion && (
                         <div>
-                          <dt className="text-gray-500">Destinación</dt>
+                          <dt className="text-gray-500">Detalle de la destinación</dt>
                           <dd className="text-gray-900">{inmueble.destinacion}</dd>
                         </div>
                       )}
@@ -647,12 +648,8 @@ export default function InmuebleDetailPage() {
                         <dd className="text-gray-900">{inmueble.direccion}</dd>
                       </div>
                       <div>
-                        <dt className="text-gray-500">Ciudad</dt>
-                        <dd className="text-gray-900">{inmueble.ciudad}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-gray-500">Departamento</dt>
-                        <dd className="text-gray-900">{inmueble.departamento}</dd>
+                        <dt className="text-gray-500">Municipio</dt>
+                        <dd className="text-gray-900">{etiquetaMunicipio(inmueble.ciudad, inmueble.departamento)}</dd>
                       </div>
                       {inmueble.barrio && (
                         <div>

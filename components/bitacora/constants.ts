@@ -108,6 +108,7 @@ export const ACTION_LABELS: Record<string, string> = {
   contrato_version_downloaded: 'Versión del contrato descargada',
   contrato_transitioned: 'Contrato cambió de estado',
   contrato_firmado_uploaded: 'Contrato firmado cargado',
+  contrato_notaria_registrado: 'Contrato registrado en notaría',
   contrato_firmado_downloaded: 'Contrato firmado descargado',
   contrato_firmado_verified: 'Contrato firmado verificado',
   contrato_renewed: 'Contrato renovado',
@@ -141,6 +142,9 @@ export const ACTION_LABELS: Record<string, string> = {
   pago_refunded: 'Pago reembolsado',
   pago_nota_credito_pendiente: 'Nota crédito pendiente en Factus',
   pago_reembolso_resuelto: 'Reembolso marcado como resuelto',
+  saldo_a_favor_abonado: 'Pago sin consulta pasó a saldo a favor',
+  saldo_a_favor_aplicado: 'Saldo a favor aplicado a un pago',
+  saldo_a_favor_devolucion: 'Devolución de saldo a favor solicitada',
   pago_cancelled: 'Pago cancelado',
   pago_link_resent: 'Enlace de pago reenviado',
   pago_webhook_processed: 'Webhook de pago procesado',
@@ -191,6 +195,8 @@ export const ACTION_LABELS: Record<string, string> = {
   mora_escalada: 'Mora escalada',
   mora_pagada: 'Mora marcada como pagada',
   mora_cancelada: 'Mora cancelada',
+  mora_notaria_presentada: 'Contrato autenticado presentado en la mora',
+  mora_notaria_verificada: 'Verificación del contrato autenticado de la mora',
 
   // Equipo de la inmobiliaria
   miembro_invitado: 'Miembro invitado',
@@ -398,6 +404,7 @@ export const ACTION_GROUPS: Array<{
       'contrato_transitioned',
       'contrato_downloaded',
       'contrato_firmado_uploaded',
+      'contrato_notaria_registrado',
       'contrato_renewed',
       'contrato_prorrogado',
       'firma_solicitud_created',
@@ -426,6 +433,9 @@ export const ACTION_GROUPS: Array<{
       'pago_refunded',
       'pago_reembolso_resuelto',
       'pago_nota_credito_pendiente',
+      'saldo_a_favor_abonado',
+      'saldo_a_favor_aplicado',
+      'saldo_a_favor_devolucion',
       'pago_cancelled',
       'prima_remitida',
     ].map(toOption),
@@ -472,7 +482,7 @@ export const ACTION_GROUPS: Array<{
   },
   {
     label: 'Moras',
-    options: ['mora_reportada', 'mora_escalada', 'mora_pagada', 'mora_cancelada'].map(toOption),
+    options: ['mora_reportada', 'mora_escalada', 'mora_pagada', 'mora_cancelada', 'mora_notaria_presentada', 'mora_notaria_verificada'].map(toOption),
   },
   {
     label: 'WhatsApp',

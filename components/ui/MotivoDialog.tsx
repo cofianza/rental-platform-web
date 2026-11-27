@@ -6,7 +6,7 @@
  * pestana. Misma familia que ConfirmDialog.
  */
 
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useRef, useState, type ReactNode } from 'react'
 import { IconLoader } from '@/components/icons'
 import { Modal, ModalAcciones, botonModal } from './Modal'
 
@@ -48,14 +48,21 @@ export function MotivoDialog({
   valorInicial = '',
 }: MotivoDialogProps) {
   const [motivo, setMotivo] = useState(valorInicial)
+  const enCurso = useRef(false)
   const valido = motivo.trim().length >= minLength
   const campoId = useId()
   const ayudaId = useId()
 
   const confirmar = async () => {
-    if (!valido || isLoading) return
-    // `false` = la acción falló: el motivo escrito se conserva para reintentar.
-    if ((await onConfirm(motivo.trim())) !== false) setMotivo('')
+    // Un doble clic llega antes de que el padre pinte isLoading: sin este candado la acción corría dos veces.
+    if (!valido || isLoading || enCurso.current) return
+    enCurso.current = true
+    try {
+      // `false` = la acción falló: el motivo escrito se conserva para reintentar.
+      if ((await onConfirm(motivo.trim())) !== false) setMotivo('')
+    } finally {
+      enCurso.current = false
+    }
   }
 
   return (

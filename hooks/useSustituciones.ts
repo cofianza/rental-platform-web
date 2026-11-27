@@ -118,7 +118,13 @@ export function useSustituciones(estudioId: string, activo: boolean, version?: u
             cotizacion.sale.persona === 'solicitante' ? { persona: 'solicitante' } : { persona: 'coarrendatario', coarrendatario_id: cotizacion.sale.coarrendatario_id },
             cotizacion.total_a_pagar_cop,
           ),
-        (r) => (r.pago ? 'Cambio abierto. Pague la consulta adicional para cargar a la persona nueva.' : 'Cambio abierto. Ya puede cargar a la persona nueva.'),
+        (r) =>
+          // Adenda 6 §6: sin enlace y con saldo aplicado, el saldo a favor cubrió la consulta.
+          r.pago && !r.pago.url_pago && (r.pago.saldo_aplicado_cop ?? 0) > 0
+            ? 'Cambio abierto. La consulta adicional se pagó con saldo a favor: ya puede cargar a la persona nueva.'
+            : r.pago
+              ? 'Cambio abierto. Pague la consulta adicional para cargar a la persona nueva.'
+              : 'Cambio abierto. Ya puede cargar a la persona nueva.',
         'No se pudo abrir el cambio. Inténtelo de nuevo.',
       ),
     [ejecutar, estudioId],
@@ -133,7 +139,15 @@ export function useSustituciones(estudioId: string, activo: boolean, version?: u
     (sustitucionId: string) =>
       ejecutar(
         () => sustitucionesService.cancelar(estudioId, sustitucionId),
-        (r) => (r.estado === 'devuelta' ? 'Cancelado. Cofianza le devolverá el pago a quien pagó.' : 'Cancelado. No se le cobró nada.'),
+        // La API dice qué pasó con lo pagado: saldo a favor (Adenda 6 §6) o devolución. Sin el dato (API anterior), neutro.
+        (r) =>
+          r.estado !== 'devuelta'
+            ? 'Cancelado. No se le cobró nada.'
+            : r.destino_pago === 'saldo'
+              ? 'Cancelado. Como la consulta no se hizo, su valor quedó como saldo a favor de quien la pagó.'
+              : r.destino_pago === 'devolucion'
+                ? 'Cancelado. Cofianza le devolverá el pago a quien pagó.'
+                : 'Cancelado. Como la consulta no se hizo, el valor pagado no se pierde.',
         'No se pudo cancelar. Inténtelo de nuevo.',
       ),
     [ejecutar, estudioId],

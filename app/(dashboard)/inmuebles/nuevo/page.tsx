@@ -39,7 +39,7 @@ function NuevoInmuebleContenido() {
       <div className="space-y-6">
         <PageHeader
           title="Nuevo inmueble"
-          subtitle="Antes de continuar, complete sus datos para contrato"
+          subtitle={`Antes de continuar, complete ${user?.rol === 'propietario' ? 'sus datos de propietario' : 'los datos de su inmobiliaria'}`}
         />
         <PerfilIncompletoBanner completitud={completitud} />
       </div>

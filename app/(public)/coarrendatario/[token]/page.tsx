@@ -22,8 +22,13 @@ import { ContactoCofianza } from '@/components/public/ContactoCofianza'
 import { EsqueletoFlujo } from '@/components/public/EsqueletoFlujo'
 import { CampoCorreoResultado } from '@/components/public/CampoCorreoResultado'
 import { CampoComprobarDocumento } from '@/components/public/CampoComprobarDocumento'
+import { MunicipioCombobox } from '@/components/registro/MunicipioCombobox'
 import { correoParaEnviar, correoResultadoValido, destinoDelCorreo, documentoParaEnviar } from '@/lib/correoResultado'
 import { esInvitacionRetirada, faseInicialInvitacion, TEXTO_YA_NO_HACE_PARTE } from '@/lib/coarrendatarioPublico'
+import { PreguntaHabitara } from '@/components/public/PreguntaHabitara'
+import { HABITARA_POR_DEFECTO, type Habitara } from '@/lib/habitara'
+import { AYUDA_CASILLA_4A, CASILLAS_5_2_V3, COTEJO_AL_FIRMAR, versionVisible } from '@/lib/autorizacionV3'
+import { canalDeEstaPagina, leerEnlace } from '@/lib/canalEnlace'
 
 /** «CC ••••5678» (así lo manda la API) → «Cédula de ciudadanía» + «5678». */
 const TIPO_DOCUMENTO_LARGO: Record<string, string> = {
@@ -51,11 +56,27 @@ function esEnlaceReemplazado(err: unknown): boolean {
   return e?.statusCode === 404 && e?.code === 'COARRENDATARIO_NOT_FOUND'
 }
 
+/**
+ * Adenda 6 §2 / 6.1: lo que se le dice tras aceptar sobre la casilla 4A. El cotejo no se hace aquí: es al firmar el
+ * contrato (6.1 §3), y la 4A también se puede autorizar en ese momento.
+ */
+function textoCotejoTrasAceptar(autorizado: boolean | null): string {
+  if (autorizado === true) {
+    return 'Autorizó el cotejo con foto (numeral 4A): se hace al firmar el contrato. Si el cotejo de todas las personas del contrato queda aprobado, se firma digitalmente; si no, con firma autenticada en notaría, a su costo.'
+  }
+  if (autorizado === false) {
+    return 'No autorizó el cotejo con foto (numeral 4A). Puede autorizarlo al firmar el contrato; sin él, el contrato se firma con firma autenticada en notaría, a su costo.'
+  }
+  return COTEJO_AL_FIRMAR
+}
+
 type Phase = 'cargando' | 'lista' | 'aceptando' | 'aceptado' | 'rechazando' | 'rechazado' | 'reportando' | 'reportado' | 'no_soy_yo' | 'retirado' | 'error'
 
 export default function CoarrendatarioPublicPage() {
   const params = useParams<{ token: string }>()
-  const token = params?.token as string | undefined
+  // Adenda 6.1 §2: el botón del WhatsApp trae la ficha con la marca del canal al final (`-w`); a la API va la limpia.
+  const tokenParam = params?.token as string | undefined
+  const token = tokenParam ? leerEnlace(tokenParam).token : undefined
 
   const [view, setView] = useState<ICoarrendatarioPublicView | null>(null)
   const [phase, setPhase] = useState<Phase>('cargando')
@@ -90,6 +111,15 @@ export default function CoarrendatarioPublicPage() {
   // Sus datos de notificación: el contrato los imprime (cláusula de notificaciones).
   const [direccion, setDireccion] = useState('')
   const [municipio, setMunicipio] = useState('')
+  const [faltaMunicipio, setFaltaMunicipio] = useState(false)
+  // Adenda 6 §8: tres opciones; por defecto «Prefiero no indicarlo» (quien tramita ve «No lo indicó»).
+  const [habitara, setHabitara] = useState<Habitara>(HABITARA_POR_DEFECTO)
+  // Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A y las dos finalidades opcionales del 5.2. Desmarcadas por defecto.
+  const [aceptaCotejo, setAceptaCotejo] = useState(false)
+  const [consentAnalitica, setConsentAnalitica] = useState(false)
+  const [consentComercial, setConsentComercial] = useState(false)
+  // El texto de la autorización cambió mientras lo leía (409): se ofrece cargar el vigente.
+  const [textoCambio, setTextoCambio] = useState(false)
   // El correo para el resultado de su evaluación: solo si la API lo pide (prellenado con el de la invitación).
   const [correoResultado, setCorreoResultado] = useState('')
   const [errorCorreo, setErrorCorreo] = useState(false)
@@ -113,6 +143,7 @@ export default function CoarrendatarioPublicPage() {
       } else if (data.estado === 'estudio_completado') {
         setResultMsg('Ya había aceptado esta invitación y su evaluación terminó.')
       }
+      setTextoCambio(false)
       setPhase(fase)
     } catch (err) {
       // Ya salió del estudio: una pantalla final, no un error.
@@ -147,7 +178,8 @@ export default function CoarrendatarioPublicPage() {
     }
     setFaltaConfirmarDocumento(false)
     if (direccion.trim().length < 5 || municipio.trim().length < 2) {
-      setErrorMsg('Escriba su dirección de residencia y su municipio.')
+      setFaltaMunicipio(municipio.trim().length < 2)
+      setErrorMsg('Escriba su dirección de residencia y elija su municipio de la lista.')
       return
     }
     const pideCorreo = !!view?.contacto_resultado?.requerido
@@ -162,18 +194,35 @@ export default function CoarrendatarioPublicPage() {
     }
     setErrorMsg(null)
     setPhase('aceptando')
+    const canal = tokenParam ? canalDeEstaPagina(tokenParam) : null
     try {
+      const v3 = !!view?.cotejo
       const r = await coarrendatarioService.aceptar(
         token,
-        { direccion: direccion.trim(), municipio: municipio.trim() },
+        { direccion: direccion.trim(), municipio: municipio.trim(), habitara_inmueble: habitara },
         {
           ...correoParaEnviar(view?.contacto_resultado?.requerido, correoResultado),
           ...documentoParaEnviar(pideDocumento, numeroDocumento),
         },
+        {
+          // Adenda 6 §2: la API comprueba que el texto aceptado sea el vigente.
+          version_terminos: view?.version_terminos,
+          // Adenda 6.1 §2: por cuál canal llegó (la marca del enlace). El correo o celular lo pone la API.
+          ...(canal ? { canal_enlace: canal } : {}),
+          ...(v3
+            ? {
+                acepta_cotejo_biometrico: aceptaCotejo,
+                consentimientos_opcionales: { analitica: consentAnalitica, comercial: consentComercial },
+              }
+            : {}),
+        },
       )
       setResultMsg(r.mensaje)
+      // Adenda 6.1 §3: la 4A queda registrada; el cotejo no es aquí, es al firmar el contrato.
+      setView((v) => (v?.cotejo ? { ...v, cotejo: { autorizado: aceptaCotejo } } : v))
       setPhase('aceptado')
     } catch (err) {
+      setTextoCambio((err as { code?: string } | null)?.code === 'TEXTO_AUTORIZACION_CAMBIO')
       setErrorMsg(esEnlaceReemplazado(err) ? ENLACE_REEMPLAZADO : mensajeParaProspecto(err, 'No se pudo registrar su aceptación.'))
       setPhase('lista')
     }
@@ -321,9 +370,21 @@ export default function CoarrendatarioPublicPage() {
           {resultMsg || 'Aceptación registrada. Estamos procesando su evaluación.'}
         </p>
         <p className="text-sm text-gray-700 mt-2">
-          Si el arriendo se aprueba, le enviaremos el contrato para firmarlo junto con{' '}
-          {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+          {/* Adenda 6.1 §3: con la V3.1 el cotejo es al firmar y quien tramita indica cómo (digital o en notaría). */}
+          {view?.cotejo ? (
+            <>
+              Si el arriendo se aprueba, quien tramita el arriendo le indicará cómo firmar el contrato junto con{' '}
+              {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+            </>
+          ) : (
+            <>
+              Si el arriendo se aprueba, le enviaremos el contrato para firmarlo junto con{' '}
+              {view?.expediente.titular_nombre || 'quien lo invitó'}. No tiene que hacer nada más por ahora.
+            </>
+          )}
         </p>
+        {/* Adenda 6 §2 / 6.1: la casilla 4A y cuándo se hace el cotejo (al firmar el contrato). */}
+        {view?.cotejo && <p className="text-sm text-gray-700 mt-2">{textoCotejoTrasAceptar(view.cotejo.autorizado)}</p>}
         {/* Al reabrir con 'aceptado' el mensaje de arriba ya nombra el correo. */}
         {view?.estado !== 'aceptado' && (
           <p className="text-xs text-gray-500 mt-4 break-words">
@@ -490,7 +551,8 @@ export default function CoarrendatarioPublicPage() {
               <div className="border-b border-gray-100 px-4 py-3">
                 <h3 className="text-sm font-semibold text-gray-900">Autorización de tratamiento de datos</h3>
                 <p className="mt-0.5 text-[11px] text-gray-500">
-                  Este es el texto íntegro que está aceptando. Versión {view.version_terminos}.
+                  Este es el texto íntegro que está aceptando. Versión {versionVisible(view.version_terminos)}.
+                  {view.cotejo && ' Las casillas de este texto se marcan más abajo.'}
                 </p>
               </div>
               <div className="whitespace-pre-wrap break-words bg-gray-50 px-4 py-3 text-xs leading-relaxed text-gray-600">
@@ -524,16 +586,19 @@ export default function CoarrendatarioPublicPage() {
                 <label htmlFor="coa-municipio" className="mb-1 block text-xs font-medium text-gray-700">
                   Municipio
                 </label>
-                <input
+                {/* Del listado oficial de municipios: «Municipio, Departamento» (reporte Oficina Virtual 25-nov, punto 4). */}
+                <MunicipioCombobox
                   id="coa-municipio"
-                  type="text"
-                  autoComplete="address-level2"
-                  value={municipio}
-                  maxLength={120}
-                  onChange={(e) => setMunicipio(e.target.value)}
+                  label={null}
+                  ayuda={null}
+                  placeholder="Escriba su municipio"
+                  value={municipio ? { codigo: '', nombre: municipio } : null}
+                  onChange={(v) => {
+                    setMunicipio(v?.nombre ?? '')
+                    if (v) setFaltaMunicipio(false)
+                  }}
+                  error={faltaMunicipio ? 'Elija su municipio de la lista.' : undefined}
                   disabled={procesando}
-                  placeholder="Medellín"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </div>
@@ -543,6 +608,14 @@ export default function CoarrendatarioPublicPage() {
                 : 'A esta dirección, a su correo y a su celular llegarán las notificaciones del contrato.'}
             </p>
           </div>
+
+          {/* Adenda 6 §8: informativo; la evaluación no lo usa. */}
+          <PreguntaHabitara
+            valor={habitara}
+            onCambio={setHabitara}
+            disabled={procesando}
+            className="rounded-xl border border-gray-200 bg-white p-3.5"
+          />
 
           {view?.contacto_resultado?.requerido && (!pideDocumento || documentoConfirmado) && (
             <CampoCorreoResultado
@@ -584,11 +657,62 @@ export default function CoarrendatarioPublicPage() {
             </label>
           </div>
 
+          {/* Adenda 6 §2 / 6.1 (texto V3.1): la casilla 4A y las dos finalidades opcionales del 5.2. Todas desmarcadas.
+              La 4A queda registrada al aceptar; el cotejo se hace al firmar el contrato (6.1 §3). */}
+          {view?.cotejo && (
+            <fieldset className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3.5">
+              <legend className="px-1 text-xs font-semibold uppercase tracking-wide text-gray-600">Opcionales</legend>
+              <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={aceptaCotejo}
+                  onChange={(e) => setAceptaCotejo(e.target.checked)}
+                  disabled={procesando}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span>
+                  <strong>Opcional (numeral 4A):</strong> autorizo el tratamiento de mis datos biométricos para el cotejo de
+                  identidad descrito en ese numeral.
+                  <span className="mt-1 block text-xs text-gray-600">{AYUDA_CASILLA_4A}</span>
+                </span>
+              </label>
+              <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentAnalitica}
+                  onChange={(e) => setConsentAnalitica(e.target.checked)}
+                  disabled={procesando}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span>{CASILLAS_5_2_V3.analitica} <span className="text-gray-600">(Opcional, numeral 5.2)</span></span>
+              </label>
+              <label className="flex items-start gap-3 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={consentComercial}
+                  onChange={(e) => setConsentComercial(e.target.checked)}
+                  disabled={procesando}
+                  className="mt-0.5 h-5 w-5 shrink-0 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
+                <span>{CASILLAS_5_2_V3.comercial} <span className="text-gray-600">(Opcional, numeral 5.2)</span></span>
+              </label>
+            </fieldset>
+          )}
+
           {/* El error va pegado al boton: antes quedaba varias pantallas arriba,
               detras del texto legal, y el usuario volvia a tocar sin verlo. */}
           {errorMsg && (
             <div ref={errorRef} className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-md p-3" role="alert">
               {errorMsg}
+              {textoCambio && (
+                <button
+                  type="button"
+                  onClick={fetchView}
+                  className="mt-2 block min-h-11 font-semibold text-red-800 underline underline-offset-2 hover:text-red-900"
+                >
+                  Cargar el texto vigente
+                </button>
+              )}
               {faltaConfirmarDocumento && (
                 <button
                   type="button"

@@ -30,8 +30,8 @@ import { formatCurrency, formatDate, ESTADOS_EXPEDIENTE } from '@/lib/constants'
 import type { DashboardSummary, ExpedientePorEstado } from '@/services/dashboardService'
 import type { IExpediente } from '@/types/expediente'
 import { AccionesPendientesWidget } from '@/components/dashboard/AccionesPendientesWidget'
-import { MisExpedientesActivosWidget } from '@/components/dashboard/MisExpedientesActivosWidget'
-import { SaldoCreditosCard } from '@/components/dashboard/SaldoCreditosCard'
+import { TareasInicio } from '@/components/dashboard/TareasInicio'
+import { OficinaVirtualHero } from '@/components/dashboard/OficinaVirtualHero'
 import { MisInmueblesPropietario } from '@/components/dashboard/MisInmueblesPropietario'
 import { NotaApelacion } from '@/components/expedientes/ExpedienteRechazadoBanner'
 // Vista "Centro de Control" (Resumen) del administrador, mockup
@@ -217,22 +217,17 @@ export default function DashboardPage() {
     )
   }
 
-  // Vista simplificada para inmobiliaria (conserva el hero "Oficina Virtual")
+  // Inmobiliaria: el Inicio es una lista de tareas (reporte de la Oficina Virtual del 25-nov, puntos 9 a 12):
+  // primero lo pendiente, una línea por grupo y cada estudio una sola vez (TareasInicio); después la franja «Su
+  // Oficina Virtual», que ya no va en el shell de todas las secciones. Los cupos se gestionan en Pagos y la lista de
+  // «Estudios activos» repetía los estudios de los grupos: ya no van aquí.
   if (isExternalUser) {
     return (
       <div className="space-y-6">
-        {/* El hero "Oficina Virtual" ahora es persistente en el shell (sobre los
-            tabs), igual al mockup 13_v2 — ya no se renderiza aquí. */}
-
-        {/* Widget de acciones pendientes (citas por confirmar, realizar, habilitar estudio, generar contrato) */}
+        {/* El h1 de la página es el de los pendientes: va primero (los primeros pasos y la franja llevan h2). */}
+        <TareasInicio />
         <PrimerosPasosWidget />
-        <AccionesPendientesWidget />
-
-        {/* Listado de expedientes activos: visibilidad pasiva del estado de cada solicitud */}
-        <MisExpedientesActivosWidget />
-
-        {/* Creditos de estudios — exclusivo para inmobiliaria */}
-        {isInmobiliaria && <SaldoCreditosCard />}
+        <OficinaVirtualHero />
       </div>
     )
   }
@@ -992,7 +987,10 @@ function SolicitanteDashboard() {
                           label={
                             noContinua
                               ? 'No continúa'
-                              : exp.estado === 'borrador'
+                              : // Flujo §10: al prospecto, «No aprobable por ahora» (no el «No aprobado» de la Oficina Virtual).
+                                isRejected
+                                ? 'No aprobable por ahora'
+                                : exp.estado === 'borrador'
                                 ? 'En preparación'
                                 : // Sin nada que hacer mientras Cofianza verifica: el mismo nombre del detalle.
                                   isConditioned && textoRevision

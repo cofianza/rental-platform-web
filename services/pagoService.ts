@@ -16,6 +16,7 @@ export interface IPago {
   descripcion: string | null
   monto: number
   moneda: string
+  /** 'pasarela' | 'transferencia' | 'efectivo' | 'cheque' | 'saldo_a_favor' (cubierto entero con el saldo a favor). */
   metodo: string
   estado: string
   payment_link_url: string | null
@@ -35,6 +36,10 @@ export interface IPago {
   eventos?: IPagoEvento[]
   /** Factura electrónica emitida para este pago, si ya se generó. */
   factura?: { id: string; numero: string | null; estado: string } | null
+  /** Adenda 6 §6: parte del cobro cubierta con el saldo a favor (`monto` es lo que se paga en dinero). */
+  saldo_aplicado_cop?: number
+  /** El saldo a favor cubrió el cobro entero: ya está completado y no hay enlace de pago. */
+  cubierto_con_saldo?: boolean
 }
 
 export interface IPagoEvento {
@@ -286,6 +291,9 @@ export interface IReembolsoPendiente {
   en_proceso: boolean
   /** Solo lo de Mercado Pago que se devuelve completo admite «Reembolsar». */
   puede_reembolsar: boolean
+  /** AAAA-MM-DD. Devolución del saldo a favor pedida por una persona natural (motivo
+   *  `saldo_a_favor_devolucion`): 15 días hábiles desde la solicitud. Ausente en el resto. */
+  fecha_limite?: string | null
   created_at: string
 }
 

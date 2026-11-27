@@ -11,11 +11,16 @@
  * comercial, cédula, firma por-parte) — solo campos reales.
  * Es la vista de todos los roles: Cofianza también necesita buscar, paginar y
  * encontrar los terminados y cancelados (antes veía 100 contratos sin buscador).
+ *
+ * Reporte de la Oficina Virtual (25-nov), puntos 1 y 7: los contadores salen de GET /oficina-virtual/conteos (el
+ * mismo «por generar» del Inicio, sin el tope de 50 de la lista), con esqueleto mientras cargan (antes un 0 que luego
+ * saltaba al total), y «Activos» dice los cancelados y terminados («0 (4 cancelados)»), que antes solo se veían
+ * desplegando el panel de abajo.
  */
 
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { contratoService, type IContratosStats } from '@/services/contratoService'
 import type { IContratoListItem, IContratoMeta, IContratoListFilters } from '@/types/contrato'
@@ -24,8 +29,12 @@ import { cn, formatNumeroEstudio } from '@/lib/utils'
 import { tieneTrabaContrato, useAprobadosSinContrato } from '@/hooks/useAprobadosSinContrato'
 import { etapaDeTraba, etiquetaTraba } from '@/lib/etapaEstudio'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
+import { useConteosOficina } from '@/hooks/useConteosOficina'
+import { notaContratosCerrados } from '@/lib/contratosCancelados'
+import type { SeccionOficina } from '@/types/oficinaVirtual'
 import { ContratosFilters } from './ContratosFilters'
-import { SkeletonCards, SkeletonTable } from '@/components/ui/Skeleton'
+import { Skeleton, SkeletonCards, SkeletonTable } from '@/components/ui/Skeleton'
+import { AvisoCifras } from '@/components/ui/AvisoCifras'
 import {
   IconAlertTriangle,
   IconFileText,
@@ -114,6 +123,9 @@ interface Grupo {
 
 const GRUPO_VACIO: Grupo = { data: [], meta: { total: 0, page: 1, limit: 0, totalPages: 0 } }
 
+/** Los contadores de esta pestaña (los mismos que lee el encabezado de la página: una sola petición). */
+export const SECCIONES_CONTRATOS: readonly SeccionOficina[] = ['contratos']
+
 /**
  * Si el usuario filtra por un estado concreto, ese estado solo debe alimentar
  * SU panel: los otros dos quedan vacíos en vez de ignorar el filtro.
@@ -200,8 +212,13 @@ export function ContratosInmobiliariaView() {
     cargar()
   }, [cargar])
 
-  // Los KPI son globales (no dependen de los filtros): se piden una sola vez.
+  // Los KPI son globales (no dependen de los filtros): se piden una sola vez. Salen de los conteos de la Oficina
+  // Virtual; con una API anterior (sin ese endpoint), de /contratos/stats y de la lista, como antes.
+  const ov = useConteosOficina(SECCIONES_CONTRATOS)
+  const conteos = ov.data?.contratos ?? null
+  const sinConteos = ov.disponible === false
   useEffect(() => {
+    if (!sinConteos) return
     let cancel = false
     contratoService.getStats().then((s) => {
       if (!cancel) setStats(s)
@@ -209,7 +226,15 @@ export function ContratosInmobiliariaView() {
     return () => {
       cancel = true
     }
-  }, [])
+  }, [sinConteos])
+  const cargandoConteos = sinConteos ? false : ov.isLoading && !ov.data
+  // Punto 7: «(4 cancelados)» junto a los activos; tocarlo abre el panel plegado de abajo.
+  const cerradosRef = useRef<HTMLDivElement>(null)
+  const notaCerrados = notaContratosCerrados(conteos ?? (stats ? { cancelados: stats.cancelados, finalizados: stats.finalizados } : null))
+  const abrirCerrados = () => {
+    setVerCerrados(true)
+    requestAnimationFrame(() => cerradosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
 
   const hasActiveFilters = !!(search || filters.estado || filters.fecha_desde || filters.fecha_hasta)
   // La búsqueda también acota los estudios aprobados sin contrato (antes los ignoraba).
@@ -348,26 +373,43 @@ export function ContratosInmobiliariaView() {
         hasActiveFilters={hasActiveFilters}
       />
 
-      {/* Stat cards */}
+      {/* Stat cards: mientras cargan, esqueleto; sin la cifra (falló), «—» y se puede reintentar: un 0 contradecía los
+          paneles de abajo. */}
+      {!sinConteos && !cargandoConteos && !conteos && <AvisoCifras onReintentar={() => void ov.refetch()} cargando={ov.isLoading} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           label="Pendientes de generar"
-          value={porGenerar.length}
+          // El total real (el mismo del Inicio); la lista de abajo puede mostrar menos.
+          value={conteos ? conteos.aprobados_sin_contrato.por_generar : sinConteos && !loadingSinContrato ? porGenerar.length : null}
+          cargando={cargandoConteos || (sinConteos && loadingSinContrato)}
           color="text-coral-700"
           sub="Estudios aprobados sin contrato"
         />
         <StatCard
           label="En proceso de firma"
-          // Sin stats (fallo o cargando), «—»: un 0 contradecía los paneles de abajo.
-          value={stats ? stats.en_proceso_firma + (stats.por_estado.firma_incompleta ?? 0) : '—'}
+          value={conteos ? conteos.en_firma : stats ? stats.en_proceso_firma + (stats.por_estado.firma_incompleta ?? 0) : null}
+          cargando={cargandoConteos}
           color={ESTADOS_CONTRATO.pendiente_firma.textColor}
           sub="Esperando firmas o por reenviar"
         />
         <StatCard
           label="Activos"
-          value={stats?.activos ?? '—'}
+          value={conteos ? conteos.activos : (stats?.activos ?? null)}
+          cargando={cargandoConteos}
           color={ESTADOS_CONTRATO.vigente.textColor}
           sub="Contratos vigentes"
+          nota={
+            notaCerrados && (
+              <button
+                type="button"
+                onClick={abrirCerrados}
+                aria-label={`${notaCerrados.replace(/[()]/g, '')}: ver los contratos terminados y cancelados`}
+                className="-my-2 inline-flex min-h-10 items-center text-xs font-semibold text-gray-700 underline decoration-dotted underline-offset-2 hover:text-gray-900 focus-visible:outline-2 focus-visible:outline-primary-600"
+              >
+                {notaCerrados}
+              </button>
+            )
+          }
         />
       </div>
 
@@ -382,11 +424,26 @@ export function ContratosInmobiliariaView() {
         {loadingSinContrato ? (
           <SkeletonTable filas={2} columnas={4} etiqueta="Buscando estudios aprobados…" className="rounded-none border-0" />
         ) : porGenerarVisibles.length === 0 ? (
-          <EmptyRow
-            texto={porGenerar.length > 0 ? 'Ningún estudio aprobado coincide con la búsqueda.' : 'Ningún estudio aprobado espera contrato.'}
-          />
+          // Sin filas cargadas pero con pendientes (la lista trae los aprobados más recientes), no se dice «ninguno».
+          porGenerar.length === 0 && (conteos?.aprobados_sin_contrato.por_generar ?? 0) > 0 ? null : (
+            <EmptyRow
+              texto={porGenerar.length > 0 ? 'Ningún estudio aprobado coincide con la búsqueda.' : 'Ningún estudio aprobado espera contrato.'}
+            />
+          )
         ) : (
           tablaAprobados(porGenerarVisibles)
+        )}
+        {/* La lista trae los aprobados más recientes (con contrato o sin él): si hay más pendientes que los listados, se
+            dice y se lleva a la pestaña «Aprobados» de Estudios, donde están todos. El contador de arriba es el total. */}
+        {!loadingSinContrato && !searchAplicado && conteos && conteos.aprobados_sin_contrato.por_generar > porGenerar.length && (
+          <p className="border-t border-gray-200 px-4 py-3 text-xs text-gray-600 sm:px-6">
+            Se muestran los {porGenerar.length.toLocaleString('es-CO')} más recientes de{' '}
+            {conteos.aprobados_sin_contrato.por_generar.toLocaleString('es-CO')}. Los demás están en{' '}
+            <Link href="/expedientes?estudio_filtro=aprobado" className="font-semibold text-primary-700 underline underline-offset-2 hover:text-primary-800">
+              Estudios, pestaña «Aprobados»
+            </Link>
+            .
+          </p>
         )}
       </Panel>
 
@@ -542,16 +599,18 @@ export function ContratosInmobiliariaView() {
       </Panel>
 
       {/* Terminados y cancelados: plegado, se piden al abrirlo. */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div ref={cerradosRef} className="scroll-mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white">
         <button
           type="button"
           onClick={() => setVerCerrados((v) => !v)}
           aria-expanded={verCerrados}
           className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-4 text-left hover:bg-gray-50/60 sm:px-6 sm:py-5"
         >
-          <span className="flex items-center gap-2.5 text-base font-bold text-gray-900">
+          <span className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-base font-bold text-gray-900">
             <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
             Terminados y cancelados
+            {/* Punto 7: cuántos hay, sin tener que desplegarlo. */}
+            {notaCerrados && <span className="text-sm font-medium text-gray-500">{notaCerrados}</span>}
           </span>
           <span className="inline-flex items-center gap-1 text-xs text-gray-500">
             {verCerrados ? 'Ocultar' : 'Ver'}
@@ -666,16 +725,33 @@ function StatCard({
   value,
   sub,
   color = 'text-gray-900',
+  cargando = false,
+  nota,
 }: {
   label: string
-  value: number | string
+  /** null = no se pudo leer: «—» (nunca un 0). */
+  value: number | string | null
   sub: string
   color?: string
+  /** Mientras carga, el esqueleto en lugar de la cifra. */
+  cargando?: boolean
+  /** Al lado de la cifra (p. ej. «(4 cancelados)»). */
+  nota?: ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
+    <div className="rounded-xl border border-gray-200 bg-white px-5 py-4" aria-busy={cargando}>
       <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</div>
-      <div className={cn('text-3xl font-black leading-none tracking-tight', color)}>{value}</div>
+      {cargando ? (
+        <>
+          <span className="sr-only">Cargando…</span>
+          <Skeleton className="h-[30px] w-14" />
+        </>
+      ) : (
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <span className={cn('text-3xl font-black leading-none tracking-tight', color)}>{value ?? '—'}</span>
+          {nota}
+        </div>
+      )}
       <div className="mt-1 text-xs text-gray-500">{sub}</div>
     </div>
   )

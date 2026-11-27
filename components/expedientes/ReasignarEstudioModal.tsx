@@ -61,13 +61,8 @@ import { PagarConsultaAdicional } from './PagarConsultaAdicional'
 import { valorConsultaAdicional } from '@/hooks/useSustituciones'
 import type { IValorConsultaAdicional } from '@/types/sustitucion'
 import { SkeletonText } from '@/components/ui/Skeleton'
-
-/** Misma regla que la API (inmuebles/destinacion.ts): mixto o desconocido no tiene destinación. */
-function destinacionDeUso(uso: string | null | undefined): 'vivienda' | 'comercial' | null {
-  if (uso === 'vivienda') return 'vivienda'
-  if (uso === 'comercial' || uso === 'local_comercial') return 'comercial'
-  return null
-}
+import { destinacionDelInmueble } from '@/lib/destinacionInmueble'
+import { textoReasignarConReevaluacion } from '@/lib/vigenciaReporte'
 
 interface ReasignarEstudioModalProps {
   isOpen: boolean
@@ -96,6 +91,11 @@ interface ReasignarEstudioModalProps {
   canonHabilitado?: number | null
   /** La API indica que el resultado ya tiene un canon límite: un canon mayor no se evalúa de nuevo desde aquí. */
   sinReevaluacion?: boolean
+  /**
+   * Adenda 6 §7: la API dice que evaluar de nuevo por un canon mayor no tiene costo hoy (`reevaluacion_sin_costo` del
+   * estudio). Sin el dato (o en false) no se promete «sin costo»: puede requerir una consulta adicional.
+   */
+  reevaluacionSinCosto?: boolean
   /** Estudio sin propiedad: destinación evaluada (solo se vinculan inmuebles del mismo tipo). */
   destinacion?: string | null
   /** Para ofrecer la evaluación nueva cuando el inmueble no cabe. */
@@ -122,6 +122,7 @@ export function ReasignarEstudioModal({
   canonAprobado,
   canonHabilitado,
   sinReevaluacion = false,
+  reevaluacionSinCosto,
   destinacion,
   expedienteId,
   onReasignado,
@@ -323,7 +324,7 @@ export function ReasignarEstudioModal({
               </p>
               <p className="mt-0.5 text-xs text-gray-600">
                 {evaluaDeNuevo
-                  ? 'El canon es mayor al aprobado: el estudio se evalúa de nuevo con este canon antes de trasladarlo, sin costo mientras el reporte de la evaluación esté vigente. Si ya venció, no se traslada ni se cobra nada.'
+                  ? textoReasignarConReevaluacion(reevaluacionSinCosto)
                   : 'No se generará ningún cobro ni se descontará ningún crédito, y el estudio conserva su vigencia original.'}
               </p>
             </div>
@@ -354,6 +355,9 @@ export function ReasignarEstudioModal({
             <>
               <li>Su canon debe caber en el canon aprobado.</li>
               <li>Debe ser de la misma destinación (vivienda o comercial).</li>
+              {destinacion === 'comercial' && (
+                <li>Con un inmueble comercial no se podrá generar el contrato de la plataforma, que solo genera el de vivienda.</li>
+              )}
               <li>Desde ese momento el estudio pasa a la cartera del dueño del inmueble. Conserva su vigencia original.</li>
             </>
           ) : (
@@ -467,7 +471,8 @@ export function ReasignarEstudioModal({
           {!isLoading &&
             ordenados.map((inm) => {
               const otraCartera = esDeOtraCartera(inm)
-              const otraDestinacion = vincular && !!destinacion && destinacionDeUso(inm.uso) !== destinacion
+              // Tipo + uso (reporte Oficina Virtual, punto 8): un local guardado como vivienda es comercial.
+              const otraDestinacion = vincular && !!destinacion && destinacionDelInmueble(inm) !== destinacion
               const seleccionable = esSeleccionable(inm) && !otraCartera && !otraDestinacion
               const fueraDeTolerancia =
                 canonMaximo !== null && inm.valor_arriendo > canonMaximo
@@ -511,7 +516,7 @@ export function ReasignarEstudioModal({
                     )}
                     {otraDestinacion && (
                       <p className="mt-1 text-xs text-gray-500">
-                        No es {destinacion === 'comercial' ? 'comercial' : 'de vivienda'}: para otro tipo de inmueble se
+                        No es {destinacion === 'comercial' ? 'comercial' : 'de vivienda'}: para otra destinación se
                         requiere una evaluación nueva.
                       </p>
                     )}

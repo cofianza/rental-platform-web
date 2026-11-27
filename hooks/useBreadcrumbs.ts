@@ -41,7 +41,8 @@ const ROUTE_LABELS: Record<string, string> = {
   'creditos-estudios': 'Cupos de estudios',
   'paquetes-creditos-estudios': 'Paquetes de cupos',
   'cupos-vencidos': 'Cupos vencidos',
-  'datos-contrato': 'Datos para contrato',
+  // Reporte de la Oficina Virtual (25-nov), punto 13: antes «Datos para contrato» y «Mi Inmobiliaria».
+  'datos-inmobiliaria': 'Datos de mi inmobiliaria',
 }
 
 /**

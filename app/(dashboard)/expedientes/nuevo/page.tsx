@@ -25,6 +25,7 @@ import { estudioService } from '@/services/estudioService'
 import { solicitanteService } from '@/services/solicitanteService'
 import { IconAlertTriangle } from '@/components/icons'
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton'
+import { estudioSegunDestinacion } from '@/lib/destinacionInmueble'
 
 // useSearchParams en Next.js 16 requiere estar dentro de Suspense para que
 // el render bloqueante no rompa el static export. Wrapper minimo.
@@ -101,10 +102,14 @@ function NuevoExpedienteContent() {
       try {
         // §4.4: el tope de canon también se mira en este atajo — antes saltaba
         // al paso 2 sin validarlo y el gestor chocaba con el bloqueo al final.
-        const [inmueble, topeCanon] = await Promise.all([
+        const [inmueble, tope] = await Promise.all([
           inmuebleService.getInmuebleById(inmueblePreseleccionId),
-          estudioService.getTopeCanon().then((t) => t.tope_cop).catch(() => null),
+          estudioService.getTopeCanon().catch(() => null),
         ])
+        const topeCanon = tope?.tope_cop ?? null
+        // Reporte Oficina Virtual, punto 8: un inmueble comercial o mixto no salta al paso 2.
+        // Apagado el interruptor (o sin leerlo) se bloquea; encendido, se ve el aviso del paso 1.
+        const reglaDestinacion = estudioSegunDestinacion(inmueble, tope?.estudios_comercial_pj_habilitados === true)
         let hasActiveExpediente = false
         let coarrendatarioDesdeInicio = false
         try {
@@ -115,7 +120,13 @@ function NuevoExpedienteContent() {
           // Falla no bloqueante: el step 1 ya valida.
         }
         const excedeTope = topeCanon !== null && Number(inmueble.valor_arriendo ?? 0) > topeCanon
-        updateStep1({ inmueble, hasActiveExpediente, excedeTope, coarrendatarioDesdeInicio })
+        updateStep1({
+          inmueble,
+          hasActiveExpediente,
+          excedeTope,
+          coarrendatarioDesdeInicio,
+          destinacionBloqueada: reglaDestinacion === 'bloqueo',
+        })
 
         // Si venimos de un INTERESADO de la vitrina, pre-llenar el solicitante
         // (nuevo) con sus datos de contacto: /expedientes/nuevo?inmueble_id=..&
@@ -149,7 +160,8 @@ function NuevoExpedienteContent() {
         }
         // Con el canon por encima del tope nos quedamos en el paso 1 para que el
         // gestor vea el aviso (Adenda de precios §7.1: ya no bloquea, avanza él).
-        if (!excedeTope) goToStep(2)
+        // Igual con la destinación comercial o mixta: bloqueo o aviso, se ve en el paso 1.
+        if (!excedeTope && reglaDestinacion === 'libre') goToStep(2)
       } catch (err) {
         toast.error(
           err instanceof Error ? err.message : 'No pudimos cargar el inmueble seleccionado',
@@ -336,7 +348,11 @@ function NuevoExpedienteContent() {
             onNext={nextStep}
             onCancel={handleCancel}
             blockedReason={
-              step2EditDirty ? 'Guarde o cancele la edición del solicitante para continuar' : undefined
+              step2EditDirty
+                ? 'Guarde o cancele la edición del solicitante para continuar'
+                : currentStep === 1 && data.step1.destinacionBloqueada
+                  ? 'Quite el inmueble y elija uno de vivienda para continuar.'
+                  : undefined
             }
           />
         )}

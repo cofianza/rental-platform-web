@@ -15,6 +15,7 @@ import { coarrendatarioService, type IInvitarCoarrendatarioInput } from '@/servi
 import { esNombreValido } from '@/components/expedientes/CoarrendatarioInviteForm'
 import { ApiClientError } from '@/lib/api'
 import { esPersonaJuridica } from '@/components/expedientes/wizard/constants'
+import { MSG_DESTINACION_BLOQUEO } from '@/lib/destinacionInmueble'
 
 // ============================================
 // Tipos del Wizard
@@ -25,6 +26,12 @@ export interface WizardStep1Data {
   hasActiveExpediente: boolean
   /** El canon supera el tope: solo avisa (Adenda de precios §7.1; antes bloqueaba, Flujo §4.4). */
   excedeTope?: boolean
+  /**
+   * Reporte Oficina Virtual, punto 8: el inmueble elegido es comercial o mixto y el
+   * interruptor de la Gerencia está apagado: el estudio no se puede crear (Adenda de
+   * precios §6.1). Llega así por el atajo «Evaluar candidato» de un inmueble.
+   */
+  destinacionBloqueada?: boolean
   /** Adenda 3 V2 §6.1: se puede agregar el coarrendatario desde el asistente. */
   coarrendatarioDesdeInicio?: boolean
   /** Estudio sin propiedad (solo Cofianza): canon objetivo y destinación en lugar del inmueble. */
@@ -204,6 +211,8 @@ function validateStep1(data: WizardStep1Data): Record<string, string> {
   }
   if (!data.inmueble) {
     errors.inmueble = 'Debe seleccionar un inmueble'
+  } else if (data.destinacionBloqueada) {
+    errors.inmueble = MSG_DESTINACION_BLOQUEO
   }
 
   return errors
@@ -529,7 +538,7 @@ export function useExpedienteWizard() {
       // Adenda de precios §7.1: el canon sobre el tope ya no detiene el paso 1 (solo avisa).
       return data.step1.sinInmueble
         ? !!data.step1.canonObjetivo && data.step1.canonObjetivo > 0 && !!data.step1.destinacion
-        : !!data.step1.inmueble
+        : !!data.step1.inmueble && !data.step1.destinacionBloqueada
     }
     if (currentStep === 2) {
       // El coarrendatario, si se agregó, con todos sus campos (el formato se valida al pulsar «Siguiente»).

@@ -34,6 +34,15 @@ import { FOTO_LIMITS } from '@/types/inmueble'
 import { cn } from '@/lib/utils'
 import { leerErrorDeFormulario } from '@/lib/erroresApi'
 import { useAuthStore } from '@/stores/auth.store'
+import { MunicipioCombobox, type MunicipioOption } from '@/components/registro/MunicipioCombobox'
+import { departamentoSiDistinto } from '@/lib/municipios'
+import {
+  mensajeDestinacionIncoherente,
+  usosPermitidosPara,
+  NOTA_CONTRATO_SOLO_VIVIENDA,
+  NOTA_ESTUDIOS_NO_VIVIENDA,
+  type DestinacionElegible,
+} from '@/lib/destinacionInmueble'
 
 // ── Sección y campo ─────────────────────────────────────────
 
@@ -151,43 +160,6 @@ function CurrencyInput({ label, id, value, onChange, disabled, placeholder, erro
   )
 }
 
-// Departamentos de Colombia (principales)
-const DEPARTAMENTOS = [
-  'Amazonas',
-  'Antioquia',
-  'Arauca',
-  'Atlántico',
-  'Bogotá D.C.',
-  'Bolívar',
-  'Boyacá',
-  'Caldas',
-  'Caquetá',
-  'Casanare',
-  'Cauca',
-  'Cesar',
-  'Chocó',
-  'Córdoba',
-  'Cundinamarca',
-  'Guainía',
-  'Guaviare',
-  'Huila',
-  'La Guajira',
-  'Magdalena',
-  'Meta',
-  'Nariño',
-  'Norte de Santander',
-  'Putumayo',
-  'Quindío',
-  'Risaralda',
-  'San Andrés y Providencia',
-  'Santander',
-  'Sucre',
-  'Tolima',
-  'Valle del Cauca',
-  'Vaupés',
-  'Vichada',
-]
-
 interface InmuebleFormProps {
   mode: 'create' | 'edit'
   inmueble?: IInmueble | null
@@ -208,7 +180,8 @@ interface FormData {
   foto_fachada_url: string
   // Opcionales
   barrio: string
-  uso: UsoInmueble
+  // Obligatoria y sin valor por defecto (reporte Oficina Virtual, punto 8).
+  uso: UsoInmueble | ''
   destinacion: string
   valor_comercial: number | ''
   administracion: number | ''
@@ -246,7 +219,7 @@ const initialFormData: FormData = {
   propietario_id: '',
   foto_fachada_url: '',
   barrio: '',
-  uso: 'vivienda',
+  uso: '',
   destinacion: '',
   valor_comercial: '',
   administracion: '',
@@ -268,7 +241,7 @@ const initialFormData: FormData = {
 
 // Etiquetas para el aviso de 'falta X' (antes: 'completa todos los campos requeridos' sin decir cual).
 const FIELD_LABELS: Record<string, string> = {
-  codigo: 'código', direccion: 'dirección', ciudad: 'ciudad', departamento: 'departamento', tipo: 'tipo de inmueble',
+  codigo: 'código', direccion: 'dirección', ciudad: 'municipio', departamento: 'municipio', tipo: 'tipo de inmueble', uso: 'destinación',
   estrato: 'estrato', valor_arriendo: 'valor del arriendo', propietario_id: 'propietario', foto_fachada_url: 'foto de fachada',
   area_m2: 'área', habitaciones: 'habitaciones', banos: 'baños', parqueaderos: 'parqueaderos', administracion: 'administración',
 }
@@ -310,6 +283,9 @@ function Avanzado({ plegar, children }: { plegar: boolean; children: ReactNode }
 export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
   const router = useRouter()
   const authUser = useAuthStore((s) => s.user)
+  const accessToken = useAuthStore((s) => s.accessToken)
+  // Reporte Oficina Virtual 25-nov, punto 4: el municipio se elige del listado oficial (DIVIPOLA).
+  const [municipio, setMunicipio] = useState<{ codigo: string; nombre: string } | null>(null)
   const isPropietarioUser = authUser?.rol === 'propietario'
   const isInmobiliariaUser = authUser?.rol === 'inmobiliaria'
   const isAutoAssignOwner = isPropietarioUser || isInmobiliariaUser
@@ -327,6 +303,9 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     apellido: string
   } | null>(null)
   const [fotosAdicionales, setFotosAdicionales] = useState<{ file: File; preview: string }[]>([])
+  // Por qué se vació la destinación: el tipo elegido (o el guardado, en un
+  // inmueble anterior a la regla) no admite la que tenía. Se borra al elegir otra.
+  const [avisoDestinacion, setAvisoDestinacion] = useState<string | null>(null)
 
   // Cambios sin guardar: el formulario es largo y «Cancelar», el menú o cerrar
   // la pestaña borraban todo sin preguntar. `tocado` lo enciende cualquier
@@ -394,9 +373,13 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         propietario_id: inmueble.propietario_id,
         foto_fachada_url: inmueble.foto_fachada_url || '',
         barrio: inmueble.barrio || '',
-        // 'local_comercial' (legacy) se consolida en 'comercial' (Comercio) para
-        // que el select lo muestre correctamente con las nuevas opciones.
-        uso: inmueble.uso === 'local_comercial' ? 'comercial' : inmueble.uso,
+        // 'local_comercial' (legacy) se consolida en 'comercial' (Comercial) para
+        // que el select lo muestre correctamente con las nuevas opciones. Una
+        // destinación que el tipo no admite (un local guardado como vivienda
+        // antes de la regla) queda vacía: hay que elegirla para guardar.
+        uso: mensajeDestinacionIncoherente(inmueble.tipo, inmueble.uso)
+          ? ''
+          : inmueble.uso === 'local_comercial' ? 'comercial' : inmueble.uso,
         destinacion: inmueble.destinacion || '',
         valor_comercial: inmueble.valor_comercial || '',
         administracion: inmueble.administracion || '',
@@ -418,6 +401,8 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
         ubicacion_detallada: inmueble.ubicacion_detallada || '',
         matricula_inmobiliaria: inmueble.matricula_inmobiliaria || '',
       })
+
+      setAvisoDestinacion(mensajeDestinacionIncoherente(inmueble.tipo, inmueble.uso))
 
       // Cargar datos del propietario si existen
       if (inmueble.propietario) {
@@ -445,14 +430,20 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     if (!formData.direccion.trim()) {
       newErrors.direccion = INMUEBLE_MESSAGES.DIRECCION_REQUIRED
     }
-    if (!formData.ciudad.trim()) {
-      newErrors.ciudad = INMUEBLE_MESSAGES.CIUDAD_REQUIRED
-    }
-    if (!formData.departamento.trim()) {
-      newErrors.departamento = INMUEBLE_MESSAGES.DEPARTAMENTO_REQUIRED
+    // El municipio sale del listado oficial. El guardado antes del buscador (que no está en el
+    // listado) se conserva mientras no se toque; el combobox pide elegirlo.
+    if (!municipio && !(formData.ciudad.trim() && formData.departamento.trim())) {
+      newErrors.ciudad = INMUEBLE_MESSAGES.MUNICIPIO_REQUIRED
     }
     if (!formData.tipo) {
       newErrors.tipo = INMUEBLE_MESSAGES.TIPO_REQUIRED
+    }
+    if (!formData.uso) {
+      // Con un local, una oficina… no se pide «vivienda»: se dice qué puede elegir.
+      newErrors.uso = mensajeDestinacionIncoherente(formData.tipo, 'vivienda') ?? INMUEBLE_MESSAGES.USO_REQUIRED
+    } else {
+      const incoherente = mensajeDestinacionIncoherente(formData.tipo, formData.uso)
+      if (incoherente) newErrors.uso = incoherente
     }
     if (!formData.estrato) {
       newErrors.estrato = INMUEBLE_MESSAGES.ESTRATO_REQUIRED
@@ -524,7 +515,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           foto_fachada_url: formData.foto_fachada_url,
           // Opcionales
           barrio: formData.barrio || undefined,
-          uso: formData.uso,
+          uso: formData.uso as UsoInmueble,
           destinacion: formData.destinacion || undefined,
           valor_comercial: formData.valor_comercial ? Number(formData.valor_comercial) : undefined,
           administracion: formData.administracion ? Number(formData.administracion) : undefined,
@@ -576,9 +567,12 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
 
         // "Y ahora qué": el toast dice si quedó publicado y qué puede hacer
         // desde la tarjeta, porque el listado no lo explica.
+        // Punto 8: a un inmueble comercial o mixto no se le promete evaluar candidatos.
         toast.success(INMUEBLE_MESSAGES.CREATE_SUCCESS, {
           description: formData.visible_vitrina
-            ? 'Ya está publicado en la vitrina de Cofianza. Desde la tarjeta puede pausarlo o evaluar un candidato.'
+            ? formData.uso === 'vivienda'
+              ? 'Ya está publicado en la vitrina de Cofianza. Desde la tarjeta puede pausarlo o evaluar un candidato.'
+              : `Ya está publicado en la vitrina de Cofianza; desde la tarjeta puede pausarlo. ${NOTA_ESTUDIOS_NO_VIVIENDA}`
             : 'No está en la vitrina: actívelo desde la tarjeta cuando desee publicarlo.',
         })
       } else if (inmueble) {
@@ -593,7 +587,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
           propietario_id: formData.propietario_id,
           foto_fachada_url: formData.foto_fachada_url,
           barrio: formData.barrio || null,
-          uso: formData.uso,
+          uso: formData.uso as UsoInmueble,
           destinacion: formData.destinacion || null,
           valor_comercial: formData.valor_comercial ? Number(formData.valor_comercial) : null,
           // Siempre un número: con undefined el 0 («Déjalo en 0 si no aplica») o
@@ -654,6 +648,48 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }))
+    }
+  }
+
+  // Punto 8: al cambiar el tipo, una destinación que el nuevo tipo no admite se
+  // vacía (nunca se cambia sola por otra) y se dice por qué.
+  const handleTipoChange = (tipo: string) => {
+    const incoherente = mensajeDestinacionIncoherente(tipo, formData.uso)
+    setFormData((prev) => ({ ...prev, tipo: tipo as TipoInmueble | '', ...(incoherente ? { uso: '' as const } : {}) }))
+    setAvisoDestinacion(incoherente)
+    if (errors.tipo || errors.uso) setErrors((prev) => ({ ...prev, tipo: undefined, uso: undefined }))
+  }
+
+  const handleUsoChange = (uso: string) => {
+    handleChange('uso', uso)
+    setAvisoDestinacion(null)
+  }
+
+  const usosOfrecidos = USO_OPTIONS.filter((o) =>
+    usosPermitidosPara(formData.tipo).includes(o.value as DestinacionElegible),
+  )
+  const ayudaDestinacion = avisoDestinacion ? (
+    <span role="status" className="text-amber-800">{avisoDestinacion}</span>
+  ) : formData.uso === 'comercial' || formData.uso === 'mixto' ? (
+    `${NOTA_CONTRATO_SOLO_VIVIENDA} ${NOTA_ESTUDIOS_NO_VIVIENDA}`
+  ) : (
+    // Con un local, una oficina… la ayuda dice desde ya por qué no está «Vivienda».
+    mensajeDestinacionIncoherente(formData.tipo, 'vivienda') ??
+    'Vivienda: para habitar. Comercial: locales, oficinas, bodegas o negocios. Mixta: vivienda y comercio en el mismo inmueble.'
+  )
+
+  // Ciudad y departamento salen juntos de la opción elegida; sin opción (borró o está escribiendo), vacíos.
+  // Si el campo reconoció solo la ciudad guardada, no se toca: no es un cambio de quien edita.
+  const handleMunicipioChange = (
+    v: { codigo: string; nombre: string } | null,
+    m?: MunicipioOption,
+    opciones?: { automatico: boolean },
+  ) => {
+    setMunicipio(v)
+    if (opciones?.automatico) return
+    setFormData((prev) => ({ ...prev, ciudad: m?.name ?? '', departamento: m?.department.name ?? '' }))
+    if (m && (errors.ciudad || errors.departamento)) {
+      setErrors((prev) => ({ ...prev, ciudad: undefined, departamento: undefined }))
     }
   }
 
@@ -757,7 +793,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               <select
                 id="tipo"
                 value={formData.tipo}
-                onChange={(e) => handleChange('tipo', e.target.value)}
+                onChange={(e) => handleTipoChange(e.target.value)}
                 disabled={isSubmitting}
                 aria-invalid={!!errors.tipo}
                 className={inputClasses(!!errors.tipo)}
@@ -771,15 +807,17 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               </select>
             </Campo>
 
-            <Campo id="uso" label="Uso" ayuda="Vivienda: para habitar. Comercial: oficinas, locales o negocios.">
+            <Campo id="uso" label="Destinación" requerido error={errors.uso} ayuda={ayudaDestinacion}>
               <select
                 id="uso"
                 value={formData.uso}
-                onChange={(e) => handleChange('uso', e.target.value)}
+                onChange={(e) => handleUsoChange(e.target.value)}
                 disabled={isSubmitting}
-                className={inputClasses(false)}
+                aria-invalid={!!errors.uso}
+                className={inputClasses(!!errors.uso)}
               >
-                {USO_OPTIONS.map((opt) => (
+                <option value="">Seleccionar destinación...</option>
+                {usosOfrecidos.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -836,34 +874,19 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
               />
             </Campo>
 
-            <Campo id="departamento" label="Departamento" requerido error={errors.departamento}>
-              <select
-                id="departamento"
-                value={formData.departamento}
-                onChange={(e) => handleChange('departamento', e.target.value)}
-                disabled={isSubmitting}
-                aria-invalid={!!errors.departamento}
-                className={inputClasses(!!errors.departamento)}
-              >
-                <option value="">Seleccionar departamento...</option>
-                {DEPARTAMENTOS.map((dep) => (
-                  <option key={dep} value={dep}>
-                    {dep}
-                  </option>
-                ))}
-              </select>
-            </Campo>
-
-            <Campo id="ciudad" label="Ciudad" requerido error={errors.ciudad}>
-              <input
-                type="text"
+            <Campo id="ciudad" label="Municipio" requerido>
+              <MunicipioCombobox
+                key={inmueble?.id ?? 'nuevo'}
                 id="ciudad"
-                value={formData.ciudad}
-                onChange={(e) => handleChange('ciudad', e.target.value)}
+                label={null}
+                ayuda="Búsquelo en el listado oficial de municipios de Colombia."
+                placeholder="Escriba el municipio (ej. Caldas)"
+                value={municipio}
+                onChange={handleMunicipioChange}
+                guardado={mode === 'edit' && inmueble ? { ciudad: inmueble.ciudad, departamento: inmueble.departamento } : null}
+                authToken={accessToken ?? undefined}
+                error={errors.ciudad ?? errors.departamento}
                 disabled={isSubmitting}
-                placeholder="Ej: Bogotá"
-                aria-invalid={!!errors.ciudad}
-                className={inputClasses(!!errors.ciudad)}
               />
             </Campo>
 
@@ -1298,7 +1321,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                 <Campo
                   id="ubicacion_detallada"
                   label="Ubicación detallada"
-                  ayuda="Cómo se describe la ubicación en el contrato. Si lo deja vacío, usamos dirección, barrio y ciudad."
+                  ayuda="Cómo se describe la ubicación en el contrato. Si lo deja vacío, usamos dirección, barrio y municipio."
                 >
                   <textarea
                     id="ubicacion_detallada"
@@ -1307,7 +1330,7 @@ export function InmuebleForm({ mode, inmueble, returnTo }: InmuebleFormProps) {
                     disabled={isSubmitting}
                     rows={2}
                     placeholder={
-                      [formData.direccion, formData.barrio, formData.ciudad, formData.departamento]
+                      [formData.direccion, formData.barrio, formData.ciudad, departamentoSiDistinto(formData.ciudad, formData.departamento)]
                         .filter(Boolean)
                         .join(', ') || 'Ej: Carrera 50 #20-30, barrio La Estrella, Caldas, Antioquia'
                     }
