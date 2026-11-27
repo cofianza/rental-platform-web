@@ -12,19 +12,21 @@
 import { buttonClasses } from '@/components/ui/Button'
 import Link from 'next/link'
 import { usePuedeEditar } from '@/hooks/usePuedeEditar'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { PageHeader, ExportButton } from '@/components/ui'
-import { IconPlus, IconRefresh, IconAlertTriangle, IconLoader } from '@/components/icons'
+import { IconPlus, IconRefresh, IconAlertTriangle, IconLoader, IconX } from '@/components/icons'
 import { useExpedientes } from '@/hooks/useExpedientes'
 import { expedienteService } from '@/services/expedienteService'
 import { useAuthStore } from '@/stores/auth.store'
 import { BandejaTabs, ToggleAsignados } from './BandejaTabs'
 import { ExpedientesFilters } from './ExpedientesFilters'
+import { FiltrosActivos } from './FiltrosActivos'
 import { ExpedientesTablaCofianza, ExpedientesTablaCofianzaSkeleton } from './ExpedientesTablaCofianza'
 import { EXPEDIENTE_UI_MESSAGES } from './constants'
 import { instanteBogota } from '@/lib/utils'
 import { corregirFiltroDeBandeja, estudioFiltroDeBandeja } from '@/lib/bandejaCofianza'
+import { chipsDeFiltros, hoyBogota, QUITAR_CHIP, type ClaveChip } from '@/lib/filtrosExpedientes'
 
 export function ExpedientesListado() {
   const user = useAuthStore((s) => s.user)
@@ -43,6 +45,12 @@ export function ExpedientesListado() {
     stats,
     filters,
     analistas,
+    inmobiliarias,
+    errorInmobiliarias,
+    sinFiltroInmobiliaria,
+    reintentarInmobiliarias,
+    statsVigentes,
+    isLoadingStats,
     isLoading,
     error,
     activeBandeja,
@@ -55,6 +63,18 @@ export function ExpedientesListado() {
     hasActiveFilters,
     fetchExpedientes,
   } = useExpedientes()
+
+  // Chips de los filtros activos (filtro mejorado, 27-nov). «Hoy» fijado al montar: leer la hora en cada render es impuro.
+  const [hoy] = useState(hoyBogota)
+  const chips = chipsDeFiltros(filters, { analistas, inmobiliarias, misExpedientes, hoy })
+  const quitarChip = (clave: ClaveChip) => {
+    // «Asignados a mí» se apaga con su interruptor (que también limpia el analista).
+    if (clave === 'asignados') toggleMisExpedientes()
+    else setFilters(QUITAR_CHIP[clave])
+  }
+  // Sin chips, el foco vuelve al buscador (no al final de la página).
+  const barraRef = useRef<HTMLDivElement>(null)
+  const enfocarBusqueda = () => barraRef.current?.querySelector<HTMLInputElement>('input[type="search"]')?.focus()
 
   // «Turno del gestor»: llega por el enlace del aviso de bloqueos.
   const requiereAccionActivo = filters.estudio_filtro === 'requiere_accion'
@@ -83,14 +103,27 @@ export function ExpedientesListado() {
         <IconAlertTriangle size={48} className="mx-auto text-red-400 mb-4" />
         <h2 className="text-lg font-medium text-gray-900 mb-2">No se pudieron cargar los estudios</h2>
         <p className="mx-auto max-w-md text-sm text-gray-500 mb-4">{error}</p>
-        <button
-          type="button"
-          onClick={() => fetchExpedientes()}
-          className="inline-flex min-h-10 items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
-        >
-          <IconRefresh size={18} />
-          {EXPEDIENTE_UI_MESSAGES.ERROR_RETRY}
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => fetchExpedientes()}
+            className="inline-flex min-h-10 items-center gap-2 px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 transition-colors"
+          >
+            <IconRefresh size={18} />
+            {EXPEDIENTE_UI_MESSAGES.ERROR_RETRY}
+          </button>
+          {/* Si el error viene de un filtro (p. ej. la inmobiliaria elegida), reintentar lo repetiría: quitarlos. */}
+          {hasActiveFilters() && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50"
+            >
+              <IconX size={16} />
+              {EXPEDIENTE_UI_MESSAGES.CLEAR_FILTERS}
+            </button>
+          )}
+        </div>
       </div>
     )
   }
@@ -136,11 +169,14 @@ export function ExpedientesListado() {
         onToggleMisExpedientes={toggleMisExpedientes}
         requiereAccionActivo={requiereAccionActivo}
         mostrarToggle={false}
+        // Con el filtro de inmobiliaria recién cambiado, los números son del anterior: no se muestran hasta que llegan
+        // los nuevos (y si no llegan, «—», nunca un número de otra organización).
+        conteosOcultos={statsVigentes ? undefined : isLoadingStats ? 'cargando' : 'sin_dato'}
       />
 
       {/* Una sola superficie: la barra de filtros encabeza la cola que filtra. */}
       <section aria-label="Estudios" className="rounded-lg border border-gray-200 bg-white">
-        <div className="border-b border-gray-100 p-3 sm:p-4">
+        <div ref={barraRef} className="border-b border-gray-100 p-3 sm:p-4">
           <ExpedientesFilters
             barra
             filters={filters}
@@ -150,6 +186,12 @@ export function ExpedientesListado() {
             onClearFilters={clearFilters}
             hasActiveFilters={hasActiveFilters()}
             accesorio={<ToggleAsignados activo={misExpedientes} onToggle={toggleMisExpedientes} />}
+            // Con una API anterior (sin el filtro) no se muestra: diría «Inmobiliaria: X» con la lista de todas.
+            inmobiliarias={sinFiltroInmobiliaria ? undefined : inmobiliarias}
+            errorInmobiliarias={errorInmobiliarias}
+            onReintentarInmobiliarias={() => void reintentarInmobiliarias()}
+            panelMovil
+            filtrosActivos={<FiltrosActivos chips={chips} onQuitar={quitarChip} onLimpiar={clearFilters} onSinChips={enfocarBusqueda} />}
           />
         </div>
 
@@ -181,7 +223,7 @@ export function ExpedientesListado() {
               vacio={
                 // U22: «Asignados a mí» filtra por analista; sin otro filtro, el vacío lo explica.
                 // X11: con una pestaña activa, «en esta bandeja» (puede tener asignados en otras).
-                misExpedientes && !filters.search && !filters.fecha_desde && !filters.fecha_hasta
+                misExpedientes && !filters.search && !filters.fecha_desde && !filters.fecha_hasta && !filters.inmobiliaria_id
                   ? activeBandeja === null
                     ? 'asignados'
                     : 'asignados_bandeja'

@@ -247,6 +247,11 @@ export interface IExpedienteFilters {
   limit: number
   /** Miembro del equipo de la inmobiliaria (distinto del analista interno). */
   miembro_responsable_id?: string
+  /**
+   * Filtro «Inmobiliaria» de la cola de Cofianza (solo roles internos; la API lo rechaza a los demás): el id de la
+   * organización, 'ninguna' (estudios sin inmobiliaria: propietario directo) o '' (todas).
+   */
+  inmobiliaria_id?: string
   /** Solo los que no tienen analista (el «Sin asignar» del dashboard). */
   sin_analista?: boolean
   /** Que cada fila traiga tiene_contrato_vivo (acciones pendientes del inicio). */
@@ -296,6 +301,14 @@ export interface IExpedientesStats {
 export interface IAnalistaOption {
   id: string
   nombre: string
+}
+
+/** Una organización para el filtro «Inmobiliaria» de la cola de Cofianza (GET /expedientes/inmobiliarias). */
+export interface IInmobiliariaFiltro {
+  id: string
+  nombre: string
+  /** Se cerró: sus estudios siguen en la lista. */
+  cerrada: boolean
 }
 
 /**

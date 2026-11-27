@@ -5,10 +5,13 @@
 
 'use client'
 
-import { useState } from 'react'
-import { IconSearch, IconX, IconLoader, IconCalendar } from '@/components/icons'
+import { useId, useState } from 'react'
+import { IconSearch, IconX, IconLoader, IconCalendar, IconSlidersHorizontal } from '@/components/icons'
+import { cn } from '@/lib/utils'
+import { hoyBogota, periodoDe, rangoPeriodo, type Periodo } from '@/lib/filtrosExpedientes'
 import { EXPEDIENTE_UI_MESSAGES } from './constants'
-import type { IExpedienteFilters, IAnalistaOption } from '@/types/expediente'
+import { FiltroInmobiliaria } from './FiltroInmobiliaria'
+import type { IExpedienteFilters, IAnalistaOption, IInmobiliariaFiltro } from '@/types/expediente'
 
 export interface ExpedientesFiltersProps {
   filters: IExpedienteFilters
@@ -27,39 +30,22 @@ export interface ExpedientesFiltersProps {
   barra?: boolean
   /** Barra: control extra al final (p. ej. «Asignados a mí»). */
   accesorio?: React.ReactNode
-}
-
-type Periodo = '' | 'hoy' | '7' | '30' | 'mes' | 'otro'
-
-/** Fecha de hoy en Colombia como AAAA-MM-DD (lo que esperan fecha_desde/fecha_hasta). */
-function hoyBogota(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' })
-}
-
-function restarDias(iso: string, dias: number): string {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(Date.UTC(y, m - 1, d - dias)).toISOString().slice(0, 10)
-}
-
-/** Rango de cada periodo; «hasta» vacío = sin tope (incluye hoy). */
-function rangoPeriodo(p: Exclude<Periodo, '' | 'otro'>, hoy: string): { fecha_desde: string; fecha_hasta: string } {
-  if (p === 'hoy') return { fecha_desde: hoy, fecha_hasta: hoy }
-  if (p === 'mes') return { fecha_desde: `${hoy.slice(0, 8)}01`, fecha_hasta: '' }
-  return { fecha_desde: restarDias(hoy, Number(p) - 1), fecha_hasta: '' }
-}
-
-function periodoDe(desde: string, hasta: string, hoy: string): Periodo {
-  if (!desde && !hasta) return ''
-  for (const p of ['hoy', '7', '30', 'mes'] as const) {
-    const r = rangoPeriodo(p, hoy)
-    if (r.fecha_desde === desde && r.fecha_hasta === hasta) return p
-  }
-  return 'otro'
+  /**
+   * Cola de Cofianza: el filtro «Inmobiliaria» (combobox) con estas organizaciones (null = cargando). Sin la prop no
+   * se muestra (la inmobiliaria y el propietario no lo tienen).
+   */
+  inmobiliarias?: IInmobiliariaFiltro[] | null
+  errorInmobiliarias?: boolean
+  onReintentarInmobiliarias?: () => void
+  /** Barra: los chips de los filtros activos, debajo (traen su «Limpiar filtros»: el de la barra no se repite). */
+  filtrosActivos?: React.ReactNode
+  /** Barra: en celular los filtros (menos la búsqueda) van en un panel que se abre con «Filtros». */
+  panelMovil?: boolean
 }
 
 /**
  * Barra de la cola: un selector de periodo en vez de dos fechas nativas
- * («dd/mm/aaaa a dd/mm/aaaa» se leía como ruido). «Otro rango…» abre
+ * («dd/mm/aaaa a dd/mm/aaaa» se leía como ruido). «Rango personalizado…» abre
  * las dos fechas para lo que no cabe en los periodos.
  */
 function FiltroPeriodo({
@@ -110,7 +96,7 @@ function FiltroPeriodo({
           <option value="7">Últimos 7 días</option>
           <option value="30">Últimos 30 días</option>
           <option value="mes">Este mes</option>
-          <option value="otro">Otro rango…</option>
+          <option value="otro">Rango personalizado…</option>
         </select>
       </div>
       {periodo === 'otro' && (
@@ -150,86 +136,148 @@ export function ExpedientesFilters({
   ocultarResponsable = false,
   barra = false,
   accesorio,
+  inmobiliarias,
+  errorInmobiliarias = false,
+  onReintentarInmobiliarias,
+  filtrosActivos,
+  panelMovil = false,
 }: ExpedientesFiltersProps) {
   const usaMiembros = Object.keys(miembros ?? {}).length > 0
+  const panelId = useId()
+  const [panelAbierto, setPanelAbierto] = useState(false)
+  // Cuántos filtros del panel están puestos (la búsqueda queda fuera: siempre está a la vista).
+  const enPanel = [usaMiembros ? filters.miembro_responsable_id : filters.analista_id, filters.inmobiliaria_id, filters.fecha_desde || filters.fecha_hasta].filter(Boolean).length
+  const conInmobiliaria = inmobiliarias !== undefined
 
   if (barra) {
     const campo =
       'h-10 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 transition-colors hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent'
-    return (
-      <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-        <div className="relative min-w-0 md:flex-1 md:basis-64">
-          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            {isLoading ? (
-              <IconLoader size={16} className="animate-spin text-gray-500" />
-            ) : (
-              <IconSearch size={16} className="text-gray-500" />
-            )}
-          </div>
-          <input
-            type="search"
-            aria-label="Buscar estudios"
-            placeholder="Código, inmueble o solicitante"
-            value={filters.search}
-            onChange={(e) => onFilterChange({ search: e.target.value })}
-            // Sin la «x» nativa de type=search: ya hay un botón para borrar (salían dos).
-            className={`${campo} w-full pl-9 pr-9 placeholder:text-gray-500 [&::-webkit-search-cancel-button]:appearance-none`}
-          />
-          {filters.search && (
-            <button
-              type="button"
-              aria-label="Borrar la búsqueda"
-              onClick={() => onFilterChange({ search: '' })}
-              className="absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-r-lg text-gray-500 hover:text-gray-700"
-            >
-              <IconX size={14} />
-            </button>
+    const busqueda = (
+      <div className={cn('relative min-w-0', panelMovil ? 'flex-1' : 'md:flex-1 md:basis-64')}>
+        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+          {isLoading ? (
+            <IconLoader size={16} className="animate-spin text-gray-500" />
+          ) : (
+            <IconSearch size={16} className="text-gray-500" />
           )}
         </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {!ocultarResponsable && (
-            <select
-              aria-label={usaMiembros ? 'Filtrar por responsable' : 'Filtrar por analista'}
-              value={usaMiembros ? (filters.miembro_responsable_id ?? '') : filters.analista_id}
-              onChange={(e) =>
-                onFilterChange(
-                  usaMiembros ? { miembro_responsable_id: e.target.value } : { analista_id: e.target.value },
-                )
-              }
-              className={`${campo} min-w-0 grow basis-full px-3 sm:basis-40 md:w-52 md:grow-0 md:basis-auto`}
-            >
-              {/* La columna de la cola se llama «Analista»: el filtro, igual. */}
-              <option value="">{usaMiembros ? 'Todos los responsables' : 'Todos los analistas'}</option>
-              {usaMiembros
-                ? Object.entries(miembros ?? {}).map(([id, nombre]) => (
-                    <option key={id} value={id}>
-                      {nombre}
-                    </option>
-                  ))
-                : analistas.map((analista) => (
-                    <option key={analista.id} value={analista.id}>
-                      {analista.nombre}
-                    </option>
-                  ))}
-            </select>
-          )}
-
-          <FiltroPeriodo desde={filters.fecha_desde} hasta={filters.fecha_hasta} onChange={onFilterChange} campo={campo} />
-
-          {hasActiveFilters && (
-            <button
-              type="button"
-              onClick={onClearFilters}
-              className="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
-            >
-              <IconX size={14} />
-              {EXPEDIENTE_UI_MESSAGES.CLEAR_FILTERS}
-            </button>
-          )}
-          {accesorio}
-        </div>
+        <input
+          type="search"
+          aria-label="Buscar estudios"
+          // Cofianza también encuentra por el nombre de la inmobiliaria (migración 20261127000002 de la API).
+          placeholder={conInmobiliaria ? 'Código, inmueble, solicitante o inmobiliaria' : 'Código, inmueble o solicitante'}
+          value={filters.search}
+          onChange={(e) => onFilterChange({ search: e.target.value })}
+          // Sin la «x» nativa de type=search: ya hay un botón para borrar (salían dos).
+          className={`${campo} w-full pl-9 pr-9 placeholder:text-gray-500 [&::-webkit-search-cancel-button]:appearance-none`}
+        />
+        {filters.search && (
+          <button
+            type="button"
+            aria-label="Borrar la búsqueda"
+            onClick={() => onFilterChange({ search: '' })}
+            className="absolute inset-y-0 right-0 flex w-9 items-center justify-center rounded-r-lg text-gray-500 hover:text-gray-700"
+          >
+            <IconX size={14} />
+          </button>
+        )}
       </div>
+    )
+    return (
+      <>
+        <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+          {panelMovil ? (
+            <div className="flex min-w-0 gap-2 md:flex-1 md:basis-64">
+              {busqueda}
+              {/* En celular los demás filtros van en un panel: la barra no ocupa media pantalla. */}
+              <button
+                type="button"
+                aria-expanded={panelAbierto}
+                aria-controls={panelId}
+                onClick={() => setPanelAbierto((a) => !a)}
+                className={cn(
+                  'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition-colors md:hidden',
+                  panelAbierto || enPanel > 0
+                    ? 'border-primary-300 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 text-gray-700 hover:bg-gray-50',
+                )}
+              >
+                <IconSlidersHorizontal size={16} />
+                Filtros
+                {enPanel > 0 && (
+                  <>
+                    <span aria-hidden="true" className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary-600 px-1.5 text-xs font-semibold text-white">
+                      {enPanel}
+                    </span>
+                    <span className="sr-only">({enPanel} {enPanel === 1 ? 'activo' : 'activos'})</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            busqueda
+          )}
+
+          <div
+            id={panelId}
+            className={cn('flex-wrap items-center gap-2', panelMovil && !panelAbierto ? 'hidden md:flex' : 'flex')}
+          >
+            {!ocultarResponsable && (
+              <select
+                aria-label={usaMiembros ? 'Filtrar por responsable' : 'Filtrar por analista'}
+                value={usaMiembros ? (filters.miembro_responsable_id ?? '') : filters.analista_id}
+                onChange={(e) =>
+                  onFilterChange(
+                    usaMiembros ? { miembro_responsable_id: e.target.value } : { analista_id: e.target.value },
+                  )
+                }
+                className={`${campo} min-w-0 grow basis-full px-3 sm:basis-40 md:w-52 md:grow-0 md:basis-auto`}
+              >
+                {/* La columna de la cola se llama «Analista»: el filtro, igual. */}
+                <option value="">{usaMiembros ? 'Todos los responsables' : 'Todos los analistas'}</option>
+                {usaMiembros
+                  ? Object.entries(miembros ?? {}).map(([id, nombre]) => (
+                      <option key={id} value={id}>
+                        {nombre}
+                      </option>
+                    ))
+                  : analistas.map((analista) => (
+                      <option key={analista.id} value={analista.id}>
+                        {analista.nombre}
+                      </option>
+                    ))}
+              </select>
+            )}
+
+            {conInmobiliaria && (
+              <FiltroInmobiliaria
+                valor={filters.inmobiliaria_id ?? ''}
+                inmobiliarias={inmobiliarias}
+                error={errorInmobiliarias}
+                onReintentar={onReintentarInmobiliarias}
+                onChange={(v) => onFilterChange({ inmobiliaria_id: v })}
+                campo={campo}
+                className="grow basis-full sm:basis-56 md:w-64 md:grow-0 md:basis-auto"
+              />
+            )}
+
+            <FiltroPeriodo desde={filters.fecha_desde} hasta={filters.fecha_hasta} onChange={onFilterChange} campo={campo} />
+
+            {hasActiveFilters && !filtrosActivos && (
+              <button
+                type="button"
+                onClick={onClearFilters}
+                className="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              >
+                <IconX size={14} />
+                {EXPEDIENTE_UI_MESSAGES.CLEAR_FILTERS}
+              </button>
+            )}
+            {accesorio}
+          </div>
+        </div>
+        {filtrosActivos}
+      </>
     )
   }
 

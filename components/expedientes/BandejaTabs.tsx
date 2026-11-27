@@ -58,6 +58,8 @@ export interface BandejaTabsProps {
   requiereAccionActivo?: boolean
   /** false: el interruptor va en la barra de filtros (ToggleAsignados). */
   mostrarToggle?: boolean
+  /** Los contadores son de otro filtro: no se muestran sus números ('cargando' mientras llegan; 'sin_dato' si fallaron). */
+  conteosOcultos?: 'cargando' | 'sin_dato'
 }
 
 export function BandejaTabs({
@@ -68,6 +70,7 @@ export function BandejaTabs({
   onToggleMisExpedientes,
   requiereAccionActivo = false,
   mostrarToggle = true,
+  conteosOcultos,
 }: BandejaTabsProps) {
   const conRevision = revisionCofianzaDisponible(stats)
   const getCount = (estado: EstadoExpediente | null): number => {
@@ -123,6 +126,14 @@ export function BandejaTabs({
                   {/* Sin punto de color: en las inactivas era un punto gris en cada una, y el
                       color de la activa ya lo da el fondo. */}
                   {rotulo(bandeja)}
+                  {conteosOcultos === 'cargando' ? (
+                    <span aria-hidden="true" className="inline-block h-4 w-5 animate-pulse rounded-full bg-gray-200" />
+                  ) : conteosOcultos === 'sin_dato' ? (
+                    <span title="No se pudo contar" className="text-xs text-gray-500">
+                      <span aria-hidden="true">—</span>
+                      <span className="sr-only">no se pudo contar</span>
+                    </span>
+                  ) : (
                   <span
                     className={cn(
                       'inline-flex items-center justify-center min-w-[20px] px-1.5 py-0.5 rounded-full text-xs font-semibold tabular-nums',
@@ -135,6 +146,7 @@ export function BandejaTabs({
                   >
                     {count}
                   </span>
+                  )}
                 </button>
               )
             })}
