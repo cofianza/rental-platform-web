@@ -80,7 +80,7 @@ export function SaldosAFavorSection() {
         <div className="min-w-0">
           <h3 className="text-base font-semibold text-gray-900">Saldos a favor</h3>
           <p className="text-sm text-gray-500 mt-0.5">
-            Lo pagado por anticipado que no se llegó a consultar. Se descuenta automáticamente del siguiente pago de quien pagó.
+            Lo pagado por anticipado que no se llegó a consultar. El de una inmobiliaria o un propietario se descuenta solo de su siguiente pago; el de una persona que pagó por el enlace se le devuelve cuando lo pide.
             Si una persona natural pide que se le devuelva, registre aquí su solicitud: queda en Reembolsos con la fecha límite.
           </p>
         </div>

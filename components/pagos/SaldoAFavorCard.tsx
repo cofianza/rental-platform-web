@@ -55,7 +55,7 @@ export function SaldoAFavorCard({ className }: { className?: string }) {
                 : se lo devolvemos dentro de los 15 días hábiles siguientes a su solicitud.
               </>
             ) : (
-              'Se descuenta automáticamente de su siguiente pago a Cofianza de un estudio o una consulta adicional. No se devuelve en dinero.'
+              'Se descuenta automáticamente del siguiente cobro a nombre de su inmobiliaria, como una consulta adicional. No se devuelve en dinero.'
             )}
           </p>
         </div>
